@@ -99,6 +99,11 @@ def domain_validate(
             for problem in report.problems:
                 console.print(f"    {problem}")
 
+        # Warnings never fail the check: the content is internally consistent,
+        # but something about it is provisional and should stay visible.
+        for warning in report.warnings:
+            console.print(f"    [yellow]! {warning}[/yellow]")
+
     if failed:
         raise typer.Exit(code=1)
 

@@ -1,0 +1,118 @@
+# Pre-test bank. Held out from practice, administered without hints.
+#
+# Every misconception is probed here and again in the post-test with a parallel
+# form, so its remediation rate is measurable. The validator checks both.
+items:
+  - id: ca_lim_pre1
+    concept_id: limits_of_sequences
+    bank: pretest
+    prompt: "Evaluate: lim(x -> 3) of (x^2 - 9)/(x - 3)"
+    answer: "6"
+    probes: [indeterminate_limit_reported_as_zero]
+    params: { indeterminate: true }
+
+  - id: ca_avg_pre1
+    concept_id: average_rate_of_change
+    bank: pretest
+    prompt: "For y = x^2, find the average rate of change from x = 2 to x = 5."
+    answer: "7"
+
+  - id: ca_tan_pre1
+    concept_id: limit_concept
+    bank: pretest
+    prompt: "Find the gradient of the tangent to y = x^2 at x = 5."
+    answer: "10"
+
+  - id: ca_inst_pre1
+    concept_id: instantaneous_rate_of_change
+    bank: pretest
+    prompt: "For y = x^2, find the instantaneous rate of change at x = 4."
+    answer: "8"
+    probes: [average_for_instantaneous_rate]
+    params: { average_rate: 9 }
+
+  - id: ca_fp_pre1
+    concept_id: derivative_from_first_principles
+    bank: pretest
+    prompt: "Expand (t + h)^2."
+    answer: "t**2 + 2*t*h + h**2"
+    probes: [binomial_middle_term_lost]
+    params: { base: "t", step: "h", exponent: 2 }
+
+  - id: ca_pow_pre1
+    concept_id: power_rule
+    bank: pretest
+    prompt: "Differentiate: y = x^7"
+    answer: "7*x**6"
+    probes: [power_rule_forgets_decrement]
+    params: { coefficient: 1, exponent: 7 }
+
+  - id: ca_neg_pre1
+    concept_id: negative_fractional_exponents
+    bank: pretest
+    prompt: "Differentiate: y = 3/x^2"
+    answer: "-6/x**3"
+    probes: [reciprocal_power_not_rewritten]
+    params: { coefficient: 3, exponent: 2 }
+
+  - id: ca_poly_pre1
+    concept_id: polynomial_differentiation
+    bank: pretest
+    prompt: "Differentiate: y = 2x^3 + x^2 - 5"
+    answer: "6*x**2 + 2*x"
+
+  - id: ca_stat_pre1
+    concept_id: stationary_points
+    bank: pretest
+    prompt: "Solve 5x^2 - 10x = 0. Give all solutions."
+    answer: "0, 2"
+    probes: [cancel_x_loses_root]
+    params: { nonzero_root: 2 }
+
+  - id: ca_prod_pre1
+    concept_id: product_rule
+    bank: pretest
+    prompt: "Differentiate: y = x^3 cos(x)"
+    answer: "3*x**2*cos(x) - x**3*sin(x)"
+    probes: [product_rule_as_product_of_derivatives]
+    params: { f: "x**3", g: "cos(x)", df: "3*x**2", dg: "-sin(x)" }
+
+  - id: ca_quot_pre1
+    concept_id: quotient_rule
+    bank: pretest
+    prompt: "Differentiate: y = x^3/(x + 2)"
+    answer: "(3*x**2*(x + 2) - x**3)/(x + 2)**2"
+    probes: [quotient_rule_order_swapped]
+    params: { f: "x**3", g: "x + 2", df: "3*x**2", dg: "1" }
+
+  - id: ca_chain_pre1
+    concept_id: chain_rule
+    bank: pretest
+    prompt: "Differentiate: y = cos(x^3)"
+    answer: "-3*x**2*sin(x**3)"
+    probes: [chain_rule_omits_inner]
+    params: { outer_derivative: "-sin(x**3)" }
+
+  - id: ca_impl_pre1
+    concept_id: implicit_differentiation
+    bank: pretest
+    prompt: "Given x^2 + y^2 = 9, find dy/dx."
+    answer: "-x/y"
+    probes: [implicit_diff_omits_dydx]
+    params: { without_dydx: "-x" }
+
+  - id: ca_anti_pre1
+    concept_id: antiderivative
+    bank: pretest
+    prompt: "Find the general antiderivative of 4x^3."
+    answer: "x**4 + C"
+    probes: [antiderivative_omits_constant]
+    params: { particular: "x**4" }
+
+  - id: ca_usub_pre1
+    concept_id: integration_by_substitution
+    bank: pretest
+    prompt: "Integrate sin(3x) with respect to x. Omit the constant."
+    answer: "-cos(3*x)/3"
+    probes: [usub_forgets_du]
+    params: { without_du: "-cos(3*x)" }

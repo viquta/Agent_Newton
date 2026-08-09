@@ -21,6 +21,13 @@ from agent_newton.domains.base import Domain, Verdict
 
 ANSWERS_VERIFY = "answers_verify"
 RULES_PRODUCE_ERRORS = "rules_produce_errors"
+UNCONFIRMED_SOURCE = "unconfirmed_source"
+
+#: Marker for a catalogue entry whose literature source is not yet confirmed.
+#: Reported as a warning, not a failure: the entry works and the domain loads,
+#: but it is not yet defensible as a *documented* error. Shipping it visibly
+#: incomplete beats shipping it with an attribution nobody checked.
+NEEDS_SOURCE = "NEEDS-SOURCE"
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,14 +43,19 @@ class Problem:
 class ValidationReport:
     domain: str
     problems: list[Problem] = field(default_factory=list)
+    warnings: list[Problem] = field(default_factory=list)
     stats: dict[str, int] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
+        """Whether the content is *consistent*. Warnings do not affect this."""
         return not self.problems
 
     def add(self, check: str, message: str) -> None:
         self.problems.append(Problem(check, message))
+
+    def warn(self, check: str, message: str) -> None:
+        self.warnings.append(Problem(check, message))
 
 
 def validate(domain: Domain) -> ValidationReport:
@@ -80,6 +92,12 @@ def validate(domain: Domain) -> ValidationReport:
                 "misconception_has_source",
                 f"misconception {misconception.id!r} has an empty source; the "
                 f"catalogue must stay traceable to the literature",
+            )
+        elif misconception.source.strip().upper().startswith(NEEDS_SOURCE):
+            report.warn(
+                UNCONFIRMED_SOURCE,
+                f"misconception {misconception.id!r} has no confirmed source yet: "
+                f"{misconception.source.strip()}",
             )
         if domain.buggy_rule(misconception.id) is None:
             report.add(

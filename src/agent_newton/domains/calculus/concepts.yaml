@@ -1,0 +1,67 @@
+# Single-variable calculus prerequisite graph.
+#
+# The spine follows the order in which the concepts are actually constructed:
+# limits make the instantaneous rate meaningful, which makes the derivative
+# definable, which makes the rules worth stating. Two later branches
+# (implicit differentiation, integration by substitution) both depend on the
+# chain rule, which is why it sits where it does.
+concepts:
+  - id: limits_of_sequences
+    name: Limits of sequences
+    prerequisites: []
+
+  - id: average_rate_of_change
+    name: Average rate of change over an interval
+    prerequisites: []
+
+  - id: limit_concept
+    name: The tangent as the limit of secants
+    prerequisites: [limits_of_sequences]
+
+  - id: instantaneous_rate_of_change
+    name: Instantaneous rate of change at a point
+    prerequisites: [average_rate_of_change, limit_concept]
+
+  - id: derivative_from_first_principles
+    name: The derivative from first principles
+    prerequisites: [instantaneous_rate_of_change]
+
+  - id: power_rule
+    name: The power rule
+    prerequisites: [derivative_from_first_principles]
+
+  - id: negative_fractional_exponents
+    name: Powers with negative and fractional exponents
+    prerequisites: [power_rule]
+
+  - id: polynomial_differentiation
+    name: Differentiating polynomials
+    prerequisites: [power_rule]
+
+  - id: stationary_points
+    name: Stationary points
+    prerequisites: [polynomial_differentiation]
+
+  - id: product_rule
+    name: The product rule
+    prerequisites: [polynomial_differentiation]
+
+  - id: quotient_rule
+    name: The quotient rule
+    prerequisites: [product_rule]
+
+  - id: chain_rule
+    name: The chain rule
+    prerequisites: [polynomial_differentiation]
+
+  - id: implicit_differentiation
+    name: Implicit differentiation
+    prerequisites: [chain_rule]
+
+  - id: antiderivative
+    name: Antiderivatives
+    prerequisites: [power_rule]
+
+  - id: integration_by_substitution
+    name: Integration by substitution
+    prerequisites: [chain_rule, antiderivative]

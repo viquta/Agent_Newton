@@ -1,0 +1,118 @@
+# The shared label space: the simulator's buggy rules and the diagnostic agent's
+# classification targets are drawn from these same entries.
+#
+# `source` is required. Entries marked NEEDS-SOURCE are reported as warnings by
+# `domain validate`: they work, but they are not yet backed by a study that
+# documents the error in students, so they are visibly provisional rather than
+# silently attributed. Confirm or replace them before reporting any result that
+# depends on them.
+misconceptions:
+  # --- documented by Orton (1983b), differentiation ------------------------
+  - id: binomial_middle_term_lost
+    concept_id: derivative_from_first_principles
+    description: >-
+      Expanding (x + h)^2 as x^2 + h^2, losing the middle term 2xh. The first
+      principles quotient then collapses and the derivative comes out wrong.
+    source: >-
+      Orton, A. (1983). Students' understanding of differentiation. Educational
+      Studies in Mathematics 14(3) — 17 of 110 students lost the middle term 6ah
+      when expanding 3(a + h)^2.
+
+  - id: cancel_x_loses_root
+    concept_id: stationary_points
+    description: >-
+      Solving a stationary-point equation by dividing through by x, which
+      discards the root x = 0.
+    source: >-
+      Orton, A. (1983b) — twelve students lost x = 0 by cancelling x, or
+      dividing throughout by x, when solving 3x^2 - 6x = 0.
+
+  - id: average_for_instantaneous_rate
+    concept_id: instantaneous_rate_of_change
+    description: >-
+      Reporting the average rate of change across an interval when asked for
+      the instantaneous rate at a point.
+    source: >-
+      Orton, A. (1983b) — a very common error was to state that the formula
+      measured the rate of change "from P to Q", over the whole section of curve.
+
+  - id: reciprocal_power_not_rewritten
+    concept_id: negative_fractional_exponents
+    description: >-
+      Differentiating a/x^n as though it were a·x^n, without first rewriting it
+      with a negative exponent.
+    source: >-
+      Orton, A. (1983b) — the only common error made in differentiating arose in
+      handling y = 2/x^2, where the reciprocal power was not rewritten.
+
+  # --- documented by Orton (1983a), integration and limits ------------------
+  - id: indeterminate_limit_reported_as_zero
+    concept_id: limits_of_sequences
+    description: >-
+      Reporting zero for a limit whose direct substitution gives an
+      indeterminate form, rather than resolving the form first.
+    source: >-
+      Orton, A. (1983). Students' understanding of integration. Educational
+      Studies in Mathematics 14(1) — half the students answered part (d)
+      incorrectly, many of the incorrect responses being zero.
+
+  # --- documented by Borji & Martinez-Planell (2020) ------------------------
+  - id: chain_rule_omits_inner
+    concept_id: chain_rule
+    description: >-
+      Differentiating a composite function by differentiating the outer function
+      only, omitting the derivative of the inner function.
+    source: >-
+      Borji, V. & Martinez-Planell, R. (2020). On students' understanding of
+      implicit differentiation based on APOS theory. Educational Studies in
+      Mathematics — students who had not constructed a Process conception of
+      function composition treated the rules as unrelated; see also Clark et al.
+      (1997) on intra-chain-rule schema development.
+
+  - id: implicit_diff_omits_dydx
+    concept_id: implicit_differentiation
+    description: >-
+      Differentiating a term in y with respect to x without treating y as a
+      function of x, so the dy/dx factor never appears.
+    source: >-
+      Borji & Martinez-Planell (2020) — attaining a coherent implicit
+      differentiation Schema requires treating y as a function of x, which
+      students who had not constructed the chain rule Schema did not do.
+
+  # --- not yet sourced -----------------------------------------------------
+  # These are widely recognised, but none of the studies on hand documents them
+  # in students. They are usable; they are not yet defensible as documented.
+  - id: power_rule_forgets_decrement
+    concept_id: power_rule
+    description: >-
+      Multiplying by the exponent but leaving the exponent unchanged:
+      d/dx x^n giving n·x^n rather than n·x^(n-1).
+    source: "NEEDS-SOURCE: widely recognised, but not documented in the studies on hand."
+
+  - id: product_rule_as_product_of_derivatives
+    concept_id: product_rule
+    description: >-
+      Differentiating a product as the product of the derivatives,
+      (fg)' = f'g'.
+    source: "NEEDS-SOURCE: Chu (2019) reports rule difficulties generally; the specific error is not itemised."
+
+  - id: quotient_rule_order_swapped
+    concept_id: quotient_rule
+    description: >-
+      Applying the quotient rule with the numerator terms transposed, giving
+      (f·g' - f'·g)/g^2 instead of (f'·g - f·g')/g^2.
+    source: "NEEDS-SOURCE: widely recognised, but not documented in the studies on hand."
+
+  - id: usub_forgets_du
+    concept_id: integration_by_substitution
+    description: >-
+      Integrating a composite function without dividing by the derivative of
+      the inner function, so the substitution's du factor is unaccounted for.
+    source: "NEEDS-SOURCE: not documented in the integration study on hand, which concerns limits and area."
+
+  - id: antiderivative_omits_constant
+    concept_id: antiderivative
+    description: >-
+      Giving a single antiderivative rather than the general one, omitting the
+      constant of integration.
+    source: "NEEDS-SOURCE: widely recognised, but not documented in the studies on hand."
