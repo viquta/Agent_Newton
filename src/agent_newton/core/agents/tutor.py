@@ -1,0 +1,94 @@
+"""The template tutor — hints without a model.
+
+Text is assembled from the domain's misconception catalogue at the support
+level the scaffolding rule asks for. The wording is plain; what matters for the
+experiment is *what the hint targets*, since that is the only thing the learner
+responds to.
+
+The tutor is driven by the instructional rules rather than checked against them
+afterwards: it asks what move is required and makes it, so the error-first
+ordering holds by construction.
+"""
+
+from __future__ import annotations
+
+from typing import Sequence
+
+from agent_newton.core.agents.base import Diagnosis, Hint, StateView
+from agent_newton.core.pedagogy import (
+    HintLevel,
+    TutorMove,
+    hint_level,
+    next_required_move,
+)
+from agent_newton.config import ZPDConfig
+from agent_newton.core.state.views import FullStateView
+from agent_newton.domains.base import Domain, Item
+
+
+class TemplateTutor:
+    """Model-free tutor. Support level from the rules, target from the diagnosis."""
+
+    def __init__(self, band: ZPDConfig) -> None:
+        self._band = band
+
+    def respond(
+        self,
+        item: Item,
+        diagnosis: Diagnosis,
+        view: StateView,
+        domain: Domain,
+        *,
+        failed_attempts: int,
+        moves_this_item: Sequence[TutorMove],
+    ) -> Hint:
+        # Mastery is only available in the coupled view. Without it the tutor
+        # falls back to the bottom of the band, which is the conservative
+        # reading: assume little and scaffold accordingly.
+        mastery = (
+            view.probability(item.concept_id, 0.0)
+            if isinstance(view, FullStateView)
+            else 0.0
+        )
+        level = hint_level(mastery, failed_attempts, self._band)
+
+        required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
+        if required is TutorMove.REFLECT:
+            return Hint(
+                text=(
+                    f"Before we fix it — look again at your step for "
+                    f"'{item.prompt}'. Which part are you least sure of, and why?"
+                ),
+                move=TutorMove.REFLECT,
+                level=level,
+                # A reflective prompt deliberately targets nothing: it costs a
+                # turn and remediates nothing, which is what makes the
+                # error-first rule a real constraint rather than a free one.
+                targets=None,
+            )
+
+        if not diagnosis.named:
+            return Hint(
+                text=f"That is not right yet. Check your working on '{item.prompt}'.",
+                move=TutorMove.HINT,
+                level=level,
+                targets=None,
+            )
+
+        assert diagnosis.misconception_id is not None
+        misconception = domain.misconceptions.get(diagnosis.misconception_id)
+        return Hint(
+            text=_text_for(level, misconception.description, item),
+            move=TutorMove.REMEDIATE,
+            level=level,
+            targets=diagnosis.misconception_id,
+        )
+
+
+def _text_for(level: HintLevel, description: str, item: Item) -> str:
+    description = " ".join(description.split())
+    if level is HintLevel.NUDGE:
+        return "Almost — one part of that step does not follow. Try it once more."
+    if level is HintLevel.TARGETED:
+        return f"Here is what went wrong: {description}"
+    return f"Here is what went wrong: {description} The correct answer is {item.answer}."

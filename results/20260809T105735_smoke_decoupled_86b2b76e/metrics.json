@@ -1,0 +1,42 @@
+{
+  "run_id": "20260809T105735_smoke_decoupled_86b2b76e",
+  "arm": "decoupled",
+  "domain": "toy_algebra",
+  "n_learners": 3,
+  "mean_pretest": 0.7777777777777778,
+  "mean_posttest": 0.8333333333333334,
+  "mean_gain": 0.05555555555555558,
+  "mean_items": 11.333333333333334,
+  "mean_remediation": 0.42273913226771237,
+  "unmeasurable_steps": 0,
+  "diagnostic_accuracy": 1.0,
+  "per_learner": [
+    {
+      "learner_id": "L0000",
+      "pretest": 0.6666666666666666,
+      "posttest": 0.8333333333333334,
+      "gain": 0.16666666666666674,
+      "items": 12,
+      "items_to_exhaustion": null,
+      "remediation": 0.5707173968031372
+    },
+    {
+      "learner_id": "L0001",
+      "pretest": 0.8333333333333334,
+      "posttest": 0.8333333333333334,
+      "gain": 0.0,
+      "items": 10,
+      "items_to_exhaustion": 10,
+      "remediation": 0.0
+    },
+    {
+      "learner_id": "L0002",
+      "pretest": 0.8333333333333334,
+      "posttest": 0.8333333333333334,
+      "gain": 0.0,
+      "items": 12,
+      "items_to_exhaustion": null,
+      "remediation": 0.6975
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{"ts": "2026-08-09T12:57:35", "level": "INFO", "logger": "__main__", "message": "3 learners on toy_algebra (decoupled)", "event": "cohort.start", "run_id": "20260809T105735_smoke_decoupled_86b2b76e", "uses_llm": false}
+{"ts": "2026-08-09T12:57:35", "level": "INFO", "logger": "__main__", "message": "L0000: 0.67 -> 0.83", "event": "learner.done", "learner_id": "L0000", "gain": 0.16666666666666674, "items": 12, "remediation": 0.5707173968031372}
+{"ts": "2026-08-09T12:57:35", "level": "INFO", "logger": "__main__", "message": "L0001: 0.83 -> 0.83", "event": "learner.done", "learner_id": "L0001", "gain": 0.0, "items": 10, "remediation": 0.0}
+{"ts": "2026-08-09T12:57:35", "level": "INFO", "logger": "__main__", "message": "L0002: 0.83 -> 0.83", "event": "learner.done", "learner_id": "L0002", "gain": 0.0, "items": 12, "remediation": 0.6975}

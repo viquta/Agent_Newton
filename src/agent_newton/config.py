@@ -107,10 +107,14 @@ class DiagnosticSpec(ModelSpec):
 
 
 class PlannerSpec(ModelSpec):
-    #: ``deterministic`` selects from the ZPD frontier by a fixed policy;
+    #: ``deterministic`` selects from the mastery frontier by a fixed policy;
     #: ``oracle`` may additionally see the simulator's true profile and is the
     #: upper bound the real planner's regret is measured against.
     impl: PlannerImpl = "llm"
+    #: Consecutive correct answers before the decoupled planner moves on. Its
+    #: view carries no per-concept estimate, so this stream is the only signal
+    #: it has to advance on.
+    advance_after: int = Field(default=2, ge=1)
 
 
 class AgentsConfig(BaseModel):
