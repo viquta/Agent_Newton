@@ -74,6 +74,8 @@ def run(config: Config) -> dict:
         "mean_remediation": _mean(o.remediation_ratio for o in outcomes),
         "unmeasurable_steps": sum(o.unmeasurable_steps for o in outcomes),
         "diagnostic_accuracy": _diagnostic_accuracy(outcomes),
+        "replans_by_trigger": _triggers(outcomes),
+        "suppressed_triggers": sum(o.suppressed for o in outcomes),
         "per_learner": [
             {
                 "learner_id": o.learner_id,
@@ -94,6 +96,15 @@ def run(config: Config) -> dict:
 def _mean(values) -> float:
     values = list(values)
     return sum(values) / len(values) if values else 0.0
+
+
+def _triggers(outcomes) -> dict[str, int]:
+    """Replans by trigger, summed over the cohort."""
+    totals: dict[str, int] = {}
+    for outcome in outcomes:
+        for trigger, count in outcome.triggers.items():
+            totals[trigger] = totals.get(trigger, 0) + count
+    return dict(sorted(totals.items()))
 
 
 def _diagnostic_accuracy(outcomes) -> float | None:

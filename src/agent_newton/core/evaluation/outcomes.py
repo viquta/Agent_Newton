@@ -47,6 +47,14 @@ class SessionOutcome:
     #: diagnostic agent against the ground truth it never saw.
     diagnoses: tuple[tuple[str | None, str | None], ...] = ()
 
+    #: Replans by trigger. Reported separately because the triggers compete: a
+    #: threshold that suppresses one pathway lets another take up the slack, so
+    #: a total replan count can stay flat while the threshold is doing plenty.
+    #: A sweep reading only totals would conclude the threshold does nothing.
+    triggers: dict[str, int] = field(default_factory=dict)
+    #: Triggers that fired and were held back by the rate limit.
+    suppressed: int = 0
+
     @property
     def gain(self) -> float:
         return self.posttest.score - self.pretest.score

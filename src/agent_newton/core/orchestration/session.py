@@ -28,6 +28,8 @@ from agent_newton.core.agents.diagnostic import NoisedOracleDiagnostic, OracleDi
 from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
 from agent_newton.core.agents.planner import FixedOrderPlanner, FrontierPlanner
 from agent_newton.core.agents.tutor import TemplateTutor
+from agent_newton.core.arbitration.policy import ArbitrationPolicy
+from agent_newton.core.state import bkt
 from agent_newton.llm.factory import build_provider
 from agent_newton.core.evaluation.outcomes import SessionOutcome, administer
 from agent_newton.core.pedagogy import TutorMove, check_move
@@ -57,6 +59,7 @@ class Session:
     surface: SurfaceRenderer
     domain: Domain
     config: Config
+    arbitration: ArbitrationPolicy
 
     def run(self) -> SessionOutcome:
         pretest = administer(
@@ -67,18 +70,43 @@ class Session:
         diagnoses: list[tuple[str | None, str | None]] = []
         exhausted: int | None = None
 
+        plan: str | None = None
+
         for _ in range(self.config.cohort.max_items):
-            item = self.planner.select(self.board.view(), self.domain, given)
-            if item is None:
-                # Nothing left to teach: the frontier emptied, or the syllabus
-                # ran out. When that happened is an outcome in its own right.
-                exhausted = sum(given.values())
-                self.board.annotate(
-                    "nothing left to select", items_given=sum(given.values())
-                )
-                break
+            decision = self.arbitration.evaluate(
+                current_concept=plan,
+                mastery=dict(self.board.state.mastery),
+                frontier=self.board.frontier,
+                error_trace=list(self.board.state.error_trace),
+                prior=bkt.initial(self.config.bkt),
+            )
+
+            if decision.replan:
+                item = self.planner.select(self.board.view(), self.domain, given)
+                if item is None:
+                    # Nothing left to teach: the frontier emptied, or the
+                    # syllabus ran out. When that happened is an outcome.
+                    exhausted = sum(given.values())
+                    self.board.annotate(
+                        "nothing left to select", items_given=sum(given.values())
+                    )
+                    break
+                plan = item.concept_id
+                self.board.record_replan(decision.summary, **decision.evidence)
+                self.arbitration.accept(dict(self.board.state.mastery))
+            else:
+                if decision.suppressed_by:
+                    # A trigger that fired and was held back is worth recording:
+                    # it is the difference between the threshold deciding and
+                    # the rate limit deciding.
+                    self.board.annotate(decision.summary, **decision.evidence)
+                item = self._next_item_for(plan, given)
+                if item is None:
+                    exhausted = sum(given.values())
+                    break
 
             given[item.id] += 1
+            self.arbitration.note_item()
             self._work_item(item, diagnoses)
 
         posttest = administer(
@@ -95,7 +123,25 @@ class Session:
             remediation_ratio=self.learner.profile.remediation_ratio(),
             unmeasurable_steps=self.board.unmeasurable,
             diagnoses=tuple(diagnoses),
+            triggers=self._trigger_counts(),
+            suppressed=self.arbitration.suppressed,
         )
+
+    def _trigger_counts(self) -> dict[str, int]:
+        counts: Counter[str] = Counter()
+        for record in self.board.audit_log:
+            if record.cause == "replan":
+                counts[record.summary.replace("replan triggered by ", "")] += 1
+        return dict(counts)
+
+    def _next_item_for(self, concept_id: str | None, given: Counter[str]):
+        """Continue with the current plan: the least-practised item on it."""
+        if concept_id is None:
+            return None
+        items = self.domain.items.for_concept(concept_id, "practice")
+        if not items:
+            return None
+        return min(items, key=lambda item: (given.get(item.id, 0), item.id))
 
     def _work_item(
         self, item, diagnoses: list[tuple[str | None, str | None]]
@@ -207,4 +253,5 @@ def build_session(
         surface=SymbolicSurface(),
         domain=domain,
         config=config,
+        arbitration=ArbitrationPolicy(config.arbitration),
     )
