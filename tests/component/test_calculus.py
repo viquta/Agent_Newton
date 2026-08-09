@@ -43,6 +43,7 @@ class TestEquivalence:
             ("-4/x**3", "-4*x**(-3)"),  # negative exponent
             ("1/2", "0.5"),  # rational vs decimal
             ("2*x", " 2 * x "),  # whitespace
+            ("x**3 + C", "x**3 + c"),  # constant of integration, either case
         ],
     )
     def test_accepts_equivalent_forms(self, calculus, answer: str, response: str) -> None:

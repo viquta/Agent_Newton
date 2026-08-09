@@ -1,0 +1,502 @@
+# Hand-labelled verifier cases for the calculus domain.
+#
+# `kind` is the hand label. It names both the verdict the case asserts and the
+# bucket the case is reported in:
+#
+#   canonical    the bank's own answer, verbatim              -> correct
+#   equivalent   correct, written differently                 -> correct
+#   wrong        a genuine mathematical error                 -> incorrect
+#   unreadable   nothing mathematically decidable             -> unparseable
+#
+# The set is deliberately weighted toward `equivalent`. Those are the cases a
+# string-matching verifier fails and an equivalence verifier must pass, and a
+# miss there charges the learner with an error they did not make.
+#
+# `known_limitation` states why the verifier is expected to disagree with the
+# label today. Such cases stay in the set and stay counted; the scorer reports
+# a disagreement nobody predicted and a prediction that no longer holds as two
+# distinct failures, so the markers cannot rot in either direction.
+#
+# Labels are written from the mathematics, not from what the verifier returned.
+cases:
+  # --- limits ---------------------------------------------------------------
+  - id: gv_lim_canonical
+    item_id: ca_lim_p1
+    response: "4"
+    kind: canonical
+
+  - id: gv_lim_unevaluated_quotient
+    item_id: ca_lim_p1
+    response: "8/2"
+    kind: equivalent
+    note: arithmetic left undone
+
+  - id: gv_lim_decimal
+    item_id: ca_lim_p1
+    response: "4.0"
+    kind: equivalent
+    note: decimal for an integer
+
+  - id: gv_lim_zero
+    item_id: ca_lim_p1
+    response: "0"
+    kind: wrong
+    note: the indeterminate form reported as zero
+
+  - id: gv_lim_prose
+    item_id: ca_lim_p1
+    response: "the limit does not exist"
+    kind: unreadable
+
+  # --- average rate of change -----------------------------------------------
+  - id: gv_avg_unsimplified
+    item_id: ca_avg_p1
+    response: "(9 - 1)/(3 - 1)"
+    kind: equivalent
+    note: the difference quotient left unevaluated
+
+  - id: gv_avg_endpoint_difference
+    item_id: ca_avg_p1
+    response: "8"
+    kind: wrong
+    note: the change in y, not divided by the change in x
+
+  # --- first principles -----------------------------------------------------
+  - id: gv_fp_canonical
+    item_id: ca_fp_p1
+    response: "x**2 + 2*x*h + h**2"
+    kind: canonical
+
+  - id: gv_fp_student_notation
+    item_id: ca_fp_p1
+    response: "x^2 + 2xh + h^2"
+    kind: equivalent
+    note: caret and implicit multiplication
+
+  - id: gv_fp_reordered
+    item_id: ca_fp_p1
+    response: "h**2 + 2*h*x + x**2"
+    kind: equivalent
+
+  - id: gv_fp_middle_term_lost
+    item_id: ca_fp_p1
+    response: "x**2 + h**2"
+    kind: wrong
+
+  - id: gv_fp_restates_the_question
+    item_id: ca_fp_p1
+    response: "(x + h)**2"
+    kind: wrong
+    note: the prompt asks for the expansion; nothing has been expanded
+    known_limitation: >-
+      This item asks for a rewrite, so its answer is a form rather than a value.
+      An equivalence verifier cannot distinguish the two, and accepts the
+      unexpanded input. The buggy rules never produce this response, so no
+      simulated learner reaches it; a human-facing run would need the item
+      reworded or a form-sensitive check.
+
+  # --- power rule -----------------------------------------------------------
+  - id: gv_pow_canonical
+    item_id: ca_pow_p1
+    response: "5*x**4"
+    kind: canonical
+
+  - id: gv_pow_student_notation
+    item_id: ca_pow_p1
+    response: "5x^4"
+    kind: equivalent
+
+  - id: gv_pow_commuted
+    item_id: ca_pow_p1
+    response: "x**4*5"
+    kind: equivalent
+
+  - id: gv_pow_repeated_factors
+    item_id: ca_pow_p1
+    response: "5*x*x*x*x"
+    kind: equivalent
+
+  - id: gv_pow_negative_exponent_form
+    item_id: ca_pow_p1
+    response: "5/x**(-4)"
+    kind: equivalent
+    note: division by a negative power
+
+  - id: gv_pow_forgets_decrement
+    item_id: ca_pow_p1
+    response: "5*x**5"
+    kind: wrong
+
+  - id: gv_pow_drops_coefficient
+    item_id: ca_pow_p1
+    response: "x**4"
+    kind: wrong
+
+  - id: gv_pow_truncated
+    item_id: ca_pow_p1
+    response: "5x^"
+    kind: unreadable
+
+  - id: gv_pow2_factored_coefficient
+    item_id: ca_pow_p2
+    response: "3*4*x**2"
+    kind: equivalent
+    note: the coefficient left as the product that produced it
+
+  - id: gv_pow2_repeated_factors
+    item_id: ca_pow_p2
+    response: "12*x*x"
+    kind: equivalent
+
+  - id: gv_pow2_forgets_decrement
+    item_id: ca_pow_p2
+    response: "12*x**3"
+    kind: wrong
+
+  - id: gv_pow_pretest_student_notation
+    item_id: ca_pow_pre1
+    response: "7x^6"
+    kind: equivalent
+
+  - id: gv_pow_pretest_forgets_decrement
+    item_id: ca_pow_pre1
+    response: "7*x**7"
+    kind: wrong
+
+  # --- negative and reciprocal powers ---------------------------------------
+  - id: gv_neg_canonical
+    item_id: ca_neg_p1
+    response: "-4/x**3"
+    kind: canonical
+
+  - id: gv_neg_exponent_form
+    item_id: ca_neg_p1
+    response: "-4*x**(-3)"
+    kind: equivalent
+
+  - id: gv_neg_unreduced_fraction
+    item_id: ca_neg_p1
+    response: "-8/(2*x**3)"
+    kind: equivalent
+
+  - id: gv_neg_bracketed_sign
+    item_id: ca_neg_p1
+    response: "-(4/x^3)"
+    kind: equivalent
+
+  - id: gv_neg_sign_error
+    item_id: ca_neg_p1
+    response: "4/x**3"
+    kind: wrong
+
+  - id: gv_neg_exponent_not_decremented
+    item_id: ca_neg_p1
+    response: "-4/x**2"
+    kind: wrong
+
+  # --- polynomial differentiation -------------------------------------------
+  - id: gv_poly_canonical
+    item_id: ca_poly_p1
+    response: "3*x**2 - 6*x"
+    kind: canonical
+
+  - id: gv_poly_factored
+    item_id: ca_poly_p1
+    response: "3*x*(x - 2)"
+    kind: equivalent
+
+  - id: gv_poly_reordered
+    item_id: ca_poly_p1
+    response: "-6*x + 3*x**2"
+    kind: equivalent
+
+  - id: gv_poly_constant_survives
+    item_id: ca_poly_p1
+    response: "3*x**2 - 6*x + 4"
+    kind: wrong
+    note: the constant term carried through undifferentiated
+
+  - id: gv_poly_coefficient_error
+    item_id: ca_poly_p1
+    response: "3*x**2 - 3*x"
+    kind: wrong
+
+  - id: gv_poly_garbled
+    item_id: ca_poly_p1
+    response: "2 **/ x"
+    kind: unreadable
+
+  # --- stationary points (solution sets) ------------------------------------
+  - id: gv_stat_canonical
+    item_id: ca_stat_p1
+    response: "0, 2"
+    kind: canonical
+
+  - id: gv_stat_reordered
+    item_id: ca_stat_p1
+    response: "2, 0"
+    kind: equivalent
+    note: the question asks for all roots, so order carries no meaning
+
+  - id: gv_stat_unreduced
+    item_id: ca_stat_p1
+    response: "0, 4/2"
+    kind: equivalent
+
+  - id: gv_stat_cancels_x
+    item_id: ca_stat_p1
+    response: "2"
+    kind: wrong
+    note: dividing through by x discards the root at zero
+
+  - id: gv_stat_extra_root
+    item_id: ca_stat_p1
+    response: "0, 2, 5"
+    kind: wrong
+
+  - id: gv_stat_relation
+    item_id: ca_stat_p1
+    response: "x > 2"
+    kind: unreadable
+    note: a relation is not an expression
+
+  - id: gv_stat_written_as_equations
+    item_id: ca_stat_p1
+    response: "x = 0 or x = 2"
+    kind: equivalent
+    note: both roots, stated as equations
+    known_limitation: >-
+      The parser reads expressions, so an equation or a prose connective comes
+      back unparseable. The failure is the safe direction — no evidence is
+      recorded and the learner is not charged with an error — but the step is
+      wasted.
+
+  # --- product rule ---------------------------------------------------------
+  - id: gv_prod_canonical
+    item_id: ca_prod_p1
+    response: "2*x*sin(x) + x**2*cos(x)"
+    kind: canonical
+
+  - id: gv_prod_factored
+    item_id: ca_prod_p1
+    response: "x*(2*sin(x) + x*cos(x))"
+    kind: equivalent
+
+  - id: gv_prod_reordered
+    item_id: ca_prod_p1
+    response: "x**2*cos(x) + 2*x*sin(x)"
+    kind: equivalent
+
+  - id: gv_prod_product_of_derivatives
+    item_id: ca_prod_p1
+    response: "2*x*cos(x)"
+    kind: wrong
+
+  - id: gv_prod_sign_error
+    item_id: ca_prod_p1
+    response: "2*x*sin(x) - x**2*cos(x)"
+    kind: wrong
+
+  - id: gv_prod_prose
+    item_id: ca_prod_p1
+    response: "no idea"
+    kind: unreadable
+    note: implicit multiplication would otherwise read this as a product
+
+  # --- quotient rule --------------------------------------------------------
+  - id: gv_quot_canonical
+    item_id: ca_quot_p1
+    response: "(2*x*(x + 1) - x**2)/(x + 1)**2"
+    kind: canonical
+
+  - id: gv_quot_numerator_expanded
+    item_id: ca_quot_p1
+    response: "(x**2 + 2*x)/(x + 1)**2"
+    kind: equivalent
+    note: the numerator collected
+
+  - id: gv_quot_numerator_factored
+    item_id: ca_quot_p1
+    response: "x*(x + 2)/(x + 1)**2"
+    kind: equivalent
+
+  - id: gv_quot_order_swapped
+    item_id: ca_quot_p1
+    response: "(x**2 - 2*x*(x + 1))/(x + 1)**2"
+    kind: wrong
+
+  - id: gv_quot_derivative_over_derivative
+    item_id: ca_quot_p1
+    response: "2*x"
+    kind: wrong
+    note: numerator and denominator differentiated separately
+
+  - id: gv_quot_posttest_collected
+    item_id: ca_quot_post1
+    response: "(x**2 + 6*x)/(x + 3)**2"
+    kind: equivalent
+
+  # --- chain rule -----------------------------------------------------------
+  - id: gv_chain_canonical
+    item_id: ca_chain_p1
+    response: "2*x*cos(x**2)"
+    kind: canonical
+
+  - id: gv_chain_student_notation
+    item_id: ca_chain_p1
+    response: "cos(x^2)*2x"
+    kind: equivalent
+
+  - id: gv_chain_repeated_factor
+    item_id: ca_chain_p1
+    response: "2*x*cos(x*x)"
+    kind: equivalent
+
+  - id: gv_chain_omits_inner
+    item_id: ca_chain_p1
+    response: "cos(x**2)"
+    kind: wrong
+
+  - id: gv_chain_inner_not_squared
+    item_id: ca_chain_p1
+    response: "2*x*cos(x)"
+    kind: wrong
+
+  - id: gv_chain_apostrophe
+    item_id: ca_chain_p1
+    response: "I don't know"
+    kind: unreadable
+
+  - id: gv_chain2_unmultiplied
+    item_id: ca_chain_p2
+    response: "4*(3*x + 1)**3*3"
+    kind: equivalent
+    note: the two factors left unmultiplied
+
+  - id: gv_chain2_expanded
+    item_id: ca_chain_p2
+    response: "324*x**3 + 324*x**2 + 108*x + 12"
+    kind: equivalent
+    note: expanded rather than left in the bracketed form
+
+  - id: gv_chain2_omits_inner
+    item_id: ca_chain_p2
+    response: "4*(3*x + 1)**3"
+    kind: wrong
+
+  # --- implicit differentiation ---------------------------------------------
+  - id: gv_impl_canonical
+    item_id: ca_impl_p1
+    response: "-x/y"
+    kind: canonical
+
+  - id: gv_impl_unreduced
+    item_id: ca_impl_p1
+    response: "-2*x/(2*y)"
+    kind: equivalent
+    note: the form the rearrangement produces, before cancelling
+
+  - id: gv_impl_sign_on_denominator
+    item_id: ca_impl_p1
+    response: "x/(-y)"
+    kind: equivalent
+
+  - id: gv_impl_omits_dydx
+    item_id: ca_impl_p1
+    response: "-x"
+    kind: wrong
+
+  - id: gv_impl_sign_error
+    item_id: ca_impl_p1
+    response: "x/y"
+    kind: wrong
+
+  - id: gv_impl_written_as_equation
+    item_id: ca_impl_p1
+    response: "dy/dx = -x/y"
+    kind: equivalent
+    note: the answer restated as the equation the question asks for
+    known_limitation: >-
+      Same cause as gv_stat_written_as_equations: the parser reads one
+      expression, and an equals sign is a syntax error. Unparseable rather than
+      wrong, so nothing false enters the learner model.
+
+  - id: gv_impl_posttest_omits_dydx
+    item_id: ca_impl_post1
+    response: "-x"
+    kind: wrong
+
+  # --- antiderivatives ------------------------------------------------------
+  - id: gv_anti_canonical
+    item_id: ca_anti_p1
+    response: "x**3 + C"
+    kind: canonical
+
+  - id: gv_anti_constant_first
+    item_id: ca_anti_p1
+    response: "C + x**3"
+    kind: equivalent
+
+  - id: gv_anti_repeated_factors
+    item_id: ca_anti_p1
+    response: "x*x*x + C"
+    kind: equivalent
+
+  - id: gv_anti_lowercase_constant
+    item_id: ca_anti_p1
+    response: "x**3 + c"
+    kind: equivalent
+    note: the constant of integration written in lower case
+
+  - id: gv_anti_omits_constant
+    item_id: ca_anti_p1
+    response: "x**3"
+    kind: wrong
+
+  - id: gv_anti_divides_instead
+    item_id: ca_anti_p1
+    response: "x**3/3 + C"
+    kind: wrong
+
+  - id: gv_anti_posttest_constant_first
+    item_id: ca_anti_post1
+    response: "C + x**5"
+    kind: equivalent
+
+  # --- integration by substitution ------------------------------------------
+  - id: gv_usub_canonical
+    item_id: ca_usub_p1
+    response: "sin(2*x)/2"
+    kind: canonical
+
+  - id: gv_usub_decimal_coefficient
+    item_id: ca_usub_p1
+    response: "0.5*sin(2*x)"
+    kind: equivalent
+
+  - id: gv_usub_double_angle_identity
+    item_id: ca_usub_p1
+    response: "sin(x)*cos(x)"
+    kind: equivalent
+    note: the double-angle identity; the numeric screen cannot separate these
+
+  - id: gv_usub_forgets_du
+    item_id: ca_usub_p1
+    response: "sin(2*x)"
+    kind: wrong
+
+  - id: gv_usub_sign_error
+    item_id: ca_usub_p1
+    response: "-sin(2*x)/2"
+    kind: wrong
+
+  - id: gv_usub_posttest_double_angle
+    item_id: ca_usub_post1
+    response: "sin(2*x)*cos(2*x)/2"
+    kind: equivalent
+    note: sin(4x)/4 written through the double-angle identity
+
+  - id: gv_usub_empty
+    item_id: ca_usub_p1
+    response: ""
+    kind: unreadable

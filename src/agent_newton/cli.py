@@ -112,6 +112,139 @@ def domain_validate(
         raise typer.Exit(code=1)
 
 
+@eval_app.command("verifier")
+def evaluate_verifier(
+    domain_name: str = typer.Option("calculus", "--domain", help="Domain to evaluate."),
+    gold: Path | None = typer.Option(None, "--gold", help="Gold-set YAML."),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+    show_all: bool = typer.Option(False, "--all", help="List every case, not just misses."),
+) -> None:
+    """Score a domain's verifier against its hand-labelled gold set.
+
+    No model is involved and nothing is cached: the verifier is symbolic, so the
+    whole set runs in well under a second and the numbers are exact.
+
+    Exits non-zero when a case disagrees with its label without a stated reason,
+    or when a stated reason no longer applies.
+    """
+    from agent_newton.core.evaluation.verifier import load, score
+
+    try:
+        domain = registry.load_domain(domain_name)
+    except DomainError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    path = gold or Path("tests/fixtures/gold") / f"{domain_name}_verifier_cases.yaml"
+    if not path.exists():
+        console.print(f"[red]no gold set at {path}[/red]")
+        raise typer.Exit(code=1)
+
+    try:
+        report = score(domain, load(path, domain))
+    except DomainError as exc:
+        console.print(f"[red]{path} is not usable:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    directory = out or Path("results") / f"verifier_{domain_name}"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    with (directory / "cases.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            ["case_id", "item_id", "kind", "response", "expected", "actual",
+             "agrees", "known_limitation", "detail"]
+        )
+        for scored in report.scored:
+            writer.writerow([
+                scored.case.id, scored.case.item_id, scored.case.kind,
+                scored.case.response, scored.case.expected.value, scored.actual.value,
+                scored.agrees, scored.case.known_limitation, scored.detail,
+            ])
+
+    summary = {
+        "domain": domain_name,
+        "gold_set": str(path),
+        "item_bank_hash": domain.items.content_hash(),
+        "cases": report.total,
+        "accuracy": report.accuracy,
+        "by_kind": {k: len(report.of_kind(k)) for k in ("canonical", "equivalent",
+                                                        "wrong", "unreadable")},
+        "false_negative_rate": report.false_negative_rate,
+        "false_negatives_scored_incorrect": [s.case.id for s in report.scored_incorrect()],
+        "false_negatives_unmeasured": [s.case.id for s in report.unmeasured()],
+        "false_accept_rate": report.false_accept_rate,
+        "false_accepts": [s.case.id for s in report.false_accepts()],
+        "hidden_errors": [s.case.id for s in report.hidden_errors()],
+        "surprises": [s.case.id for s in report.surprises()],
+        "resolved": [s.case.id for s in report.resolved()],
+        "confusion": {f"{a.value} -> {b.value}": n for (a, b), n in report.confusion().items()},
+    }
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    console.print(
+        f"[bold]{report.total} cases[/bold] on {domain_name} from {path}\n"
+        f"writing to {directory}\n"
+    )
+
+    for scored in report.scored:
+        if scored.agrees and not show_all:
+            continue
+        if scored.agrees:
+            mark = "[green]OK  [/green]"
+        elif scored.case.known_limitation:
+            mark = "[yellow]KNOWN[/yellow]"
+        else:
+            mark = "[red]MISS[/red]"
+        console.print(
+            f"  {mark} {scored.case.id:34} {scored.case.kind:11} "
+            f"{scored.case.expected.value} -> {scored.actual.value}"
+        )
+        if not scored.agrees:
+            console.print(f"        {scored.case.response!r} on {scored.case.item_id}")
+
+    table = Table(title="verifier accuracy", show_header=False, box=None)
+    table.add_row("cases", str(report.total))
+    table.add_row("accuracy", f"{report.accuracy:.1%}")
+    table.add_row(
+        "false negatives",
+        f"{report.false_negative_rate:.1%} of {len(report.of_kind('equivalent'))} "
+        f"equivalent forms  "
+        f"({len(report.scored_incorrect())} scored wrong, "
+        f"{len(report.unmeasured())} unmeasured)",
+    )
+    table.add_row(
+        "false accepts",
+        f"{report.false_accept_rate:.1%} of {len(report.of_kind('wrong'))} wrong answers"
+        + (f"  ({len(report.hidden_errors())} unmeasured)" if report.hidden_errors() else ""),
+    )
+    table.add_row("elapsed", f"{report.seconds * 1000:.0f} ms")
+    console.print()
+    console.print(table)
+
+    # A correct answer scored as an error is the one that reaches the learner
+    # model, so it is called out apart from the rate it sits inside.
+    if report.scored_incorrect():
+        console.print(
+            f"\n[red]{len(report.scored_incorrect())} correct answer(s) scored as "
+            f"errors[/red] — these write error events about learners who made none"
+        )
+
+    if report.surprises() or report.resolved():
+        for scored in report.resolved():
+            console.print(
+                f"\n[red]{scored.case.id}[/red] now agrees with its label; its "
+                f"known_limitation describes the past and should be removed"
+            )
+        raise typer.Exit(code=1)
+
+    if any(s.case.known_limitation for s in report.scored):
+        console.print(
+            f"\n[yellow]{sum(1 for s in report.scored if s.case.known_limitation)} "
+            f"stated limitation(s)[/yellow] — see known_limitation in {path.name}"
+        )
+
+
 @eval_app.command("diagnostic")
 def evaluate_diagnostic(
     domain_name: str = typer.Option("calculus", "--domain", help="Domain to evaluate on."),

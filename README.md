@@ -49,6 +49,21 @@ Check a domain's content for internal consistency:
 uv run agent-newton domain validate all
 ```
 
+Score a domain's verifier against its hand-labelled gold set — no model, well
+under a second:
+
+```bash
+uv run agent-newton evaluate verifier --domain calculus
+```
+
+Score a diagnostic agent against the item bank's injected labels. This one calls
+a model for every case; it is resumable, and identical prompts hit the response
+cache, so an interrupted run restarts free:
+
+```bash
+uv run agent-newton evaluate diagnostic --domain calculus
+```
+
 ## Layout
 
 | Path | Contents |

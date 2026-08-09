@@ -71,6 +71,11 @@ _ALLOWED = {
 }
 _ALLOWED["ln"] = sympy.log
 _SYMBOLS = {s: sympy.Symbol(s) for s in ("x", "y", "h", "t", "u", "a", "b", "n", "C")}
+# The constant of integration is written both ways. It is mapped onto the *same*
+# symbol rather than admitted as a second one: two distinct symbols would make
+# "x**3 + c" and "x**3 + C" inequivalent, which would turn a response the
+# verifier merely could not read into one it scores as wrong.
+_SYMBOLS["c"] = _SYMBOLS["C"]
 _NAMESPACE = {**_ALLOWED, **_SYMBOLS}
 
 # parse_expr compiles the transformed source, and that source calls sympy
