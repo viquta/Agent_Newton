@@ -160,28 +160,25 @@ class TestTheArmsDiffer:
         assert coupled.learner.profile.initial == decoupled.learner.profile.initial
 
 
-class TestModelBackedAgentsAreRefused:
-    """Until the provider layer exists, naming one must fail loudly."""
+class TestModelBackedAgentsAreAvailable:
+    """P8 replaced the refusals. Assembly must still not contact a server."""
 
-    @pytest.mark.parametrize(
-        "agents",
-        [
-            {"tutor": {"impl": "llm"}},
-            {"diagnostic": {"impl": "llm"}},
-            {"planner": {"impl": "llm"}},
-        ],
-    )
-    def test_a_model_backed_agent_is_rejected(self, agents: dict) -> None:
+    @pytest.mark.parametrize("role", ["tutor", "diagnostic", "planner"])
+    def test_a_model_backed_role_can_be_built(self, role: str) -> None:
         base = {
             "tutor": {"impl": "template"},
             "diagnostic": {"impl": "oracle"},
             "planner": {"impl": "deterministic"},
         }
-        config = config_for("toy_algebra", "coupled", agents={**base, **agents})
-        with pytest.raises(NotImplementedForModels):
-            build_session("L0000", 1, registry.load_domain("toy_algebra"), config)
+        spec = {"impl": "llm", "provider": "ollama", "model": "gemma4:12b"}
+        config = config_for("toy_algebra", "coupled", agents={**base, role: spec})
+        session = build_session("L0000", 1, registry.load_domain("toy_algebra"), config)
+        assert session is not None
 
-    def test_a_model_backed_surface_is_rejected(self) -> None:
+    def test_a_model_backed_surface_is_still_refused(self) -> None:
+        # The renderer is the one piece P8 did not build. Refusing loudly beats
+        # silently falling back to the symbolic one, which would make a run
+        # claim a naturalistic simulator it did not use.
         config = Config.model_validate(
             {
                 "domain": "toy_algebra",

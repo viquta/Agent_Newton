@@ -25,8 +25,10 @@ from agent_newton.core.agents.base import (
     Tutor,
 )
 from agent_newton.core.agents.diagnostic import NoisedOracleDiagnostic, OracleDiagnostic
+from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
 from agent_newton.core.agents.planner import FixedOrderPlanner, FrontierPlanner
 from agent_newton.core.agents.tutor import TemplateTutor
+from agent_newton.llm.factory import build_provider
 from agent_newton.core.evaluation.outcomes import SessionOutcome, administer
 from agent_newton.core.pedagogy import TutorMove, check_move
 from agent_newton.core.simulator import (
@@ -159,48 +161,48 @@ def build_session(
     domain: Domain,
     config: Config,
 ) -> Session:
-    """Assemble a session from a config, refusing anything not yet built."""
-    agents = config.agents
+    """Assemble a session from a config.
 
-    if agents.tutor.impl != "template":
-        raise NotImplementedForModels(
-            f"tutor impl {agents.tutor.impl!r} needs the provider layer; use 'template'"
-        )
-    if agents.planner.impl not in ("deterministic", "oracle"):
-        raise NotImplementedForModels(
-            f"planner impl {agents.planner.impl!r} needs the provider layer; "
-            f"use 'deterministic'"
-        )
+    Each role is built from the implementation its config names. Providers are
+    constructed only for roles that actually use one, so an oracle diagnostic
+    never opens a connection.
+    """
+    agents = config.agents
+    cache_dir = config.paths.cache_dir
+
+    if agents.tutor.impl == "template":
+        tutor: Tutor = TemplateTutor(config.zpd)
+    else:
+        tutor = LLMTutor(build_provider(agents.tutor, cache_dir), config.zpd)
 
     if agents.diagnostic.impl == "oracle":
         diagnostic: Diagnostic = OracleDiagnostic()
     elif agents.diagnostic.impl == "noised_oracle":
         diagnostic = NoisedOracleDiagnostic(agents.diagnostic.noise_rate, seed=seed)
     else:
-        raise NotImplementedForModels(
-            f"diagnostic impl {agents.diagnostic.impl!r} needs the provider layer"
-        )
+        diagnostic = LLMDiagnostic(build_provider(agents.diagnostic, cache_dir))
 
     if config.simulator.surface != "symbolic":
         raise NotImplementedForModels(
-            "the model-backed surface renderer needs the provider layer; "
+            "the model-backed surface renderer is not built yet; "
             "use simulator.surface: symbolic"
         )
 
-    # The arm decides the view, and the view decides which planner is even
-    # usable: FrontierPlanner cannot run on a view with no frontier.
-    planner: Planner = (
-        FrontierPlanner()
-        if config.arm == "coupled"
-        else FixedOrderPlanner(agents.planner.advance_after)
-    )
+    # The arm decides the view, and the view decides which planners are even
+    # usable: neither frontier-based planner can run on a view with no frontier.
+    if config.arm == "decoupled":
+        planner: Planner = FixedOrderPlanner(agents.planner.advance_after)
+    elif agents.planner.impl == "llm":
+        planner = LLMPlanner(build_provider(agents.planner, cache_dir), config.zpd)
+    else:
+        planner = FrontierPlanner()
 
     profile = sample_profile(learner_id, seed, domain.misconceptions, config.simulator)
     return Session(
         learner=SimulatedLearner(profile, domain, config.simulator),
         board=new_blackboard(learner_id, seed, domain.concepts, config),
         planner=planner,
-        tutor=TemplateTutor(config.zpd),
+        tutor=tutor,
         diagnostic=diagnostic,
         surface=SymbolicSurface(),
         domain=domain,
