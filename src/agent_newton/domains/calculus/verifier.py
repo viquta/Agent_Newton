@@ -28,6 +28,7 @@ import contextlib
 import random
 import signal
 import threading
+from dataclasses import dataclass
 from typing import Iterator
 
 import sympy
@@ -46,6 +47,11 @@ SIMPLIFY_TIMEOUT = 2.0
 #: Points sampled by the numeric screen, and the tolerance for agreement.
 SAMPLE_POINTS = 12
 TOLERANCE = 1e-7
+
+#: Sample points that must actually have been evaluable before numeric
+#: agreement may stand in for a symbolic proof. Below this, a timed-out
+#: simplification means the answer was not verified at all.
+MIN_SAMPLES_TO_ACCEPT = 4
 
 _TRANSFORMS = standard_transformations + (
     implicit_multiplication_application,  # "2x" -> 2*x
@@ -157,12 +163,36 @@ def _free_symbols(*exprs: sympy.Expr) -> list[sympy.Symbol]:
     return sorted(found, key=str)
 
 
-def _numerically_disagrees(a: sympy.Expr, b: sympy.Expr, rng: random.Random) -> bool:
-    """True when the two provably differ at some point.
+def _as_finite_complex(expr: sympy.Expr) -> complex | None:
+    """Numeric value of ``expr``, or None where it is not usable.
 
-    Sampling failures (poles, complex results, undefined points) are skipped
-    rather than counted: they say nothing about equivalence.
+    Poles, NaNs and non-numeric results all mean "this point tells us nothing",
+    and every one of them must be caught here — a conversion that escapes would
+    abort the whole session over one unlucky sample point.
     """
+    try:
+        value = complex(expr.evalf())
+    except (TypeError, ValueError, ZeroDivisionError, AttributeError, OverflowError):
+        return None
+    if value != value or abs(value) == float("inf"):  # NaN or pole
+        return None
+    return value
+
+
+@dataclass(frozen=True, slots=True)
+class _Screen:
+    """Outcome of the numeric screen.
+
+    ``checked`` is load-bearing, not diagnostic: agreement across zero evaluable
+    points is not evidence of anything, and callers must not treat it as such.
+    """
+
+    disagrees: bool
+    checked: int
+
+
+def _numeric_screen(a: sympy.Expr, b: sympy.Expr, rng: random.Random) -> _Screen:
+    """Sample both expressions; one clear disagreement proves inequivalence."""
     symbols = _free_symbols(a, b)
     difference = a - b
     checked = 0
@@ -171,34 +201,52 @@ def _numerically_disagrees(a: sympy.Expr, b: sympy.Expr, rng: random.Random) -> 
         # Irrational-ish points avoid the small integers where distinct
         # expressions coincide by accident.
         substitution = {s: sympy.Float(rng.uniform(0.35, 2.65)) for s in symbols}
-        try:
-            value = complex(difference.subs(substitution).evalf())
-        except (TypeError, ValueError, ZeroDivisionError, AttributeError):
-            continue
-        if value != value or abs(value) == float("inf"):  # NaN / pole
-            continue
-        checked += 1
-        if abs(value) > TOLERANCE * max(1.0, abs(complex(a.subs(substitution).evalf() or 0))):
-            return True
 
-    return False if checked else False
+        gap = _as_finite_complex(difference.subs(substitution))
+        if gap is None:
+            continue
+
+        # Scale the tolerance by the operand's own magnitude so floating-point
+        # error in a large expression is not mistaken for a real difference.
+        # Where that magnitude is unusable, fall back to an absolute tolerance
+        # rather than skipping the point.
+        magnitude = _as_finite_complex(a.subs(substitution))
+        scale = max(1.0, abs(magnitude)) if magnitude is not None else 1.0
+
+        checked += 1
+        if abs(gap) > TOLERANCE * scale:
+            return _Screen(disagrees=True, checked=checked)
+
+    return _Screen(disagrees=False, checked=checked)
+
+
+class VerificationUnavailable(Exception):
+    """Equivalence could not be decided either numerically or symbolically."""
 
 
 def _equivalent(a: sympy.Expr, b: sympy.Expr, rng: random.Random) -> tuple[bool, str]:
     if a == b:
         return True, ""
 
-    if _numerically_disagrees(a, b, rng):
+    screen = _numeric_screen(a, b, rng)
+    if screen.disagrees:
         return False, ""
 
     try:
         with _time_limit(SIMPLIFY_TIMEOUT):
             return bool(sympy.simplify(a - b) == 0), ""
     except TimeoutError:
-        # Survived every sample but could not be confirmed symbolically.
-        return True, "accepted on numeric agreement; simplify timed out"
+        if screen.checked >= MIN_SAMPLES_TO_ACCEPT:
+            return True, f"accepted on agreement at {screen.checked} points; simplify timed out"
+        # Nothing was evaluable and nothing was proved. Reporting this as
+        # correct would score an answer that was never checked, and reporting it
+        # as incorrect would blame the learner for our own failure to measure.
+        raise VerificationUnavailable(
+            f"simplify timed out and only {screen.checked} sample point(s) "
+            f"could be evaluated"
+        ) from None
     except Exception as exc:
-        return False, f"simplification failed: {exc}"
+        raise VerificationUnavailable(f"simplification failed: {exc}") from exc
 
 
 class SymbolicVerifier:
@@ -237,7 +285,15 @@ class SymbolicVerifier:
 
         for candidate in given:
             for index, target in enumerate(remaining):
-                same, note = _equivalent(candidate, target, rng)
+                try:
+                    same, note = _equivalent(candidate, target, rng)
+                except VerificationUnavailable as exc:
+                    # We failed to measure, so we know nothing about this
+                    # response. UNPARSEABLE keeps it out of the learner model
+                    # rather than charging our own failure to the learner.
+                    return VerificationResult(
+                        Verdict.UNPARSEABLE, item.answer, f"could not verify: {exc}"
+                    )
                 if same:
                     if note:
                         notes.append(note)

@@ -112,6 +112,101 @@ class TestResponsesAreUntrusted:
             parse("__import__('os')")
 
 
+class TestNumericScreenRobustness:
+    """The screen runs on every step; it must never take the session down."""
+
+    def test_survives_a_pole_in_one_operand(self, calculus) -> None:
+        # 1/(x-1) + 1 against 1/(x-1): the difference is a constant and finite
+        # everywhere, but the operands blow up near x = 1. Evaluating the
+        # operand for tolerance scaling must not escape as an exception.
+        result = calculus.verifier.verify(item("1/(x - 1) + 1"), "1/(x - 1)")
+        assert result.verdict is Verdict.INCORRECT
+
+    def test_accepts_equivalent_expressions_with_poles(self, calculus) -> None:
+        result = calculus.verifier.verify(item("1/(x - 1)"), "(x + 1)/((x - 1)*(x + 1))")
+        assert result.verdict is Verdict.CORRECT
+
+    def test_reports_how_many_points_were_evaluable(self) -> None:
+        import random
+
+        import sympy
+
+        from agent_newton.domains.calculus.verifier import _numeric_screen
+
+        x = sympy.Symbol("x")
+        screen = _numeric_screen(x**2, x**2, random.Random(0))
+        # Equivalent expressions: no disagreement, and the count is real
+        # evidence that points were actually checked.
+        assert not screen.disagrees
+        assert screen.checked > 0
+
+
+class TestUnverifiableIsNotAVerdict:
+    """Failing to measure must not be reported as a fact about the learner."""
+
+    def test_timeout_without_numeric_evidence_is_unparseable(
+        self, calculus, monkeypatch
+    ) -> None:
+        import sympy
+
+        from agent_newton.domains.calculus import verifier as module
+
+        # No sample point evaluable, and simplify never returns: the answer has
+        # been checked by nothing. Scoring it CORRECT would pass an unverified
+        # response; scoring it INCORRECT would blame the learner for our failure.
+        monkeypatch.setattr(
+            module, "_numeric_screen", lambda a, b, rng: module._Screen(False, 0)
+        )
+
+        def _hang(*args, **kwargs):
+            raise TimeoutError("simulated")
+
+        monkeypatch.setattr(sympy, "simplify", _hang)
+
+        result = calculus.verifier.verify(item("2*sin(x)*cos(x)"), "sin(2*x)")
+        assert result.verdict is Verdict.UNPARSEABLE
+        assert not result.is_evidence
+        assert "could not verify" in result.detail
+
+    def test_timeout_with_enough_evidence_is_accepted(self, calculus, monkeypatch) -> None:
+        import sympy
+
+        from agent_newton.domains.calculus import verifier as module
+
+        monkeypatch.setattr(
+            module,
+            "_numeric_screen",
+            lambda a, b, rng: module._Screen(False, module.MIN_SAMPLES_TO_ACCEPT),
+        )
+
+        def _hang(*args, **kwargs):
+            raise TimeoutError("simulated")
+
+        monkeypatch.setattr(sympy, "simplify", _hang)
+
+        result = calculus.verifier.verify(item("2*sin(x)*cos(x)"), "sin(2*x)")
+        assert result.verdict is Verdict.CORRECT
+        # The compromise is recorded rather than hidden, so it can be audited.
+        assert "simplify timed out" in result.detail
+
+    def test_internal_failure_is_not_charged_to_the_learner(
+        self, calculus, monkeypatch
+    ) -> None:
+        import sympy
+
+        from agent_newton.domains.calculus import verifier as module
+
+        monkeypatch.setattr(
+            module, "_numeric_screen", lambda a, b, rng: module._Screen(False, 8)
+        )
+        monkeypatch.setattr(
+            sympy, "simplify", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom"))
+        )
+
+        result = calculus.verifier.verify(item("2*sin(x)*cos(x)"), "sin(2*x)")
+        assert result.verdict is Verdict.UNPARSEABLE
+
+
 class TestDeterminism:
     def test_same_input_gives_same_verdict(self, calculus) -> None:
         # The numeric screen samples random points; a verdict that varied
