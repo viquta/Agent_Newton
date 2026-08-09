@@ -1,10 +1,10 @@
-# Agent_Newton
+# Agent_Newton (still under construction)
 
 A multi-agent intelligent tutoring system built around a **shared learner-state
 layer**, with a simulated-learner harness for running controlled, reproducible
 comparisons between architectural variants.
 
-The subject matter is pluggable. Two domains ship: `calculus` (single-variable)
+The subject matter is pluggable. Currently, two domains ship: `calculus` (single-variable)
 and `toy_algebra`, a small reference domain used as a fast test fixture.
 
 ## What it does
