@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import csv
+import json
 from pathlib import Path
 
 import typer
@@ -9,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 from agent_newton import __version__
-from agent_newton.config import Config
+from agent_newton.config import Config, ModelSpec
 from agent_newton.domains import registry
 from agent_newton.domains.base import DomainError
 from agent_newton.domains.validate import validate
@@ -17,6 +19,8 @@ from agent_newton.domains.validate import validate
 app = typer.Typer(add_completion=False, help="Agent_Newton — multi-agent ITS.")
 domain_app = typer.Typer(help="Inspect and validate teaching domains.")
 app.add_typer(domain_app, name="domain")
+eval_app = typer.Typer(help="Component evaluations.")
+app.add_typer(eval_app, name="evaluate")
 console = Console()
 
 
@@ -106,6 +110,107 @@ def domain_validate(
 
     if failed:
         raise typer.Exit(code=1)
+
+
+@eval_app.command("diagnostic")
+def evaluate_diagnostic(
+    domain_name: str = typer.Option("calculus", "--domain", help="Domain to evaluate on."),
+    model: str = typer.Option("gemma4:12b", "--model", help="Model to evaluate."),
+    provider: str = typer.Option("ollama", "--provider"),
+    limit: int | None = typer.Option(None, "--limit", help="Stop after N cases."),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="List the cases and exit."),
+) -> None:
+    """Score a diagnostic agent against the item bank's injected labels.
+
+    Every (item, misconception) pair the bank declares becomes one case, so the
+    confusion matrix is balanced by construction rather than shaped by whatever
+    a session happened to produce.
+
+    Safe to interrupt. Identical prompts hit the response cache, so restarting
+    resumes without repeating work or spending anything.
+    """
+    from agent_newton.core.agents.llm import LLMDiagnostic
+    from agent_newton.core.evaluation.diagnostic import DiagnosticReport, cases, evaluate
+    from agent_newton.llm.factory import build_provider
+
+    try:
+        domain = registry.load_domain(domain_name)
+    except DomainError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    todo = cases(domain)[:limit]
+    if dry_run:
+        console.print(f"{len(todo)} cases on {domain_name}, {len({m for _, m, _ in todo})} labels")
+        for item_id, misconception, wrong in todo:
+            console.print(f"  {item_id:18} {misconception:36} -> {wrong}")
+        return
+
+    spec = ModelSpec(provider=provider, model=model)  # pyright: ignore[reportArgumentType]
+    agent = LLMDiagnostic(build_provider(spec, Path(".cache/llm")))
+
+    directory = out or Path("results") / f"diagnostic_{domain_name}_{model.replace(':', '-')}"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    console.print(
+        f"[bold]{len(todo)} cases[/bold] on {domain_name} with {provider}/{model}\n"
+        f"writing to {directory}  ·  safe to interrupt, cached runs resume\n"
+    )
+
+    report = DiagnosticReport()
+    rows_path = directory / "predictions.csv"
+    with rows_path.open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            ["item_id", "concept_id", "injected", "inferred", "correct",
+             "wrong_answer", "prompt", "seconds"]
+        )
+        for n, prediction in enumerate(evaluate(domain, agent, limit=limit), start=1):
+            report.predictions.append(prediction)
+            writer.writerow([
+                prediction.item_id, prediction.concept_id, prediction.injected,
+                prediction.inferred or "", prediction.correct,
+                prediction.wrong_answer, prediction.prompt, f"{prediction.seconds:.1f}",
+            ])
+            handle.flush()  # partial results survive an interrupt
+            mark = "[green]OK  [/green]" if prediction.correct else "[red]MISS[/red]"
+            console.print(
+                f"  {n:>3}/{len(todo)} {mark} {prediction.seconds:5.1f}s  "
+                f"{prediction.injected[:34]:36} -> {prediction.inferred or '<abstained>'}"
+            )
+
+    summary = {
+        "domain": domain_name,
+        "model": f"{provider}/{model}",
+        "cases": report.total,
+        "accuracy": report.accuracy,
+        "macro_f1": report.macro_f1,
+        "abstentions": report.abstentions,
+        "failed_calls": agent.failures,
+        "seconds": report.seconds,
+        "per_label": report.per_label(),
+        "confusion": {f"{a} -> {b}": n for (a, b), n in report.confusion().items()},
+    }
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    console.print()
+    table = Table(title="diagnostic accuracy", show_header=False, box=None)
+    table.add_row("cases", str(report.total))
+    table.add_row("accuracy", f"{report.accuracy:.1%}")
+    table.add_row("macro F1", f"{report.macro_f1:.3f}")
+    table.add_row("abstained", str(report.abstentions))
+    table.add_row("failed calls", str(agent.failures))
+    table.add_row("total time", f"{report.seconds / 60:.1f} min")
+    console.print(table)
+
+    worst = report.worst_confusions()
+    if worst:
+        console.print("\n[bold]most frequent confusions[/bold]")
+        for injected, inferred, count in worst:
+            console.print(f"  {count}x  {injected}  ->  {inferred}")
+    else:
+        console.print("\n[green]no confusions[/green]")
 
 
 if __name__ == "__main__":
