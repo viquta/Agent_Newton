@@ -76,9 +76,20 @@ class ModelSpec(BaseModel):
 
     provider: Provider = "ollama"
     model: str = "gemma4:12b"
+    #: Whether a reasoning model deliberates before answering this role's calls.
+    #: ``None`` leaves the backend's own default alone, which is what a model
+    #: with no reasoning mode needs.
+    #:
+    #: It belongs in the config rather than in the provider because it changes
+    #: what the model does, not merely how fast: every reply here is a small
+    #: structured object chosen from a closed set, and deliberation is
+    #: proportionally expensive. Recorded in the manifest, so a run states which
+    #: it used.
+    think: bool | None = None
 
     def label(self) -> str:
-        return f"{self.provider}/{self.model}"
+        thinking = "" if self.think is None else f" (think={str(self.think).lower()})"
+        return f"{self.provider}/{self.model}{thinking}"
 
 
 class TutorSpec(ModelSpec):

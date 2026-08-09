@@ -250,6 +250,12 @@ def evaluate_diagnostic(
     domain_name: str = typer.Option("calculus", "--domain", help="Domain to evaluate on."),
     model: str = typer.Option("gemma4:12b", "--model", help="Model to evaluate."),
     provider: str = typer.Option("ollama", "--provider"),
+    think: bool | None = typer.Option(
+        None,
+        "--think/--no-think",
+        help="Whether a reasoning model deliberates before answering. Unset "
+        "leaves the backend default.",
+    ),
     limit: int | None = typer.Option(None, "--limit", help="Stop after N cases."),
     out: Path | None = typer.Option(None, "--out", help="Output directory."),
     dry_run: bool = typer.Option(False, "--dry-run", help="List the cases and exit."),
@@ -280,10 +286,17 @@ def evaluate_diagnostic(
             console.print(f"  {item_id:18} {misconception:36} -> {wrong}")
         return
 
-    spec = ModelSpec(provider=provider, model=model)  # pyright: ignore[reportArgumentType]
+    spec = ModelSpec(provider=provider, model=model, think=think)  # pyright: ignore[reportArgumentType]
     agent = LLMDiagnostic(build_provider(spec, Path(".cache/llm")))
 
-    directory = out or Path("results") / f"diagnostic_{domain_name}_{model.replace(':', '-')}"
+    # The reasoning mode is part of the run's identity, not a flag on it: the
+    # same model answering with and without deliberation gives two different
+    # measurements, and they must not overwrite each other.
+    suffix = "" if think is None else f"_think-{str(think).lower()}"
+    directory = (
+        out
+        or Path("results") / f"diagnostic_{domain_name}_{model.replace(':', '-')}{suffix}"
+    )
     directory.mkdir(parents=True, exist_ok=True)
 
     console.print(
@@ -315,7 +328,7 @@ def evaluate_diagnostic(
 
     summary = {
         "domain": domain_name,
-        "model": f"{provider}/{model}",
+        "model": spec.label(),
         "cases": report.total,
         "accuracy": report.accuracy,
         "macro_f1": report.macro_f1,

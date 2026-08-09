@@ -1,0 +1,99 @@
+{
+  "domain": "calculus",
+  "model": "ollama/gemma4:12b (think=false)",
+  "cases": 38,
+  "accuracy": 0.9736842105263158,
+  "macro_f1": 0.974074074074074,
+  "abstentions": 0,
+  "failed_calls": 0,
+  "seconds": 182.07136607170105,
+  "per_label": {
+    "antiderivative_omits_constant": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "average_for_instantaneous_rate": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "f1": 0.8
+    },
+    "binomial_middle_term_lost": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "cancel_x_loses_root": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "chain_rule_omits_inner": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "implicit_diff_omits_dydx": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "indeterminate_limit_reported_as_zero": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "power_rule_forgets_decrement": {
+      "support": 4,
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1": 0.888888888888889
+    },
+    "product_rule_as_product_of_derivatives": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "quotient_rule_order_swapped": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "reciprocal_power_not_rewritten": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "usub_forgets_du": {
+      "support": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "confusion": {
+    "antiderivative_omits_constant -> antiderivative_omits_constant": 3,
+    "chain_rule_omits_inner -> chain_rule_omits_inner": 4,
+    "binomial_middle_term_lost -> binomial_middle_term_lost": 3,
+    "implicit_diff_omits_dydx -> implicit_diff_omits_dydx": 3,
+    "average_for_instantaneous_rate -> average_for_instantaneous_rate": 2,
+    "average_for_instantaneous_rate -> power_rule_forgets_decrement": 1,
+    "indeterminate_limit_reported_as_zero -> indeterminate_limit_reported_as_zero": 3,
+    "reciprocal_power_not_rewritten -> reciprocal_power_not_rewritten": 3,
+    "power_rule_forgets_decrement -> power_rule_forgets_decrement": 4,
+    "product_rule_as_product_of_derivatives -> product_rule_as_product_of_derivatives": 3,
+    "quotient_rule_order_swapped -> quotient_rule_order_swapped": 3,
+    "cancel_x_loses_root -> cancel_x_loses_root": 3,
+    "usub_forgets_du -> usub_forgets_du": 3
+  }
+}

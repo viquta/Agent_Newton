@@ -52,13 +52,18 @@ packages = ["src/agent_newton"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+# `experiments` so the cohort runners are importable: the code deciding what a
+# run condition holds constant is worth testing, not only running.
+pythonpath = ["src", "experiments"]
 markers = [
     "slow: tests that invoke a real model or run a cohort",
 ]
 
 [tool.pyright]
-include = ["src", "tests"]
+include = ["src", "tests", "experiments"]
+# The cohort runners are scripts, not a package; this is how the tests covering
+# them resolve.
+extraPaths = ["experiments"]
 pythonVersion = "3.10"
 typeCheckingMode = "standard"
 # networkx ships no type stubs. The import resolves at runtime; genuinely

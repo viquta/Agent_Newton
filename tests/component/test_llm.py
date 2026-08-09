@@ -17,6 +17,7 @@ from agent_newton.llm.base import (
     Completion,
     LLMProvider,
     MalformedResponse,
+    ProviderError,
     complete,
 )
 from agent_newton.llm.cache import CachedProvider, cache_key
@@ -273,3 +274,104 @@ class TestGenerationIsBounded:
         )
         assert built["host"] == "http://elsewhere:11434"
         assert "timeout" in built
+
+
+class TestReasoningModels:
+    """A model that deliberates answers in two channels.
+
+    ``message.thinking`` fills first and ``message.content`` only once the model
+    has finished. An empty ``content`` is therefore ambiguous: it may be a
+    service failure, worth retrying, or a deliberation that outlasted the token
+    budget, which will fail identically every time and belongs to the repair
+    loop instead.
+    """
+
+    class Client:
+        def __init__(self, message: dict, done_reason: str = "stop", **kwargs) -> None:
+            self._message = message
+            self._done_reason = done_reason
+            self.kwargs = kwargs
+            self.calls: list[dict] = []
+
+        def chat(self, **kwargs):
+            self.calls.append(kwargs)
+            return {"message": self._message, "done_reason": self._done_reason}
+
+    def _provider(self, monkeypatch, client, **kwargs):
+        from agent_newton.llm.ollama import OllamaProvider
+
+        provider = OllamaProvider("gemma4:12b", **kwargs)
+        monkeypatch.setattr(provider, "_connect", lambda: client)
+        return provider
+
+    def test_a_deliberation_without_an_answer_is_a_malformed_reply(self, monkeypatch) -> None:
+        client = self.Client({"content": "", "thinking": "step 1..."}, done_reason="length")
+        provider = self._provider(monkeypatch, client)
+        with pytest.raises(MalformedResponse):
+            provider.generate("classify", Answer, system=None)
+
+    def test_a_genuinely_empty_reply_is_still_a_provider_error(self, monkeypatch) -> None:
+        # Nothing generated at all: a service problem, and worth retrying.
+        client = self.Client({"content": "", "thinking": ""})
+        provider = self._provider(monkeypatch, client)
+        with pytest.raises(ProviderError) as raised:
+            provider.generate("classify", Answer, system=None)
+        assert not isinstance(raised.value, MalformedResponse)
+
+    def test_a_malformed_reply_is_not_retried_by_the_provider(self, monkeypatch) -> None:
+        # Temperature is zero: the same question gives the same non-answer, so
+        # three attempts here spend the budget before the repair loop — which
+        # does change the prompt — ever runs.
+        client = self.Client({"content": "", "thinking": "..."}, done_reason="length")
+        provider = self._provider(monkeypatch, client)
+        with pytest.raises(MalformedResponse):
+            provider.generate("classify", Answer, system=None)
+        assert len(client.calls) == 1
+
+    def test_the_repair_loop_handles_it(self, monkeypatch) -> None:
+        # The failure must not escape as an exception that aborts a cohort run.
+        class Deliberates:
+            label = "ollama/gemma4:12b"
+
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def generate(self, prompt, schema, system):
+                self.calls += 1
+                if self.calls == 1:
+                    raise MalformedResponse("spent its budget thinking")
+                return Completion(text=GOOD, model="m", provider="ollama")
+
+        provider = Deliberates()
+        answer = complete(provider, "classify", Answer)
+        assert answer.label == "chain_rule_omits_inner"
+        assert provider.calls == 2
+
+    def test_the_mode_is_sent_only_when_configured(self, monkeypatch) -> None:
+        # A model with no reasoning mode should get the server's own default.
+        client = self.Client({"content": GOOD})
+        self._provider(monkeypatch, client).generate("classify", Answer, system=None)
+        assert "think" not in client.calls[0]
+
+        client = self.Client({"content": GOOD})
+        self._provider(monkeypatch, client, think=False).generate("classify", Answer, None)
+        assert client.calls[0]["think"] is False
+
+    def test_the_mode_changes_the_cache_key(self, tmp_path) -> None:
+        # A reply produced by a deliberating model must not be served to a run
+        # configured for a direct one; they are different calls.
+        from agent_newton.llm.ollama import OllamaProvider
+
+        labels = {
+            OllamaProvider("gemma4:12b", think=think).label
+            for think in (None, True, False)
+        }
+        assert len(labels) == 3
+
+    def test_the_spec_carries_the_mode_into_the_provider(self, tmp_path) -> None:
+        from agent_newton.llm.factory import build_provider
+
+        provider = build_provider(
+            ModelSpec(provider="ollama", model="gemma4:12b", think=False), None, cached=False
+        )
+        assert "think=false" in provider.label

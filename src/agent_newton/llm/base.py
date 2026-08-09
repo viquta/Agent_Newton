@@ -107,11 +107,14 @@ def complete(
     last_text = ""
 
     for attempt in range(1, max_attempts + 1):
-        completion = provider.generate(current, schema, system)
-        last_text = completion.text
         try:
+            completion = provider.generate(current, schema, system)
+            last_text = completion.text
             return schema.model_validate_json(_extract_json(completion.text))
-        except ValidationError as exc:
+        except (ValidationError, MalformedResponse) as exc:
+            # A provider may reject its own reply before this sees it — a
+            # deliberation that never reached an answer produces no text to
+            # validate. It is the same failure and takes the same repair.
             last_error = str(exc)
             log.debug(
                 "malformed reply from %s (attempt %d/%d)",
@@ -120,7 +123,7 @@ def complete(
                 max_attempts,
                 extra={"event": "llm.malformed", "provider": provider.label},
             )
-            current = repair_prompt(prompt, completion.text, last_error, schema)
+            current = repair_prompt(prompt, last_text, last_error, schema)
 
     raise MalformedResponse(
         f"{provider.label} did not produce valid {schema.__name__} in "
