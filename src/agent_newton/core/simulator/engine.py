@@ -5,16 +5,23 @@ if not, which misconception produced it; a surface renderer may later phrase
 that decision in natural language, but it never changes it.
 
 Randomness is drawn per decision from a hash of
-``(seed, learner, item, attempt, misconception)`` rather than from a running
-generator. Two consequences, and the second is the reason:
+``(seed, learner, item, repetition, attempt, misconception)`` rather than from a
+running generator. Three consequences:
 
-* A decision does not depend on how many rolls happened before it, so replaying
-  a session or reordering unrelated items cannot perturb it.
-* **The same learner facing the same item draws the same number in both
-  architectures.** Only the tutoring differs, so the comparison is not also
-  absorbing the difference between two random streams. This is the common
-  random numbers technique, and it lowers the variance of the paired
-  comparison at no cost in bias — more power for the same cohort size.
+* A decision does not depend on how many rolls happened on *other* items, so
+  reordering unrelated work cannot perturb it.
+* **The same learner meeting the same item for the nth time draws the same
+  number in both architectures.** Only the tutoring differs, so the comparison
+  is not also absorbing the difference between two random streams. This is the
+  common random numbers technique, and it lowers the variance of the paired
+  comparison at no cost in bias.
+* ``repetition`` is part of the key, so practising an item again is a fresh
+  draw. Without it a repeated item reproduces its own past verbatim: a learner
+  who once answered correctly would do so forever, mastering the concept
+  without ever demonstrating anything, and one who erred could never stop.
+  Common random numbers then survive only while the two arms have given the
+  item the same number of times — which is exactly as long as their histories
+  agree, and is the most the technique can offer once they genuinely diverge.
 """
 
 from __future__ import annotations
@@ -44,9 +51,16 @@ class SimulatedStep:
         return self.fired or ("correct" if self.correct else "unlabelled-error")
 
 
-def _roll(seed: int, learner_id: str, item_id: str, attempt: int, misconception_id: str) -> float:
+def _roll(
+    seed: int,
+    learner_id: str,
+    item_id: str,
+    repetition: int,
+    attempt: int,
+    misconception_id: str,
+) -> float:
     """A stable number in [0, 1) for one specific decision."""
-    key = f"{seed}|{learner_id}|{item_id}|{attempt}|{misconception_id}"
+    key = f"{seed}|{learner_id}|{item_id}|{repetition}|{attempt}|{misconception_id}"
     digest = hashlib.sha256(key.encode()).digest()
     return int.from_bytes(digest[:8], "big") / float(1 << 64)
 
@@ -69,19 +83,29 @@ class SimulatedLearner:
         """Ground truth. For the evaluation harness only — never for an agent."""
         return self._profile
 
-    def answer(self, item: Item, attempt: int = 0) -> SimulatedStep:
+    def answer(self, item: Item, attempt: int = 0, repetition: int = 0) -> SimulatedStep:
         """Produce a step for this item.
 
         Misconceptions this learner holds *and* which the item can elicit are
         considered in a fixed order; the first to fire produces the response. If
         none fires, the learner answers correctly.
+
+        ``attempt`` counts steps within one visit; ``repetition`` counts how
+        many times the item has been given before. Both enter the draw, so
+        neither a retry nor a later revisit repeats an earlier outcome.
         """
         applicable = sorted(m for m in item.probes if self._profile.holds(m))
 
         for misconception_id in applicable:
             probability = self._profile.probability(misconception_id)
-            if _roll(self._profile.seed, self._profile.learner_id, item.id, attempt,
-                     misconception_id) >= probability:
+            if _roll(
+                self._profile.seed,
+                self._profile.learner_id,
+                item.id,
+                repetition,
+                attempt,
+                misconception_id,
+            ) >= probability:
                 continue
 
             rule = self._domain.buggy_rule(misconception_id)

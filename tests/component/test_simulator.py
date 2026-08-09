@@ -107,6 +107,37 @@ class TestAnswering:
         assert len(rolls) == 2, "expected both outcomes across many attempts"
 
 
+class TestRepeatedPracticeIsAFreshDraw:
+    """Practising an item again must not replay its own past.
+
+    Regression. When planners began repeating items, a roll keyed only on
+    (item, attempt) made every revisit an exact clone: a learner who once
+    answered correctly did so forever, mastering the concept without ever
+    demonstrating anything, while one who erred could never stop. Mastery
+    became a step function and misconceptions went permanently unexhibited.
+    """
+
+    def test_revisits_vary(self, toy) -> None:
+        subject = learner(toy, seed=3, config=SimulatorConfig(
+            misconceptions_per_learner=4, p_fire_range=(0.5, 0.5)
+        ))
+        item = toy.items.get("ta_dist_p1")
+        outcomes = {subject.answer(item, repetition=n).correct for n in range(12)}
+        assert len(outcomes) == 2, "repeated practice replayed the same outcome"
+
+    def test_a_single_visit_is_still_deterministic(self, toy) -> None:
+        subject = learner(toy, config=ALWAYS)
+        item = toy.items.get("ta_dist_p1")
+        assert len({subject.answer(item, repetition=2).response for _ in range(8)}) == 1
+
+    def test_repetition_and_attempt_are_distinct_axes(self, toy) -> None:
+        # The second visit's first step is a different draw from the first
+        # visit's second step; conflating them would reintroduce the clone.
+        from agent_newton.core.simulator.engine import _roll
+
+        assert _roll(1, "L", "i", 1, 0, "m") != _roll(1, "L", "i", 0, 1, "m")
+
+
 class TestCommonRandomNumbers:
     """The same learner meets the same item identically in both architectures."""
 

@@ -1,0 +1,46 @@
+# Calculus, model-free. The shape the SQ2 runs use.
+#
+# max_items is 45 because that is where misconception coverage plateaus:
+# measured over 20 learners, 12 items exercise 10% of the misconceptions a
+# cohort actually holds, 30 exercise 65%, and 45 exercise 98%. Beyond 45 buys
+# nothing — the budget stops being the binding constraint.
+#
+# A learner whose misconceptions are never exercised contributes a zero
+# difference to both arms and dilutes the effect toward null, so this is a
+# power decision rather than a cosmetic one.
+run_name: calculus
+domain: calculus
+arm: coupled
+seed: 20260807
+
+cohort:
+  n_learners: 20
+  max_items: 45
+  max_steps_per_item: 3
+
+simulator:
+  surface: symbolic
+  misconceptions_per_learner: 2
+  p_fire_range: [0.6, 0.9]
+  remediation_factor: 0.55
+
+agents:
+  tutor:      { impl: template }
+  diagnostic: { impl: oracle }
+  planner:    { impl: deterministic }
+
+bkt:
+  p_init: 0.15
+  p_transit: 0.20
+  p_guess: 0.20
+  p_slip: 0.10
+
+zpd:
+  theta_lower: 0.70
+  theta_upper: 0.90
+
+arbitration:
+  theta: 0.15
+  k_repeats: 2
+  min_items_between_replans: 2
+  error_trace_length: 20

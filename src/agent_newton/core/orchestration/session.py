@@ -107,7 +107,7 @@ class Session:
 
             given[item.id] += 1
             self.arbitration.note_item()
-            self._work_item(item, diagnoses)
+            self._work_item(item, diagnoses, repetition=given[item.id] - 1)
 
         posttest = administer(
             self.domain.items.bank("posttest"), self.learner, self.domain, self.surface
@@ -144,14 +144,18 @@ class Session:
         return min(items, key=lambda item: (given.get(item.id, 0), item.id))
 
     def _work_item(
-        self, item, diagnoses: list[tuple[str | None, str | None]]
+        self,
+        item,
+        diagnoses: list[tuple[str | None, str | None]],
+        *,
+        repetition: int = 0,
     ) -> None:
         moves: list[TutorMove] = []
         confirmed = False
         failed = 0
 
         for attempt in range(self.config.cohort.max_steps_per_item):
-            step = self.learner.answer(item, attempt=attempt)
+            step = self.learner.answer(item, attempt=attempt, repetition=repetition)
             response = self.surface.render(item, step)
             result = self.domain.verifier.verify(item, response)
 
