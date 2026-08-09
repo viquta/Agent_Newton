@@ -29,7 +29,7 @@ import random
 import signal
 import threading
 from dataclasses import dataclass
-from typing import Iterator
+from typing import Iterator, cast
 
 import sympy
 from sympy.parsing.sympy_parser import (
@@ -130,7 +130,11 @@ def parse(text: str) -> sympy.Expr:
         )
     except Exception as exc:  # sympy raises a wide variety here
         raise UnparseableResponse(f"could not parse {text!r}: {exc}") from exc
-    if not isinstance(expr, (sympy.Expr, sympy.Basic)):
+    # Expr only, not Basic. Basic is the superclass, so admitting it also
+    # admits things that are not expressions at all — a relational like "x > 2"
+    # parses to a Boolean, which would then be subtracted from an expression
+    # downstream and yield nonsense rather than a verdict.
+    if not isinstance(expr, sympy.Expr):
         raise UnparseableResponse(f"{text!r} is not an expression")
 
     # Implicit multiplication will happily read "no idea" as no*idea, inventing
@@ -156,10 +160,37 @@ def parse_answer(text: str) -> tuple[sympy.Expr, ...]:
     return tuple(parse(p) for p in parts)
 
 
+def _subtract(a: sympy.Expr, b: sympy.Expr) -> sympy.Expr:
+    """``a - b``.
+
+    Wrapped because sympy's arithmetic operators are built by decorators that
+    erase their signatures, so a static checker cannot see that ``Expr``
+    supports ``-``. Keeping the cast here documents that once, instead of
+    scattering suppressions through the module.
+    """
+    return cast(sympy.Expr, a - b)
+
+
+def _substitute(expr: sympy.Expr, point: dict[sympy.Symbol, sympy.Expr]) -> sympy.Expr:
+    """``expr`` with every symbol replaced by a value from ``point``.
+
+    Cast for the same reason as :func:`_subtract`: sympy's ``subs`` is typed as
+    returning ``Basic``, but substituting numbers into an expression yields an
+    expression, and the caller needs ``evalf``.
+
+    Pairs rather than the dict itself, which sympy's stub does not describe.
+    The two forms differ only in that pairs substitute sequentially — immaterial
+    here, since every replacement is a number and no symbol can reappear.
+    """
+    return cast(sympy.Expr, expr.subs(list(point.items())))
+
+
 def _free_symbols(*exprs: sympy.Expr) -> list[sympy.Symbol]:
     found: set[sympy.Symbol] = set()
     for expr in exprs:
-        found |= expr.free_symbols
+        # Typed as set[Basic] by sympy; every member is a Symbol at runtime,
+        # which is what subs() needs as a key.
+        found |= cast("set[sympy.Symbol]", expr.free_symbols)
     return sorted(found, key=str)
 
 
@@ -194,15 +225,17 @@ class _Screen:
 def _numeric_screen(a: sympy.Expr, b: sympy.Expr, rng: random.Random) -> _Screen:
     """Sample both expressions; one clear disagreement proves inequivalence."""
     symbols = _free_symbols(a, b)
-    difference = a - b
+    difference = _subtract(a, b)
     checked = 0
 
     for _ in range(SAMPLE_POINTS):
         # Irrational-ish points avoid the small integers where distinct
         # expressions coincide by accident.
-        substitution = {s: sympy.Float(rng.uniform(0.35, 2.65)) for s in symbols}
+        substitution: dict[sympy.Symbol, sympy.Expr] = {
+            s: sympy.Float(rng.uniform(0.35, 2.65)) for s in symbols
+        }
 
-        gap = _as_finite_complex(difference.subs(substitution))
+        gap = _as_finite_complex(_substitute(difference, substitution))
         if gap is None:
             continue
 
@@ -210,7 +243,7 @@ def _numeric_screen(a: sympy.Expr, b: sympy.Expr, rng: random.Random) -> _Screen
         # error in a large expression is not mistaken for a real difference.
         # Where that magnitude is unusable, fall back to an absolute tolerance
         # rather than skipping the point.
-        magnitude = _as_finite_complex(a.subs(substitution))
+        magnitude = _as_finite_complex(_substitute(a, substitution))
         scale = max(1.0, abs(magnitude)) if magnitude is not None else 1.0
 
         checked += 1
@@ -234,7 +267,7 @@ def _equivalent(a: sympy.Expr, b: sympy.Expr, rng: random.Random) -> tuple[bool,
 
     try:
         with _time_limit(SIMPLIFY_TIMEOUT):
-            return bool(sympy.simplify(a - b) == 0), ""
+            return bool(sympy.simplify(_subtract(a, b)) == 0), ""
     except TimeoutError:
         if screen.checked >= MIN_SAMPLES_TO_ACCEPT:
             return True, f"accepted on agreement at {screen.checked} points; simplify timed out"

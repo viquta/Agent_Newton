@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Iterable, Literal, Protocol, Sequence, runtime_checkable
+from typing import Any, Iterable, Literal, Protocol, Sequence, runtime_checkable
 
 Bank = Literal["practice", "pretest", "posttest"]
 
@@ -88,7 +88,7 @@ class Item:
     #: Structured form of the item, for buggy rules to compute against. Rules
     #: read this rather than re-parsing ``prompt``, which would be brittle and
     #: would couple every rule to prompt wording.
-    params: dict[str, object] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

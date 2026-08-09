@@ -93,7 +93,7 @@ class DiagnosticSpec(ModelSpec):
     #: ``llm`` these are the three conditions compared to isolate how diagnostic
     #: error propagates into system-level outcomes.
     impl: DiagnosticImpl = "llm"
-    noise_rate: float = Field(0.0, ge=0.0, le=1.0)
+    noise_rate: float = Field(default=0.0, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
     def _check_noise_rate(self) -> DiagnosticSpec:
@@ -114,9 +114,9 @@ class PlannerSpec(ModelSpec):
 
 
 class AgentsConfig(BaseModel):
-    tutor: TutorSpec = Field(default_factory=TutorSpec)
-    diagnostic: DiagnosticSpec = Field(default_factory=DiagnosticSpec)
-    planner: PlannerSpec = Field(default_factory=PlannerSpec)
+    tutor: TutorSpec = Field(default_factory=lambda: TutorSpec())
+    diagnostic: DiagnosticSpec = Field(default_factory=lambda: DiagnosticSpec())
+    planner: PlannerSpec = Field(default_factory=lambda: PlannerSpec())
 
 
 class SimulatorConfig(BaseModel):
@@ -137,10 +137,10 @@ class SimulatorConfig(BaseModel):
 class BKTConfig(BaseModel):
     """Bayesian Knowledge Tracing parameters (Corbett & Anderson, 1995)."""
 
-    p_init: float = Field(0.15, ge=0.0, le=1.0)
-    p_transit: float = Field(0.20, ge=0.0, le=1.0)
-    p_guess: float = Field(0.20, ge=0.0, le=1.0)
-    p_slip: float = Field(0.10, ge=0.0, le=1.0)
+    p_init: float = Field(default=0.15, ge=0.0, le=1.0)
+    p_transit: float = Field(default=0.20, ge=0.0, le=1.0)
+    p_guess: float = Field(default=0.20, ge=0.0, le=1.0)
+    p_slip: float = Field(default=0.10, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
     def _check_identifiability(self) -> BKTConfig:
@@ -162,8 +162,8 @@ class ZPDConfig(BaseModel):
     (``P(mastery) > theta_lower``).
     """
 
-    theta_lower: float = Field(0.70, ge=0.0, le=1.0)
-    theta_upper: float = Field(0.90, ge=0.0, le=1.0)
+    theta_lower: float = Field(default=0.70, ge=0.0, le=1.0)
+    theta_upper: float = Field(default=0.90, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
     def _check_zpd_band(self) -> ZPDConfig:
@@ -179,21 +179,21 @@ class ArbitrationConfig(BaseModel):
     """When real-time evidence may revise the plan."""
 
     #: Mastery-delta replanning threshold. Swept in sensitivity runs.
-    theta: float = Field(0.15, gt=0.0, le=1.0)
+    theta: float = Field(default=0.15, gt=0.0, le=1.0)
     #: Repeats of one misconception within the rolling window that force a replan.
-    k_repeats: int = Field(2, ge=1)
+    k_repeats: int = Field(default=2, ge=1)
     #: Rate limit, to stop the planner thrashing between concepts.
-    min_items_between_replans: int = Field(2, ge=0)
+    min_items_between_replans: int = Field(default=2, ge=0)
     #: Rolling error-trace length held in the learner state.
-    error_trace_length: int = Field(20, ge=1)
+    error_trace_length: int = Field(default=20, ge=1)
 
 
 class CohortConfig(BaseModel):
-    n_learners: int = Field(3, ge=1)
+    n_learners: int = Field(default=3, ge=1)
     #: Practice items before the post-test, per learner.
-    max_items: int = Field(20, ge=1)
+    max_items: int = Field(default=20, ge=1)
     #: Max student steps allowed on one item before moving on.
-    max_steps_per_item: int = Field(3, ge=1)
+    max_steps_per_item: int = Field(default=3, ge=1)
 
 
 class PathsConfig(BaseModel):
@@ -209,13 +209,13 @@ class Config(BaseModel):
     arm: Arm = "coupled"
     seed: int = 20260807
 
-    cohort: CohortConfig = Field(default_factory=CohortConfig)
-    simulator: SimulatorConfig = Field(default_factory=SimulatorConfig)
-    agents: AgentsConfig = Field(default_factory=AgentsConfig)
-    bkt: BKTConfig = Field(default_factory=BKTConfig)
-    zpd: ZPDConfig = Field(default_factory=ZPDConfig)
-    arbitration: ArbitrationConfig = Field(default_factory=ArbitrationConfig)
-    paths: PathsConfig = Field(default_factory=PathsConfig)
+    cohort: CohortConfig = Field(default_factory=lambda: CohortConfig())
+    simulator: SimulatorConfig = Field(default_factory=lambda: SimulatorConfig())
+    agents: AgentsConfig = Field(default_factory=lambda: AgentsConfig())
+    bkt: BKTConfig = Field(default_factory=lambda: BKTConfig())
+    zpd: ZPDConfig = Field(default_factory=lambda: ZPDConfig())
+    arbitration: ArbitrationConfig = Field(default_factory=lambda: ArbitrationConfig())
+    paths: PathsConfig = Field(default_factory=lambda: PathsConfig())
 
     @model_validator(mode="after")
     def _check_simulator_family(self) -> Config:

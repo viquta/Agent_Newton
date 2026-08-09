@@ -89,6 +89,18 @@ class TestUnreadableResponses:
         assert not result.is_evidence
 
 
+class TestNonExpressions:
+    """Only expressions get a verdict."""
+
+    @pytest.mark.parametrize("response", ["x > 2", "x >= 2", "x < 2"])
+    def test_relations_are_unreadable_not_wrong(self, calculus, response: str) -> None:
+        # A relational parses to a Boolean, not an Expr. Admitting it would send
+        # a Boolean into the subtraction and produce a verdict from nonsense.
+        result = calculus.verifier.verify(item("2*x"), response)
+        assert result.verdict is Verdict.UNPARSEABLE
+        assert not result.is_evidence
+
+
 class TestResponsesAreUntrusted:
     """A response is input from a model or a person, never code to run."""
 
