@@ -1,0 +1,99 @@
+# Practice items. Disjoint from the pre-test and post-test banks — the
+# validator enforces that, so post-test performance measures transfer rather
+# than recall of an item already tutored.
+#
+# `params` is the structured form buggy rules compute against, so no rule has to
+# parse `prompt`.
+items:
+  # --- integer_arithmetic -------------------------------------------------
+  - id: ta_int_p1
+    concept_id: integer_arithmetic
+    prompt: "Compute: 7 + 5"
+    answer: "12"
+
+  - id: ta_int_p2
+    concept_id: integer_arithmetic
+    prompt: "Compute: 13 - 6"
+    answer: "7"
+
+  # --- evaluate_expression ------------------------------------------------
+  - id: ta_eval_p1
+    concept_id: evaluate_expression
+    prompt: "Evaluate 2x + 1 when x = 4"
+    answer: "9"
+
+  - id: ta_eval_p2
+    concept_id: evaluate_expression
+    prompt: "Evaluate 5x - 3 when x = 2"
+    answer: "7"
+
+  # --- combine_like_terms -------------------------------------------------
+  - id: ta_clt_p1
+    concept_id: combine_like_terms
+    prompt: "Simplify: 2x + 3x"
+    answer: "5x"
+
+  - id: ta_clt_p2
+    concept_id: combine_like_terms
+    prompt: "Simplify: 4x + 5"
+    answer: "4x + 5"
+    probes: [combine_unlike_terms]
+    params: { a: 4, c: 5 }
+
+  - id: ta_clt_p3
+    concept_id: combine_like_terms
+    prompt: "Simplify: 7x + 2"
+    answer: "7x + 2"
+    probes: [combine_unlike_terms]
+    params: { a: 7, c: 2 }
+
+  # --- distribute ---------------------------------------------------------
+  - id: ta_dist_p1
+    concept_id: distribute
+    prompt: "Expand: 3(x + 4)"
+    answer: "3x + 12"
+    probes: [distribute_first_term_only]
+    params: { a: 3, c: 4 }
+
+  - id: ta_dist_p2
+    concept_id: distribute
+    prompt: "Expand: 5(x + 2)"
+    answer: "5x + 10"
+    probes: [distribute_first_term_only]
+    params: { a: 5, c: 2 }
+
+  - id: ta_dist_p3
+    concept_id: distribute
+    prompt: "Expand: 2(x + 9)"
+    answer: "2x + 18"
+    probes: [distribute_first_term_only]
+    params: { a: 2, c: 9 }
+
+  # --- solve_linear -------------------------------------------------------
+  - id: ta_solve_p1
+    concept_id: solve_linear
+    prompt: "Solve for x: x + 5 = 12"
+    answer: "7"
+    probes: [sign_error_moving_term]
+    params: { form: add, c: 5, rhs: 12 }
+
+  - id: ta_solve_p2
+    concept_id: solve_linear
+    prompt: "Solve for x: 3x = 12"
+    answer: "4"
+    probes: [drop_coefficient_when_solving]
+    params: { form: mul, a: 3, rhs: 12 }
+
+  - id: ta_solve_p3
+    concept_id: solve_linear
+    prompt: "Solve for x: x + 8 = 20"
+    answer: "12"
+    probes: [sign_error_moving_term]
+    params: { form: add, c: 8, rhs: 20 }
+
+  - id: ta_solve_p4
+    concept_id: solve_linear
+    prompt: "Solve for x: 4x = 20"
+    answer: "5"
+    probes: [drop_coefficient_when_solving]
+    params: { form: mul, a: 4, rhs: 20 }

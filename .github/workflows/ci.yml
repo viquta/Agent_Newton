@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Install
+        run: uv sync --all-extras --dev
+
+      # Excludes tests marked `slow` — those invoke a real model or run a
+      # cohort, and neither belongs in CI. Everything else, including the full
+      # zero-LLM end-to-end run, is expected to pass here.
+      - name: Test
+        run: uv run pytest -m "not slow" -q

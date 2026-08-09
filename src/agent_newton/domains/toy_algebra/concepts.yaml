@@ -1,0 +1,27 @@
+# Deliberately small prerequisite DAG.
+#
+# toy_algebra exists to keep the domain abstraction honest — an interface
+# validated against a single implementation is not validated — and to serve as
+# the fast CI fixture, where the whole pipeline runs in seconds.
+#
+# It is NOT a subject domain in its own right. Keep it small.
+concepts:
+  - id: integer_arithmetic
+    name: Integer arithmetic
+    prerequisites: []
+
+  - id: evaluate_expression
+    name: Evaluating an expression at a value
+    prerequisites: [integer_arithmetic]
+
+  - id: combine_like_terms
+    name: Combining like terms
+    prerequisites: [integer_arithmetic]
+
+  - id: distribute
+    name: Distributing a factor over a sum
+    prerequisites: [combine_like_terms]
+
+  - id: solve_linear
+    name: Solving a one-variable linear equation
+    prerequisites: [distribute, evaluate_expression]

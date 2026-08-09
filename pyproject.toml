@@ -1,0 +1,61 @@
+[project]
+name = "agent-newton"
+version = "0.1.0"
+description = "Multi-agent intelligent tutoring system with a shared, ZPD-bearing learner-state layer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+dependencies = [
+    # domain / verifier
+    "sympy>=1.14",
+    "networkx>=3.0",
+    # schema + config
+    "pydantic>=2.7",
+    "pydantic-settings>=2.2",
+    "pyyaml>=6.0",
+    # analysis
+    "numpy>=1.26",
+    "pandas>=2.0",
+    "scipy>=1.11",
+    "statsmodels>=0.14",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    # runtime
+    "tenacity>=9.0",
+    "typer>=0.12",
+    "rich>=13.0",
+    "ollama>=0.5",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.50"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-bdd>=8.0",
+    "hypothesis>=6.100",
+]
+
+[project.scripts]
+agent-newton = "agent_newton.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_newton"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "slow: tests that invoke a real model or run a cohort",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]

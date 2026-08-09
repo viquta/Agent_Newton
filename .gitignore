@@ -1,0 +1,61 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+.coverage
+htmlcov/
+
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/
+
+# --- Secrets. Nothing here should ever reach a public remote. -------------
+.env
+.env.*
+*.key
+*.pem
+*.p12
+secrets.yaml
+secrets.yml
+credentials.json
+
+# --- Copyrighted source material. ----------------------------------------
+# Papers live outside the repo (~/Documents/Claude/papers_ITS). This is a
+# backstop in case any are ever copied in — publishing them would be a
+# copyright problem, not just clutter. Generated figures are exempt below.
+*.pdf
+*.pptx
+*.docx
+!results/figures/*.pdf
+!docs/**/*.pdf
+
+# --- Working notes and draft prose. --------------------------------------
+# Anything whose text will be reused in the accompanying write-up. Publishing
+# it would put a public copy of that text online before submission, which
+# similarity checkers report as a match against the author's own work.
+#
+# tests/test_publishable.py enforces the other half: tracked files must not
+# contain that prose either.
+research_private/
+
+# --- LLM response cache — regenerable, and large. ------------------------
+.cache/
+
+# --- Local vector stores, if RAG is ever enabled. ------------------------
+chroma/
+*.sqlite
+*.sqlite3
+*.db
+
+# --- Run artifacts. ------------------------------------------------------
+# Manifests, aggregated metrics and figures ARE committed (see
+# results/README.md); raw per-call LLM logs are not — hundreds of MB per cohort.
+results/**/llm_calls.jsonl
+results/**/raw/

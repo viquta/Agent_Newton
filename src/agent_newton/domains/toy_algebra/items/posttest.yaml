@@ -1,0 +1,46 @@
+# Post-test bank: parallel forms of the pre-test items, same structure,
+# different numbers. Held out from practice and administered without hints.
+items:
+  - id: ta_int_post1
+    concept_id: integer_arithmetic
+    bank: posttest
+    prompt: "Compute: 15 - 8"
+    answer: "7"
+
+  - id: ta_eval_post1
+    concept_id: evaluate_expression
+    bank: posttest
+    prompt: "Evaluate 4x - 1 when x = 5"
+    answer: "19"
+
+  - id: ta_clt_post1
+    concept_id: combine_like_terms
+    bank: posttest
+    prompt: "Simplify: 8x + 3"
+    answer: "8x + 3"
+    probes: [combine_unlike_terms]
+    params: { a: 8, c: 3 }
+
+  - id: ta_dist_post1
+    concept_id: distribute
+    bank: posttest
+    prompt: "Expand: 6(x + 5)"
+    answer: "6x + 30"
+    probes: [distribute_first_term_only]
+    params: { a: 6, c: 5 }
+
+  - id: ta_solve_post1
+    concept_id: solve_linear
+    bank: posttest
+    prompt: "Solve for x: x + 7 = 15"
+    answer: "8"
+    probes: [sign_error_moving_term]
+    params: { form: add, c: 7, rhs: 15 }
+
+  - id: ta_solve_post2
+    concept_id: solve_linear
+    bank: posttest
+    prompt: "Solve for x: 6x = 18"
+    answer: "3"
+    probes: [drop_coefficient_when_solving]
+    params: { form: mul, a: 6, rhs: 18 }

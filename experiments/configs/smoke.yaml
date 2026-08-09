@@ -1,0 +1,41 @@
+# Fast, fully deterministic smoke run: no model is invoked anywhere.
+#
+# This is the shape the threshold sweep uses, and the configuration the
+# end-to-end run is verified against. If it cannot complete in seconds,
+# something has crept onto the hot path that should not be there.
+run_name: smoke
+domain: toy_algebra
+arm: coupled
+seed: 20260807
+
+cohort:
+  n_learners: 3
+  max_items: 12
+  max_steps_per_item: 3
+
+simulator:
+  surface: symbolic          # rule engine's decision used verbatim; no LLM
+  misconceptions_per_learner: 2
+  p_fire_range: [0.6, 0.9]
+  remediation_factor: 0.55
+
+agents:
+  tutor:      { impl: template }
+  diagnostic: { impl: oracle }      # reads the injected label; no inference
+  planner:    { impl: deterministic }
+
+bkt:
+  p_init: 0.15
+  p_transit: 0.20
+  p_guess: 0.20
+  p_slip: 0.10
+
+zpd:
+  theta_lower: 0.70
+  theta_upper: 0.90
+
+arbitration:
+  theta: 0.15
+  k_repeats: 2
+  min_items_between_replans: 2
+  error_trace_length: 20

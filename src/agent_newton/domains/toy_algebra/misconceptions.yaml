@@ -1,0 +1,34 @@
+# The shared label space: the simulator's buggy rules and the diagnostic agent's
+# classification targets are drawn from these same entries.
+#
+# 'source' is required for every entry. These are real, documented algebra
+# errors rather than invented ones, so that the toy domain exercises the same
+# validation path the calculus catalogue must satisfy.
+misconceptions:
+  - id: distribute_first_term_only
+    concept_id: distribute
+    description: >-
+      Multiplies the factor into only the first term inside the parentheses,
+      leaving the rest untouched: 3(x + 4) becomes 3x + 4.
+    source: "Booth & Koedinger (2008), 'Key misconceptions in algebraic problem solving'"
+
+  - id: combine_unlike_terms
+    concept_id: combine_like_terms
+    description: >-
+      Adds a variable term and a constant as though they were like terms:
+      2x + 3 becomes 5x.
+    source: "Küchemann (1981), 'Algebra', in Hart (ed.) Children's Understanding of Mathematics"
+
+  - id: sign_error_moving_term
+    concept_id: solve_linear
+    description: >-
+      Moves a term across the equals sign without negating it:
+      x + 5 = 12 gives x = 12 + 5.
+    source: "Booth & Koedinger (2008)"
+
+  - id: drop_coefficient_when_solving
+    concept_id: solve_linear
+    description: >-
+      Reads off the constant as the solution without dividing by the
+      coefficient: 3x = 12 gives x = 12.
+    source: "Küchemann (1981)"
