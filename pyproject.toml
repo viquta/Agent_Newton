@@ -37,6 +37,7 @@ dev = [
     "pytest>=8.0",
     "pytest-bdd>=8.0",
     "hypothesis>=6.100",
+    "pyright>=1.1.400",
 ]
 
 [project.scripts]
@@ -55,6 +56,14 @@ pythonpath = ["src"]
 markers = [
     "slow: tests that invoke a real model or run a cohort",
 ]
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+# networkx ships no type stubs. The import resolves at runtime; genuinely
+# unresolvable imports are still reported, by reportMissingImports.
+reportMissingModuleSource = "none"
 
 [tool.ruff]
 line-length = 100

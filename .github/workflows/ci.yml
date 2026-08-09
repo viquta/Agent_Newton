@@ -22,6 +22,11 @@ jobs:
       - name: Install
         run: uv sync --all-extras --dev
 
+      # Config in [tool.pyright]. Errors fail the build; warnings do not, so a
+      # third-party package shipping no stubs cannot block a merge.
+      - name: Type check
+        run: uv run pyright
+
       # Excludes tests marked `slow` — those invoke a real model or run a
       # cohort, and neither belongs in CI. Everything else, including the full
       # zero-LLM end-to-end run, is expected to pass here.
