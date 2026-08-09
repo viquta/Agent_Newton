@@ -15,7 +15,7 @@ import pytest
 from agent_newton.config import Config, ZPDConfig
 from agent_newton.core.agents.base import Diagnosis, OracleAccess
 from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
-from agent_newton.core.agents.schemas import diagnosis_schema, plan_schema
+from agent_newton.core.agents.schemas import MAX_CANDIDATES, diagnosis_schema, plan_schema
 from agent_newton.core.orchestration.session import build_session
 from agent_newton.core.pedagogy import HintLevel, TutorMove
 from agent_newton.core.state.store import new_blackboard
@@ -106,6 +106,43 @@ class TestLLMDiagnostic:
         schema = diagnosis_schema(toy.name, tuple(toy.misconceptions.ids()))
         with pytest.raises(Exception):
             schema.model_validate({"misconception_id": "not_a_real_id", "confidence": 0.5})
+
+
+class TestTheCandidateListIsBounded:
+    """An unbounded array is an unbounded reply.
+
+    Constrained decoding follows the schema's grammar, so an array with no
+    maximum permits a model to enumerate labels until it hits the context
+    limit — minutes of inference for a reply that should take one second.
+    """
+
+    def test_too_many_candidates_are_rejected(self, toy) -> None:
+        schema = diagnosis_schema(toy.name, tuple(toy.misconceptions.ids()))
+        label = toy.misconceptions.ids()[0]
+        with pytest.raises(Exception):
+            schema.model_validate(
+                {
+                    "considered": [label] * (MAX_CANDIDATES + 1),
+                    "misconception_id": label,
+                    "confidence": 0.5,
+                }
+            )
+
+    def test_the_bound_reaches_the_decoder(self, toy) -> None:
+        # The JSON schema is what becomes the decoding grammar. A bound enforced
+        # only by pydantic would reject the long reply *after* generating it,
+        # which is the cost this exists to avoid.
+        schema = diagnosis_schema(toy.name, tuple(toy.misconceptions.ids()))
+        rendered = schema.model_json_schema()
+        assert rendered["properties"]["considered"]["maxItems"] == MAX_CANDIDATES
+
+    def test_a_reply_within_the_bound_still_passes(self, toy) -> None:
+        schema = diagnosis_schema(toy.name, tuple(toy.misconceptions.ids()))
+        label = toy.misconceptions.ids()[0]
+        reply = schema.model_validate(
+            {"considered": [label], "misconception_id": label, "confidence": 0.5}
+        )
+        assert reply.misconception_id == label  # pyright: ignore[reportAttributeAccessIssue]
 
 
 class TestLLMTutor:

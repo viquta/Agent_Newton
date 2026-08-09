@@ -194,3 +194,82 @@ class TestFactory:
             [sys.executable, "-c", code], capture_output=True, text=True, check=True
         )
         assert out.stdout.strip() == "False"
+
+
+class TestGenerationIsBounded:
+    """A call must not be able to run for minutes.
+
+    Constrained decoding bounds a reply's *shape*, not its length. A schema
+    holding an array or a free string permits an arbitrarily long reply, and a
+    model that begins repeating itself will decode until it hits the context
+    limit. Two independent bounds close that off: the schema caps what it can,
+    and the provider caps the rest.
+    """
+
+    class RecordingClient:
+        """Stands in for ``ollama.Client``, capturing what it was asked."""
+
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+            self.calls: list[dict] = []
+
+        def chat(self, **kwargs):
+            self.calls.append(kwargs)
+            return {"message": {"content": GOOD}}
+
+    def _provider(self, monkeypatch, **kwargs):
+        from agent_newton.llm.ollama import OllamaProvider
+
+        provider = OllamaProvider("gemma4:12b", **kwargs)
+        client = self.RecordingClient()
+        monkeypatch.setattr(provider, "_connect", lambda: client)
+        return provider, client
+
+    def test_every_call_carries_a_token_cap(self, monkeypatch) -> None:
+        from agent_newton.llm.ollama import MAX_TOKENS
+
+        provider, client = self._provider(monkeypatch)
+        provider.generate("classify this", Answer, system=None)
+        assert client.calls[0]["options"]["num_predict"] == MAX_TOKENS
+
+    def test_the_cap_is_far_above_a_real_reply(self, monkeypatch) -> None:
+        # Set too low it would truncate legitimate replies, and every call would
+        # come back malformed. The longest reply here is a two-sentence hint.
+        from agent_newton.llm.ollama import MAX_TOKENS
+
+        assert MAX_TOKENS >= 256
+
+    def test_the_client_is_given_a_timeout(self, monkeypatch) -> None:
+        # A request that never returns would hold a cohort run open for as long
+        # as the machine stayed up.
+        import ollama
+
+        from agent_newton.llm.ollama import REQUEST_TIMEOUT, OllamaProvider
+
+        built: dict = {}
+
+        def _client(**kwargs):
+            built.update(kwargs)
+            return TestGenerationIsBounded.RecordingClient(**kwargs)
+
+        monkeypatch.setattr(ollama, "Client", _client)
+        OllamaProvider("gemma4:12b").generate("classify", Answer, system=None)
+        assert built["timeout"] == REQUEST_TIMEOUT
+
+    def test_a_host_is_still_honoured(self, monkeypatch) -> None:
+        import ollama
+
+        built: dict = {}
+
+        from agent_newton.llm.ollama import OllamaProvider
+
+        def _client(**kwargs):
+            built.update(kwargs)
+            return TestGenerationIsBounded.RecordingClient(**kwargs)
+
+        monkeypatch.setattr(ollama, "Client", _client)
+        OllamaProvider("gemma4:12b", host="http://elsewhere:11434").generate(
+            "classify", Answer, system=None
+        )
+        assert built["host"] == "http://elsewhere:11434"
+        assert "timeout" in built

@@ -27,6 +27,17 @@ from agent_newton.domains.base import Domain
 #: admission for both tutoring and measurement.
 UNKNOWN = "unknown"
 
+#: Candidates the diagnostic agent may list before choosing between them.
+#:
+#: Bounded, and that bound is load-bearing rather than tidiness. Constrained
+#: decoding follows the schema's grammar, and an unbounded array is a grammar
+#: that permits an arbitrarily long reply: a model that starts enumerating
+#: labels has nothing to stop it, and one observed case decoded 8,485 tokens —
+#: minutes of inference — before it was interrupted. A cap on the array makes
+#: that unreachable; :data:`agent_newton.llm.ollama.MAX_TOKENS` is the backstop
+#: for the fields a schema cannot bound.
+MAX_CANDIDATES = 4
+
 
 @lru_cache(maxsize=8)
 def diagnosis_schema(domain_name: str, ids: tuple[str, ...]) -> type[BaseModel]:
@@ -38,9 +49,10 @@ def diagnosis_schema(domain_name: str, ids: tuple[str, ...]) -> type[BaseModel]:
             list[labels],  # type: ignore[valid-type]
             Field(
                 default_factory=list,
+                max_length=MAX_CANDIDATES,
                 description=(
-                    "Candidate misconceptions consistent with the step, before "
-                    "choosing between them."
+                    f"Up to {MAX_CANDIDATES} candidate misconceptions consistent "
+                    f"with the step, before choosing between them."
                 ),
             ),
         ),
