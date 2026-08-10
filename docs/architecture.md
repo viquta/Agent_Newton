@@ -27,9 +27,10 @@ direct call between two agents would be a design error, so
 
 | Module | Holds |
 |---|---|
-| `schema.py` | `LearnerState`, `ErrorEvent` — pydantic models. Concept and misconception ids are opaque strings; no subject knowledge here. |
+| `schema.py` | `LearnerState`, `ErrorEvent`, `Plan` — pydantic models. Concept and misconception ids are opaque strings; no subject knowledge here. |
 | `bkt.py` | Bayesian Knowledge Tracing — per-concept mastery posterior from a stream of correct/incorrect observations |
 | `zpd.py` | The mastery frontier, derived from the posteriors and the prerequisite graph |
+| `route.py` | The way to the goal, derived from the posteriors, the error trace and the graph |
 | `store.py` | The blackboard. Every mutation bumps `version` and appends to an immutable audit log. |
 | `views.py` | `FullStateView` and `ItemCorrectnessView` |
 
@@ -39,6 +40,48 @@ misconception labels and the frontier. `ItemCorrectnessView` carries only the
 correct/incorrect stream. They are two views over one state object, not two
 implementations, so a configuration that changes the view changes what an agent
 can see and nothing else.
+
+Both views carry the `Plan`. A goal is curriculum, like the item bank and the
+graph, so it is not part of what the ablation withholds.
+
+### Goals and the route to them
+
+A domain declares terminal concepts in `concepts.yaml`, in the order they are
+worked toward:
+
+```yaml
+goals: [negative_fractional_exponents, stationary_points, quotient_rule]
+```
+
+Absent, the graph's sinks are used. `ConceptGraph.goals()` returns them.
+
+The `Plan` on `LearnerState` holds the goal currently aimed at and the
+`Emphasis` — how the learner wants to reach it. It holds no sequence of
+concepts: the way there is recomputed from the state each time it is needed,
+the same way the frontier is.
+
+```
+relevant(goal)  = all_prerequisites(goal) ∪ {goal}
+candidates      = frontier ∩ relevant(goal)
+next step       = rank(candidates) by emphasis
+```
+
+| `Emphasis` | Ranking among candidates |
+|---|---|
+| `consolidate` | most errors in the trace, then shallowest, then furthest from mastery |
+| `advance` | deepest reachable first |
+
+The two differ because the band has width. A concept opens once its
+prerequisites clear `θ_lower` but stays selectable until it clears `θ_upper`,
+so there is a range in which a learner may either move on or stay.
+
+Ranking uses `depth` rather than position in the topological order: the latter
+is only *a* total order consistent with the graph, and among concepts at equal
+depth it comes from the order the YAML happens to be written in.
+
+Computing any of this needs the posteriors and the error trace, so a planner
+holding `ItemCorrectnessView` produces the same selections whichever emphasis
+was configured.
 
 ### The mastery frontier
 
@@ -83,11 +126,28 @@ text.
 |---|---|---|
 | `tutor` | Hints and step-level feedback at the level the scaffolding predicate selects | Every step |
 | `diagnostic` | Classifies an incorrect step into the domain's misconception catalogue, structured as elicit → differentiate → remediate → verify | Only on incorrect steps |
-| `planner` | Proposes the next concept and item from its state view | Per item, and on replan |
+| `planner` | Names the goal, and selects the next concept and item on the way to it | Per item, and on replan |
 
-The planner is hybrid: the model proposes, and a deterministic guardrail layer
-rejects out-of-band, prerequisite-violating or thrashing choices and falls back.
-The model's latitude is bounded by rules that cannot be prompted away.
+A planner makes two decisions at two timescales. `plan()` names the target —
+the first declared goal not yet reached. `select()` chooses the item on the way
+to it. Both read the same view, so a planner that cannot see the learner model
+is limited at both.
+
+| Implementation | Behaviour |
+|---|---|
+| `goal_directed` | Routes toward the declared goals from the posteriors and the error trace |
+| `greedy` | Frontier selection with no target — the undirected predecessor, kept as a baseline |
+| `llm` | Proposes among the goal-directed candidates; the guardrail decides whether the proposal stands |
+
+The model-backed planner is hybrid: the model proposes, and a deterministic
+guardrail layer rejects out-of-band, off-route or thrashing choices and falls
+back. The model's latitude is bounded by rules that cannot be prompted away, and
+it does not choose the goal.
+
+The decoupled arm's planner walks the union of every goal's prerequisite closure
+in topological order, advancing on consecutive correct answers. It is restricted
+to the same material — that is curriculum — but cannot skip what this learner
+has already mastered or return to what they are struggling with.
 
 ### Arbitration policy (`core/arbitration/`)
 

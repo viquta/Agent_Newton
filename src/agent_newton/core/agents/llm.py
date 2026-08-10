@@ -24,7 +24,9 @@ from typing import Mapping, Sequence
 
 from agent_newton.config import ZPDConfig
 from agent_newton.core.agents.base import Diagnosis, Hint, StateView
-from agent_newton.core.agents.planner import FrontierPlanner, _least_used
+from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
+from agent_newton.core.state import route
+from agent_newton.core.state.schema import Emphasis, Plan
 from agent_newton.core.agents.schemas import UNKNOWN, diagnosis_schema, plan_schema
 from agent_newton.core.agents.schemas import HintReply
 from agent_newton.core.pedagogy import (
@@ -184,15 +186,28 @@ class LLMPlanner:
     """Proposes the next concept; a guardrail decides whether it stands.
 
     The model sees only what its arm's view carries. The guardrail is the
-    deterministic frontier planner: if the proposal is outside the band, or
-    names a concept with no material left, the guardrail's own choice is used
-    instead and the override is counted.
+    deterministic goal-directed planner: if the proposal is outside the band, or
+    off the way to the goal, or names a concept with no material left, the
+    guardrail's own choice is used instead and the override is counted.
+
+    **The model does not choose the goal.** Which target comes next is settled
+    by the domain's declared order and the posteriors, so letting a model decide
+    it would add an uncontrolled variable to the one decision the whole
+    comparison is framed around. The model's latitude is where to go *next*,
+    within the route.
     """
 
-    def __init__(self, provider: LLMProvider, band: ZPDConfig) -> None:
+    def __init__(
+        self,
+        provider: LLMProvider,
+        band: ZPDConfig,
+        prior: float,
+        emphasis: Emphasis = Emphasis.CONSOLIDATE,
+    ) -> None:
         self._provider = provider
         self._band = band
-        self._fallback = FrontierPlanner()
+        self._prior = prior
+        self._fallback = GoalDirectedPlanner(band, prior, emphasis)
         #: Proposals replaced by the guardrail. Reported per run: a high rate
         #: means the model is not usefully planning, whatever the outcome says.
         self.overrides = 0
@@ -201,6 +216,9 @@ class LLMPlanner:
     @property
     def override_rate(self) -> float:
         return self.overrides / self.proposals if self.proposals else 0.0
+
+    def plan(self, view: StateView, domain: Domain) -> Plan | None:
+        return self._fallback.plan(view, domain)
 
     def select(
         self, view: StateView, domain: Domain, given: Mapping[str, int]
@@ -212,13 +230,21 @@ class LLMPlanner:
         if guarded is None:
             return None  # nothing selectable at all; not the model's call to make
 
-        offered = sorted(view.frontier)
+        # Only concepts on the way to the goal are offered. A proposal outside
+        # the route is not a judgement call the model gets to make.
+        offered = (
+            list(route.candidates(view.plan.goal, view.frontier, domain.concepts))
+            if view.plan is not None
+            else sorted(view.frontier)
+        )
         if not offered:
             return guarded
 
         self.proposals += 1
         schema = plan_schema(domain.name, tuple(domain.concepts.ids()))
+        goal_line = f"Working toward: {view.plan.goal}\n" if view.plan else ""
         prompt = (
+            f"{goal_line}"
             f"Concepts the student is ready for: {', '.join(offered)}\n"
             f"Mastery estimates: "
             f"{', '.join(f'{c}={view.probability(c, 0.0):.2f}' for c in offered)}\n"
@@ -233,10 +259,10 @@ class LLMPlanner:
             self.overrides += 1
             return guarded
 
-        if may_select(proposed, view.frontier) is not None:
+        if proposed not in offered or may_select(proposed, view.frontier) is not None:
             self.overrides += 1
             log.info(
-                "planner proposed out-of-band concept %s", proposed,
+                "planner proposed concept %s, which is not on offer", proposed,
                 extra={"event": "planner.override", "proposed": proposed},
             )
             return guarded

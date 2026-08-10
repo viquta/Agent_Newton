@@ -28,7 +28,7 @@ def config_for(domain: str, arm: str, **overrides) -> Config:
             "agents": {
                 "tutor": {"impl": "template"},
                 "diagnostic": {"impl": "oracle"},
-                "planner": {"impl": "deterministic"},
+                "planner": {"impl": "goal_directed"},
             },
             **overrides,
         }
@@ -131,7 +131,7 @@ class TestTheLoopBehaves:
             agents={
                 "tutor": {"impl": "template"},
                 "diagnostic": {"impl": "noised_oracle", "noise_rate": 0.9},
-                "planner": {"impl": "deterministic"},
+                "planner": {"impl": "goal_directed"},
             },
         )
         assert noisy.remediation_ratio < accurate.remediation_ratio
@@ -168,7 +168,7 @@ class TestModelBackedAgentsAreAvailable:
         base = {
             "tutor": {"impl": "template"},
             "diagnostic": {"impl": "oracle"},
-            "planner": {"impl": "deterministic"},
+            "planner": {"impl": "goal_directed"},
         }
         spec = {"impl": "llm", "provider": "ollama", "model": "gemma4:12b"}
         config = config_for("toy_algebra", "coupled", agents={**base, role: spec})
@@ -186,9 +186,129 @@ class TestModelBackedAgentsAreAvailable:
                 "agents": {
                     "tutor": {"impl": "template"},
                     "diagnostic": {"impl": "oracle"},
-                    "planner": {"impl": "deterministic"},
+                    "planner": {"impl": "goal_directed"},
                 },
             }
         )
         with pytest.raises(NotImplementedForModels):
             build_session("L0000", 1, registry.load_domain("toy_algebra"), config)
+
+
+def concepts_worked(session) -> list[str]:
+    """The concepts a session actually gave work on, in order, deduplicated."""
+    seen = [
+        record.evidence.get("concept_id")
+        for record in session.board.audit_log
+        if record.cause == "observation"
+    ]
+    return [c for i, c in enumerate(seen) if i == 0 or c != seen[i - 1]]
+
+
+class TestPlanningIsDirected:
+    """The goal is shared state; the route toward it is derived from evidence."""
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_a_goal_is_set_and_recorded(self, domain_name: str) -> None:
+        session, outcome = run(domain_name, "coupled")
+        assert session.board.plan is not None
+        assert outcome.goal == session.board.plan.goal
+        assert session.board.plan.goal in session.domain.concepts.goals()
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_the_goal_change_is_auditable(self, domain_name: str) -> None:
+        # A target nobody can account for afterwards is not auditable, and the
+        # audit trail is the point.
+        session, _ = run(domain_name, "coupled")
+        plans = [r for r in session.board.audit_log if r.cause == "plan"]
+        assert plans
+        for record in plans:
+            assert record.evidence["goal"]
+            assert record.evidence["emphasis"]
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_setting_a_goal_is_not_counted_as_a_replan_trigger(
+        self, domain_name: str
+    ) -> None:
+        # The threshold analysis reads the trigger breakdown, so a plan record
+        # leaking into it would show up as a trigger that does not exist.
+        _, outcome = run(domain_name, "coupled")
+        assert all("goal set" not in trigger for trigger in outcome.triggers)
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_work_stays_on_the_way_to_the_goal(self, domain_name: str) -> None:
+        session, _ = run(domain_name, "coupled")
+        graph = session.domain.concepts
+        # Goals advance during a session, so anything worked must be relevant to
+        # some declared goal rather than to the final one only.
+        reachable = set()
+        for goal in graph.goals():
+            reachable |= graph.all_prerequisites(goal) | {goal}
+        for concept in concepts_worked(session):
+            assert concept in reachable, f"{concept} is on the way to no goal"
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_distance_to_the_goal_is_reported(self, domain_name: str) -> None:
+        _, outcome = run(domain_name, "coupled")
+        assert outcome.distance_to_goal is not None
+        assert outcome.distance_to_goal >= 0
+
+
+class TestIntentNeedsTheLearnerModel:
+    """The sharpest form of the ablation.
+
+    Acting on ``consolidate`` needs the error trace; acting on ``advance`` needs
+    the posteriors. A view carrying neither cannot honour either — not less
+    well, but not at all.
+    """
+
+    def _paths(self, domain_name: str, arm: str):
+        paths = {}
+        for emphasis in ("consolidate", "advance"):
+            session, _ = run(
+                domain_name,
+                arm,
+                agents={
+                    "tutor": {"impl": "template"},
+                    "diagnostic": {"impl": "oracle"},
+                    "planner": {"impl": "goal_directed", "emphasis": emphasis},
+                },
+            )
+            paths[emphasis] = concepts_worked(session)
+        return paths
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_the_coupled_arm_honours_it(self, domain_name: str) -> None:
+        paths = self._paths(domain_name, "coupled")
+        assert paths["consolidate"] != paths["advance"]
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_the_decoupled_arm_cannot(self, domain_name: str) -> None:
+        # Identical, because nothing in its view distinguishes the two.
+        paths = self._paths(domain_name, "decoupled")
+        assert paths["consolidate"] == paths["advance"]
+
+    def test_advancing_reaches_further_than_consolidating(self) -> None:
+        # Not a value judgement: the two are asked for different things, and
+        # this asserts each does what it was asked.
+        far = run(
+            "calculus",
+            "coupled",
+            agents={
+                "tutor": {"impl": "template"},
+                "diagnostic": {"impl": "oracle"},
+                "planner": {"impl": "goal_directed", "emphasis": "advance"},
+            },
+        )[0]
+        near = run(
+            "calculus",
+            "coupled",
+            agents={
+                "tutor": {"impl": "template"},
+                "diagnostic": {"impl": "oracle"},
+                "planner": {"impl": "goal_directed", "emphasis": "consolidate"},
+            },
+        )[0]
+        deepest = lambda s: max(  # noqa: E731
+            s.domain.concepts.depth(c) for c in concepts_worked(s)
+        )
+        assert deepest(far) > deepest(near)

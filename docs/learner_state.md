@@ -11,12 +11,20 @@ the same state serve any domain.
 | `learner_id`, `seed` | Identity and the seed the learner was generated from |
 | `mastery` | `concept_id -> P(mastery)`. Absent concepts sit at the BKT prior. |
 | `error_trace` | Recent errors, oldest first, bounded by `arbitration.error_trace_length` |
+| `plan` | What the learner is working toward. `None` before the first plan is set. |
 | `version` | Monotonic; bumped by every mutation |
 | `t` | Steps taken; timestamps error events |
 
 An `ErrorEvent` carries the item and concept, the misconception label (or `None`
 when the diagnostic named nothing — distinct from a label of `"unknown"`), a
 confidence, and the verifier's verdict.
+
+A `Plan` carries the `goal` — a terminal concept the domain declares — the
+`emphasis` (`consolidate` or `advance`), the version it was set at, and a
+reason. It holds no sequence of concepts: the way to the goal is derived from
+the rest of the state whenever it is needed, so evidence arriving mid-session
+changes the next step rather than invalidating a stored one. See `route.py` and
+[architecture.md](architecture.md).
 
 ## Mastery estimation
 
@@ -96,8 +104,16 @@ state object, so the two configurations cannot drift apart in any other respect.
 | Frontier | yes | — |
 | Outcome stream | yes | yes |
 | `consecutive_correct()` | yes | yes |
+| Plan (goal and emphasis) | yes | yes |
 
 The second is not a coarser version of the first. It has neither the posteriors
 nor the graph, so **no frontier can be computed from it** — there is no method
 that would return one. A planner given this view is structurally incapable of
 frontier-based selection rather than merely discouraged from it.
+
+The same limit extends to the plan. Both views carry it, because a goal is
+curriculum and withholding it would make the comparison measure ignorance of
+the target rather than inability to route toward it. But routing toward that
+goal needs the posteriors, and honouring the emphasis needs the posteriors or
+the error trace, so a planner on the second view produces identical selections
+whichever emphasis was configured.

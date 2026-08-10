@@ -126,7 +126,7 @@ class TestUsesLLM:
                 "agents": {
                     "tutor": {"impl": "template"},
                     "diagnostic": {"impl": "oracle"},
-                    "planner": {"impl": "deterministic"},
+                    "planner": {"impl": "goal_directed"},
                 },
             }
         )
@@ -147,7 +147,7 @@ class TestUsesLLM:
             "agents": {
                 "tutor": {"impl": "template"},
                 "diagnostic": {"impl": "oracle"},
-                "planner": {"impl": "deterministic"},
+                "planner": {"impl": "goal_directed"},
             },
         }
         for key, value in override.items():

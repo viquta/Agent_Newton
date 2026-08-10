@@ -12,12 +12,34 @@ that caused it.
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 #: What produced a state change. Recorded on every audit entry.
-Cause = Literal["observation", "replan", "reset", "annotation"]
+#:
+#: ``plan`` is separate from ``replan``: setting a goal is not a replanning
+#: trigger, and folding it in would put it among the trigger counts that the
+#: threshold analysis reads.
+Cause = Literal["observation", "plan", "replan", "reset", "annotation"]
+
+
+class Emphasis(str, Enum):
+    """How a learner wants to get to their goal.
+
+    Both orderings are legitimate, and the difference between them is real
+    because the mastery band has width. A concept opens once its prerequisites
+    clear ``theta_lower`` but stays selectable until it clears ``theta_upper``,
+    so there is a range in which a learner may either move on or stay.
+
+    ``CONSOLIDATE`` stays, working wherever the error trace shows difficulty.
+    ``ADVANCE`` moves on to the deepest concept now reachable, leaving
+    partly-mastered ones behind in favour of progress toward the goal.
+    """
+
+    CONSOLIDATE = "consolidate"
+    ADVANCE = "advance"
 
 
 class ErrorEvent(BaseModel):
@@ -49,6 +71,25 @@ class AuditRecord(BaseModel):
     evidence: dict[str, Any] = Field(default_factory=dict)
 
 
+class Plan(BaseModel):
+    """What the learner is working toward, and how.
+
+    Deliberately small. It holds the *target* and nothing about the route,
+    because the route is derived from the rest of the state every time it is
+    needed — see :mod:`agent_newton.core.state.route`. Freezing a sequence of
+    concepts here would make the path curriculum-driven again, which is the
+    thing the derived route exists to avoid.
+    """
+
+    #: The terminal concept currently aimed at.
+    goal: str
+    emphasis: Emphasis = Emphasis.CONSOLIDATE
+    #: State version at which this plan was set, so the audit log can be read
+    #: back against the estimates that justified it.
+    set_at_version: int = 0
+    reason: str = ""
+
+
 class LearnerState(BaseModel):
     """Per-learner state: mastery estimates, recent errors, provenance.
 
@@ -66,6 +107,11 @@ class LearnerState(BaseModel):
 
     #: Most recent errors, oldest first, bounded by the configured length.
     error_trace: list[ErrorEvent] = Field(default_factory=list)
+
+    #: What this learner is working toward. None before the first plan is set.
+    #: This is the shared representation of goals: it lives in the state every
+    #: agent reads, not in the loop that happens to be running.
+    plan: Plan | None = None
 
     #: Monotonic. Bumped by every mutation; the frontier cache keys on it.
     version: int = 0

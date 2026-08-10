@@ -149,8 +149,30 @@ class ConceptGraph(Protocol):
     def get(self, concept_id: str) -> Concept: ...
     def ids(self) -> Sequence[str]: ...
     def prerequisites(self, concept_id: str) -> frozenset[str]: ...
+    def all_prerequisites(self, concept_id: str) -> frozenset[str]: ...
     def topological_order(self) -> Sequence[str]: ...
     def content_hash(self) -> str: ...
+
+    def depth(self, concept_id: str) -> int:
+        """Longest path from any root.
+
+        Ranking uses this rather than position in the topological order, which
+        is only a total order consistent with the graph: among concepts at the
+        same depth its ordering comes from the declaration order in the YAML,
+        and planning must not depend on how the content file happens to be
+        written.
+        """
+        ...
+
+    def goals(self) -> Sequence[str]:
+        """Terminal concepts, in the order they should be worked toward.
+
+        A goal is what makes planning directed: the concepts that matter for
+        reaching it are its prerequisite closure, and everything else in the
+        graph is out of scope until it is reached. Ordered, so a domain can say
+        which target comes first rather than leaving it to the graph's shape.
+        """
+        ...
 
 
 class MisconceptionCatalogue(Protocol):

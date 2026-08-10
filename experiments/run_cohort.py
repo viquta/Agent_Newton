@@ -73,6 +73,15 @@ def run(config: Config) -> dict:
         "mean_items": _mean(o.items_attempted for o in outcomes),
         "mean_remediation": _mean(o.remediation_ratio for o in outcomes),
         "unmeasurable_steps": sum(o.unmeasurable_steps for o in outcomes),
+        # Mastery-derived, so it means the same thing in both arms. The
+        # planner's own retarget count does not — see SessionOutcome.
+        "mean_goals_mastered": _mean(o.goals_mastered for o in outcomes),
+        "mean_goal_changes": _mean(o.goal_changes for o in outcomes),
+        # None where a planner works toward no goal at all, which is a different
+        # thing from being zero concepts away from one.
+        "mean_distance_to_goal": _mean(
+            o.distance_to_goal for o in outcomes if o.distance_to_goal is not None
+        ),
         "diagnostic_accuracy": _diagnostic_accuracy(outcomes),
         "replans_by_trigger": _triggers(outcomes),
         "suppressed_triggers": sum(o.suppressed for o in outcomes),
@@ -85,6 +94,10 @@ def run(config: Config) -> dict:
                 "items": o.items_attempted,
                 "items_to_exhaustion": o.items_to_exhaustion,
                 "remediation": o.remediation_ratio,
+                "goal": o.goal,
+                "goals_mastered": o.goals_mastered,
+                "goal_changes": o.goal_changes,
+                "distance_to_goal": o.distance_to_goal,
             }
             for o in outcomes
         ],

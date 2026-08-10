@@ -1,18 +1,27 @@
 """Planners — where the ablation becomes behaviour.
 
-Both planners know the **syllabus**: the item bank and the prerequisite graph
-are static curriculum, available to either arm. What differs is what they know
-about *this learner*. Keeping curriculum knowledge common is what makes the
-comparison fair — otherwise the decoupled arm would be handicapped by ignorance
-of the subject rather than of the learner.
+Both planners know the **syllabus**: the item bank, the prerequisite graph and
+the declared goals are static curriculum, available to either arm. What differs
+is what they know about *this learner*. Keeping curriculum knowledge common is
+what makes the comparison fair — otherwise the decoupled arm would be
+handicapped by ignorance of the subject rather than of the learner.
 
-:class:`FrontierPlanner` reads the frontier and selects from it.
-:class:`FixedOrderPlanner` cannot: its view has neither the posteriors nor any
-per-concept estimate, so it walks the syllabus in topological order and advances
-on consecutive correct answers. That is not a worse heuristic over the same
-information — it is the best available given strictly less.
+Both restrict their work to the goal's prerequisite closure, because that too is
+curriculum: which concepts lie on the way to a target is a property of the
+graph. So the arms are not separated by *scope*.
 
-Both may **repeat** an item, preferring the least-used one for a concept.
+They are separated by **routing**. :class:`GoalDirectedPlanner` reads the
+posteriors and the error trace, so it can skip what is already mastered and
+order what remains by the learner's stated intent.
+:class:`FixedOrderPlanner` has neither, so it walks the closure in topological
+order and advances on consecutive correct answers. That is not a worse heuristic
+over the same information — it is the best available given strictly less.
+
+:class:`FrontierPlanner` is kept as the undirected baseline: it selects from the
+frontier with no goal at all, which is what the system did before planning had a
+target.
+
+All three may **repeat** an item, preferring the least-used one for a concept.
 Mastery takes several correct answers to establish, and a bank holding fewer
 items than that per concept would otherwise make the concept permanently
 unmasterable: the planner would run out of unseen work and stop while the
@@ -23,8 +32,11 @@ from __future__ import annotations
 
 from typing import Mapping
 
+from agent_newton.config import ZPDConfig
 from agent_newton.core.agents.base import StateView
 from agent_newton.core.pedagogy import may_select
+from agent_newton.core.state import route
+from agent_newton.core.state.schema import Emphasis, Plan
 from agent_newton.core.state.views import FullStateView
 from agent_newton.domains.base import Domain, Item
 
@@ -37,16 +49,88 @@ def _least_used(domain: Domain, concept_id: str, given: Mapping[str, int]) -> It
     return min(items, key=lambda item: (given.get(item.id, 0), item.id))
 
 
+class GoalDirectedPlanner:
+    """Aims at a declared goal and routes toward it from the learner model.
+
+    The goal is chosen from the domain's ordered list — the first not yet
+    mastered. The next concept is derived from the blackboard every time it is
+    asked for rather than fixed when the goal is set, so evidence arriving
+    mid-session changes where the learner is taken next.
+    """
+
+    def __init__(self, band: ZPDConfig, prior: float, emphasis: Emphasis) -> None:
+        self._band = band
+        self._prior = prior
+        self._emphasis = emphasis
+
+    def _require_full(self, view: StateView) -> FullStateView:
+        if not isinstance(view, FullStateView):
+            raise TypeError(
+                "GoalDirectedPlanner requires the full state view; the decoupled "
+                "arm must use FixedOrderPlanner"
+            )
+        return view
+
+    def plan(self, view: StateView, domain: Domain) -> Plan | None:
+        full = self._require_full(view)
+        goal = route.next_goal(
+            domain.concepts.goals(), full.mastery, self._band, self._prior
+        )
+        if goal is None:
+            return None
+        outstanding = route.remaining(
+            goal, full.mastery, domain.concepts, self._band, self._prior
+        )
+        return Plan(
+            goal=goal,
+            emphasis=self._emphasis,
+            reason=f"{len(outstanding)} concept(s) still needed for {goal}",
+        )
+
+    def select(
+        self, view: StateView, domain: Domain, given: Mapping[str, int]
+    ) -> Item | None:
+        full = self._require_full(view)
+        if full.plan is None:
+            return None
+
+        step = route.next_step(
+            goal=full.plan.goal,
+            emphasis=full.plan.emphasis,
+            mastery=full.mastery,
+            error_trace=full.error_trace,
+            frontier=full.frontier,
+            graph=domain.concepts,
+            band=self._band,
+            prior=self._prior,
+        )
+        if step is None:
+            return None
+
+        # The band-membership rule is the planner's own guardrail, so a
+        # selection violating it never reaches the learner. The fallback branch
+        # is exempt: it fires only when the frontier and the graph disagree, and
+        # stalling the session would be the worse failure.
+        if not step.fallback and may_select(step.concept_id, full.frontier) is not None:
+            return None
+        return _least_used(domain, step.concept_id, given)
+
+
 class FrontierPlanner:
     """Selects from the frontier, nearest the syllabus start first.
 
-    Ties are broken by topological position, so among reachable concepts it
-    prefers the one whose prerequisites were satisfied earliest, and the walk is
-    reproducible.
+    The undirected baseline: no goal, so nothing constrains selection to what is
+    on the way anywhere. Ties are broken by topological position, so among
+    reachable concepts it prefers the one whose prerequisites were satisfied
+    earliest, and the walk is reproducible.
 
     Returns None only when the frontier is empty — which means every concept is
     mastered, not that the planner ran out of material.
     """
+
+    def plan(self, view: StateView, domain: Domain) -> Plan | None:  # noqa: ARG002
+        """No target. Selection is not directed anywhere."""
+        return None
 
     def select(self, view: StateView, domain: Domain, given: Mapping[str, int]) -> Item | None:
         if not isinstance(view, FullStateView):
@@ -57,8 +141,6 @@ class FrontierPlanner:
 
         order = list(domain.concepts.topological_order())
         for concept_id in sorted(view.frontier, key=order.index):
-            # The band-membership rule is the planner's own guardrail, so a
-            # selection violating it never reaches the learner.
             if may_select(concept_id, view.frontier) is not None:
                 continue
             item = _least_used(domain, concept_id, given)
@@ -69,11 +151,15 @@ class FrontierPlanner:
 
 
 class FixedOrderPlanner:
-    """Walks the syllabus in order, advancing on consecutive correct answers.
+    """Walks the goal's prerequisite closure in order, advancing on correctness.
 
     The decoupled arm. Its view carries a right/wrong stream and nothing else,
-    so it cannot ask which concepts are reachable — only whether the learner has
-    been getting things right lately.
+    so it cannot ask which concepts are reachable or which are already known —
+    only whether the learner has been getting things right lately.
+
+    It knows the goal, and it knows from the graph which concepts lie on the way
+    to it. Both are curriculum. What it cannot do is skip the ones this learner
+    has already mastered, or work the one they are struggling with first.
     """
 
     def __init__(self, advance_after: int = 2) -> None:
@@ -84,8 +170,44 @@ class FixedOrderPlanner:
         #: call rather than once, racing through the syllabus an item at a time.
         self._advanced_at = 0
 
-    def select(self, view: StateView, domain: Domain, given: Mapping[str, int]) -> Item | None:
+    def _walk(self, domain: Domain) -> list[str]:
+        """The concepts this planner will walk, in order.
+
+        The union of every declared goal's closure — everything on the way to
+        anything the domain aims at. Curriculum, so restricting to it is fair.
+
+        Deliberately *not* narrowed to the current goal. Narrowing would mean
+        stepping past a concept that no current goal needs but a later one does,
+        and the walk only moves forward, so that concept would never be
+        revisited. The coupled planner can narrow safely because it knows which
+        goals are already reached; this one cannot, and pretending otherwise
+        would hand the comparison an advantage that has nothing to do with the
+        learner model.
+        """
+        needed: set[str] = set()
+        for goal in domain.concepts.goals():
+            needed |= route.relevant(goal, domain.concepts)
         order = list(domain.concepts.topological_order())
+        return [c for c in order if c in needed] if needed else order
+
+    def plan(self, view: StateView, domain: Domain) -> Plan | None:  # noqa: ARG002
+        """The first declared goal this walk has not yet passed.
+
+        Whether a goal has been *reached* is a fact about the learner, and this
+        planner cannot see it. Its position in its own walk is the only progress
+        signal it has, so that is what the goal advances on.
+        """
+        walk = self._walk(domain)
+        for goal in domain.concepts.goals():
+            if goal in walk and walk.index(goal) >= min(self._position, len(walk)):
+                return Plan(
+                    goal=goal,
+                    reason=f"walking the syllabus; position {self._position}",
+                )
+        return None
+
+    def select(self, view: StateView, domain: Domain, given: Mapping[str, int]) -> Item | None:
+        walk = self._walk(domain)
         answered = len(view.outcomes)
 
         if (
@@ -95,8 +217,8 @@ class FixedOrderPlanner:
             self._position += 1
             self._advanced_at = answered
 
-        while self._position < len(order):
-            item = _least_used(domain, order[self._position], given)
+        while self._position < len(walk):
+            item = _least_used(domain, walk[self._position], given)
             if item is not None:
                 return item
             # A concept with no practice items at all cannot be taught; step

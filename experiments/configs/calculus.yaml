@@ -27,7 +27,7 @@ simulator:
 agents:
   tutor:      { impl: template }
   diagnostic: { impl: oracle }
-  planner:    { impl: deterministic }
+  planner:    { impl: goal_directed }
 
 bkt:
   p_init: 0.15

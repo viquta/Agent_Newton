@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Mapping, Protocol, Sequence, runtime_checkable
 
 from agent_newton.core.pedagogy import HintLevel, TutorMove
+from agent_newton.core.state.schema import Plan
 from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
 from agent_newton.domains.base import Domain, Item
 
@@ -86,12 +87,22 @@ class OracleAccess(Protocol):
 
 @runtime_checkable
 class Planner(Protocol):
-    """Selects the next item.
+    """Chooses what to work toward, and what to work on next.
 
-    Both arms' planners know the syllabus — the item bank and the prerequisite
-    graph are static curriculum, not learner state. They differ only in what
-    they know about *this learner*, which is the single variable under test.
+    Both arms' planners know the syllabus — the item bank, the prerequisite
+    graph and the declared goals are static curriculum, not learner state. They
+    differ only in what they know about *this learner*, which is the single
+    variable under test.
+
+    Two decisions at two timescales, and the session is what moves information
+    between them. :meth:`plan` names the target; :meth:`select` chooses the next
+    item on the way to it. Both read the same view, so a planner that cannot see
+    the learner model is limited in the same way at both.
     """
+
+    def plan(self, view: StateView, domain: Domain) -> Plan | None:
+        """The goal to work toward, or None when every goal is reached."""
+        ...
 
     def select(
         self, view: StateView, domain: Domain, given: Mapping[str, int]

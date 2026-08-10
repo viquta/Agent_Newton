@@ -17,13 +17,34 @@ one implementation tends to leak that implementation's assumptions.
 
 | Member | Supplied as | Notes |
 |---|---|---|
-| `ConceptGraph` | `concepts.yaml` | Prerequisite DAG; also the substrate the mastery frontier is computed over |
+| `ConceptGraph` | `concepts.yaml` | Prerequisite DAG and the declared goals; also the substrate the mastery frontier is computed over |
 | `MisconceptionCatalogue` | `misconceptions.yaml` | The shared label space |
 | `ItemBank` | `items/*.yaml` | Practice, pre-test, post-test |
 | `Verifier` | Python | Correctness, independent of any model |
 | `BuggyRule` | Python | How the simulator errs — one per misconception |
 
 Three of the five are pure content, so adding items or concepts needs no Python.
+
+### Goals
+
+`concepts.yaml` carries an ordered list of terminal concepts beside the graph:
+
+```yaml
+goals: [solve_linear]
+
+concepts:
+  - id: integer_arithmetic
+    ...
+```
+
+The planner works toward the first goal not yet mastered, then the next. A goal
+restricts planning to its prerequisite closure, so ordering matters: a nearer
+goal keeps the set of concepts under consideration small early on.
+
+The key is optional. Absent, the graph's sinks are used — a concept nothing
+depends on is where a path through the graph ends. The validator rejects a goal
+that is not a concept, and one whose closure contains a concept with no practice
+items, since the planner would reach it and have nothing to give.
 
 ### The shared label space
 

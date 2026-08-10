@@ -23,6 +23,8 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, Field, model_validator
 
+from agent_newton.core.state.schema import Emphasis
+
 Provider = Literal["ollama", "anthropic", "openai"]
 Arm = Literal["coupled", "decoupled"]
 SurfaceMode = Literal["symbolic", "llm"]
@@ -35,7 +37,10 @@ SurfaceMode = Literal["symbolic", "llm"]
 # possible.
 TutorImpl = Literal["llm", "template"]
 DiagnosticImpl = Literal["llm", "oracle", "noised_oracle"]
-PlannerImpl = Literal["llm", "deterministic", "oracle"]
+#: ``goal_directed`` routes toward the domain's declared goals from the learner
+#: model. ``greedy`` is the undirected predecessor — frontier selection with no
+#: target — kept as the baseline the directed planner is compared against.
+PlannerImpl = Literal["llm", "goal_directed", "greedy", "oracle"]
 
 
 # Model-name prefix -> developer. Used only by the circularity check: what
@@ -118,10 +123,16 @@ class DiagnosticSpec(ModelSpec):
 
 
 class PlannerSpec(ModelSpec):
-    #: ``deterministic`` selects from the mastery frontier by a fixed policy;
+    #: ``goal_directed`` routes toward the declared goals from the learner
+    #: model; ``greedy`` selects from the mastery frontier with no target;
     #: ``oracle`` may additionally see the simulator's true profile and is the
     #: upper bound the real planner's regret is measured against.
     impl: PlannerImpl = "llm"
+    #: How the learner wants to reach the goal. A property of the learner, not
+    #: of the architecture, so it must be **held identical across arms** in a
+    #: paired comparison — it changes behaviour on its own, and varying it with
+    #: the arm would confound the two.
+    emphasis: Emphasis = Emphasis.CONSOLIDATE
     #: Consecutive correct answers before the decoupled planner moves on. Its
     #: view carries no per-concept estimate, so this stream is the only signal
     #: it has to advance on.

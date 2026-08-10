@@ -21,7 +21,13 @@ from typing import Any
 
 from agent_newton.config import Config
 from agent_newton.core.state import bkt, zpd
-from agent_newton.core.state.schema import AuditRecord, Cause, ErrorEvent, LearnerState
+from agent_newton.core.state.schema import (
+    AuditRecord,
+    Cause,
+    ErrorEvent,
+    LearnerState,
+    Plan,
+)
 from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
 from agent_newton.core.state.zpd import Frontier
 from agent_newton.domains.base import ConceptGraph, VerificationResult, Verdict
@@ -73,10 +79,21 @@ class Blackboard:
     def probability(self, concept_id: str) -> float:
         return self._state.probability(concept_id, bkt.initial(self._config.bkt))
 
+    @property
+    def plan(self) -> Plan | None:
+        """What this learner is working toward. None before the first plan."""
+        return self._state.plan
+
     def view(self, arm: str | None = None) -> FullStateView | ItemCorrectnessView:
         """The view this arm's planner receives.
 
         This single choice is the independent variable of the whole experiment.
+
+        The plan is on **both** views. A goal is curriculum, like the item bank
+        and the graph, so withholding it would make the comparison measure
+        ignorance of the target rather than inability to route toward it. What
+        the decoupled view still lacks is everything needed to compute a route:
+        the posteriors, the error trace and the frontier.
         """
         arm = arm or self._config.arm
         if arm == "coupled":
@@ -86,10 +103,12 @@ class Blackboard:
                 frontier=self.frontier,
                 outcomes=tuple(self._outcomes),
                 version=self._state.version,
+                plan=self._state.plan,
             )
         return ItemCorrectnessView(
             outcomes=tuple(self._outcomes),
             version=self._state.version,
+            plan=self._state.plan,
         )
 
     # -- writing ----------------------------------------------------------
@@ -180,6 +199,25 @@ class Blackboard:
         than only observable during it.
         """
         self._bump("replan", summary, **evidence)
+
+    def record_plan(self, plan: Plan, **evidence: Any) -> Plan:
+        """Set what the learner is working toward.
+
+        Goes through the same path as every other mutation, so a change of goal
+        bumps the version and lands in the audit log. Without that, the state
+        could carry a target nobody could account for afterwards.
+        """
+        stamped = plan.model_copy(update={"set_at_version": self._state.version + 1})
+        self._state.plan = stamped
+        self._bump(
+            "plan",
+            f"goal set to {stamped.goal!r} ({stamped.emphasis.value})",
+            goal=stamped.goal,
+            emphasis=stamped.emphasis.value,
+            reason=stamped.reason,
+            **evidence,
+        )
+        return stamped
 
     def annotate(self, summary: str, **evidence: Any) -> None:
         """Record something worth auditing that changes no estimate."""

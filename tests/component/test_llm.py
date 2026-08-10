@@ -160,7 +160,7 @@ class TestFactory:
                 "agents": {
                     "tutor": {"impl": "template"},
                     "diagnostic": {"impl": "oracle"},
-                    "planner": {"impl": "deterministic"},
+                    "planner": {"impl": "goal_directed"},
                 },
                 "simulator": {"surface": "symbolic"},
             }
@@ -173,7 +173,7 @@ class TestFactory:
                 "agents": {
                     "tutor": {"impl": "llm", "provider": "ollama", "model": "gemma4:12b"},
                     "diagnostic": {"impl": "oracle"},
-                    "planner": {"impl": "deterministic"},
+                    "planner": {"impl": "goal_directed"},
                 },
                 "simulator": {"surface": "symbolic"},
             }

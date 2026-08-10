@@ -36,14 +36,23 @@ are run conditions, not test doubles.
   classification.
 - `noised_oracle` — the injected label corrupted at `noise_rate`. Setting
   `noise_rate: 0.0` is rejected, since that is just an oracle.
-- `deterministic` (planner) — fixed policy over the frontier.
+- `goal_directed` (planner) — routes toward the domain's declared goals, using
+  the posteriors and the error trace.
+- `greedy` (planner) — frontier selection with no target; the undirected
+  predecessor, kept as a baseline.
 - `oracle` (planner) — may additionally see the simulator's true profile.
+
+`planner.emphasis` selects how the learner wants to reach the goal:
+`consolidate` works wherever the error trace shows difficulty; `advance` takes
+the deepest reachable concept. It changes behaviour on its own, so a paired
+comparison must hold it **identical across arms**. It is recorded in the run
+manifest.
 
 ```yaml
 agents:
   tutor:      { impl: llm, provider: ollama, model: gemma4:12b }
   diagnostic: { impl: llm, provider: ollama, model: gemma4:12b }
-  planner:    { impl: deterministic }
+  planner:    { impl: goal_directed, emphasis: consolidate }
 ```
 
 `Config.uses_llm()` is `False` only when no role and no simulator surface uses a

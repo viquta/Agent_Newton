@@ -18,7 +18,12 @@ from agent_newton.domains.base import (
     Verifier,
 )
 from agent_newton.domains.content import YamlConceptGraph
-from agent_newton.domains.validate import ANSWERS_VERIFY, RULES_PRODUCE_ERRORS, validate
+from agent_newton.domains.validate import (
+    ANSWERS_VERIFY,
+    GOALS_ARE_REACHABLE,
+    RULES_PRODUCE_ERRORS,
+    validate,
+)
 
 
 @pytest.fixture(scope="module")
@@ -94,6 +99,50 @@ class TestConceptGraph:
             YamlConceptGraph([Concept("a", "one"), Concept("a", "two")])
 
 
+class TestGoals:
+    """What the planner works toward.
+
+    A goal narrows planning to its prerequisite closure, so a wrong one does not
+    fail loudly — it quietly changes what the learner is ever offered.
+    """
+
+    CHAIN = (Concept("a", "a"), Concept("b", "b", ("a",)), Concept("c", "c", ("b",)))
+
+    def test_declared_goals_keep_their_order(self) -> None:
+        # Order is the curriculum decision: the planner takes the first goal not
+        # yet mastered, so sorting these would silently retarget the run.
+        graph = YamlConceptGraph(self.CHAIN, goals=("c", "b"))
+        assert list(graph.goals()) == ["c", "b"]
+
+    def test_sinks_are_the_default(self) -> None:
+        # A concept nothing depends on is where a path through the graph ends.
+        graph = YamlConceptGraph(self.CHAIN)
+        assert list(graph.goals()) == ["c"]
+
+    def test_every_sink_is_a_default_goal(self) -> None:
+        graph = YamlConceptGraph(
+            (Concept("a", "a"), Concept("b", "b", ("a",)), Concept("c", "c", ("a",)))
+        )
+        assert set(graph.goals()) == {"b", "c"}
+
+    def test_an_unknown_goal_is_refused(self) -> None:
+        with pytest.raises(DomainError, match="unknown goal concept"):
+            YamlConceptGraph(self.CHAIN, goals=("ghost",))
+
+    def test_the_shipped_domains_declare_theirs(self) -> None:
+        assert list(registry.load_domain("toy_algebra").concepts.goals()) == ["solve_linear"]
+        calculus = list(registry.load_domain("calculus").concepts.goals())
+        assert calculus[0] == "negative_fractional_exponents"
+        assert calculus[-1] == "integration_by_substitution"
+
+    def test_a_nearer_goal_is_relevant_to_fewer_concepts(self) -> None:
+        # The point of ordering: planning starts narrow and widens.
+        graph = registry.load_domain("calculus").concepts
+        near = len(graph.all_prerequisites("negative_fractional_exponents"))
+        far = len(graph.all_prerequisites("integration_by_substitution"))
+        assert near < far
+
+
 class TestContentHashes:
     def test_are_stable_across_loads(self) -> None:
         assert (
@@ -111,6 +160,22 @@ class TestContentHashes:
         original = YamlConceptGraph([Concept("a", "a"), Concept("b", "b", ("a",))])
         edited = YamlConceptGraph([Concept("a", "a"), Concept("b", "b")])
         assert original.content_hash() != edited.content_hash()
+
+    def test_change_when_the_goal_changes(self) -> None:
+        # Retargeting a run changes what it measured, so analysis must refuse to
+        # pool across the change rather than average two different studies.
+        concepts = [Concept("a", "a"), Concept("b", "b", ("a",))]
+        assert (
+            YamlConceptGraph(concepts, goals=("a",)).content_hash()
+            != YamlConceptGraph(concepts, goals=("b",)).content_hash()
+        )
+
+    def test_change_when_the_goal_order_changes(self) -> None:
+        concepts = [Concept("a", "a"), Concept("b", "b")]
+        assert (
+            YamlConceptGraph(concepts, goals=("a", "b")).content_hash()
+            != YamlConceptGraph(concepts, goals=("b", "a")).content_hash()
+        )
 
 
 class TestToyAlgebraProtocolConformance:
@@ -263,6 +328,29 @@ class TestValidator:
         problems = validate(broken).problems
         assert any(p.check == "misconception_probed_in_tests" for p in problems)
 
+    def test_counts_the_goals(self, toy) -> None:
+        assert validate(toy).stats["goals"] == 1
+
+    def test_catches_a_goal_that_is_not_a_concept(self, toy) -> None:
+        broken = replace(toy, concepts=_GraphWithGoals(toy.concepts, ("ghost",)))
+        problems = validate(broken).problems
+        assert any(p.check == GOALS_ARE_REACHABLE for p in problems)
+
+    def test_catches_a_goal_requiring_an_unteachable_concept(self, toy) -> None:
+        # The silent case. The graph says the goal is reachable, but a concept
+        # on the way has no practice items, so the planner arrives there and has
+        # nothing to give. The run ends early and looks like a short session.
+        without_distribute = [i for i in toy.items.all() if i.concept_id != "distribute"]
+        broken = replace(toy, items=_ItemBankStub(without_distribute))
+        problems = validate(broken).problems
+        assert any(
+            p.check == GOALS_ARE_REACHABLE and "distribute" in p.message for p in problems
+        )
+
+    def test_catches_a_graph_with_nothing_to_plan_toward(self, toy) -> None:
+        broken = replace(toy, concepts=_GraphWithGoals(toy.concepts, ()))
+        assert any(p.check == GOALS_ARE_REACHABLE for p in validate(broken).problems)
+
     def test_catches_a_test_item_copied_from_practice(self, toy) -> None:
         practice = toy.items.bank("practice")[0]
         leaked = Item(
@@ -295,6 +383,25 @@ class _ItemBankStub:
 
     def content_hash(self):
         return "stub"
+
+
+class _GraphWithGoals:
+    """A real graph with its goals overridden.
+
+    Constructing the graph with a bad goal raises at load, which is the right
+    behaviour and also means the validator's own goal checks could never fire.
+    This lets them be exercised.
+    """
+
+    def __init__(self, inner, goals) -> None:
+        self._inner = inner
+        self._goals = tuple(goals)
+
+    def goals(self):
+        return self._goals
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
 
 
 class TestYamlContentOnDisk:

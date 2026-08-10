@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, Sequence
 
-from agent_newton.core.state.schema import ErrorEvent
+from agent_newton.core.state.schema import ErrorEvent, Plan
 from agent_newton.core.state.zpd import Frontier
 
 
@@ -29,6 +29,11 @@ class PlannerView(Protocol):
     @property
     def outcomes(self) -> Sequence[bool]:
         """Item-level correctness, oldest first."""
+        ...
+
+    @property
+    def plan(self) -> Plan | None:
+        """The goal being worked toward. Curriculum, so both arms see it."""
         ...
 
     def consecutive_correct(self) -> int: ...
@@ -43,6 +48,7 @@ class FullStateView:
     frontier: Frontier
     outcomes: tuple[bool, ...]
     version: int
+    plan: Plan | None = None
 
     def consecutive_correct(self) -> int:
         count = 0
@@ -62,15 +68,22 @@ class FullStateView:
 
 @dataclass(frozen=True)
 class ItemCorrectnessView:
-    """The decoupled arm's view: a right/wrong stream, and nothing more.
+    """The decoupled arm's view: a right/wrong stream, and the goal.
 
     Deliberately has no ``mastery``, no ``frontier``, no ``error_trace``. A
     planner holding this cannot ask which concepts are reachable, because the
     information required to answer is absent rather than withheld.
+
+    It knows *where* the learner is going and cannot work out how to get there.
+    That extends to the learner's stated intent: consolidating on a difficulty
+    needs the error trace and advancing past what is already known needs the
+    posteriors, so a planner on this view behaves identically whichever the
+    learner asked for.
     """
 
     outcomes: tuple[bool, ...]
     version: int
+    plan: Plan | None = None
 
     def consecutive_correct(self) -> int:
         count = 0

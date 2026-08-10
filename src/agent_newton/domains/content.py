@@ -30,11 +30,14 @@ from agent_newton.domains.base import (
 from agent_newton.manifest import hash_content
 
 
-def _load_yaml(path: Path, key: str) -> list[dict]:
+def _load_document(path: Path) -> dict:
     if not path.exists():
         raise DomainError(f"missing content file: {path}")
-    data = yaml.safe_load(path.read_text()) or {}
-    entries = data.get(key)
+    return yaml.safe_load(path.read_text()) or {}
+
+
+def _load_yaml(path: Path, key: str) -> list[dict]:
+    entries = _load_document(path).get(key)
     if not entries:
         raise DomainError(f"{path} has no '{key}' entries")
     return entries
@@ -47,7 +50,7 @@ class YamlConceptGraph:
     Protocols in ``base`` are for typing, not inheritance.
     """
 
-    def __init__(self, concepts: Sequence[Concept]) -> None:
+    def __init__(self, concepts: Sequence[Concept], goals: Sequence[str] = ()) -> None:
         self._by_id: dict[str, Concept] = {}
         for concept in concepts:
             if concept.id in self._by_id:
@@ -76,8 +79,22 @@ class YamlConceptGraph:
         self._order = tuple(nx.topological_sort(graph))
         self._depths: dict[str, int] | None = None
 
+        for goal in goals:
+            if goal not in self._by_id:
+                raise unknown_id_error("goal concept", goal, self._by_id)
+        # Absent, the sinks are the goals. A concept nothing depends on is where
+        # a path through the graph ends, so this is a definition rather than a
+        # stopgap — a domain that declares nothing still plans toward something.
+        self._goals: tuple[str, ...] = tuple(goals) or tuple(
+            cid for cid in self._order if graph.out_degree(cid) == 0
+        )
+
     @classmethod
     def from_yaml(cls, path: Path) -> YamlConceptGraph:
+        document = _load_document(path)
+        entries = document.get("concepts")
+        if not entries:
+            raise DomainError(f"{path} has no 'concepts' entries")
         return cls(
             [
                 Concept(
@@ -85,9 +102,13 @@ class YamlConceptGraph:
                     name=entry.get("name", entry["id"]),
                     prerequisites=tuple(entry.get("prerequisites", ()) or ()),
                 )
-                for entry in _load_yaml(path, "concepts")
-            ]
+                for entry in entries
+            ],
+            goals=tuple(document.get("goals", ()) or ()),
         )
+
+    def goals(self) -> Sequence[str]:
+        return self._goals
 
     def concepts(self) -> Sequence[Concept]:
         return tuple(self._by_id[cid] for cid in self._order)
@@ -128,8 +149,12 @@ class YamlConceptGraph:
         return self._depths[concept_id]
 
     def content_hash(self) -> str:
+        # Goals are part of the hash: changing what a learner is worked toward
+        # changes what the run measured, so results from before and after must
+        # not be pooled.
         return hash_content(
-            *(f"{c.id}|{c.name}|{','.join(sorted(c.prerequisites))}" for c in self.concepts())
+            *(f"{c.id}|{c.name}|{','.join(sorted(c.prerequisites))}" for c in self.concepts()),
+            f"goals={'>'.join(self._goals)}",
         )
 
 

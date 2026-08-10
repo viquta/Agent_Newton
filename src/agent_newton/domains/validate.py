@@ -22,6 +22,7 @@ from agent_newton.domains.base import Domain, Verdict
 ANSWERS_VERIFY = "answers_verify"
 RULES_PRODUCE_ERRORS = "rules_produce_errors"
 UNCONFIRMED_SOURCE = "unconfirmed_source"
+GOALS_ARE_REACHABLE = "goals_are_reachable"
 
 #: Marker for a catalogue entry whose literature source is not yet confirmed.
 #: Reported as a warning, not a failure: the entry works and the domain loads,
@@ -117,6 +118,39 @@ def validate(domain: Domain) -> ValidationReport:
                 report.add(
                     "item_probes_exist",
                     f"item {item.id!r} probes unknown misconception {probed!r}",
+                )
+
+    # --- goals ----------------------------------------------------------------
+    # A goal is what makes planning directed, so a bad one does not fail loudly:
+    # it silently narrows or empties the set of concepts the planner will
+    # consider, and the run looks like it worked.
+    goals = list(concepts.goals())
+    report.stats["goals"] = len(goals)
+
+    if not goals:
+        report.add(
+            GOALS_ARE_REACHABLE,
+            "the graph declares no goals and has no sinks, so nothing can be "
+            "planned toward",
+        )
+
+    for goal in goals:
+        if goal not in concept_ids:
+            report.add(
+                GOALS_ARE_REACHABLE,
+                f"goal {goal!r} is not a concept in this graph",
+            )
+            continue
+        # Every concept on the way to a goal must be teachable, or the planner
+        # reaches a concept it cannot give work for and the goal is unreachable
+        # in practice while looking reachable in the graph.
+        relevant = concepts.all_prerequisites(goal) | {goal}
+        for concept_id in sorted(relevant):
+            if not items.for_concept(concept_id, "practice"):
+                report.add(
+                    GOALS_ARE_REACHABLE,
+                    f"goal {goal!r} requires concept {concept_id!r}, which has no "
+                    f"practice items; the goal cannot be reached",
                 )
 
     # --- coverage -------------------------------------------------------------

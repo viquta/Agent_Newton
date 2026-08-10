@@ -12,17 +12,20 @@ import json
 
 import pytest
 
-from agent_newton.config import Config, ZPDConfig
+from agent_newton.config import BKTConfig, Config, ZPDConfig
 from agent_newton.core.agents.base import Diagnosis, OracleAccess
 from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
 from agent_newton.core.agents.schemas import MAX_CANDIDATES, diagnosis_schema, plan_schema
 from agent_newton.core.orchestration.session import build_session
 from agent_newton.core.pedagogy import HintLevel, TutorMove
+from agent_newton.core.state import bkt
+from agent_newton.core.state.schema import Plan
 from agent_newton.core.state.store import new_blackboard
 from agent_newton.domains import registry
 from agent_newton.llm.base import Completion
 
 BAND = ZPDConfig()
+PRIOR = bkt.initial(BKTConfig())
 
 
 class Scripted:
@@ -47,9 +50,14 @@ def toy():
     return registry.load_domain("toy_algebra")
 
 
-def view_for(toy, arm: str = "coupled"):
+def view_for(toy, arm: str = "coupled", goal: str | None = "solve_linear"):
     config = Config.model_validate({"domain": "toy_algebra", "arm": arm})
-    return new_blackboard("L1", 1, toy.concepts, config).view()
+    board = new_blackboard("L1", 1, toy.concepts, config)
+    if goal is not None:
+        # The session sets the goal before asking for an item, so a view without
+        # one is not a state any planner is ever handed.
+        board.record_plan(Plan(goal=goal))
+    return board.view()
 
 
 class TestTheDiagnosticCannotSeeGroundTruth:
@@ -202,7 +210,7 @@ class TestLLMTutor:
 
 class TestLLMPlannerGuardrails:
     def _planner(self, *replies):
-        return LLMPlanner(Scripted(*replies), BAND)
+        return LLMPlanner(Scripted(*replies), BAND, PRIOR)
 
     def test_an_in_band_proposal_is_honoured(self, toy) -> None:
         reply = json.dumps({"concept_id": "integer_arithmetic", "reason": "start here"})
@@ -243,7 +251,7 @@ class TestSessionAssembly:
         base = {
             "tutor": {"impl": "template"},
             "diagnostic": {"impl": "oracle"},
-            "planner": {"impl": "deterministic"},
+            "planner": {"impl": "goal_directed"},
         }
         return Config.model_validate(
             {

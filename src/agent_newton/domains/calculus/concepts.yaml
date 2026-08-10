@@ -5,6 +5,21 @@
 # definable, which makes the rules worth stating. Two later branches
 # (implicit differentiation, integration by substitution) both depend on the
 # chain rule, which is why it sits where it does.
+# Targets, in the order they are worked toward. The planner aims at the first
+# not yet mastered, so the concepts relevant to planning start narrow and widen:
+# reaching negative_fractional_exponents involves 7 of the 15 concepts, reaching
+# integration_by_substitution involves 10.
+#
+# These are the graph's sinks, but declared rather than inferred, because not
+# every sink is a place to finish — stationary_points is a leaf of the
+# differentiation branch, not the end of the subject, and the order says so.
+goals:
+  - negative_fractional_exponents
+  - stationary_points
+  - quotient_rule
+  - implicit_differentiation
+  - integration_by_substitution
+
 concepts:
   - id: limits_of_sequences
     name: Limits of sequences

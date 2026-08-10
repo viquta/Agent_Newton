@@ -55,6 +55,25 @@ class SessionOutcome:
     #: Triggers that fired and were held back by the rate limit.
     suppressed: int = 0
 
+    #: The goal being worked toward when the session ended. None for a planner
+    #: with no target.
+    goal: str | None = None
+    #: Times the planner moved to a new target.
+    #:
+    #: **Not comparable between arms.** The coupled planner retargets when a
+    #: goal's mastery clears the band; the decoupled one cannot see mastery and
+    #: retargets on its own position in the syllabus, so it can be working
+    #: toward a goal it is nowhere near. Use ``goals_mastered`` to compare.
+    goal_changes: int = 0
+    #: Declared goals whose mastery cleared the band by the end. Derived from
+    #: the state rather than from planner bookkeeping, so it means the same
+    #: thing in both arms.
+    goals_mastered: int = 0
+    #: Concepts still needed for the current goal at the end. A session can end
+    #: with a good post-test score and still be far from its target, which the
+    #: test scores do not show.
+    distance_to_goal: int | None = None
+
     @property
     def gain(self) -> float:
         return self.posttest.score - self.pretest.score

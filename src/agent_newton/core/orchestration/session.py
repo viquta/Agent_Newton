@@ -26,10 +26,14 @@ from agent_newton.core.agents.base import (
 )
 from agent_newton.core.agents.diagnostic import NoisedOracleDiagnostic, OracleDiagnostic
 from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
-from agent_newton.core.agents.planner import FixedOrderPlanner, FrontierPlanner
+from agent_newton.core.agents.planner import (
+    FixedOrderPlanner,
+    FrontierPlanner,
+    GoalDirectedPlanner,
+)
 from agent_newton.core.agents.tutor import TemplateTutor
 from agent_newton.core.arbitration.policy import ArbitrationPolicy
-from agent_newton.core.state import bkt
+from agent_newton.core.state import bkt, route
 from agent_newton.llm.factory import build_provider
 from agent_newton.core.evaluation.outcomes import SessionOutcome, administer
 from agent_newton.core.pedagogy import TutorMove, check_move
@@ -70,11 +74,14 @@ class Session:
         diagnoses: list[tuple[str | None, str | None]] = []
         exhausted: int | None = None
 
-        plan: str | None = None
+        #: The concept currently being worked. The *goal* lives on the board;
+        #: this is only where the learner is along the way to it.
+        working: str | None = None
+        goal_changes = 0
 
         for _ in range(self.config.cohort.max_items):
             decision = self.arbitration.evaluate(
-                current_concept=plan,
+                current_concept=working,
                 mastery=dict(self.board.state.mastery),
                 frontier=self.board.frontier,
                 error_trace=list(self.board.state.error_trace),
@@ -82,6 +89,19 @@ class Session:
             )
 
             if decision.replan:
+                # Macro first: is the target still the right one? Then micro:
+                # what to work on the way to it. Both come from the planner, and
+                # the goal is written to the board before the item is chosen, so
+                # the selection is made against the plan that will be recorded.
+                if self._retarget():
+                    goal_changes += 1
+                if self.board.plan is None and self._wants_a_goal():
+                    exhausted = sum(given.values())
+                    self.board.annotate(
+                        "every goal reached", items_given=sum(given.values())
+                    )
+                    break
+
                 item = self.planner.select(self.board.view(), self.domain, given)
                 if item is None:
                     # Nothing left to teach: the frontier emptied, or the
@@ -91,7 +111,7 @@ class Session:
                         "nothing left to select", items_given=sum(given.values())
                     )
                     break
-                plan = item.concept_id
+                working = item.concept_id
                 self.board.record_replan(decision.summary, **decision.evidence)
                 self.arbitration.accept(dict(self.board.state.mastery))
             else:
@@ -100,7 +120,7 @@ class Session:
                     # it is the difference between the threshold deciding and
                     # the rate limit deciding.
                     self.board.annotate(decision.summary, **decision.evidence)
-                item = self._next_item_for(plan, given)
+                item = self._next_item_for(working, given)
                 if item is None:
                     exhausted = sum(given.values())
                     break
@@ -125,6 +145,72 @@ class Session:
             diagnoses=tuple(diagnoses),
             triggers=self._trigger_counts(),
             suppressed=self.arbitration.suppressed,
+            goal=self.board.plan.goal if self.board.plan else None,
+            goal_changes=goal_changes,
+            goals_mastered=self._goals_mastered(),
+            distance_to_goal=self._distance_to_goal(),
+        )
+
+    def _goals_mastered(self) -> int:
+        """Declared goals whose mastery cleared the band.
+
+        Read from the state rather than counted as the planner retargets, so it
+        means the same thing whichever planner ran.
+        """
+        mastery = dict(self.board.state.mastery)
+        prior = bkt.initial(self.config.bkt)
+        return sum(
+            1
+            for goal in self.domain.concepts.goals()
+            if route.reached(goal, mastery, self.config.zpd, prior)
+        )
+
+    def _retarget(self) -> bool:
+        """Ask the planner what to aim at; record it if it changed.
+
+        Returns whether a goal was *completed* — that is, whether a goal was
+        already set and has now been replaced. A planner with no notion of goals
+        returns None here and nothing is recorded, which is how the undirected
+        baseline coexists with the directed one.
+        """
+        proposed = self.planner.plan(self.board.view(), self.domain)
+        existing = self.board.plan
+
+        if proposed is None:
+            return existing is not None
+        if existing is not None and existing.goal == proposed.goal:
+            return False
+
+        self.board.record_plan(proposed)
+        return existing is not None
+
+    def _wants_a_goal(self) -> bool:
+        """Whether this planner plans toward goals at all.
+
+        Distinguishes 'every goal reached' from 'this planner has no goals',
+        which look identical from a None return.
+        """
+        return bool(self.domain.concepts.goals()) and not isinstance(
+            self.planner, FrontierPlanner
+        )
+
+    def _distance_to_goal(self) -> int | None:
+        """Concepts still needed for the current goal. None without a goal.
+
+        Reported per learner: a session that ends far from its target says
+        something the pre/post scores do not.
+        """
+        plan = self.board.plan
+        if plan is None:
+            return None
+        return len(
+            route.remaining(
+                plan.goal,
+                dict(self.board.state.mastery),
+                self.domain.concepts,
+                self.config.zpd,
+                bkt.initial(self.config.bkt),
+            )
         )
 
     def _trigger_counts(self) -> dict[str, int]:
@@ -239,13 +325,22 @@ def build_session(
         )
 
     # The arm decides the view, and the view decides which planners are even
-    # usable: neither frontier-based planner can run on a view with no frontier.
+    # usable: no planner that routes from the learner model can run on a view
+    # that carries none.
+    prior = bkt.initial(config.bkt)
     if config.arm == "decoupled":
         planner: Planner = FixedOrderPlanner(agents.planner.advance_after)
     elif agents.planner.impl == "llm":
-        planner = LLMPlanner(build_provider(agents.planner, cache_dir), config.zpd)
-    else:
+        planner = LLMPlanner(
+            build_provider(agents.planner, cache_dir),
+            config.zpd,
+            prior,
+            agents.planner.emphasis,
+        )
+    elif agents.planner.impl == "greedy":
         planner = FrontierPlanner()
+    else:
+        planner = GoalDirectedPlanner(config.zpd, prior, agents.planner.emphasis)
 
     profile = sample_profile(learner_id, seed, domain.misconceptions, config.simulator)
     return Session(

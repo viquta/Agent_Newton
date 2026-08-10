@@ -5,6 +5,11 @@
 # the fast CI fixture, where the whole pipeline runs in seconds.
 #
 # It is NOT a subject domain in its own right. Keep it small.
+
+# Declared rather than left to the sink fallback, so the reference domain shows
+# what a domain author should write.
+goals: [solve_linear]
+
 concepts:
   - id: integer_arithmetic
     name: Integer arithmetic
