@@ -1,0 +1,162 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260811,
+  "baseline": "goal_directed",
+  "alpha": 0.05,
+  "conditions": {
+    "goal_directed": {
+      "mean_items": 44.6875,
+      "opportunity_coverage": 1.0,
+      "exhibition_coverage": 0.9625,
+      "mean_remediation": 0.5409211741450013,
+      "mean_gain": 0.049583333333333326,
+      "mean_goals_mastered": 4.5375,
+      "mean_distance_to_goal": 0.5
+    },
+    "reverse": {
+      "mean_items": 42.425,
+      "opportunity_coverage": 0.91875,
+      "exhibition_coverage": 0.8875,
+      "mean_remediation": 0.5011488065092582,
+      "mean_gain": 0.04416666666666665,
+      "mean_goals_mastered": 5.0,
+      "mean_distance_to_goal": 0.0
+    },
+    "shuffled": {
+      "mean_items": 44.6875,
+      "opportunity_coverage": 0.996875,
+      "exhibition_coverage": 0.95625,
+      "mean_remediation": 0.5359279458488192,
+      "mean_gain": 0.049583333333333326,
+      "mean_goals_mastered": 5.0,
+      "mean_distance_to_goal": 0.0
+    }
+  },
+  "comparisons": {
+    "reverse": [
+      {
+        "outcome": "remediation",
+        "mean_difference": 0.039772367635743086,
+        "ci95": [
+          0.02381781094196338,
+          0.056955683433871286
+        ],
+        "ties": 136,
+        "favouring_baseline": 22,
+        "favouring_probe": 2,
+        "rank_biserial": 0.8333333333333333,
+        "sign_p": 3.5881996154785156e-05,
+        "holm_p": 7.176399230957031e-05,
+        "significant": true
+      },
+      {
+        "outcome": "gain",
+        "mean_difference": 0.005416666666666665,
+        "ci95": [
+          0.0024999999999999996,
+          0.008749999999999997
+        ],
+        "ties": 145,
+        "favouring_baseline": 14,
+        "favouring_probe": 1,
+        "rank_biserial": 0.8666666666666667,
+        "sign_p": 0.0009765625,
+        "holm_p": 0.0009765625,
+        "significant": true
+      },
+      {
+        "outcome": "goals_mastered",
+        "mean_difference": -0.4625,
+        "ci95": [
+          -0.54375,
+          -0.38125
+        ],
+        "ties": 86,
+        "favouring_baseline": 0,
+        "favouring_probe": 74,
+        "rank_biserial": -1.0,
+        "sign_p": 1.0587911840678754e-22,
+        "holm_p": 4.235164736271502e-22,
+        "significant": true
+      },
+      {
+        "outcome": "distance_to_goal",
+        "mean_difference": 0.5,
+        "ci95": [
+          0.40625,
+          0.5875
+        ],
+        "ties": 86,
+        "favouring_baseline": 74,
+        "favouring_probe": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 1.0587911840678754e-22,
+        "holm_p": 4.235164736271502e-22,
+        "significant": true
+      }
+    ],
+    "shuffled": [
+      {
+        "outcome": "remediation",
+        "mean_difference": 0.004993228296182073,
+        "ci95": [
+          -0.0011070153256670743,
+          0.012962718143436124
+        ],
+        "ties": 154,
+        "favouring_baseline": 4,
+        "favouring_probe": 2,
+        "rank_biserial": 0.33333333333333326,
+        "sign_p": 0.6875,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      {
+        "outcome": "gain",
+        "mean_difference": 0.0,
+        "ci95": [
+          -0.0012499999999999998,
+          0.0012499999999999998
+        ],
+        "ties": 158,
+        "favouring_baseline": 1,
+        "favouring_probe": 1,
+        "rank_biserial": 0.0,
+        "sign_p": 1.0,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      {
+        "outcome": "goals_mastered",
+        "mean_difference": -0.4625,
+        "ci95": [
+          -0.5375,
+          -0.3875
+        ],
+        "ties": 86,
+        "favouring_baseline": 0,
+        "favouring_probe": 74,
+        "rank_biserial": -1.0,
+        "sign_p": 1.0587911840678754e-22,
+        "holm_p": 4.235164736271502e-22,
+        "significant": true
+      },
+      {
+        "outcome": "distance_to_goal",
+        "mean_difference": 0.5,
+        "ci95": [
+          0.4125,
+          0.5875
+        ],
+        "ties": 86,
+        "favouring_baseline": 74,
+        "favouring_probe": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 1.0587911840678754e-22,
+        "holm_p": 4.235164736271502e-22,
+        "significant": true
+      }
+    ]
+  }
+}

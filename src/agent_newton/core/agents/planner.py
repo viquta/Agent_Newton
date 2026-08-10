@@ -30,6 +30,7 @@ learner still had everything to learn.
 
 from __future__ import annotations
 
+import hashlib
 from typing import Mapping
 
 from agent_newton.config import ZPDConfig
@@ -114,6 +115,84 @@ class GoalDirectedPlanner:
         if not step.fallback and may_select(step.concept_id, full.frontier) is not None:
             return None
         return _least_used(domain, step.concept_id, given)
+
+
+class _ClosureWalker:
+    """Selects from the goal's unmastered closure, ignoring the band.
+
+    The base for the ordering probes. It takes exactly the material
+    :class:`GoalDirectedPlanner` would eventually cover —
+    ``route.remaining`` is the same set — and differs only in which of it to
+    take next. Holding the material constant is what makes a null result
+    meaningful: a planner that wandered off and never met the learner's
+    misconceptions would do worse for reasons that have nothing to do with
+    ordering.
+
+    The band-membership guardrail is deliberately skipped. Violating it is the
+    point, and a subclass that respected it could not violate the prerequisite
+    order it exists to violate.
+    """
+
+    def __init__(self, band: ZPDConfig, prior: float) -> None:
+        self._band = band
+        self._prior = prior
+
+    def plan(self, view: StateView, domain: Domain) -> Plan | None:
+        if not isinstance(view, FullStateView):
+            raise TypeError(f"{type(self).__name__} requires the full state view")
+        goal = route.next_goal(
+            domain.concepts.goals(), view.mastery, self._band, self._prior
+        )
+        return None if goal is None else Plan(goal=goal, reason="ordering probe")
+
+    def _order(self, remaining: tuple[str, ...], view: FullStateView) -> str:
+        raise NotImplementedError
+
+    def select(
+        self, view: StateView, domain: Domain, given: Mapping[str, int]
+    ) -> Item | None:
+        if not isinstance(view, FullStateView):
+            raise TypeError(f"{type(self).__name__} requires the full state view")
+        if view.plan is None:
+            return None
+        remaining = route.remaining(
+            view.plan.goal, view.mastery, domain.concepts, self._band, self._prior
+        )
+        if not remaining:
+            return None
+        return _least_used(domain, self._order(remaining, view), given)
+
+
+class ReverseOrderPlanner(_ClosureWalker):
+    """Works the goal's closure backwards: every dependant before its prerequisite.
+
+    The worst sequencing the prerequisite graph allows, and therefore the sharp
+    test of whether the graph has any bearing on what a simulated learner
+    learns. If outcomes match a planner that respects the order, the structure
+    is constraining selection and nothing else.
+    """
+
+    def _order(self, remaining: tuple[str, ...], view: FullStateView) -> str:
+        return remaining[-1]
+
+
+class ShuffledPlanner(_ClosureWalker):
+    """Takes an arbitrary concept from the closure, ignoring structure entirely.
+
+    Guards against reverse order being special in some way not foreseen. The
+    choice is a hash of the seed and the concepts still outstanding rather than
+    a running generator, so it is reproducible and does not depend on how many
+    other selections happened first — the same convention the simulator's rule
+    engine uses.
+    """
+
+    def __init__(self, band: ZPDConfig, prior: float, seed: int = 0) -> None:
+        super().__init__(band, prior)
+        self._seed = seed
+
+    def _order(self, remaining: tuple[str, ...], view: FullStateView) -> str:
+        digest = hashlib.sha256(f"{self._seed}|{'|'.join(remaining)}".encode()).digest()
+        return remaining[int.from_bytes(digest[:8], "big") % len(remaining)]
 
 
 class OraclePlanner:

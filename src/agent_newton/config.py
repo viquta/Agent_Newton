@@ -40,7 +40,12 @@ DiagnosticImpl = Literal["llm", "oracle", "noised_oracle"]
 #: ``goal_directed`` routes toward the domain's declared goals from the learner
 #: model. ``greedy`` is the undirected predecessor — frontier selection with no
 #: target — kept as the baseline the directed planner is compared against.
-PlannerImpl = Literal["llm", "goal_directed", "greedy", "oracle"]
+#: ``reverse`` and ``shuffled`` are ordering probes: they cover the same
+#: material as ``goal_directed`` but violate the prerequisite order, so a
+#: comparison against them measures whether that order matters at all.
+PlannerImpl = Literal[
+    "llm", "goal_directed", "greedy", "oracle", "reverse", "shuffled"
+]
 
 
 # Model-name prefix -> developer. Used only by the circularity check: what

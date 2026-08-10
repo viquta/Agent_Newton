@@ -31,6 +31,8 @@ from agent_newton.core.agents.planner import (
     FrontierPlanner,
     GoalDirectedPlanner,
     OraclePlanner,
+    ReverseOrderPlanner,
+    ShuffledPlanner,
 )
 from agent_newton.core.agents.tutor import TemplateTutor
 from agent_newton.core.arbitration.policy import ArbitrationPolicy
@@ -352,6 +354,10 @@ def build_session(
         )
     elif agents.planner.impl == "greedy":
         planner = FrontierPlanner()
+    elif agents.planner.impl == "reverse":
+        planner = ReverseOrderPlanner(config.zpd, prior)
+    elif agents.planner.impl == "shuffled":
+        planner = ShuffledPlanner(config.zpd, prior, seed)
     elif agents.planner.impl == "oracle":
         # The only agent handed the learner's true profile, and only because the
         # config names it. `profile.firing` is passed live, so remediation during

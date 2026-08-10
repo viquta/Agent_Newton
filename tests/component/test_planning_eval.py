@@ -233,3 +233,96 @@ class TestAgainstARealSession:
     # where the graph is large enough for the choice to matter, it is 74.0%
     # against 23.9% — recorded with the run artifacts rather than as a test that
     # would fail for a legitimate change in behaviour.
+
+
+class TestTheOrderingProbes:
+    """Planners built to violate prerequisite order, for a validity check.
+
+    They exist to answer whether the graph does anything beyond constraining
+    selection. That only works if they cover the same material as the planner
+    they are compared against — a probe that wandered off and never met the
+    learner's misconceptions would lose for reasons unrelated to ordering.
+    """
+
+    def _view(self, toy, mastery: dict[str, float]):
+        from agent_newton.core.state.views import FullStateView
+        from agent_newton.core.state.zpd import compute
+
+        return FullStateView(
+            mastery=mastery,
+            error_trace=(),
+            frontier=compute(mastery, toy.concepts, BAND, PRIOR),
+            outcomes=(),
+            version=1,
+            plan=Plan(goal="solve_linear"),
+        )
+
+    def _probes(self):
+        from agent_newton.core.agents.planner import ReverseOrderPlanner, ShuffledPlanner
+
+        return ReverseOrderPlanner(BAND, PRIOR), ShuffledPlanner(BAND, PRIOR, 7)
+
+    def test_reverse_really_violates_the_order(self, toy) -> None:
+        # The point of the probe. On a fresh learner the goal-directed planner
+        # takes a root; reverse takes the goal itself, whose prerequisites are
+        # untouched.
+        view = self._view(toy, {})
+        reverse, _ = self._probes()
+        directed = GoalDirectedPlanner(BAND, PRIOR, Emphasis.CONSOLIDATE)
+
+        taken = reverse.select(view, toy, {})
+        respected = directed.select(view, toy, {})
+        assert taken is not None and respected is not None
+        assert taken.concept_id != respected.concept_id
+
+        unmet = [
+            p
+            for p in toy.concepts.all_prerequisites(taken.concept_id)
+            if view.mastery.get(p, PRIOR) < BAND.theta_upper
+        ]
+        assert unmet, "reverse selected a concept with nothing outstanding behind it"
+
+    def test_the_goal_directed_planner_never_does(self, toy) -> None:
+        # The contrast that makes the probe a probe.
+        view = self._view(toy, {})
+        directed = GoalDirectedPlanner(BAND, PRIOR, Emphasis.CONSOLIDATE)
+        chosen = directed.select(view, toy, {})
+        assert chosen is not None
+        assert chosen.concept_id in view.frontier
+
+    def test_both_probes_stay_on_the_way_to_the_goal(self, toy) -> None:
+        # Coverage has to be comparable by construction, not by luck.
+        from agent_newton.core.state import route
+
+        view = self._view(toy, {})
+        relevant = route.relevant("solve_linear", toy.concepts)
+        for probe in self._probes():
+            chosen = probe.select(view, toy, {})
+            assert chosen is not None and chosen.concept_id in relevant
+
+    def test_the_shuffled_probe_is_reproducible(self, toy) -> None:
+        from agent_newton.core.agents.planner import ShuffledPlanner
+
+        view = self._view(toy, {})
+        first = ShuffledPlanner(BAND, PRIOR, 7).select(view, toy, {})
+        second = ShuffledPlanner(BAND, PRIOR, 7).select(view, toy, {})
+        assert first is not None and second is not None
+        assert first.id == second.id
+
+    def test_a_different_seed_can_choose_differently(self, toy) -> None:
+        # Otherwise the seed is decorative and the probe is just another
+        # fixed-order planner.
+        from agent_newton.core.agents.planner import ShuffledPlanner
+
+        view = self._view(toy, {})
+        chosen = {
+            ShuffledPlanner(BAND, PRIOR, seed).select(view, toy, {}).concept_id  # type: ignore[union-attr]
+            for seed in range(40)
+        }
+        assert len(chosen) > 1
+
+    def test_they_stop_when_the_goal_is_done(self, toy) -> None:
+        mastered = {c: BAND.theta_upper + 0.05 for c in toy.concepts.ids()}
+        view = self._view(toy, mastered)
+        for probe in self._probes():
+            assert probe.select(view, toy, {}) is None
