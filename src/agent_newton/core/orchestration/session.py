@@ -15,11 +15,13 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
 
 from agent_newton.config import Config
 from agent_newton.core.agents.base import (
     Diagnosis,
     Diagnostic,
+    Hint,
     OracleAccess,
     Planner,
     Tutor,
@@ -38,7 +40,7 @@ from agent_newton.core.agents.tutor import TemplateTutor
 from agent_newton.core.arbitration.policy import ArbitrationPolicy
 from agent_newton.core.state import bkt, route
 from agent_newton.llm.factory import build_provider
-from agent_newton.core.evaluation.outcomes import SessionOutcome, administer
+from agent_newton.core.evaluation.outcomes import SessionOutcome, TestResult, administer
 from agent_newton.core.pedagogy import TutorMove, check_move
 from agent_newton.core.simulator import (
     SimulatedLearner,
@@ -46,19 +48,39 @@ from agent_newton.core.simulator import (
     SymbolicSurface,
     sample_profile,
 )
+from agent_newton.core.simulator.engine import Learner
 from agent_newton.core.state.store import Blackboard, new_blackboard
-from agent_newton.domains.base import Domain, Verdict
+from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
 
 
 class NotImplementedForModels(NotImplementedError):
     """Raised when a config names a model-backed agent before one exists."""
 
 
+@runtime_checkable
+class SessionObserver(Protocol):
+    """Watches a session without taking part in it.
+
+    Exists so a front end can render what is happening without the loop
+    knowing there is one, and without a second loop being written that would
+    drift from this one. Every hook is optional in effect: the default session
+    has no observer and behaves exactly as before.
+    """
+
+    def item_started(self, item: Item, board: Blackboard) -> None: ...
+
+    def step_graded(
+        self, item: Item, response: str, result: VerificationResult, diagnosis: Diagnosis
+    ) -> None: ...
+
+    def tutor_replied(self, item: Item, hint: Hint) -> None: ...
+
+
 @dataclass
 class Session:
     """A single learner working through practice items."""
 
-    learner: SimulatedLearner
+    learner: Learner
     board: Blackboard
     planner: Planner
     tutor: Tutor
@@ -67,11 +89,10 @@ class Session:
     domain: Domain
     config: Config
     arbitration: ArbitrationPolicy
+    observer: SessionObserver | None = None
 
     def run(self) -> SessionOutcome:
-        pretest = administer(
-            self.domain.items.bank("pretest"), self.learner, self.domain, self.surface
-        )
+        pretest = self._administer("pretest")
 
         given: Counter[str] = Counter()
         diagnoses: list[tuple[str | None, str | None]] = []
@@ -132,18 +153,16 @@ class Session:
             self.arbitration.note_item()
             self._work_item(item, diagnoses, repetition=given[item.id] - 1)
 
-        posttest = administer(
-            self.domain.items.bank("posttest"), self.learner, self.domain, self.surface
-        )
+        posttest = self._administer("posttest")
 
         return SessionOutcome(
-            learner_id=self.learner.profile.learner_id,
+            learner_id=self.learner.learner_id,
             arm=self.config.arm,
             pretest=pretest,
             posttest=posttest,
             items_attempted=sum(given.values()),
             items_to_exhaustion=exhausted,
-            remediation_ratio=self.learner.profile.remediation_ratio(),
+            remediation_ratio=self.learner.remediation_ratio(),
             unmeasurable_steps=self.board.unmeasurable,
             diagnoses=tuple(diagnoses),
             triggers=self._trigger_counts(),
@@ -152,6 +171,18 @@ class Session:
             goal_changes=goal_changes,
             goals_mastered=self._goals_mastered(),
             distance_to_goal=self._distance_to_goal(),
+        )
+
+    def _administer(self, bank) -> TestResult:
+        """Run a held-out bank, unless the config says not to.
+
+        A skipped bank returns an empty result rather than a zero score, so
+        `TestResult.administered` can tell the two apart.
+        """
+        if not self.config.cohort.administer_tests:
+            return TestResult(correct=0, total=0)
+        return administer(
+            self.domain.items.bank(bank), self.learner, self.domain, self.surface
         )
 
     def _goals_mastered(self) -> int:
@@ -251,6 +282,9 @@ class Session:
         confirmed = False
         failed = 0
 
+        if self.observer is not None:
+            self.observer.item_started(item, self.board)
+
         for attempt in range(self.config.cohort.max_steps_per_item):
             step = self.learner.answer(item, attempt=attempt, repetition=repetition)
             response = self.surface.render(item, step)
@@ -274,6 +308,9 @@ class Session:
                 confidence=diagnosis.confidence,
             )
 
+            if self.observer is not None:
+                self.observer.step_graded(item, response, result, diagnosis)
+
             if result.verdict is Verdict.CORRECT:
                 return
             failed += 1
@@ -294,6 +331,9 @@ class Session:
                 # cohort, but it must not pass unnoticed either.
                 self.board.annotate(f"pedagogy violation: {violation}", rule=violation.rule)
 
+            if self.observer is not None:
+                self.observer.tutor_replied(item, hint)
+
             moves.append(hint.move)
 
             # Only remediation teaches. A reflective prompt costs a turn and
@@ -307,12 +347,18 @@ def build_session(
     seed: int,
     domain: Domain,
     config: Config,
+    learner: Learner | None = None,
+    observer: SessionObserver | None = None,
 ) -> Session:
     """Assemble a session from a config.
 
     Each role is built from the implementation its config names. Providers are
     constructed only for roles that actually use one, so an oracle diagnostic
     never opens a connection.
+
+    ``learner`` and ``observer`` let a front end put a person in this loop and
+    watch it, rather than writing a second loop that would drift from the one
+    the cohorts run.
     """
     agents = config.agents
     cache_dir = config.paths.cache_dir
@@ -366,7 +412,7 @@ def build_session(
     else:
         planner = GoalDirectedPlanner(config.zpd, prior, agents.planner.emphasis)
     return Session(
-        learner=SimulatedLearner(profile, domain, config.simulator),
+        learner=learner or SimulatedLearner(profile, domain, config.simulator),
         board=new_blackboard(learner_id, seed, domain.concepts, config),
         planner=planner,
         tutor=tutor,
@@ -375,4 +421,5 @@ def build_session(
         domain=domain,
         config=config,
         arbitration=ArbitrationPolicy(config.arbitration),
+        observer=observer,
     )

@@ -1,0 +1,49 @@
+# Human-in-the-loop session. One person, answering at the keyboard.
+#
+# The diagnostic must be model-backed: a person carries no injected
+# misconception label, so an oracle would have nothing to read and would
+# diagnose nothing on every step. The config validator rejects that rather than
+# letting the session run and look fine.
+#
+# `think: false` because gemma4 is a reasoning model — left to deliberate it can
+# spend its whole token budget before answering, which at a keyboard is a wait
+# rather than a line in a log.
+run_name: demo
+domain: calculus
+arm: coupled
+seed: 20260812
+
+cohort:
+  n_learners: 1
+  # Short by design: this is a sitting at a keyboard, not a cohort run.
+  max_items: 12
+  max_steps_per_item: 3
+  # Kept on, so the sitting yields a real pre-to-post measurement. It adds the
+  # two held-out banks either side of the practice items — set it false for a
+  # shorter demonstration, at the cost of the gain figure.
+  administer_tests: true
+
+simulator:
+  learner: human
+  surface: symbolic
+
+agents:
+  tutor:      { impl: template }
+  diagnostic: { impl: llm, provider: ollama, model: gemma4:12b, think: false }
+  planner:    { impl: goal_directed, emphasis: consolidate }
+
+bkt:
+  p_init: 0.15
+  p_transit: 0.20
+  p_guess: 0.20
+  p_slip: 0.10
+
+zpd:
+  theta_lower: 0.70
+  theta_upper: 0.90
+
+arbitration:
+  theta: 0.15
+  k_repeats: 2
+  min_items_between_replans: 2
+  error_trace_length: 20

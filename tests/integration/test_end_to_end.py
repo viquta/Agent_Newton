@@ -119,7 +119,10 @@ class TestTheLoopBehaves:
     @pytest.mark.parametrize("domain_name", DOMAINS)
     def test_remediation_happens(self, domain_name: str) -> None:
         ratios = [o.remediation_ratio for _, o in run_cohort(domain_name, "coupled")]
-        assert any(r > 0.0 for r in ratios)
+        # A simulated learner always has a profile, so a None here would mean the
+        # cohort ran something that cannot be measured.
+        assert all(r is not None for r in ratios)
+        assert any(r > 0.0 for r in ratios if r is not None)
 
     def test_a_misdiagnosing_tutor_remediates_less(self) -> None:
         # The causal chain the whole experiment rests on: diagnostic error means
@@ -134,6 +137,8 @@ class TestTheLoopBehaves:
                 "planner": {"impl": "goal_directed"},
             },
         )
+        assert noisy.remediation_ratio is not None
+        assert accurate.remediation_ratio is not None
         assert noisy.remediation_ratio < accurate.remediation_ratio
 
 
@@ -155,8 +160,12 @@ class TestTheArmsDiffer:
     @pytest.mark.parametrize("domain_name", DOMAINS)
     def test_both_face_the_same_learner(self, domain_name: str) -> None:
         # Pairing: same seed, same profile, so the comparison is within-learner.
+        from agent_newton.core.simulator import SimulatedLearner
+
         coupled, _ = run(domain_name, "coupled")
         decoupled, _ = run(domain_name, "decoupled")
+        assert isinstance(coupled.learner, SimulatedLearner)
+        assert isinstance(decoupled.learner, SimulatedLearner)
         assert coupled.learner.profile.initial == decoupled.learner.profile.initial
 
 

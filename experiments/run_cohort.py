@@ -71,7 +71,11 @@ def run(config: Config) -> dict:
         "mean_posttest": _mean(o.posttest.score for o in outcomes),
         "mean_gain": _mean(o.gain for o in outcomes),
         "mean_items": _mean(o.items_attempted for o in outcomes),
-        "mean_remediation": _mean(o.remediation_ratio for o in outcomes),
+        # Skipped where unavailable, as for distance: a person has no profile to
+        # measure a reduction against, and a zero would read as "none happened".
+        "mean_remediation": _mean(
+            o.remediation_ratio for o in outcomes if o.remediation_ratio is not None
+        ),
         "unmeasurable_steps": sum(o.unmeasurable_steps for o in outcomes),
         # Mastery-derived, so it means the same thing in both arms. The
         # planner's own retarget count does not — see SessionOutcome.

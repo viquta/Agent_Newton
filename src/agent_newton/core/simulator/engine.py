@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
 
 from agent_newton.config import SimulatorConfig
 from agent_newton.core.simulator.profile import MisconceptionProfile
@@ -39,7 +40,12 @@ class SimulatedStep:
     """One step, with the ground truth that produced it.
 
     ``fired`` is the injected label the diagnostic agent is scored against. It
-    is never exposed to any agent.
+    is never exposed to any agent, and it is ``None`` whenever no misconception
+    produced the step — including every step by a human, who has no injected
+    label at all.
+
+    ``correct`` is what the *learner* believed; the verifier is what decides,
+    and the session reads its verdict rather than this field.
     """
 
     response: str
@@ -49,6 +55,32 @@ class SimulatedStep:
     @property
     def label(self) -> str:
         return self.fired or ("correct" if self.correct else "unlabelled-error")
+
+
+@runtime_checkable
+class Learner(Protocol):
+    """Whoever is answering: a simulated profile, or a person.
+
+    The session depends on this and not on the simulator, so a human sits in
+    the same loop the cohorts run — the demo exercises the real system rather
+    than a re-implementation of it.
+    """
+
+    @property
+    def learner_id(self) -> str: ...
+
+    def answer(self, item: Item, attempt: int = 0, repetition: int = 0) -> SimulatedStep: ...
+
+    def receive_hint(self, targeted_misconception: str | None) -> bool: ...
+
+    def remediation_ratio(self) -> float | None:
+        """How far the learner's misconceptions have been reduced.
+
+        ``None`` when there is no ground-truth profile to measure against,
+        which is the case for a person. Reported as unavailable rather than as
+        zero: a zero would be read as "nothing was remediated".
+        """
+        ...
 
 
 def _roll(
@@ -82,6 +114,13 @@ class SimulatedLearner:
     def profile(self) -> MisconceptionProfile:
         """Ground truth. For the evaluation harness only — never for an agent."""
         return self._profile
+
+    @property
+    def learner_id(self) -> str:
+        return self._profile.learner_id
+
+    def remediation_ratio(self) -> float | None:
+        return self._profile.remediation_ratio()
 
     def answer(self, item: Item, attempt: int = 0, repetition: int = 0) -> SimulatedStep:
         """Produce a step for this item.

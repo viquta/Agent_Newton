@@ -195,6 +195,9 @@ class TestAgainstARealSession:
         from agent_newton.core.evaluation.planning import ShadowedPlanner
 
         session = build_session("L0000", config.seed, domain, config)
+        from agent_newton.core.simulator import SimulatedLearner
+
+        assert isinstance(session.learner, SimulatedLearner)
         session.planner = ShadowedPlanner(
             session.planner,
             OraclePlanner(session.learner.profile.firing, config.zpd, PRIOR),

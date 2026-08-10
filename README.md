@@ -49,6 +49,18 @@ Check a domain's content for internal consistency:
 uv run agent-newton domain validate all
 ```
 
+Work through a session yourself, with the shared state visible as it updates:
+
+```bash
+uv run agent-newton demo --config experiments/configs/demo.yaml
+```
+
+This drives the same session the cohorts run — same planner, verifier,
+arbitration policy and blackboard — with a person answering where a simulated
+learner otherwise would. A person carries no injected misconception label, so
+the diagnostic must infer one from the step; the configuration is rejected at
+load if it names an oracle for a human session.
+
 Score a domain's verifier against its hand-labelled gold set — no model, well
 under a second:
 

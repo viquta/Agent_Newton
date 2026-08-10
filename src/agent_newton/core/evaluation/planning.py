@@ -227,8 +227,14 @@ def evaluate(
     report = PlanningReport()
     for learner_id in learner_ids:
         session = build(learner_id, config.seed, domain, config)
+        profile = getattr(session.learner, "profile", None)
+        if profile is None:
+            raise TypeError(
+                "the planner evaluation needs the learner's true profile, so it "
+                "runs against a simulated learner only"
+            )
         reference = OraclePlanner(
-            session.learner.profile.firing, config.zpd, bkt.initial(config.bkt)
+            profile.firing, config.zpd, bkt.initial(config.bkt)
         )
         session.planner = ShadowedPlanner(
             session.planner,

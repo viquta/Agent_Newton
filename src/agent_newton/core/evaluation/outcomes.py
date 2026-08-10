@@ -25,7 +25,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Sequence
 
-from agent_newton.core.simulator import SimulatedLearner, SurfaceRenderer
+from agent_newton.core.simulator import SurfaceRenderer
+from agent_newton.core.simulator.engine import Learner
 from agent_newton.domains.base import Domain, Item, Verdict
 
 
@@ -43,6 +44,15 @@ class TestResult:
     def score(self) -> float:
         return self.correct / self.total if self.total else 0.0
 
+    @property
+    def administered(self) -> bool:
+        """Whether the bank was actually run.
+
+        A skipped test and a test scored zero both have ``score == 0.0``, and
+        they mean opposite things. Check this before reporting a score.
+        """
+        return self.total > 0
+
 
 @dataclass(frozen=True, slots=True)
 class SessionOutcome:
@@ -56,7 +66,9 @@ class SessionOutcome:
     #: Practice items consumed when the session ended because there was nothing
     #: left to teach. None when the learner did not get there within budget.
     items_to_exhaustion: int | None
-    remediation_ratio: float
+    #: None when there is no ground-truth profile to measure against — a
+    #: person. Unavailable, not zero: zero would read as 'nothing remediated'.
+    remediation_ratio: float | None
     unmeasurable_steps: int
     #: (injected label, inferred label) per diagnosed step, for scoring the
     #: diagnostic agent against the ground truth it never saw.
@@ -92,12 +104,18 @@ class SessionOutcome:
 
     @property
     def gain(self) -> float:
+        """Pre to post improvement.
+
+        Meaningful only when both banks were administered — see
+        ``TestResult.administered``. Zero otherwise, and zero would read as "no
+        improvement" rather than "not measured".
+        """
         return self.posttest.score - self.pretest.score
 
 
 def administer(
     items: Sequence[Item],
-    learner: SimulatedLearner,
+    learner: Learner,
     domain: Domain,
     surface: SurfaceRenderer,
 ) -> TestResult:

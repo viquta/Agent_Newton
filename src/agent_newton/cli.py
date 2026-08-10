@@ -112,6 +112,28 @@ def domain_validate(
         raise typer.Exit(code=1)
 
 
+@app.command("demo")
+def demo(
+    config_path: Path = typer.Option(
+        Path("experiments/configs/demo.yaml"), "--config", help="A human session config."
+    ),
+) -> None:
+    """Work through a session yourself, with the blackboard visible.
+
+    Drives the same session the cohorts run — same planner, verifier,
+    arbitration policy and shared state — with a person answering where a
+    simulated learner otherwise would. The panel shows mastery moving, the
+    frontier narrowing, the goal and what remains of the route, and replanning
+    firing with the evidence that caused it.
+
+    Needs a model for the diagnostic: a person carries no injected misconception
+    label, so it has to be inferred from the step.
+    """
+    from agent_newton.demo import run_demo
+
+    run_demo(config_path, console)
+
+
 @eval_app.command("verifier")
 def evaluate_verifier(
     domain_name: str = typer.Option("calculus", "--domain", help="Domain to evaluate."),
