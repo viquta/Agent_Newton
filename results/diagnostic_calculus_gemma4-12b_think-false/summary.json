@@ -6,7 +6,24 @@
   "macro_f1": 0.974074074074074,
   "abstentions": 0,
   "failed_calls": 0,
-  "seconds": 182.07136607170105,
+  "seconds": 0.016588926315307617,
+  "accuracy_by_bank": {
+    "posttest": {
+      "cases": 12,
+      "correct": 12,
+      "accuracy": 1.0
+    },
+    "practice": {
+      "cases": 14,
+      "correct": 14,
+      "accuracy": 1.0
+    },
+    "pretest": {
+      "cases": 12,
+      "correct": 11,
+      "accuracy": 0.9166666666666666
+    }
+  },
   "per_label": {
     "antiderivative_omits_constant": {
       "support": 3,

@@ -290,3 +290,57 @@ class TestAgainstTheRealDomain:
         goal = calculus.concepts.goals()[0]
         frontier = compute({}, calculus.concepts, BAND, PRIOR)
         assert route.candidates(goal, frontier, calculus.concepts)
+
+
+class TestNoisedOracleRateIsRealised:
+    """The noised condition is defined by its rate, so the rate has to hold.
+
+    Corruption is deterministic in the situation, which is what keeps both arms
+    misdiagnosed identically. Keyed on the situation *alone* it would also make a
+    repeated situation reproduce its own past — and a session revisits a handful
+    of situations many times, so a single unlucky draw would decide most of the
+    run rather than the configured rate.
+    """
+
+    def _agent(self, rate: float):
+        from agent_newton.core.agents.diagnostic import NoisedOracleDiagnostic
+
+        return NoisedOracleDiagnostic(rate, seed=20260807)
+
+    def test_a_repeated_situation_draws_again(self, calculus) -> None:
+        # The defect this guards: at rate 0.5, twenty encounters with one
+        # situation must not all come back the same way.
+        agent = self._agent(0.5)
+        item = calculus.items.get("ca_chain_p1")
+        label = "chain_rule_omits_inner"
+        agent.observe_ground_truth(label)
+        verdicts = {
+            agent.diagnose(item, "cos(x**2)", calculus).misconception_id
+            for _ in range(20)
+        }
+        assert len(verdicts) > 1, "a repeated situation replayed its own past"
+
+    @pytest.mark.parametrize("rate", [0.1, 0.25, 0.5])
+    def test_the_rate_holds_over_repeats_of_one_situation(self, calculus, rate) -> None:
+        agent = self._agent(rate)
+        item = calculus.items.get("ca_chain_p1")
+        label = "chain_rule_omits_inner"
+        agent.observe_ground_truth(label)
+        n = 400
+        wrong = sum(
+            agent.diagnose(item, "cos(x**2)", calculus).misconception_id != label
+            for _ in range(n)
+        )
+        # Generous band: this is one hash stream, not a statistical claim.
+        assert abs(wrong / n - rate) < 0.08, f"realised {wrong / n:.3f} for nominal {rate}"
+
+    def test_both_arms_meeting_the_same_situation_agree(self, calculus) -> None:
+        # The property the determinism exists for: two independently constructed
+        # agents on the same seed misdiagnose the nth encounter identically.
+        item = calculus.items.get("ca_chain_p1")
+        left, right = self._agent(0.5), self._agent(0.5)
+        for agent in (left, right):
+            agent.observe_ground_truth("chain_rule_omits_inner")
+        assert [left.diagnose(item, "cos(x**2)", calculus).misconception_id for _ in range(10)] == [
+            right.diagnose(item, "cos(x**2)", calculus).misconception_id for _ in range(10)
+        ]

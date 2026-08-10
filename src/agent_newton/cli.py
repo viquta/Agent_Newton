@@ -335,6 +335,7 @@ def evaluate_diagnostic(
         "abstentions": report.abstentions,
         "failed_calls": agent.failures,
         "seconds": report.seconds,
+        "accuracy_by_bank": report.accuracy_by_bank(),
         "per_label": report.per_label(),
         "confusion": {f"{a} -> {b}": n for (a, b), n in report.confusion().items()},
     }
@@ -344,6 +345,10 @@ def evaluate_diagnostic(
     table = Table(title="diagnostic accuracy", show_header=False, box=None)
     table.add_row("cases", str(report.total))
     table.add_row("accuracy", f"{report.accuracy:.1%}")
+    for bank, row in report.accuracy_by_bank().items():
+        # Only practice items are diagnosed in a session, so that row is the
+        # rate a running system is exposed to.
+        table.add_row(f"  on {bank}", f"{row['accuracy']:.1%} of {int(row['cases'])}")
     table.add_row("macro F1", f"{report.macro_f1:.3f}")
     table.add_row("abstained", str(report.abstentions))
     table.add_row("failed calls", str(agent.failures))

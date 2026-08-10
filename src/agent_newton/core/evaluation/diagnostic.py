@@ -40,6 +40,11 @@ class Prediction:
     injected: str
     inferred: str | None
     seconds: float
+    #: Which bank the item came from. Carried because only ``practice`` items
+    #: are ever diagnosed during a session — the pre- and post-tests are
+    #: administered without hints, state updates or diagnosis — so the accuracy
+    #: a running system is exposed to is the practice subset, not the whole set.
+    bank: str = "practice"
 
     @property
     def correct(self) -> bool:
@@ -106,6 +111,28 @@ class DiagnosticReport:
             }
         return scores
 
+    def accuracy_by_bank(self) -> dict[str, dict[str, float]]:
+        """Accuracy split by item bank.
+
+        The whole-set figure is the right *component* measure: every declared
+        pair gets its share, so it is not shaped by how a planner happened to
+        route anyone. But only practice items are diagnosed during a session,
+        so the practice row is the error rate a running system is actually
+        exposed to. Reporting both keeps a reader from comparing the component
+        figure against a system-level one and finding an unexplained gap.
+        """
+        banks = sorted({p.bank for p in self.predictions})
+        rows: dict[str, dict[str, float]] = {}
+        for bank in banks:
+            scored = [p for p in self.predictions if p.bank == bank]
+            correct = sum(1 for p in scored if p.correct)
+            rows[bank] = {
+                "cases": len(scored),
+                "correct": correct,
+                "accuracy": correct / len(scored) if scored else 0.0,
+            }
+        return rows
+
     @property
     def macro_f1(self) -> float:
         """Unweighted mean F1.
@@ -169,6 +196,7 @@ def evaluate(
             injected=injected,
             inferred=diagnosis.misconception_id,
             seconds=time.time() - started,
+            bank=item.bank,
         )
         if on_result is not None:
             on_result(prediction)

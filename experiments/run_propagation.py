@@ -58,26 +58,36 @@ ARMS = ("coupled", "decoupled")
 PRIMARY = "mean_remediation"
 
 
+def parse_condition(condition: str) -> tuple[str, float | None]:
+    """``"noised@0.25"`` -> ``("noised", 0.25)``; anything else -> ``(name, None)``."""
+    name, _, rate = condition.partition("@")
+    if name not in CONDITIONS:
+        raise ValueError(f"unknown condition {name!r}; known: {', '.join(CONDITIONS)}")
+    return name, float(rate) if rate else None
+
+
 def condition_config(base: Config, condition: str, arm: str, noise_rate: float) -> Config:
     """The base config with only the diagnostic and the arm changed."""
+    name, explicit = parse_condition(condition)
+    rate = explicit if explicit is not None else noise_rate
+
     diagnostic = base.agents.diagnostic
-    if condition == "oracle":
+    if name == "oracle":
         diagnostic = diagnostic.model_copy(update={"impl": "oracle", "noise_rate": 0.0})
-    elif condition == "noised":
+    elif name == "noised":
         diagnostic = diagnostic.model_copy(
-            update={"impl": "noised_oracle", "noise_rate": noise_rate}
+            update={"impl": "noised_oracle", "noise_rate": rate}
         )
-    elif condition == "llm":
+    else:  # llm
         diagnostic = diagnostic.model_copy(update={"impl": "llm", "noise_rate": 0.0})
-    else:  # pragma: no cover - argparse restricts this
-        raise ValueError(f"unknown condition {condition!r}")
 
     agents = base.agents.model_copy(update={"diagnostic": diagnostic})
     return base.model_copy(
         update={
             "agents": agents,
             "arm": arm,
-            "run_name": f"{base.run_name}_prop_{condition}",
+            # '@' and '.' would land in a directory name; keep run ids readable.
+            "run_name": f"{base.run_name}_prop_{condition.replace('@', '-').replace('.', '')}",
         }
     )
 
@@ -138,19 +148,24 @@ def main() -> None:
     parser.add_argument(
         "--conditions",
         default=",".join(CONDITIONS),
-        help="Comma-separated subset to run, e.g. 'oracle,noised' to skip the model.",
+        help="Comma-separated subset to run, e.g. 'oracle,noised' to skip the "
+        "model. A noised condition may carry its own rate — 'noised@0.25' — so "
+        "several can be swept in one go. All are model-free, so a sweep costs "
+        "seconds and turns a two-point comparison into a dose-response curve.",
     )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
 
     conditions = [c.strip() for c in args.conditions.split(",") if c.strip()]
-    unknown = set(conditions) - set(CONDITIONS)
-    if unknown:
-        parser.error(f"unknown condition(s): {', '.join(sorted(unknown))}")
+    try:
+        parsed = [parse_condition(c) for c in conditions]
+    except ValueError as exc:
+        parser.error(str(exc))
 
     noise_rate = args.noise_rate
     noise_source = "override" if noise_rate is not None else None
-    if "noised" in conditions and noise_rate is None:
+    needs_measured = any(n == "noised" and r is None for n, r in parsed)
+    if needs_measured and noise_rate is None:
         if not args.diagnostic_summary:
             parser.error(
                 "the noised condition needs a measured error rate: pass "
@@ -213,20 +228,28 @@ def main() -> None:
     (directory / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
 
     print(f"\n\nwritten to {directory / 'summary.json'}\n")
-    header = f"{'condition':10} {'diag acc':>9} {'remediation c/d':>22} {'paired mean':>12} {'c>d':>5}"
+    header = (
+        f"{'condition':14} {'diag acc':>9} {'remediation c/d':>22} "
+        f"{'paired mean':>12} {'c>d':>7}"
+    )
     print(header)
     print("-" * len(header))
     for condition in conditions:
         entry = report["conditions"][condition]
+        # The realised accuracy, not the nominal rate. Corruption is keyed on
+        # (item, response, label), so a session meeting the same situation twice
+        # is misdiagnosed the same way — which is what keeps the two arms
+        # comparable, and what makes the realised rate differ from the nominal
+        # one over a finite number of distinct situations.
         accuracy = entry["diagnostic_accuracy"]["coupled"]
         paired = entry["paired_remediation"]
         print(
-            f"{condition:10} "
+            f"{condition:14} "
             f"{'n/a' if accuracy is None else f'{accuracy:.3f}':>9} "
             f"{entry['mean_remediation']['coupled']:>10.3f} / "
             f"{entry['mean_remediation']['decoupled']:<9.3f} "
             f"{paired['mean']:>+12.4f} "
-            f"{paired['favour_coupled']:>3}/{paired['n']}"
+            f"{paired['favour_coupled']:>4}/{paired['n']}"
         )
 
 

@@ -26,7 +26,10 @@ simulator:
 
 agents:
   tutor:      { impl: template }
-  diagnostic: { impl: oracle }
+  # think: false matters whenever impl becomes llm — the error-propagation study
+  # swaps this role and nothing else. gemma4 is a reasoning model, and left to
+  # deliberate it spends its whole token budget before answering on some items.
+  diagnostic: { impl: oracle, think: false }
   planner:    { impl: goal_directed }
 
 bkt:
