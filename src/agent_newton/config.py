@@ -137,6 +137,15 @@ class PlannerSpec(ModelSpec):
     #: view carries no per-concept estimate, so this stream is the only signal
     #: it has to advance on.
     advance_after: int = Field(default=2, ge=1)
+    #: What the decoupled planner does when its walk reaches the end of the
+    #: syllabus. ``stop`` ends the session; ``cycle`` starts the walk again.
+    #:
+    #: This is not a detail. Stopping is not forced by the missing learner model
+    #: — a planner seeing only item correctness has no reason to give up rather
+    #: than revise — and it makes the decoupled arm attempt fewer items than the
+    #: coupled one, which confounds every outcome that grows with practice.
+    #: ``cycle`` is the more charitable baseline and removes that difference.
+    on_exhaustion: Literal["stop", "cycle"] = "stop"
 
 
 class AgentsConfig(BaseModel):

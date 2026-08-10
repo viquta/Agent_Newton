@@ -196,22 +196,30 @@ class Session:
         )
 
     def _distance_to_goal(self) -> int | None:
-        """Concepts still needed for the current goal. None without a goal.
+        """Concepts still needed for the first goal not yet mastered.
 
-        Reported per learner: a session that ends far from its target says
-        something the pre/post scores do not.
+        Measured against a goal derived from **mastery**, not against whatever
+        the planner happens to be aiming at. Those are not the same thing, and
+        using the planner's target makes this incomparable between arms: a
+        planner that advances its target on its own progress signal can be
+        reported as close to an easy goal while another is reported as close to
+        a hard one, and the two numbers get compared as though they meant the
+        same. Measured that way the two arms once read 0.50 and 0.53 — against
+        the last goal and the first.
+
+        None only when the domain declares no goals at all; zero when every
+        declared goal has been mastered.
         """
-        plan = self.board.plan
-        if plan is None:
+        goals = self.domain.concepts.goals()
+        if not goals:
             return None
+        mastery = dict(self.board.state.mastery)
+        prior = bkt.initial(self.config.bkt)
+        goal = route.next_goal(goals, mastery, self.config.zpd, prior)
+        if goal is None:
+            return 0
         return len(
-            route.remaining(
-                plan.goal,
-                dict(self.board.state.mastery),
-                self.domain.concepts,
-                self.config.zpd,
-                bkt.initial(self.config.bkt),
-            )
+            route.remaining(goal, mastery, self.domain.concepts, self.config.zpd, prior)
         )
 
     def _trigger_counts(self) -> dict[str, int]:
@@ -332,7 +340,9 @@ def build_session(
     profile = sample_profile(learner_id, seed, domain.misconceptions, config.simulator)
 
     if config.arm == "decoupled":
-        planner: Planner = FixedOrderPlanner(agents.planner.advance_after)
+        planner: Planner = FixedOrderPlanner(
+            agents.planner.advance_after, agents.planner.on_exhaustion
+        )
     elif agents.planner.impl == "llm":
         planner = LLMPlanner(
             build_provider(agents.planner, cache_dir),

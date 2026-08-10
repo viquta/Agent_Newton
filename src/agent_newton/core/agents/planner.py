@@ -231,8 +231,13 @@ class FixedOrderPlanner:
     has already mastered, or work the one they are struggling with first.
     """
 
-    def __init__(self, advance_after: int = 2) -> None:
+    def __init__(self, advance_after: int = 2, on_exhaustion: str = "stop") -> None:
         self._advance_after = advance_after
+        #: ``stop`` ends the session at the end of the walk; ``cycle`` begins it
+        #: again. Stopping is not something the missing learner model forces —
+        #: it simply leaves this arm attempting fewer items than the other,
+        #: which confounds any outcome that grows with practice.
+        self._on_exhaustion = on_exhaustion
         self._position = 0
         #: Length of the outcome stream when the position last moved. Without
         #: it, a streak that persists would advance the position on *every*
@@ -284,6 +289,13 @@ class FixedOrderPlanner:
             and answered - self._advanced_at >= self._advance_after
         ):
             self._position += 1
+            self._advanced_at = answered
+
+        if self._position >= len(walk) and self._on_exhaustion == "cycle":
+            # Round again. `_least_used` keeps the revision spread over the
+            # bank rather than replaying one item, and the session's own item
+            # budget is what ends the run.
+            self._position = 0
             self._advanced_at = answered
 
         while self._position < len(walk):

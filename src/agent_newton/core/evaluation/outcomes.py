@@ -84,9 +84,10 @@ class SessionOutcome:
     #: the state rather than from planner bookkeeping, so it means the same
     #: thing in both arms.
     goals_mastered: int = 0
-    #: Concepts still needed for the current goal at the end. A session can end
-    #: with a good post-test score and still be far from its target, which the
-    #: test scores do not show.
+    #: Concepts still needed for the first goal not yet mastered. Derived from
+    #: mastery, not from the planner's current target — those differ, and using
+    #: the target would measure the two arms against different goals. Zero when
+    #: every declared goal is mastered; None when the domain declares none.
     distance_to_goal: int | None = None
 
     @property

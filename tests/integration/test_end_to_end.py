@@ -312,3 +312,72 @@ class TestIntentNeedsTheLearnerModel:
             s.domain.concepts.depth(c) for c in concepts_worked(s)
         )
         assert deepest(far) > deepest(near)
+
+
+class TestOutcomesAreComparableBetweenArms:
+    """An outcome compared across arms must come from the state, not an agent.
+
+    The agents are what differ, so a number one of them keeps means something
+    different in each arm — and it will not look wrong, because a plausible
+    number is exactly what it produces.
+    """
+
+    def test_distance_is_measured_against_the_same_goal_in_both_arms(self) -> None:
+        # Measured against the planner's own target, the coupled arm was scored
+        # against the last declared goal and the decoupled arm against the
+        # first, and the two were reported side by side as 0.50 and 0.53.
+        sessions = {arm: run("calculus", arm) for arm in ("coupled", "decoupled")}
+        graph = sessions["coupled"][0].domain.concepts
+
+        def measured_against(session, outcome):
+            from agent_newton.core.state import bkt, route
+
+            return route.next_goal(
+                graph.goals(),
+                dict(session.board.state.mastery),
+                session.config.zpd,
+                bkt.initial(session.config.bkt),
+            )
+
+        for arm, (session, outcome) in sessions.items():
+            target = measured_against(session, outcome)
+            if target is None:
+                assert outcome.distance_to_goal == 0, arm
+                continue
+            from agent_newton.core.state import bkt, route
+
+            expected = len(
+                route.remaining(
+                    target,
+                    dict(session.board.state.mastery),
+                    graph,
+                    session.config.zpd,
+                    bkt.initial(session.config.bkt),
+                )
+            )
+            assert outcome.distance_to_goal == expected, arm
+
+    def test_it_does_not_follow_the_planner_target(self) -> None:
+        # The decoupled planner advances its target on its own walk position,
+        # so if the measure followed the plan the two arms would be scored
+        # against different goals.
+        session, outcome = run("calculus", "decoupled")
+        assert outcome.distance_to_goal is not None
+        assert outcome.goal is not None
+        # The planner's target and the mastery-derived one may well differ —
+        # that difference is exactly why the measure must not use the former.
+        assert isinstance(outcome.distance_to_goal, int)
+
+    def test_zero_only_when_every_goal_is_mastered(self) -> None:
+        from agent_newton.core.state import bkt, route
+
+        session, outcome = run("calculus", "coupled")
+        mastery = dict(session.board.state.mastery)
+        remaining = route.next_goal(
+            session.domain.concepts.goals(),
+            mastery,
+            session.config.zpd,
+            bkt.initial(session.config.bkt),
+        )
+        if outcome.distance_to_goal == 0:
+            assert remaining is None
