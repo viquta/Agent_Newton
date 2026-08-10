@@ -245,6 +245,111 @@ def evaluate_verifier(
         )
 
 
+@eval_app.command("planner")
+def evaluate_planner(
+    config_path: Path = typer.Option(
+        ..., "--config", help="Run config; the planner and arm it names are what is scored."
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+) -> None:
+    """Score a planner's choices against a policy holding the true profile.
+
+    The planner under test drives a real session; the reference watches and
+    answers the same question from the same options. Regret is the remaining
+    misconception probability the chosen item could not bring to the surface and
+    the reference's could — zero when a different choice was equally good.
+
+    Run it per arm: the decoupled planner is the interesting subject, since the
+    coupled one selects from the frontier by construction.
+    """
+    from agent_newton.core.evaluation.planning import evaluate
+    from agent_newton.core.orchestration.session import build_session
+
+    try:
+        config = Config.from_yaml(config_path)
+    except Exception as exc:  # pydantic ValidationError or a YAML error
+        console.print(f"[red]invalid config:[/red] {config_path}\n{exc}")
+        raise typer.Exit(code=1)
+
+    if config.uses_llm():
+        console.print(
+            "[yellow]note:[/yellow] this config calls a model, so every learner "
+            "costs inference. A model-free config scores the same planner logic "
+            "in seconds."
+        )
+
+    domain = registry.load_domain(config.domain)
+    learners = [f"L{n:04d}" for n in range(config.cohort.n_learners)]
+    report = evaluate(learners, domain, config, build_session)
+
+    directory = out or Path("results") / f"planner_{config.domain}_{config.arm}"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    with (directory / "decisions.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            ["learner_id", "goal", "chosen_item", "chosen_concept", "reference_item",
+             "reference_concept", "chosen_value", "reference_value", "regret",
+             "in_frontier", "options"]
+        )
+        for d in report.decisions:
+            writer.writerow([
+                d.learner_id, d.goal or "", d.chosen_item or "", d.chosen_concept or "",
+                d.reference_item or "", d.reference_concept or "",
+                f"{d.chosen_value:.4f}", f"{d.reference_value:.4f}", f"{d.regret:.4f}",
+                d.in_frontier, d.options,
+            ])
+
+    summary = {
+        "config": str(config_path),
+        "domain": config.domain,
+        "arm": config.arm,
+        "planner": config.agents.planner.impl,
+        "emphasis": config.agents.planner.emphasis.value,
+        "decisions": report.total,
+        "item_agreement": report.agreement,
+        "concept_agreement": report.concept_agreement,
+        "mean_regret": report.mean_regret,
+        "mean_reference_value": report.reference_value,
+        "regret_share": report.regret_share,
+        "costly_disagreements": report.costly_disagreements,
+        "in_frontier_rate": report.in_frontier_rate,
+        "no_selection": report.no_selection,
+    }
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    table = Table(title=f"planner vs oracle — {config.arm}", show_header=False, box=None)
+    table.add_row("decisions", str(report.total))
+    table.add_row("item agreement", f"{report.agreement:.1%}")
+    table.add_row("concept agreement", f"{report.concept_agreement:.1%}")
+    table.add_row(
+        "mean regret",
+        f"{report.mean_regret:.4f} of {report.reference_value:.4f} available",
+    )
+    # The comparable figure: the arms face different states, so one planner may
+    # simply have been offered more to leave behind.
+    table.add_row("regret share", f"{report.regret_share:.1%} of what was available")
+    table.add_row("costly disagreements", str(report.costly_disagreements))
+    table.add_row(
+        "selections in frontier",
+        f"{report.in_frontier_rate:.1%} of {report.total - report.no_selection} made",
+    )
+    table.add_row("nothing to select", str(report.no_selection))
+    console.print(table)
+    console.print(f"\nwritten to {directory}")
+
+    worst = report.worst()
+    if any(d.regret > 1e-9 for d in worst):
+        console.print("\n[bold]largest regrets[/bold]")
+        for d in worst:
+            if d.regret <= 1e-9:
+                continue
+            console.print(
+                f"  {d.regret:.3f}  {d.learner_id}  chose {d.chosen_concept} "
+                f"where the reference took {d.reference_concept}"
+            )
+
+
 @eval_app.command("diagnostic")
 def evaluate_diagnostic(
     domain_name: str = typer.Option("calculus", "--domain", help="Domain to evaluate on."),

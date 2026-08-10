@@ -116,6 +116,75 @@ class GoalDirectedPlanner:
         return _least_used(domain, step.concept_id, given)
 
 
+class OraclePlanner:
+    """The reference policy: selects what would elicit the most, knowing the truth.
+
+    Given the learner's live misconception profile, it takes the selectable item
+    whose probes carry the greatest remaining firing probability — the most
+    misconception mass a single item could bring to the surface, where it can be
+    diagnosed, hinted at and remediated.
+
+    **A reference, not an optimum.** A truly optimal policy would look ahead over
+    the mastery dynamics and the remediation schedule; this is greedy on one
+    step. It is an upper bound on what a planner could do with the information it
+    has, which is what regret needs, and it is deterministic, which is what
+    comparing against it needs.
+
+    It stays inside the frontier and on the way to the goal, so it is a fair
+    reference for a planner bound by the same rules: the comparison is about
+    which of the permitted choices was taken, not about who was allowed more.
+
+    The profile is a **live** mapping, so remediation applied during the session
+    is reflected here without the session having to tell it anything. No
+    model-backed planner is given one — there is a test on that.
+    """
+
+    def __init__(
+        self,
+        firing: Mapping[str, float],
+        band: ZPDConfig,
+        prior: float,
+    ) -> None:
+        self._firing = firing
+        self._band = band
+        self._prior = prior
+
+    def value(self, item: Item) -> float:
+        """Remaining firing probability this item could bring to the surface."""
+        return sum(self._firing.get(m, 0.0) for m in item.probes)
+
+    def plan(self, view: StateView, domain: Domain) -> Plan | None:
+        if not isinstance(view, FullStateView):
+            raise TypeError("OraclePlanner requires the full state view")
+        goal = route.next_goal(
+            domain.concepts.goals(), view.mastery, self._band, self._prior
+        )
+        return None if goal is None else Plan(goal=goal, reason="oracle reference policy")
+
+    def candidate_items(
+        self, view: FullStateView, domain: Domain, given: Mapping[str, int]
+    ) -> list[Item]:
+        """One item per permitted concept — what any planner here could choose."""
+        concepts = (
+            route.candidates(view.plan.goal, view.frontier, domain.concepts)
+            if view.plan is not None
+            else tuple(sorted(view.frontier))
+        )
+        found = [_least_used(domain, c, given) for c in concepts]
+        return [item for item in found if item is not None]
+
+    def select(
+        self, view: StateView, domain: Domain, given: Mapping[str, int]
+    ) -> Item | None:
+        if not isinstance(view, FullStateView):
+            raise TypeError("OraclePlanner requires the full state view")
+        options = self.candidate_items(view, domain, given)
+        if not options:
+            return None
+        # Ties broken by id so the reference is reproducible.
+        return max(options, key=lambda item: (self.value(item), item.id))
+
+
 class FrontierPlanner:
     """Selects from the frontier, nearest the syllabus start first.
 

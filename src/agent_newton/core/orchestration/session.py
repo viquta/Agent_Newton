@@ -30,6 +30,7 @@ from agent_newton.core.agents.planner import (
     FixedOrderPlanner,
     FrontierPlanner,
     GoalDirectedPlanner,
+    OraclePlanner,
 )
 from agent_newton.core.agents.tutor import TemplateTutor
 from agent_newton.core.arbitration.policy import ArbitrationPolicy
@@ -328,6 +329,8 @@ def build_session(
     # usable: no planner that routes from the learner model can run on a view
     # that carries none.
     prior = bkt.initial(config.bkt)
+    profile = sample_profile(learner_id, seed, domain.misconceptions, config.simulator)
+
     if config.arm == "decoupled":
         planner: Planner = FixedOrderPlanner(agents.planner.advance_after)
     elif agents.planner.impl == "llm":
@@ -339,10 +342,13 @@ def build_session(
         )
     elif agents.planner.impl == "greedy":
         planner = FrontierPlanner()
+    elif agents.planner.impl == "oracle":
+        # The only agent handed the learner's true profile, and only because the
+        # config names it. `profile.firing` is passed live, so remediation during
+        # the session is visible without the loop reporting anything.
+        planner = OraclePlanner(profile.firing, config.zpd, prior)
     else:
         planner = GoalDirectedPlanner(config.zpd, prior, agents.planner.emphasis)
-
-    profile = sample_profile(learner_id, seed, domain.misconceptions, config.simulator)
     return Session(
         learner=SimulatedLearner(profile, domain, config.simulator),
         board=new_blackboard(learner_id, seed, domain.concepts, config),
