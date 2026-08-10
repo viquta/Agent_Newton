@@ -3,6 +3,21 @@
 Tests are administered **without hints and without updating the learner model**:
 they measure what the learner can do unaided, so they must not themselves teach
 or disturb the estimates being reported.
+
+**An outcome compared between arms must be derived from the shared state, never
+from an agent's own bookkeeping.** The agents are what differ, so a counter one
+of them keeps means something different in each arm — and it will not look
+wrong, because a plausible number is exactly what it produces. ``goal_changes``
+below is the worked example: the decoupled planner cannot see mastery, so it
+retargets on its own position in the syllabus and reports goals "reached" while
+still far from them. ``goals_mastered`` measures the same idea from the state
+and is comparable.
+
+Audited against that rule: ``triggers`` comes from the audit log, and
+``diagnoses`` is recorded by the session, so both are state-derived.
+``suppressed`` is arbitration bookkeeping, but the arbitration policy is
+identical in both arms and reads the board rather than the arm's view, so it is
+comparable — stated here rather than left to be assumed.
 """
 
 from __future__ import annotations

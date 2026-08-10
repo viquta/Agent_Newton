@@ -149,6 +149,18 @@ in topological order, advancing on consecutive correct answers. It is restricted
 to the same material — that is curriculum — but cannot skip what this learner
 has already mastered or return to what they are struggling with.
 
+The union is deliberately not narrowed to the *current* goal: the walk only
+moves forward, so narrowing would step past a concept a later goal needs and
+never return to it. Note that on `calculus` the restriction is currently inert —
+every concept is an ancestor of some declared goal, so the union is the whole
+graph. It bites only in a domain carrying material that lies on the way to no
+goal.
+
+A planner that walks off the end of its list returns nothing and the session
+ends, which is why the decoupled arm can attempt fewer items than the budget
+allows. That is an implementation choice, not a consequence of the missing
+learner model.
+
 ### Arbitration policy (`core/arbitration/`)
 
 Decides when new evidence may revise the plan.
@@ -163,6 +175,18 @@ confirmation, not the diagnostic agent's judgement alone, before any demotion.
 
 Every decision writes its triggering evidence to the audit log, so a replan can
 be reconstructed after the fact.
+
+**The policy reads the board, not the arm's view.** It is handed
+`board.state.mastery` and `board.frontier` in *both* configurations, so the
+decoupled arm receives replan timing derived from information its own planner
+cannot see. That is deliberate: the guardrail layer is held constant so that the
+planner's view is the single thing that varies. The consequence is that the
+decoupled arm is being compared at its best — it is told *when* to reconsider by
+a policy better informed than itself — which makes any difference measured
+between the arms a conservative estimate.
+
+Setting a goal is recorded under the audit cause `plan`, not `replan`, so it
+stays out of the trigger counts a threshold analysis reads.
 
 ### Verifier
 

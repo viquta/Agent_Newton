@@ -162,6 +162,29 @@ class TestEmphasis:
         step = self._step(Emphasis.CONSOLIDATE, mastery)
         assert step is not None and step.concept_id == "c"
 
+    def test_consolidate_finishes_what_was_started_before_opening_a_sibling(self) -> None:
+        # b and c sit at the same depth with no errors against either. b has
+        # been worked to 0.5; c has never been attempted, so it sits at the
+        # prior — *below* b. Ranking on the posterior alone would send a
+        # consolidating learner to the untouched one, which is the same
+        # absence-is-not-evidence error the depth key guards across levels.
+        mastery = {"a": MASTERED, "b": 0.5}
+        assert PRIOR < 0.5, "the premise of this test"
+        step = self._step(Emphasis.CONSOLIDATE, mastery)
+        assert step is not None and step.concept_id == "b"
+
+    def test_the_posterior_still_decides_between_measured_concepts(self) -> None:
+        # The tiebreak is not disabled, only made to come after measurement.
+        mastery = {"a": MASTERED, "b": 0.8, "c": 0.2}
+        step = self._step(Emphasis.CONSOLIDATE, mastery)
+        assert step is not None and step.concept_id == "c"
+
+    def test_advance_is_unaffected_by_what_has_been_measured(self) -> None:
+        # It ranks on depth alone, so it has no posterior tiebreak to get wrong.
+        mastery = {"a": MASTERED, "b": 0.5}
+        step = self._step(Emphasis.ADVANCE, mastery)
+        assert step is not None and step.concept_id in {"b", "c"}
+
     def test_consolidate_does_not_open_new_material_first(self) -> None:
         # An unstarted concept sits at the prior, below anything the learner has
         # worked on. Ranking by posterior alone would send a consolidating
