@@ -1,0 +1,117 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "domain": "calculus",
+  "n_learners": 20,
+  "seed": 20260807,
+  "emphasis": "consolidate",
+  "rows": [
+    {
+      "max_items": 12,
+      "arm": "coupled",
+      "opportunity": 0.125,
+      "exhibition": 0.1,
+      "mean_items_used": 12.0,
+      "learners_fully_covered": 1,
+      "n_learners": 20
+    },
+    {
+      "max_items": 12,
+      "arm": "decoupled",
+      "opportunity": 0.35,
+      "exhibition": 0.275,
+      "mean_items_used": 12.0,
+      "learners_fully_covered": 1,
+      "n_learners": 20
+    },
+    {
+      "max_items": 20,
+      "arm": "coupled",
+      "opportunity": 0.475,
+      "exhibition": 0.375,
+      "mean_items_used": 20.0,
+      "learners_fully_covered": 5,
+      "n_learners": 20
+    },
+    {
+      "max_items": 20,
+      "arm": "decoupled",
+      "opportunity": 0.675,
+      "exhibition": 0.55,
+      "mean_items_used": 20.0,
+      "learners_fully_covered": 8,
+      "n_learners": 20
+    },
+    {
+      "max_items": 30,
+      "arm": "coupled",
+      "opportunity": 0.625,
+      "exhibition": 0.6,
+      "mean_items_used": 30.0,
+      "learners_fully_covered": 7,
+      "n_learners": 20
+    },
+    {
+      "max_items": 30,
+      "arm": "decoupled",
+      "opportunity": 1.0,
+      "exhibition": 0.85,
+      "mean_items_used": 30.0,
+      "learners_fully_covered": 20,
+      "n_learners": 20
+    },
+    {
+      "max_items": 45,
+      "arm": "coupled",
+      "opportunity": 1.0,
+      "exhibition": 0.975,
+      "mean_items_used": 44.95,
+      "learners_fully_covered": 20,
+      "n_learners": 20
+    },
+    {
+      "max_items": 45,
+      "arm": "decoupled",
+      "opportunity": 1.0,
+      "exhibition": 0.875,
+      "mean_items_used": 32.4,
+      "learners_fully_covered": 20,
+      "n_learners": 20
+    },
+    {
+      "max_items": 60,
+      "arm": "coupled",
+      "opportunity": 1.0,
+      "exhibition": 0.975,
+      "mean_items_used": 45.9,
+      "learners_fully_covered": 20,
+      "n_learners": 20
+    },
+    {
+      "max_items": 60,
+      "arm": "decoupled",
+      "opportunity": 1.0,
+      "exhibition": 0.875,
+      "mean_items_used": 32.4,
+      "learners_fully_covered": 20,
+      "n_learners": 20
+    },
+    {
+      "max_items": 80,
+      "arm": "coupled",
+      "opportunity": 1.0,
+      "exhibition": 0.975,
+      "mean_items_used": 45.9,
+      "learners_fully_covered": 20,
+      "n_learners": 20
+    },
+    {
+      "max_items": 80,
+      "arm": "decoupled",
+      "opportunity": 1.0,
+      "exhibition": 0.875,
+      "mean_items_used": 32.4,
+      "learners_fully_covered": 20,
+      "n_learners": 20
+    }
+  ]
+}
