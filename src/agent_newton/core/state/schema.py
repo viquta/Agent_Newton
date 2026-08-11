@@ -108,6 +108,12 @@ class LearnerState(BaseModel):
     #: Most recent errors, oldest first, bounded by the configured length.
     error_trace: list[ErrorEvent] = Field(default_factory=list)
 
+    #: What the learner said when asked to reflect, most recent last. Prose,
+    #: not evidence: it updates no estimate and enters no error trace, because
+    #: it is not a graded step. It is here so the tutor can read back what the
+    #: learner said they were unsure of.
+    reflections: list[str] = Field(default_factory=list)
+
     #: What this learner is working toward. None before the first plan is set.
     #: This is the shared representation of goals: it lives in the state every
     #: agent reads, not in the loop that happens to be running.

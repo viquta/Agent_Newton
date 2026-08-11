@@ -73,6 +73,16 @@ class Learner(Protocol):
 
     def receive_hint(self, targeted_misconception: str | None) -> bool: ...
 
+    def reflect(self, item: Item, prompt: str) -> str | None:
+        """Answer a reflective prompt in prose, or ``None`` to say nothing.
+
+        A reflection is **not** an answer attempt. It is not verified, it costs
+        no attempt, and it is not counted as an unmeasurable step — the tutor
+        asked a question in words, and a person replying in words has not
+        failed to solve anything.
+        """
+        ...
+
     def remediation_ratio(self) -> float | None:
         """How far the learner's misconceptions have been reduced.
 
@@ -160,6 +170,14 @@ class SimulatedLearner:
             return SimulatedStep(response=wrong, fired=misconception_id, correct=False)
 
         return SimulatedStep(response=item.answer, fired=None, correct=True)
+
+    def reflect(self, item: Item, prompt: str) -> str | None:  # noqa: ARG002
+        """A simulated learner has nothing to say.
+
+        The reflective prompt still costs it a turn — that is what gives the
+        error-first rule a price — but it produces no prose.
+        """
+        return None
 
     def receive_hint(self, targeted_misconception: str | None) -> bool:
         """Apply a hint. Returns whether it changed anything.

@@ -204,3 +204,121 @@ class TestTheObserverOnlyWatches:
         assert watched.items_attempted == plain.items_attempted
         assert watched.goals_mastered == plain.goals_mastered
         assert watched.distance_to_goal == plain.distance_to_goal
+
+
+class TestReflectionIsNotAnAnswer:
+    """The tutor asks a question in words; the reply is words.
+
+    Before this existed, that reply went to the symbolic verifier, came back
+    unreadable, and cost the learner an attempt — the error-first rule asking a
+    question it could not receive an answer to.
+    """
+
+    def _session(self, toy, reflection: str | None):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class AlwaysDiagnoses:
+            """Forces the reflect-then-remediate path on every error."""
+
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(toy.misconceptions.ids()[0], confidence=1.0)
+
+        config = human_config()
+        # Parseable but wrong. Prose would come back UNPARSEABLE, which is
+        # never diagnosed, so no reflective prompt would ever be issued.
+        learner = HumanLearner(
+            lambda item, attempt: "999",
+            ask_reflection=(lambda item, prompt: reflection) if reflection else None,
+        )
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = AlwaysDiagnoses()
+        return session, session.run()
+
+    def test_it_is_recorded_on_the_blackboard(self, toy) -> None:
+        session, _ = self._session(toy, "I do not know what a coefficient is")
+        assert "I do not know what a coefficient is" in session.board.state.reflections
+
+    def test_it_is_not_sent_to_the_verifier(self, toy) -> None:
+        # The tell: prose reaching the verifier comes back UNPARSEABLE and is
+        # counted as a step nobody could measure.
+        spoken, _ = self._session(toy, "no idea what this means")
+        silent, _ = self._session(toy, None)
+        assert spoken.board.unmeasurable == silent.board.unmeasurable
+
+    def test_it_costs_no_attempt(self, toy) -> None:
+        spoken, with_words = self._session(toy, "no idea what this means")
+        silent, without = self._session(toy, None)
+        assert with_words.items_attempted == without.items_attempted
+
+    def test_it_updates_no_estimate(self, toy) -> None:
+        # Prose is not evidence about mastery, whatever it says.
+        spoken, _ = self._session(toy, "I understand this perfectly")
+        silent, _ = self._session(toy, None)
+        assert spoken.board.state.mastery == silent.board.state.mastery
+
+    def test_it_reaches_the_audit_log(self, toy) -> None:
+        session, _ = self._session(toy, "the notation confuses me")
+        said = [r for r in session.board.audit_log if "reflection" in r.summary]
+        assert said and said[0].evidence["reflection"] == "the notation confuses me"
+
+    def test_the_coupled_view_carries_it_and_the_decoupled_one_does_not(
+        self, toy
+    ) -> None:
+        # It is something the learner told us about themselves, so it belongs
+        # with the rest of the learner model the ablation withholds.
+        from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
+
+        session, _ = self._session(toy, "I am unsure about the second step")
+        assert isinstance(session.board.view(arm="coupled"), FullStateView)
+        assert session.board.view(arm="coupled").reflections  # type: ignore[union-attr]
+        assert not hasattr(session.board.view(arm="decoupled"), "reflections")
+        assert isinstance(session.board.view(arm="decoupled"), ItemCorrectnessView)
+
+    def test_a_simulated_learner_says_nothing(self, toy) -> None:
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import SimulatedLearner, sample_profile
+
+        profile = sample_profile("L1", 1, toy.misconceptions, SimulatorConfig())
+        learner = SimulatedLearner(profile, toy, SimulatorConfig())
+        assert learner.reflect(toy.items.all()[0], "what are you unsure of?") is None
+
+
+class TestCrossConceptDiagnosesAreCounted:
+    def test_a_coherent_diagnosis_is_not_counted(self, toy) -> None:
+        from agent_newton.core.agents.base import Diagnosis
+
+        item = next(i for i in toy.items.bank("practice") if i.probes)
+        label = item.probes[0]
+
+        class Coherent:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(label, confidence=1.0)
+
+        config = human_config()
+        learner = HumanLearner(lambda i, attempt: "wrong")
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Coherent()
+        outcome = session.run()
+        # The label belongs to the concept it was diagnosed on, so nothing is
+        # incoherent even though every answer was wrong.
+        assert outcome.cross_concept_diagnoses == 0
+
+    def test_an_incoherent_one_is(self, toy) -> None:
+        from agent_newton.core.agents.base import Diagnosis
+
+        # A label belonging to a concept the learner is not working on.
+        by_concept = {m.id: m.concept_id for m in toy.misconceptions.all()}
+        stray = next(iter(by_concept))
+
+        class Stray:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(stray, confidence=1.0)
+
+        config = human_config()
+        learner = HumanLearner(lambda item, attempt: "999")
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Stray()
+        outcome = session.run()
+        worked = {e.concept_id for e in session.board.state.error_trace}
+        if worked - {by_concept[stray]}:
+            assert outcome.cross_concept_diagnoses > 0

@@ -22,6 +22,7 @@ as unavailable, never as zero.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from rich.columns import Columns
@@ -38,6 +39,8 @@ from agent_newton.core.simulator.human import HumanLearner
 from agent_newton.core.state import bkt, route
 from agent_newton.core.state.store import Blackboard
 from agent_newton.domains import registry
+from agent_newton.manifest import RunManifest
+from agent_newton.runs import new_run_dir
 from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
 
 #: Where a mastery bar sits between "no idea" and "done".
@@ -160,6 +163,57 @@ class DemoObserver:
             line.append(f"  (diagnosed: {diagnosis.misconception_id})", style="dim")
         self._console.print(line)
 
+    def reflection_recorded(self, item: Item, text: str) -> None:
+        self._console.print(
+            Text("  ✎ noted — ", style="magenta") + Text(text, style="dim magenta")
+        )
+
+    def phase_started(self, phase: str, total: int) -> None:
+        label = {"pretest": "Pre-test", "posttest": "Post-test"}.get(phase, phase)
+        self._console.print()
+        self._console.print(
+            Panel(
+                Text(
+                    f"{label} — {total} questions.\n\n"
+                    "No feedback and no hints: this measures what you can do "
+                    "unaided, so telling you the answers would change what it "
+                    "measures.\n"
+                    "It also does not steer the training that follows — the "
+                    "tutoring starts from scratch and learns from your practice "
+                    "answers, not from these.\n"
+                    "Type :q at any point to stop.",
+                ),
+                title=f"{label.lower()} · {total} questions",
+                border_style="yellow",
+            )
+        )
+
+    def phase_answer(self, phase: str, index: int, total: int, item: Item) -> None:
+        self._console.print(
+            Text(f"  recorded  ({index + 1} of {total})", style="dim")
+        )
+
+    def phase_finished(self, phase: str, result) -> None:  # noqa: ANN001
+        label = {"pretest": "Pre-test", "posttest": "Post-test"}.get(phase, phase)
+        body = Text()
+        body.append(f"{result.correct} of {result.total} correct", style="bold")
+        body.append(f"   ({result.score:.0%})\n", style="bold")
+        if result.unmeasurable:
+            body.append(
+                f"{result.unmeasurable} answer(s) the verifier could not read — "
+                f"not counted against you.\n",
+                style="dim",
+            )
+        if phase == "pretest":
+            body.append(
+                "\nTraining starts now. From here you get feedback, hints, and "
+                "the panel showing what the system believes about you.",
+                style="dim",
+            )
+        self._console.print(
+            Panel(body, title=f"{label.lower()} result", border_style="yellow")
+        )
+
     def tutor_replied(self, item: Item, hint: Hint) -> None:
         self._console.print(
             Panel(
@@ -204,7 +258,16 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
             raise Quit
         return answer
 
-    learner = HumanLearner(ask)
+    def ask_reflection(item: Item, prompt: str) -> str:
+        # Prose, not an answer. It never reaches the verifier and costs no
+        # attempt — see Session._work_item.
+        return Prompt.ask(
+            "  [magenta]in your own words[/magenta]  [dim](enter to skip)[/dim]",
+            default="",
+            show_default=False,
+        ).strip()
+
+    learner = HumanLearner(ask, ask_reflection=ask_reflection)
     session = build_session(
         learner.learner_id, config.seed, domain, config, learner=learner,
         observer=observer,
@@ -212,12 +275,20 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
 
     console.print(
         Panel(
-            Text(
-                "Answer each exercise. The panel above shows what the system "
-                "believes about you and why it is choosing what it chooses.\n"
-                "Nothing here knows the right answer in advance — a symbolic "
-                "verifier grades every step, and the diagnostic agent has to "
-                "infer your misconception from the step alone.",
+            Text.from_markup(
+                "There are three parts: a [yellow]pre-test[/yellow], then "
+                "[cyan]training[/cyan], then a [yellow]post-test[/yellow].\n\n"
+                "[bold]Answers[/bold] are mathematical expressions — [dim]5*x**4[/dim], "
+                "[dim]5x^4[/dim] and [dim]x**4*5[/dim] are all accepted, because a "
+                "symbolic verifier checks equivalence rather than spelling. For "
+                "several roots, separate them with commas: [dim]0, 2[/dim].\n"
+                "[bold]When the tutor asks you a question in words[/bold], answer in "
+                "words — that reply is kept and is not graded.\n"
+                "[bold]:q[/bold] stops at any point.\n\n"
+                "During training the panel shows what the system believes about you "
+                "and why it chooses what it chooses. Nothing here knows the right "
+                "answer in advance: the verifier grades every step symbolically, and "
+                "the diagnostic agent infers your misconception from the step alone.",
             ),
             title="Agent_Newton",
             border_style="magenta",
@@ -234,6 +305,46 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
     console.print()
     console.print(observer.board_panel(session.board))
 
+    run_id, run_dir = new_run_dir(config)
+    manifest = RunManifest.create(config, run_id)
+    for field, value in domain.content_hashes().items():
+        setattr(manifest, field, value)
+    manifest.write(run_dir)
+    (run_dir / "transcript.json").write_text(
+        json.dumps(
+            {
+                "learner_id": outcome.learner_id,
+                "responses": [
+                    {"item_id": i, "response": r} for i, r in learner.responses
+                ],
+                "reflections": list(session.board.state.reflections),
+                "mastery": dict(session.board.state.mastery),
+                "goal": outcome.goal,
+                "goals_mastered": outcome.goals_mastered,
+                "distance_to_goal": outcome.distance_to_goal,
+                "items_attempted": outcome.items_attempted,
+                "pretest": {
+                    "correct": outcome.pretest.correct,
+                    "total": outcome.pretest.total,
+                    "administered": outcome.pretest.administered,
+                },
+                "posttest": {
+                    "correct": outcome.posttest.correct,
+                    "total": outcome.posttest.total,
+                    "administered": outcome.posttest.administered,
+                },
+                "cross_concept_diagnoses": outcome.cross_concept_diagnoses,
+                "unmeasurable_steps": outcome.unmeasurable_steps,
+                "audit_log": [
+                    {"version": r.version, "cause": r.cause, "summary": r.summary}
+                    for r in session.board.audit_log
+                ],
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
     summary = Table(title="session", show_header=False, box=None)
     summary.add_row("items attempted", str(outcome.items_attempted))
     if outcome.pretest.administered and outcome.posttest.administered:
@@ -247,8 +358,17 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
     summary.add_row("goals mastered", str(outcome.goals_mastered))
     summary.add_row("concepts to the next goal", str(outcome.distance_to_goal))
     summary.add_row("steps the verifier could not read", str(outcome.unmeasurable_steps))
+    if session.board.state.reflections:
+        summary.add_row("things you said", str(len(session.board.state.reflections)))
+    if outcome.cross_concept_diagnoses:
+        # Visible rather than quietly dropped: the diagnostic may name a
+        # misconception from a concept other than the one being worked.
+        summary.add_row(
+            "diagnoses from another concept", str(outcome.cross_concept_diagnoses)
+        )
     # There is no injected label for a person, so there is nothing to score the
     # diagnostic against. Unavailable, not zero.
     summary.add_row("diagnostic accuracy", "unavailable (no ground truth)")
     summary.add_row("remediation ratio", "unavailable (no ground truth)")
     console.print(Columns([summary]))
+    console.print(f"\n[dim]saved to {run_dir}[/dim]")

@@ -104,6 +104,7 @@ class Blackboard:
                 outcomes=tuple(self._outcomes),
                 version=self._state.version,
                 plan=self._state.plan,
+                reflections=tuple(self._state.reflections),
             )
         return ItemCorrectnessView(
             outcomes=tuple(self._outcomes),
@@ -199,6 +200,24 @@ class Blackboard:
         than only observable during it.
         """
         self._bump("replan", summary, **evidence)
+
+    def record_reflection(self, text: str, item_id: str, concept_id: str) -> None:
+        """Record what the learner said when asked to reflect.
+
+        Prose, not evidence. It updates no estimate and enters no error trace —
+        the learner was asked a question in words and answered it, which is not
+        a graded attempt at anything. It is kept because the tutor can use it,
+        and because a session where someone said what confused them and the
+        system discarded it is not a shared learner state worth the name.
+        """
+        self._state.reflections.append(text)
+        self._bump(
+            "annotation",
+            f"reflection on {item_id}",
+            item_id=item_id,
+            concept_id=concept_id,
+            reflection=text,
+        )
 
     def record_plan(self, plan: Plan, **evidence: Any) -> Plan:
         """Set what the learner is working toward.

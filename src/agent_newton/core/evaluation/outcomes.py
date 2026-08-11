@@ -23,7 +23,7 @@ comparable — stated here rather than left to be assumed.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Sequence
+from typing import Callable, Sequence
 
 from agent_newton.core.simulator import SurfaceRenderer
 from agent_newton.core.simulator.engine import Learner
@@ -96,6 +96,13 @@ class SessionOutcome:
     #: the state rather than from planner bookkeeping, so it means the same
     #: thing in both arms.
     goals_mastered: int = 0
+    #: Diagnoses naming a misconception that belongs to a different concept
+    #: than the item worked. The catalogue is offered whole, so the agent may
+    #: reach outside the concept at hand — an incoherence nothing checked until
+    #: a human demo produced one. Counted rather than prevented: narrowing the
+    #: label space would also make the offline accuracy figure easier and no
+    #: longer comparable to what is already measured.
+    cross_concept_diagnoses: int = 0
     #: Concepts still needed for the first goal not yet mastered. Derived from
     #: mastery, not from the planner's current target — those differ, and using
     #: the target would measure the two arms against different goals. Zero when
@@ -118,14 +125,23 @@ def administer(
     learner: Learner,
     domain: Domain,
     surface: SurfaceRenderer,
+    on_answer: Callable[[int, int, Item], None] | None = None,
 ) -> TestResult:
-    """Run a held-out bank. No hints, no state update, no remediation."""
+    """Run a held-out bank. No hints, no state update, no remediation.
+
+    ``on_answer`` reports progress and nothing else — it receives the index and
+    the item, never the verdict. A front end must not be able to leak the
+    result back to the learner, because feedback during a test would make it
+    measure something other than unaided ability.
+    """
     correct = 0
     unmeasurable = 0
     exhibited: set[str] = set()
 
-    for item in items:
+    for index, item in enumerate(items):
         step = learner.answer(item, attempt=0)
+        if on_answer is not None:
+            on_answer(index, len(items), item)
         response = surface.render(item, step)
         result = domain.verifier.verify(item, response)
 

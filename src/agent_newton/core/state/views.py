@@ -49,6 +49,10 @@ class FullStateView:
     outcomes: tuple[bool, ...]
     version: int
     plan: Plan | None = None
+    #: What the learner said when asked to reflect, most recent last. Only the
+    #: coupled view carries it: it is something the learner told us about
+    #: themselves, which is exactly what the decoupled arm does without.
+    reflections: tuple[str, ...] = ()
 
     def consecutive_correct(self) -> int:
         count = 0

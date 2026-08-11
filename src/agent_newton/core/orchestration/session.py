@@ -75,6 +75,14 @@ class SessionObserver(Protocol):
 
     def tutor_replied(self, item: Item, hint: Hint) -> None: ...
 
+    def reflection_recorded(self, item: Item, text: str) -> None: ...
+
+    def phase_started(self, phase: str, total: int) -> None: ...
+
+    def phase_answer(self, phase: str, index: int, total: int, item: Item) -> None: ...
+
+    def phase_finished(self, phase: str, result: "TestResult") -> None: ...
+
 
 @dataclass
 class Session:
@@ -170,6 +178,7 @@ class Session:
             goal=self.board.plan.goal if self.board.plan else None,
             goal_changes=goal_changes,
             goals_mastered=self._goals_mastered(),
+            cross_concept_diagnoses=self._cross_concept(),
             distance_to_goal=self._distance_to_goal(),
         )
 
@@ -181,8 +190,36 @@ class Session:
         """
         if not self.config.cohort.administer_tests:
             return TestResult(correct=0, total=0)
-        return administer(
-            self.domain.items.bank(bank), self.learner, self.domain, self.surface
+
+        items = self.domain.items.bank(bank)
+        if self.observer is None:
+            return administer(items, self.learner, self.domain, self.surface)
+
+        self.observer.phase_started(bank, len(items))
+        result = administer(
+            items,
+            self.learner,
+            self.domain,
+            self.surface,
+            on_answer=lambda i, n, item: self.observer.phase_answer(bank, i, n, item)
+            if self.observer
+            else None,
+        )
+        self.observer.phase_finished(bank, result)
+        return result
+
+    def _cross_concept(self) -> int:
+        """Diagnoses naming a misconception from another concept.
+
+        Read from the error trace rather than counted as it happens, so it
+        describes the state rather than the agent's bookkeeping.
+        """
+        catalogue = self.domain.misconceptions
+        return sum(
+            1
+            for event in self.board.state.error_trace
+            if event.misconception_label
+            and catalogue.get(event.misconception_label).concept_id != event.concept_id
         )
 
     def _goals_mastered(self) -> int:
@@ -333,6 +370,18 @@ class Session:
 
             if self.observer is not None:
                 self.observer.tutor_replied(item, hint)
+
+            if hint.move is TutorMove.REFLECT:
+                # The tutor asked a question in words. The answer is prose, so
+                # it goes nowhere near the verifier: it is not an attempt at the
+                # exercise, it costs no attempt, and it is not an unmeasurable
+                # step. Sending it to be graded — which is what happened before
+                # this existed — told a learner their reflection was unreadable.
+                said = self.learner.reflect(item, hint.text)
+                if said:
+                    self.board.record_reflection(said, item.id, item.concept_id)
+                    if self.observer is not None:
+                        self.observer.reflection_recorded(item, said)
 
             moves.append(hint.move)
 

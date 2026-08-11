@@ -28,7 +28,10 @@ simulator:
   surface: symbolic
 
 agents:
-  tutor:      { impl: template }
+  # A real tutor, not canned strings. The cohorts keep this model-free
+  # because only the diagnostic is measured; a person reading the words is
+  # a different requirement.
+  tutor:      { impl: llm, provider: ollama, model: gemma4:12b, think: false }
   diagnostic: { impl: llm, provider: ollama, model: gemma4:12b, think: false }
   planner:    { impl: goal_directed, emphasis: consolidate }
 

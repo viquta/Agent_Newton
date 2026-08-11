@@ -40,8 +40,10 @@ class HumanLearner:
         ask: Callable[[Item, int], str],
         learner_id: str = "human",
         on_hint: Callable[[str | None], None] | None = None,
+        ask_reflection: Callable[[Item, str], str] | None = None,
     ) -> None:
         self._ask = ask
+        self._ask_reflection = ask_reflection
         self._learner_id = learner_id
         self._on_hint = on_hint
         #: Every response given, in order. The demo shows it back at the end;
@@ -59,6 +61,18 @@ class HumanLearner:
         # not consulted by the loop — the verifier decides, which is the whole
         # reason correctness here does not depend on a model.
         return SimulatedStep(response=response, fired=None, correct=False)
+
+    def reflect(self, item: Item, prompt: str) -> str | None:
+        """Take the person's reply to a reflective prompt, in their own words.
+
+        The tutor asked a question in words; before this existed the reply went
+        to the symbolic verifier, came back unreadable, and cost an attempt. A
+        reflection is not an answer.
+        """
+        if self._ask_reflection is None:
+            return None
+        said = self._ask_reflection(item, prompt).strip()
+        return said or None
 
     def receive_hint(self, targeted_misconception: str | None) -> bool:
         """A person is not adjusted by a hint; they read it.

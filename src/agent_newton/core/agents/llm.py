@@ -158,9 +158,15 @@ class LLMTutor:
             described = domain.misconceptions.get(diagnosis.misconception_id).description
             context = f"\nThe error is: {' '.join(described.split())}"
 
+        said = (
+            "\nThe student said, when asked what they were unsure of: "
+            + "; ".join(view.reflections[-2:])
+            if isinstance(view, FullStateView) and view.reflections
+            else ""
+        )
         prompt = (
             f"Exercise: {item.prompt}\n"
-            f"Correct answer: {item.answer}{context}\n\n"
+            f"Correct answer: {item.answer}{context}{said}\n\n"
             f"{instruction}"
         )
         try:
