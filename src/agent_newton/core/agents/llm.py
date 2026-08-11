@@ -52,8 +52,15 @@ _DIAGNOSTIC_SYSTEM = (
 
 _TUTOR_SYSTEM = (
     "You are a mathematics tutor. Reply with at most two sentences, addressed to "
-    "the student. Never state the final answer unless explicitly asked to."
+    "the student. Never state the final answer unless explicitly asked to. "
+    "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
+    "Never use LaTeX or backslash commands."
 )
+# The LaTeX ban is not a style preference. Replies arrive as JSON, and a
+# backslash command inside a JSON string is eaten by escape processing:
+# "\frac{a}{b}" parses to a form-feed character followed by "rac{a}{b}", which
+# a learner sees as "$rac{a}{b}". Observed in a human session, where it hid the
+# division the hint was trying to explain.
 
 _PLANNER_SYSTEM = (
     "You choose what a student should work on next, given what they have shown "
