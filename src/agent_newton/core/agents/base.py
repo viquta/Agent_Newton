@@ -52,6 +52,14 @@ class Hint:
 
 @runtime_checkable
 class Tutor(Protocol):
+    """Writes the turn the learner reads.
+
+    ``response`` is the step being responded to. It is here because without it a
+    model-backed tutor has only the misconception's description to work from and
+    reconstructs a plausible step rather than addressing the actual one — which
+    is how a human session was told its calculation was correct when it was not.
+    """
+
     def respond(
         self,
         item: Item,
@@ -59,6 +67,7 @@ class Tutor(Protocol):
         view: StateView,
         domain: Domain,
         *,
+        response: str,
         failed_attempts: int,
         moves_this_item: Sequence[TutorMove],
     ) -> Hint: ...

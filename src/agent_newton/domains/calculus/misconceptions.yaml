@@ -116,3 +116,30 @@ misconceptions:
       Giving a single antiderivative rather than the general one, omitting the
       constant of integration.
     source: "NEEDS-SOURCE: widely recognised, but not documented in the studies on hand."
+
+  # --- the three concepts that had no entry ---------------------------------
+  # Until these existed, a wrong answer on any of the three could not be
+  # diagnosed coherently: every label in the catalogue belonged to some other
+  # concept, and the agent reached for the nearest plausible one. All three sit
+  # shallow in the graph, so they are the first thing a learner meets.
+  - id: rate_as_difference_not_ratio
+    concept_id: average_rate_of_change
+    description: >-
+      Reporting the change in the function value, f(b) - f(a), as the average
+      rate of change, without dividing by the width of the interval b - a.
+    source: "NEEDS-SOURCE: made by a person using this system (2026-08-11); not itemised in the studies on hand."
+
+  - id: tangent_as_secant
+    concept_id: limit_concept
+    description: >-
+      Computing a secant gradient at a finite separation and reporting it as
+      the gradient of the tangent, without taking the limit as the second point
+      approaches the first.
+    source: "NEEDS-SOURCE: Orton (1983b) reports the tangent treated as a chord over a section of curve; the finite-separation answer is not itemised."
+
+  - id: constant_term_differentiated
+    concept_id: polynomial_differentiation
+    description: >-
+      Carrying the constant term through into the derivative instead of letting
+      it vanish, so a term with no x survives differentiation.
+    source: "NEEDS-SOURCE: widely recognised, but not documented in the studies on hand."

@@ -10,7 +10,9 @@ import itertools
 
 import pytest
 
-from agent_newton.config import ZPDConfig
+from agent_newton.config import Config, ZPDConfig
+from agent_newton.core.agents.base import Diagnosis
+from agent_newton.core.agents.tutor import TemplateTutor
 from agent_newton.core.pedagogy import (
     BAND_MEMBERSHIP,
     ERROR_FIRST,
@@ -22,9 +24,16 @@ from agent_newton.core.pedagogy import (
     may_select,
     next_required_move,
 )
+from agent_newton.core.state.store import new_blackboard
 from agent_newton.core.state.zpd import Frontier
+from agent_newton.domains import registry
 
 BAND = ZPDConfig(theta_lower=0.70, theta_upper=0.90)
+
+
+@pytest.fixture(scope="module")
+def toy():
+    return registry.load_domain("toy_algebra")
 
 
 class TestBandMembership:
@@ -167,3 +176,37 @@ class TestViolationsAreAuditable:
         assert violation is not None
         assert violation.rule and violation.message
         assert str(violation).startswith(f"[{BAND_MEMBERSHIP}]")
+
+
+class TestTemplateTutorIgnoresTheStep:
+    """The step the learner wrote reaches the tutor, but not this one's text.
+
+    The model-backed tutor needs it — without the step it invents one to match
+    the misconception's description. The template tutor must not use it: the
+    cohorts run ``impl: template``, so a hint whose wording varied with the
+    response would make every measured number depend on something that was not
+    part of the manipulation.
+    """
+
+    def _hint(self, toy, response: str):
+        board = new_blackboard("L1", 1, toy.concepts, Config(domain="toy_algebra"))
+        return TemplateTutor(BAND).respond(
+            toy.items.get("ta_dist_p1"),
+            Diagnosis("distribute_first_term_only", 0.9),
+            board.view(),
+            toy,
+            response=response,
+            failed_attempts=1,
+            moves_this_item=[TutorMove.REFLECT],
+        )
+
+    def test_the_text_does_not_vary_with_the_response(self, toy) -> None:
+        first = self._hint(toy, "3*x + 4")
+        second = self._hint(toy, "something else entirely")
+        assert first.text == second.text
+        assert first.move is second.move and first.level is second.level
+
+    def test_the_response_never_appears_in_the_hint(self, toy) -> None:
+        # The stronger form: not merely stable, but not present at all.
+        hint = self._hint(toy, "ZZQQ-marker")
+        assert "ZZQQ-marker" not in hint.text

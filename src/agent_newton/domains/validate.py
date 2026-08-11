@@ -17,12 +17,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from agent_newton.domains.base import Domain, Verdict
+from agent_newton.domains.base import Domain, DomainError, Verdict
 
 ANSWERS_VERIFY = "answers_verify"
 RULES_PRODUCE_ERRORS = "rules_produce_errors"
 UNCONFIRMED_SOURCE = "unconfirmed_source"
 GOALS_ARE_REACHABLE = "goals_are_reachable"
+CONCEPT_HAS_A_LABEL = "concept_has_a_label"
+TEMPLATES_ARE_SOUND = "templates_are_sound"
+
+#: Draws checked per template. A learner works a concept until it is mastered,
+#: which in a full session runs to a handful of repetitions on the hardest ones;
+#: this covers that with room over.
+VARIANT_DRAWS = 8
 
 #: Marker for a catalogue entry whose literature source is not yet confirmed.
 #: Reported as a warning, not a failure: the entry works and the domain loads,
@@ -105,6 +112,30 @@ def validate(domain: Domain) -> ValidationReport:
                 "misconception_has_rule",
                 f"misconception {misconception.id!r} has no registered buggy rule, "
                 f"so no simulated learner can ever exhibit it",
+            )
+
+    # --- diagnosable concepts -------------------------------------------------
+    # A concept with practice items but no catalogue entry cannot be diagnosed
+    # coherently: the label space offered to the diagnostic is the whole
+    # catalogue, so every label available for a wrong answer here belongs to a
+    # different concept, and the agent reaches for the nearest plausible one
+    # rather than abstaining. Nothing else catches this — the referential checks
+    # above only look from the misconception outwards, and a concept with no
+    # entry references nothing.
+    #
+    # A warning rather than a problem. A concept may legitimately carry no
+    # documented misconception; what must not happen is that nobody noticed.
+    labelled = {misconception.concept_id for misconception in catalogue.all()}
+    for concept_id in concepts.ids():
+        if concept_id in labelled:
+            continue
+        practice = items.for_concept(concept_id, "practice")
+        if practice:
+            report.warn(
+                CONCEPT_HAS_A_LABEL,
+                f"concept {concept_id!r} has {len(practice)} practice item(s) but "
+                f"no misconception in the catalogue, so a wrong answer on it can "
+                f"only be labelled with another concept's misconception",
             )
 
     for item in items.all():
@@ -215,5 +246,74 @@ def validate(domain: Domain) -> ValidationReport:
                     f"which verifies as {verdict.value} — a misconception that yields "
                     f"a correct answer would be invisible to the diagnostic agent",
                 )
+
+    # --- item variants --------------------------------------------------------
+    # A template regenerates prompt, answer and params together. Getting one of
+    # them wrong produces a question that still looks fine and an answer key that
+    # no longer matches it, or a buggy rule computing against numbers from a
+    # different question — a learner would be told they were wrong when they were
+    # right. Every draw is therefore put through the same two checks the written
+    # items get, rather than trusting the arithmetic.
+    report.stats["templates"] = len(domain.templates)
+    for item_id, template in sorted(domain.templates.items()):
+        try:
+            base = items.get(item_id)
+        except DomainError:
+            report.add(
+                TEMPLATES_ARE_SOUND,
+                f"template names item {item_id!r}, which is not in the bank",
+            )
+            continue
+
+        # The template, not ``Domain.variant`` — that short-circuits draw 0 and
+        # would return ``base`` whatever the template does, so checking through
+        # it would be a guard that could never fail.
+        if template.variant(base, 0) != base:
+            report.add(
+                TEMPLATES_ARE_SOUND,
+                f"template for {item_id!r} does not reproduce the item as written at "
+                f"draw 0; the YAML would stop being the definition and anything "
+                f"referring to this item by id would change meaning",
+            )
+
+        seen = {base.prompt}
+        for draw in range(1, VARIANT_DRAWS):
+            variant = template.variant(base, draw)
+            if variant.id != base.id or variant.concept_id != base.concept_id:
+                report.add(
+                    TEMPLATES_ARE_SOUND,
+                    f"template for {item_id!r} changed the id or concept at draw "
+                    f"{draw}; a variant is the same item asked again, and the "
+                    f"session counts repetitions by id",
+                )
+            if variant.prompt in seen:
+                report.add(
+                    TEMPLATES_ARE_SOUND,
+                    f"template for {item_id!r} repeats a prompt at draw {draw}, so "
+                    f"the learner is asked the same question again anyway",
+                )
+            seen.add(variant.prompt)
+
+            verdict = domain.verifier.verify(variant, variant.answer).verdict
+            if verdict is not Verdict.CORRECT:
+                report.add(
+                    TEMPLATES_ARE_SOUND,
+                    f"template for {item_id!r} at draw {draw}: stated answer "
+                    f"{variant.answer!r} verifies as {verdict.value}",
+                )
+            for probed in variant.probes:
+                rule = domain.buggy_rule(probed)
+                if rule is None:
+                    continue
+                wrong = rule.apply(variant)
+                if wrong is None or domain.verifier.verify(variant, wrong).verdict is not (
+                    Verdict.INCORRECT
+                ):
+                    report.add(
+                        TEMPLATES_ARE_SOUND,
+                        f"template for {item_id!r} at draw {draw}: rule {probed!r} "
+                        f"produced {wrong!r}, which is not an error on this variant — "
+                        f"the params and the question have drifted apart",
+                    )
 
     return report

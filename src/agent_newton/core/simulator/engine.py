@@ -83,6 +83,22 @@ class Learner(Protocol):
         """
         ...
 
+    def show_working(self, item: Item, response: str) -> str | None:
+        """The steps taken to reach ``response``, or ``None`` to show none.
+
+        Volunteered rather than asked for, which is what separates it from
+        :meth:`reflect`. A person working on paper has reasoning the answer
+        alone does not carry, and a tutor that never sees it can only guess at
+        where the reasoning went wrong. Prose on the same terms as a
+        reflection: never verified, never an attempt.
+
+        A simulated learner returns ``None``. It has no reasoning to show —
+        its answer comes from a buggy rule, not from steps — and inventing
+        prose for it would put words into the tutor's prompt that no cohort
+        result should depend on.
+        """
+        ...
+
     def remediation_ratio(self) -> float | None:
         """How far the learner's misconceptions have been reduced.
 
@@ -176,6 +192,14 @@ class SimulatedLearner:
 
         The reflective prompt still costs it a turn — that is what gives the
         error-first rule a price — but it produces no prose.
+        """
+        return None
+
+    def show_working(self, item: Item, response: str) -> str | None:  # noqa: ARG002
+        """Nothing to show. Its answer comes from a rule, not from steps.
+
+        Keeping this empty is what keeps the channel out of the cohorts: no
+        measured result can depend on prose that was never written.
         """
         return None
 

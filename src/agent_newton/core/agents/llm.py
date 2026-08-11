@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 from typing import Mapping, Sequence
 
-from agent_newton.config import ZPDConfig
+from agent_newton.config import LabelSpace, ZPDConfig
 from agent_newton.core.agents.base import Diagnosis, Hint, StateView
 from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
 from agent_newton.core.state import route
@@ -38,7 +38,7 @@ from agent_newton.core.pedagogy import (
 )
 from agent_newton.core.state.views import FullStateView
 from agent_newton.llm.base import LLMProvider, MalformedResponse, complete
-from agent_newton.domains.base import Domain, Item
+from agent_newton.domains.base import Domain, Item, Misconception
 
 log = logging.getLogger(__name__)
 
@@ -54,13 +54,24 @@ _TUTOR_SYSTEM = (
     "You are a mathematics tutor. Reply with at most two sentences, addressed to "
     "the student. Never state the final answer unless explicitly asked to. "
     "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
-    "Never use LaTeX or backslash commands."
+    "Never use LaTeX or backslash commands. "
+    "Describe only what the student's written step actually shows. Do not tell "
+    "them which operation they performed, which part they got right, or where "
+    "they went wrong, unless their step shows it — if it does not, say what the "
+    "step should have been instead of narrating what they did."
 )
 # The LaTeX ban is not a style preference. Replies arrive as JSON, and a
 # backslash command inside a JSON string is eaten by escape processing:
 # "\frac{a}{b}" parses to a form-feed character followed by "rac{a}{b}", which
 # a learner sees as "$rac{a}{b}". Observed in a human session, where it hid the
 # division the hint was trying to explain.
+#
+# The ban on narrating the student's working has the same origin. The tutor was
+# not given the response at all until this existed, so it had nothing but the
+# misconception's description to work from and invented a step to match: a
+# learner who had multiplied was told their division was correct. The response
+# is now in the prompt, and the instruction keeps the model from embroidering
+# past it.
 
 _PLANNER_SYSTEM = (
     "You choose what a student should work on next, given what they have shown "
@@ -68,9 +79,30 @@ _PLANNER_SYSTEM = (
 )
 
 
-def _catalogue(domain: Domain) -> str:
+def _offered(domain: Domain, item: Item, label_space: LabelSpace) -> tuple[Misconception, ...]:
+    """The misconceptions this diagnosis may choose between.
+
+    Under ``concept``, only those belonging to the item's own concept. The wide
+    space is not neutral: with the whole catalogue on offer the agent will name
+    a misconception from an unrelated concept rather than abstain, which a
+    learner then reads in the panel as an explanation of their error. It is also
+    the harder task, so accuracy under the two is not the same measurement —
+    which is why the space is configured and recorded rather than assumed.
+
+    Falls back to the whole catalogue when a concept has no entry at all.
+    Offering nothing would leave only ``unknown``, making abstention the sole
+    legal reply and the measurement meaningless.
+    """
+    if label_space == "concept":
+        own = tuple(domain.misconceptions.for_concept(item.concept_id))
+        if own:
+            return own
+    return tuple(domain.misconceptions.all())
+
+
+def _describe(misconceptions: Sequence[Misconception]) -> str:
     return "\n".join(
-        f"- {m.id}: {' '.join(m.description.split())}" for m in domain.misconceptions.all()
+        f"- {m.id}: {' '.join(m.description.split())}" for m in misconceptions
     )
 
 
@@ -81,19 +113,23 @@ class LLMDiagnostic:
     which the injected label could reach it.
     """
 
-    def __init__(self, provider: LLMProvider) -> None:
+    def __init__(
+        self, provider: LLMProvider, label_space: LabelSpace = "concept"
+    ) -> None:
         self._provider = provider
+        self._label_space: LabelSpace = label_space
         #: Replies that could not be obtained at all, reported per run. These
         #: are not wrong answers and must not be scored as such.
         self.failures = 0
 
     def diagnose(self, item: Item, response: str, domain: Domain) -> Diagnosis:
-        schema = diagnosis_schema(domain.name, tuple(domain.misconceptions.ids()))
+        offered = _offered(domain, item, self._label_space)
+        schema = diagnosis_schema(domain.name, tuple(m.id for m in offered))
         prompt = (
             f"Exercise: {item.prompt}\n"
             f"Correct answer: {item.answer}\n"
             f"The student wrote: {response}\n\n"
-            f"Catalogue of misconceptions:\n{_catalogue(domain)}\n\n"
+            f"Catalogue of misconceptions:\n{_describe(offered)}\n\n"
             f"Which one explains this step?"
         )
         try:
@@ -136,6 +172,7 @@ class LLMTutor:
         view: StateView,
         domain: Domain,
         *,
+        response: str,
         failed_attempts: int,
         moves_this_item: Sequence[TutorMove],
     ) -> Hint:
@@ -165,14 +202,21 @@ class LLMTutor:
             described = domain.misconceptions.get(diagnosis.misconception_id).description
             context = f"\nThe error is: {' '.join(described.split())}"
 
-        said = (
-            "\nThe student said, when asked what they were unsure of: "
-            + "; ".join(view.reflections[-2:])
-            if isinstance(view, FullStateView) and view.reflections
-            else ""
-        )
+        # Only what was said about *this* concept. Taking the last two
+        # regardless of subject once had the tutor ask a learner differentiating
+        # 2/x^2 to revisit their explanation of limits.
+        said = ""
+        if isinstance(view, FullStateView):
+            for utterance in view.said_about(item.concept_id):
+                label = (
+                    "The student showed this working"
+                    if utterance.kind == "working"
+                    else "The student said, when asked what they were unsure of"
+                )
+                said += f"\n{label}: {utterance.text}"
         prompt = (
             f"Exercise: {item.prompt}\n"
+            f"The student wrote: {response}\n"
             f"Correct answer: {item.answer}{context}{said}\n\n"
             f"{instruction}"
         )

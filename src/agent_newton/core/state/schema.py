@@ -22,7 +22,12 @@ from pydantic import BaseModel, Field
 #: ``plan`` is separate from ``replan``: setting a goal is not a replanning
 #: trigger, and folding it in would put it among the trigger counts that the
 #: threshold analysis reads.
-Cause = Literal["observation", "plan", "replan", "reset", "annotation"]
+#:
+#: ``seed`` is separate from ``observation`` for the same reason. Both move a
+#: posterior, but a seeded update comes from a held-out test rather than from
+#: practice, so anything counting what the learner did during the session must
+#: be able to leave it out.
+Cause = Literal["observation", "seed", "plan", "replan", "reset", "annotation"]
 
 
 class Emphasis(str, Enum):
@@ -55,6 +60,26 @@ class ErrorEvent(BaseModel):
     #: The verifier's verdict, carried so analysis can separate genuine errors
     #: from responses that merely failed to parse.
     verifier_label: str = "incorrect"
+
+
+class Utterance(BaseModel):
+    """Something the learner said in words, and what it was about.
+
+    Two kinds, both prose and neither evidence: a ``reflection`` answers a
+    question the tutor asked, and ``working`` is the steps the learner took,
+    volunteered unprompted. Kept apart because the tutor should address them
+    differently — one is a reply, the other is a record of reasoning.
+
+    ``concept_id`` is here because it was once dropped. Only the text reached
+    the state, so the tutor was handed whatever had been said most recently
+    regardless of subject, and asked a learner working on ``y = 2/x^2`` to
+    reconsider their explanation of limits.
+    """
+
+    text: str
+    item_id: str
+    concept_id: str
+    kind: Literal["reflection", "working"] = "reflection"
 
 
 class AuditRecord(BaseModel):
@@ -108,11 +133,11 @@ class LearnerState(BaseModel):
     #: Most recent errors, oldest first, bounded by the configured length.
     error_trace: list[ErrorEvent] = Field(default_factory=list)
 
-    #: What the learner said when asked to reflect, most recent last. Prose,
-    #: not evidence: it updates no estimate and enters no error trace, because
-    #: it is not a graded step. It is here so the tutor can read back what the
-    #: learner said they were unsure of.
-    reflections: list[str] = Field(default_factory=list)
+    #: What the learner said, in words, most recent last. Prose, not evidence:
+    #: it updates no estimate and enters no error trace, because it is not a
+    #: graded step. It is here so the tutor can read back what the learner said
+    #: they were unsure of, and the working they showed.
+    reflections: list[Utterance] = Field(default_factory=list)
 
     #: What this learner is working toward. None before the first plan is set.
     #: This is the shared representation of goals: it lives in the state every

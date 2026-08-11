@@ -39,6 +39,11 @@ LearnerKind = Literal["simulated", "human"]
 # possible.
 TutorImpl = Literal["llm", "template"]
 DiagnosticImpl = Literal["llm", "oracle", "noised_oracle"]
+
+#: Which misconceptions the diagnostic agent may choose between — the item's
+#: own concept, or the whole catalogue. Recorded on the run manifest, because
+#: an accuracy figure measured over one is not comparable to the other.
+LabelSpace = Literal["concept", "catalogue"]
 #: ``goal_directed`` routes toward the domain's declared goals from the learner
 #: model. ``greedy`` is the undirected predecessor — frontier selection with no
 #: target — kept as the baseline the directed planner is compared against.
@@ -117,6 +122,15 @@ class DiagnosticSpec(ModelSpec):
     #: error propagates into system-level outcomes.
     impl: DiagnosticImpl = "llm"
     noise_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    #: Which misconceptions the model may choose between.
+    #:
+    #: ``concept`` offers only those belonging to the item's own concept;
+    #: ``catalogue`` offers all of them. The wide space lets the agent return a
+    #: label from an unrelated concept — an incoherence a human session showed
+    #: is frequent rather than rare, and which a learner sees in the panel.
+    #: Narrowing also makes the task easier, so the two are not interchangeable
+    #: as measurements: ``evaluate diagnostic`` reports both.
+    label_space: LabelSpace = "concept"
 
     @model_validator(mode="after")
     def _check_noise_rate(self) -> DiagnosticSpec:
@@ -247,6 +261,16 @@ class CohortConfig(BaseModel):
     #: questions of pure measurement around a short session, and they update no
     #: state, so skipping them costs the demo nothing but the gain figure.
     administer_tests: bool = True
+    #: Whether the pre-test's results seed the learner model before practice.
+    #:
+    #: **Off for every cohort, and it must stay off.** Seeding does not teach —
+    #: no hints are given during a test — but it changes the *starting
+    #: frontier*, and the coupled planner routes from the frontier while the
+    #: decoupled one structurally cannot. Turning this on for an experiment
+    #: therefore hands the coupled arm an advantage from the first item and
+    #: inflates the effect being measured. On for the demo, where a person who
+    #: has just sat a test reasonably expects it to count for something.
+    seed_from_pretest: bool = False
 
 
 class PathsConfig(BaseModel):

@@ -17,7 +17,7 @@ Two invariants this file exists to hold:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Iterable, Literal
 
 from agent_newton.config import Config
 from agent_newton.core.state import bkt, zpd
@@ -27,6 +27,7 @@ from agent_newton.core.state.schema import (
     ErrorEvent,
     LearnerState,
     Plan,
+    Utterance,
 )
 from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
 from agent_newton.core.state.zpd import Frontier
@@ -193,6 +194,52 @@ class Blackboard:
         )
         return True
 
+    def seed_from_test(self, results: Iterable[tuple[str, Verdict]]) -> int:
+        """Fold a held-out test's results into the learner model. Returns the count.
+
+        One BKT update per measurable item, before any practice happens. Close
+        to what ``record_observation`` performs, and deliberately not the same
+        method: four things must differ.
+
+        * **No learning transition.** ``bkt.revise``, not ``bkt.observe`` — a
+          held-out item is answered unaided and without feedback, so there was
+          no opportunity to learn from it. This one is not a nicety: the
+          transition is large enough that ``observe`` would *raise* the estimate
+          on a wrong answer, seeding the model backwards.
+        * **A separate audit cause.** ``seed`` rather than ``observation``, so
+          anything counting what the learner did *during* the session can leave
+          these out. They came from a test, not from practice.
+        * **No error-trace events.** A test is administered without diagnosis,
+          so a wrong answer here carries no misconception label. The arbitration
+          policy counts label repeats in the trace, and unlabelled entries would
+          trip replans on evidence that does not exist.
+        * **No outcome stream entry.** The stream is the practice record the
+          decoupled view is built from, and a test the learner sat unaided is
+          not part of it.
+
+        Unreadable answers are skipped, for the reason they are skipped
+        everywhere: the verifier failed to measure, which says nothing about
+        mastery.
+        """
+        seeded = 0
+        for concept_id, verdict in results:
+            if verdict not in (Verdict.CORRECT, Verdict.INCORRECT):
+                continue
+            before = self.probability(concept_id)
+            after = bkt.revise(before, verdict is Verdict.CORRECT, self._config.bkt)
+            self._state.mastery[concept_id] = after
+            seeded += 1
+            self._bump(
+                "seed",
+                f"{verdict.value} on a held-out item; "
+                f"P({concept_id}) {before:.3f} -> {after:.3f}",
+                concept_id=concept_id,
+                verdict=verdict.value,
+                mastery_before=before,
+                mastery_after=after,
+            )
+        return seeded
+
     def record_replan(self, summary: str, **evidence: Any) -> None:
         """Record a planning decision and what triggered it.
 
@@ -201,22 +248,36 @@ class Blackboard:
         """
         self._bump("replan", summary, **evidence)
 
-    def record_reflection(self, text: str, item_id: str, concept_id: str) -> None:
-        """Record what the learner said when asked to reflect.
+    def record_reflection(
+        self,
+        text: str,
+        item_id: str,
+        concept_id: str,
+        kind: Literal["reflection", "working"] = "reflection",
+    ) -> None:
+        """Record what the learner said, in words.
 
         Prose, not evidence. It updates no estimate and enters no error trace —
-        the learner was asked a question in words and answered it, which is not
-        a graded attempt at anything. It is kept because the tutor can use it,
-        and because a session where someone said what confused them and the
-        system discarded it is not a shared learner state worth the name.
+        the learner was asked a question in words and answered it, or showed
+        their working, and neither is a graded attempt at anything. It is kept
+        because the tutor can use it, and because a session where someone said
+        what confused them and the system discarded it is not a shared learner
+        state worth the name.
+
+        ``concept_id`` is stored rather than only audited. It was audited only,
+        once, and the tutor consequently read back whatever had been said most
+        recently regardless of subject.
         """
-        self._state.reflections.append(text)
+        self._state.reflections.append(
+            Utterance(text=text, item_id=item_id, concept_id=concept_id, kind=kind)
+        )
         self._bump(
             "annotation",
-            f"reflection on {item_id}",
+            f"{kind} on {item_id}",
             item_id=item_id,
             concept_id=concept_id,
             reflection=text,
+            kind=kind,
         )
 
     def record_plan(self, plan: Plan, **evidence: Any) -> Plan:

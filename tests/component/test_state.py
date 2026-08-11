@@ -223,6 +223,83 @@ class TestBlackboard:
         assert set(board.frontier) != set(first)
 
 
+class TestSeedingFromAHeldOutTest:
+    """What a pre-test may and may not do to the learner model.
+
+    It may move the posteriors — that is the point. It may not leave anything
+    behind that later reads as practice, because the learner did that work
+    unaided and without a diagnosis.
+    """
+
+    def _board(self, graph) -> Blackboard:
+        config = Config.model_validate({"domain": "toy_algebra"})
+        return new_blackboard("L1", seed=1, graph=graph, config=config)
+
+    def test_a_correct_answer_raises_the_estimate(self, graph) -> None:
+        board = self._board(graph)
+        before = board.probability("integer_arithmetic")
+        assert board.seed_from_test([("integer_arithmetic", Verdict.CORRECT)]) == 1
+        assert board.probability("integer_arithmetic") > before
+
+    def test_a_wrong_answer_lowers_it(self, graph) -> None:
+        board = self._board(graph)
+        before = board.probability("integer_arithmetic")
+        board.seed_from_test([("integer_arithmetic", Verdict.INCORRECT)])
+        assert board.probability("integer_arithmetic") < before
+
+    def test_the_learning_transition_is_not_applied(self, graph) -> None:
+        # The transition means "the learner may have learned it at this
+        # opportunity", which is true of practice and false of a test answered
+        # unaided and without feedback. It is also large enough to invert the
+        # sign: `observe` on a wrong answer from the prior returns 0.22, above
+        # the 0.15 it started at. Seeding with it would raise the estimate on
+        # every question the learner got wrong.
+        board = self._board(graph)
+        prior = board.probability("integer_arithmetic")
+        board.seed_from_test([("integer_arithmetic", Verdict.INCORRECT)])
+
+        assert board.probability("integer_arithmetic") == pytest.approx(
+            bkt.revise(prior, False, PARAMS)
+        )
+        assert bkt.observe(prior, False, PARAMS) > prior
+
+    def test_an_unreadable_answer_moves_nothing(self, graph) -> None:
+        board = self._board(graph)
+        before = board.probability("integer_arithmetic")
+        assert board.seed_from_test([("integer_arithmetic", Verdict.UNPARSEABLE)]) == 0
+        assert board.probability("integer_arithmetic") == before
+
+    def test_no_error_event_is_recorded(self, graph) -> None:
+        # A test is administered without diagnosis, so a wrong answer here has
+        # no misconception label. Unlabelled trace entries would trip the
+        # arbitration policy's repeat trigger on evidence that does not exist.
+        board = self._board(graph)
+        board.seed_from_test([("combine_like_terms", Verdict.INCORRECT)])
+        assert board.state.error_trace == []
+
+    def test_the_outcome_stream_is_untouched(self, graph) -> None:
+        # The stream is the practice record the decoupled view is built from.
+        board = self._board(graph)
+        board.seed_from_test(
+            [("integer_arithmetic", Verdict.CORRECT), ("distribute", Verdict.INCORRECT)]
+        )
+        assert board.view("decoupled").outcomes == ()
+
+    def test_it_is_audited_under_its_own_cause(self, graph) -> None:
+        # Distinguishable from practice, so anything counting what the learner
+        # did during the session can leave it out.
+        board = self._board(graph)
+        board.seed_from_test([("integer_arithmetic", Verdict.CORRECT)])
+        seeded = [r for r in board.audit_log if r.cause == "seed"]
+        assert len(seeded) == 1
+        assert seeded[0].evidence["concept_id"] == "integer_arithmetic"
+
+    def test_it_is_not_recorded_as_an_observation(self, graph) -> None:
+        board = self._board(graph)
+        board.seed_from_test([("integer_arithmetic", Verdict.CORRECT)])
+        assert not [r for r in board.audit_log if r.cause == "observation"]
+
+
 class TestTheAblation:
     """The two arms differ in what the planner can see, and nothing else."""
 

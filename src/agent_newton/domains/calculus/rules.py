@@ -157,6 +157,41 @@ class AntiderivativeOmitsConstant:
         return None if got is None else str(got[0])
 
 
+class RateAsDifferenceNotRatio:
+    """f(b) - f(a) reported as the average rate, never divided by b - a."""
+
+    misconception_id = "rate_as_difference_not_ratio"
+
+    def apply(self, item: Item) -> str | None:
+        got = _need(item, "difference")
+        return None if got is None else str(got[0])
+
+
+class TangentAsSecant:
+    """A secant gradient at a finite separation given as the tangent's."""
+
+    misconception_id = "tangent_as_secant"
+
+    def apply(self, item: Item) -> str | None:
+        got = _need(item, "secant_gradient")
+        return None if got is None else str(got[0])
+
+
+class ConstantTermDifferentiated:
+    """The constant term carried into the derivative instead of vanishing."""
+
+    misconception_id = "constant_term_differentiated"
+
+    def apply(self, item: Item) -> str | None:
+        got = _need(item, "constant")
+        if got is None:
+            return None
+        # Built from the item's own answer rather than from a second copy of
+        # the derivative in params. The ban in this module is on parsing
+        # ``prompt``, which is prose; ``answer`` is already structured.
+        return f"{item.answer} + ({got[0]})"
+
+
 RULES: Sequence[BuggyRule] = (
     BinomialMiddleTermLost(),
     CancelXLosesRoot(),
@@ -170,4 +205,7 @@ RULES: Sequence[BuggyRule] = (
     QuotientRuleOrderSwapped(),
     UsubForgetsDu(),
     AntiderivativeOmitsConstant(),
+    RateAsDifferenceNotRatio(),
+    TangentAsSecant(),
+    ConstantTermDifferentiated(),
 )

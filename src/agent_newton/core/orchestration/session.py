@@ -63,8 +63,14 @@ class SessionObserver(Protocol):
 
     Exists so a front end can render what is happening without the loop
     knowing there is one, and without a second loop being written that would
-    drift from this one. Every hook is optional in effect: the default session
-    has no observer and behaves exactly as before.
+    drift from this one. A session with no observer behaves exactly as one
+    written before observers existed.
+
+    Implement it structurally, or subclass :class:`Watching` to take no-ops for
+    the hooks you do not want. The session calls every hook unconditionally, so
+    a partial structural implementation fails at the moment the session first
+    reaches the missing one — halfway through somebody's sitting, not at
+    startup.
     """
 
     def item_started(self, item: Item, board: Blackboard) -> None: ...
@@ -73,15 +79,65 @@ class SessionObserver(Protocol):
         self, item: Item, response: str, result: VerificationResult, diagnosis: Diagnosis
     ) -> None: ...
 
+    def item_finished(self, item: Item, solved: bool) -> None:
+        """The session is done with this item, whether or not it was answered.
+
+        Exists because running out of attempts previously looked identical to
+        nothing happening: the next question simply appeared, and a person had
+        no way to tell whether they had got the last one right.
+        """
+        ...
+
     def tutor_replied(self, item: Item, hint: Hint) -> None: ...
 
     def reflection_recorded(self, item: Item, text: str) -> None: ...
+
+    def working_recorded(self, item: Item, text: str) -> None: ...
 
     def phase_started(self, phase: str, total: int) -> None: ...
 
     def phase_answer(self, phase: str, index: int, total: int, item: Item) -> None: ...
 
     def phase_finished(self, phase: str, result: "TestResult") -> None: ...
+
+
+class Watching:
+    """A :class:`SessionObserver` that does nothing. Subclass and override.
+
+    Here so a front end can take the hooks it wants without having to track
+    every one the session grows later. The alternative is that adding a hook
+    breaks existing observers the first time a session reaches it, which is
+    mid-sitting rather than at startup.
+    """
+
+    def item_started(self, item: Item, board: Blackboard) -> None:
+        return None
+
+    def step_graded(
+        self, item: Item, response: str, result: VerificationResult, diagnosis: Diagnosis
+    ) -> None:
+        return None
+
+    def item_finished(self, item: Item, solved: bool) -> None:
+        return None
+
+    def tutor_replied(self, item: Item, hint: Hint) -> None:
+        return None
+
+    def reflection_recorded(self, item: Item, text: str) -> None:
+        return None
+
+    def working_recorded(self, item: Item, text: str) -> None:
+        return None
+
+    def phase_started(self, phase: str, total: int) -> None:
+        return None
+
+    def phase_answer(self, phase: str, index: int, total: int, item: Item) -> None:
+        return None
+
+    def phase_finished(self, phase: str, result: "TestResult") -> None:
+        return None
 
 
 @dataclass
@@ -101,6 +157,12 @@ class Session:
 
     def run(self) -> SessionOutcome:
         pretest = self._administer("pretest")
+        if self.config.cohort.seed_from_pretest:
+            # Off for every cohort — see CohortConfig. It moves the starting
+            # frontier, and only one arm can route from a frontier.
+            self.board.seed_from_test(
+                (result.concept_id, result.verdict) for result in pretest.per_item
+            )
 
         given: Counter[str] = Counter()
         diagnoses: list[tuple[str | None, str | None]] = []
@@ -319,6 +381,12 @@ class Session:
         confirmed = False
         failed = 0
 
+        # A concept is worked until its posterior clears the band, and most
+        # concepts carry one item — so without this the same question is asked
+        # verbatim each time. The variant keeps the item's id, because it is the
+        # same item asked again and the session counts repetitions by id.
+        item = self.domain.variant(item, repetition)
+
         if self.observer is not None:
             self.observer.item_started(item, self.board)
 
@@ -348,7 +416,20 @@ class Session:
             if self.observer is not None:
                 self.observer.step_graded(item, response, result, diagnosis)
 
+            # Asked after the answer is recorded, so the working cannot become a
+            # hint the learner writes for themselves before committing. Prose,
+            # on the same terms as a reflection: no estimate moves.
+            shown = self.learner.show_working(item, response)
+            if shown:
+                self.board.record_reflection(
+                    shown, item.id, item.concept_id, kind="working"
+                )
+                if self.observer is not None:
+                    self.observer.working_recorded(item, shown)
+
             if result.verdict is Verdict.CORRECT:
+                if self.observer is not None:
+                    self.observer.item_finished(item, solved=True)
                 return
             failed += 1
 
@@ -357,6 +438,7 @@ class Session:
                 diagnosis,
                 self.board.view(),
                 self.domain,
+                response=response,
                 failed_attempts=failed,
                 moves_this_item=moves,
             )
@@ -390,6 +472,13 @@ class Session:
             if hint.move is TutorMove.REMEDIATE:
                 self.learner.receive_hint(hint.targets)
 
+        # The attempts ran out. Said explicitly, because it previously looked
+        # exactly like nothing happening — the next question simply appeared,
+        # and a person had no way to tell whether they had got the last one
+        # right. Nothing about the loop changes here; it is a report.
+        if self.observer is not None:
+            self.observer.item_finished(item, solved=False)
+
 
 def build_session(
     learner_id: str,
@@ -422,7 +511,10 @@ def build_session(
     elif agents.diagnostic.impl == "noised_oracle":
         diagnostic = NoisedOracleDiagnostic(agents.diagnostic.noise_rate, seed=seed)
     else:
-        diagnostic = LLMDiagnostic(build_provider(agents.diagnostic, cache_dir))
+        diagnostic = LLMDiagnostic(
+            build_provider(agents.diagnostic, cache_dir),
+            label_space=agents.diagnostic.label_space,
+        )
 
     if config.simulator.surface != "symbolic":
         raise NotImplementedForModels(

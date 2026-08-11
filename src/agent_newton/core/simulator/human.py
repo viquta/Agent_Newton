@@ -41,9 +41,11 @@ class HumanLearner:
         learner_id: str = "human",
         on_hint: Callable[[str | None], None] | None = None,
         ask_reflection: Callable[[Item, str], str] | None = None,
+        ask_working: Callable[[Item, str], str] | None = None,
     ) -> None:
         self._ask = ask
         self._ask_reflection = ask_reflection
+        self._ask_working = ask_working
         self._learner_id = learner_id
         self._on_hint = on_hint
         #: Every response given, in order. The demo shows it back at the end;
@@ -73,6 +75,20 @@ class HumanLearner:
             return None
         said = self._ask_reflection(item, prompt).strip()
         return said or None
+
+    def show_working(self, item: Item, response: str) -> str | None:
+        """Take the steps the person took, if they care to give them.
+
+        Optional at every step and skipped by pressing enter, because a channel
+        that has to be filled in becomes a tax on answering. Someone who worked
+        it out on paper has reasoning the final answer does not carry — asked
+        for after the answer rather than before, so it cannot become a hint the
+        learner writes for themselves.
+        """
+        if self._ask_working is None:
+            return None
+        shown = self._ask_working(item, response).strip()
+        return shown or None
 
     def receive_hint(self, targeted_misconception: str | None) -> bool:
         """A person is not adjusted by a hint; they read it.

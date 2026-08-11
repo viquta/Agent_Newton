@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, Sequence
 
-from agent_newton.core.state.schema import ErrorEvent, Plan
+from agent_newton.core.state.schema import ErrorEvent, Plan, Utterance
 from agent_newton.core.state.zpd import Frontier
 
 
@@ -49,10 +49,10 @@ class FullStateView:
     outcomes: tuple[bool, ...]
     version: int
     plan: Plan | None = None
-    #: What the learner said when asked to reflect, most recent last. Only the
-    #: coupled view carries it: it is something the learner told us about
-    #: themselves, which is exactly what the decoupled arm does without.
-    reflections: tuple[str, ...] = ()
+    #: What the learner said in words, most recent last. Only the coupled view
+    #: carries it: it is something the learner told us about themselves, which
+    #: is exactly what the decoupled arm does without.
+    reflections: tuple[Utterance, ...] = ()
 
     def consecutive_correct(self) -> int:
         count = 0
@@ -64,6 +64,17 @@ class FullStateView:
 
     def probability(self, concept_id: str, default: float = 0.0) -> float:
         return self.mastery.get(concept_id, default)
+
+    def said_about(self, concept_id: str, window: int = 2) -> tuple[Utterance, ...]:
+        """The learner's most recent words **on this concept**.
+
+        Filtered rather than taken from the end of the list. Unfiltered, a
+        reflection carried over from an earlier concept and the tutor asked
+        someone differentiating ``2/x^2`` to revisit their explanation of
+        limits.
+        """
+        on_topic = [u for u in self.reflections if u.concept_id == concept_id]
+        return tuple(on_topic[-window:])
 
     def recent_misconceptions(self, window: int | None = None) -> list[str]:
         events = self.error_trace if window is None else self.error_trace[-window:]

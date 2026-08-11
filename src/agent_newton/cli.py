@@ -386,6 +386,13 @@ def evaluate_diagnostic(
     limit: int | None = typer.Option(None, "--limit", help="Stop after N cases."),
     out: Path | None = typer.Option(None, "--out", help="Output directory."),
     dry_run: bool = typer.Option(False, "--dry-run", help="List the cases and exit."),
+    label_space: str = typer.Option(
+        "concept",
+        "--label-space",
+        help="Labels offered per case: 'concept' (the item's own concept) or "
+        "'catalogue' (all of them). Not interchangeable as measurements — the "
+        "narrow space is the easier task, so run both and report both.",
+    ),
 ) -> None:
     """Score a diagnostic agent against the item bank's injected labels.
 
@@ -413,13 +420,23 @@ def evaluate_diagnostic(
             console.print(f"  {item_id:18} {misconception:36} -> {wrong}")
         return
 
+    if label_space not in ("concept", "catalogue"):
+        console.print(f"[red]unknown label space {label_space!r}[/red]")
+        raise typer.Exit(code=1)
+
     spec = ModelSpec(provider=provider, model=model, think=think)  # pyright: ignore[reportArgumentType]
-    agent = LLMDiagnostic(build_provider(spec, Path(".cache/llm")))
+    agent = LLMDiagnostic(
+        build_provider(spec, Path(".cache/llm")),
+        label_space=label_space,  # pyright: ignore[reportArgumentType]
+    )
 
     # The reasoning mode is part of the run's identity, not a flag on it: the
     # same model answering with and without deliberation gives two different
-    # measurements, and they must not overwrite each other.
+    # measurements, and they must not overwrite each other. The label space is
+    # the same kind of thing: a narrower one is an easier task, so the two
+    # figures must not land in the same directory either.
     suffix = "" if think is None else f"_think-{str(think).lower()}"
+    suffix += f"_labels-{label_space}"
     directory = (
         out
         or Path("results") / f"diagnostic_{domain_name}_{model.replace(':', '-')}{suffix}"
@@ -456,6 +473,10 @@ def evaluate_diagnostic(
     summary = {
         "domain": domain_name,
         "model": spec.label(),
+        # Part of the measurement's identity. An accuracy figure under one label
+        # space cannot be compared against the other, and a summary that did not
+        # say which it was would invite exactly that comparison.
+        "label_space": label_space,
         "cases": report.total,
         "accuracy": report.accuracy,
         "macro_f1": report.macro_f1,

@@ -8,8 +8,8 @@
     {
       "max_items": 12,
       "arm": "coupled",
-      "opportunity": 0.125,
-      "exhibition": 0.1,
+      "opportunity": 0.225,
+      "exhibition": 0.225,
       "mean_items_used": 12.0,
       "learners_fully_covered": 1,
       "n_learners": 20
@@ -17,54 +17,54 @@
     {
       "max_items": 12,
       "arm": "decoupled",
-      "opportunity": 0.35,
-      "exhibition": 0.275,
+      "opportunity": 0.325,
+      "exhibition": 0.325,
       "mean_items_used": 12.0,
-      "learners_fully_covered": 1,
+      "learners_fully_covered": 2,
       "n_learners": 20
     },
     {
       "max_items": 20,
       "arm": "coupled",
-      "opportunity": 0.475,
-      "exhibition": 0.375,
+      "opportunity": 0.45,
+      "exhibition": 0.45,
       "mean_items_used": 20.0,
-      "learners_fully_covered": 5,
+      "learners_fully_covered": 2,
       "n_learners": 20
     },
     {
       "max_items": 20,
       "arm": "decoupled",
-      "opportunity": 0.675,
-      "exhibition": 0.55,
+      "opportunity": 0.7,
+      "exhibition": 0.7,
       "mean_items_used": 20.0,
-      "learners_fully_covered": 8,
+      "learners_fully_covered": 9,
       "n_learners": 20
     },
     {
       "max_items": 30,
       "arm": "coupled",
-      "opportunity": 0.625,
-      "exhibition": 0.6,
+      "opportunity": 0.725,
+      "exhibition": 0.65,
       "mean_items_used": 30.0,
-      "learners_fully_covered": 7,
+      "learners_fully_covered": 10,
       "n_learners": 20
     },
     {
       "max_items": 30,
       "arm": "decoupled",
-      "opportunity": 1.0,
-      "exhibition": 0.85,
+      "opportunity": 0.975,
+      "exhibition": 0.9,
       "mean_items_used": 30.0,
-      "learners_fully_covered": 20,
+      "learners_fully_covered": 19,
       "n_learners": 20
     },
     {
       "max_items": 45,
       "arm": "coupled",
       "opportunity": 1.0,
-      "exhibition": 0.975,
-      "mean_items_used": 44.95,
+      "exhibition": 1.0,
+      "mean_items_used": 44.8,
       "learners_fully_covered": 20,
       "n_learners": 20
     },
@@ -72,8 +72,8 @@
       "max_items": 45,
       "arm": "decoupled",
       "opportunity": 1.0,
-      "exhibition": 0.875,
-      "mean_items_used": 32.4,
+      "exhibition": 0.95,
+      "mean_items_used": 32.2,
       "learners_fully_covered": 20,
       "n_learners": 20
     },
@@ -81,8 +81,8 @@
       "max_items": 60,
       "arm": "coupled",
       "opportunity": 1.0,
-      "exhibition": 0.975,
-      "mean_items_used": 45.9,
+      "exhibition": 1.0,
+      "mean_items_used": 45.5,
       "learners_fully_covered": 20,
       "n_learners": 20
     },
@@ -90,8 +90,8 @@
       "max_items": 60,
       "arm": "decoupled",
       "opportunity": 1.0,
-      "exhibition": 0.875,
-      "mean_items_used": 32.4,
+      "exhibition": 0.95,
+      "mean_items_used": 32.2,
       "learners_fully_covered": 20,
       "n_learners": 20
     },
@@ -99,8 +99,8 @@
       "max_items": 80,
       "arm": "coupled",
       "opportunity": 1.0,
-      "exhibition": 0.975,
-      "mean_items_used": 45.9,
+      "exhibition": 1.0,
+      "mean_items_used": 45.5,
       "learners_fully_covered": 20,
       "n_learners": 20
     },
@@ -108,8 +108,8 @@
       "max_items": 80,
       "arm": "decoupled",
       "opportunity": 1.0,
-      "exhibition": 0.875,
-      "mean_items_used": 32.4,
+      "exhibition": 0.95,
+      "mean_items_used": 32.2,
       "learners_fully_covered": 20,
       "n_learners": 20
     }

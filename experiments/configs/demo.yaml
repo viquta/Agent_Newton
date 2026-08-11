@@ -15,13 +15,20 @@ seed: 20260812
 
 cohort:
   n_learners: 1
-  # Short by design: this is a sitting at a keyboard, not a cohort run.
-  max_items: 12
+  # Short by design: this is a sitting at a keyboard, not a cohort run. Raised
+  # from 12 so that more of the sitting is the tutoring being evaluated and
+  # less of it is measurement.
+  max_items: 20
   max_steps_per_item: 3
   # Kept on, so the sitting yields a real pre-to-post measurement. It adds the
   # two held-out banks either side of the practice items — set it false for a
   # shorter demonstration, at the cost of the gain figure.
   administer_tests: true
+  # On here and nowhere else. A person who has just answered fifteen questions
+  # expects them to count for something, and the training now starts from what
+  # the pre-test showed. It stays off for cohorts because it moves the starting
+  # frontier, which only the coupled arm can route from — see CohortConfig.
+  seed_from_pretest: true
 
 simulator:
   learner: human

@@ -9,11 +9,13 @@ number where there is none.
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 from pydantic import ValidationError
 
 from agent_newton.config import Config
-from agent_newton.core.orchestration.session import build_session
+from agent_newton.core.orchestration.session import Watching, build_session
 from agent_newton.core.simulator.engine import Learner, SimulatedLearner
 from agent_newton.core.simulator.human import HumanLearner
 from agent_newton.domains import registry
@@ -169,7 +171,11 @@ class TestTheObserverOnlyWatches:
         # something other than the system that produced the numbers.
         from agent_newton.core.agents.base import Diagnosis
 
-        class Recorder:
+        # Subclassing `Watching` is how a front end implements only part of
+        # the protocol. Implementing it structurally instead would mean a
+        # hook added later crashes this observer the first time the session
+        # reaches it — mid-run, not at startup.
+        class Recorder(Watching):
             def __init__(self) -> None:
                 self.calls: list[str] = []
 
@@ -206,6 +212,70 @@ class TestTheObserverOnlyWatches:
         assert watched.distance_to_goal == plain.distance_to_goal
 
 
+class TestThePreTestCanSteerTheTraining:
+    """A person who has just sat a test expects it to have counted.
+
+    Off by default and off in every cohort — it moves the starting frontier, and
+    only the coupled arm can route from a frontier. On here so the behaviour is
+    tested rather than only configured.
+    """
+
+    def _run(self, toy, *, seed_from_pretest: bool, answer: str):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={
+                "n_learners": 1,
+                "max_items": 4,
+                "administer_tests": True,
+                "seed_from_pretest": seed_from_pretest,
+            }
+        )
+        learner = HumanLearner(lambda item, attempt: answer)
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        return session, session.run()
+
+    def test_the_pretest_reports_what_was_missed(self, toy) -> None:
+        # Aggregates alone cannot answer "what do I need to work on".
+        _, outcome = self._run(toy, seed_from_pretest=False, answer="999")
+        assert outcome.pretest.concepts_missed
+        assert set(outcome.pretest.concepts_missed) <= set(toy.concepts.ids())
+
+    def test_a_missed_concept_is_estimated_lower_when_seeding_is_on(self, toy) -> None:
+        # Read from the audit records rather than from final mastery: practice
+        # moves the estimates afterwards, and the claim is about what the
+        # pre-test did.
+        session, outcome = self._run(toy, seed_from_pretest=True, answer="999")
+        seeded = [r for r in session.board.audit_log if r.cause == "seed"]
+        assert seeded, "seeding recorded nothing"
+
+        wrong = [r for r in seeded if r.evidence["verdict"] == "incorrect"]
+        assert wrong, "the run produced no incorrect pre-test answers to seed from"
+        for record in wrong:
+            assert record.evidence["mastery_after"] < record.evidence["mastery_before"]
+        assert {r.evidence["concept_id"] for r in wrong} >= set(
+            outcome.pretest.concepts_missed
+        )
+
+    def test_seeding_off_leaves_the_model_untouched_by_the_pretest(self, toy) -> None:
+        session, _ = self._run(toy, seed_from_pretest=False, answer="999")
+        assert not [r for r in session.board.audit_log if r.cause == "seed"]
+
+    def test_the_pretest_score_is_the_same_either_way(self, toy) -> None:
+        # Seeding must not feed back into what the test measured. The banks are
+        # administered before anything is folded in, and a score that moved with
+        # the flag would mean the measurement had been disturbed.
+        _, seeded = self._run(toy, seed_from_pretest=True, answer="999")
+        _, plain = self._run(toy, seed_from_pretest=False, answer="999")
+        assert seeded.pretest.correct == plain.pretest.correct
+        assert seeded.pretest.total == plain.pretest.total
+
+
 class TestReflectionIsNotAnAnswer:
     """The tutor asks a question in words; the reply is words.
 
@@ -236,7 +306,38 @@ class TestReflectionIsNotAnAnswer:
 
     def test_it_is_recorded_on_the_blackboard(self, toy) -> None:
         session, _ = self._session(toy, "I do not know what a coefficient is")
-        assert "I do not know what a coefficient is" in session.board.state.reflections
+        said = session.board.state.reflections
+        assert [u.text for u in said].count("I do not know what a coefficient is")
+        assert all(u.kind == "reflection" for u in said)
+
+    def test_it_keeps_the_concept_it_was_said_about(self, toy) -> None:
+        # Dropped once: only the text reached the state, so the tutor read back
+        # whatever had been said most recently whatever its subject, and asked a
+        # learner differentiating 2/x^2 to revisit their explanation of limits.
+        session, _ = self._session(toy, "I am unsure about the second step")
+        said = session.board.state.reflections
+        assert said
+        for utterance in said:
+            item = toy.items.get(utterance.item_id)
+            assert utterance.concept_id == item.concept_id
+
+    def test_the_tutor_is_only_given_words_about_the_concept_at_hand(self, toy) -> None:
+        from agent_newton.core.state.schema import Utterance
+        from agent_newton.core.state.views import FullStateView
+
+        session, _ = self._session(toy, "I am unsure about the second step")
+        view = session.board.view(arm="coupled")
+        assert isinstance(view, FullStateView)
+
+        elsewhere = Utterance(
+            text="about something else entirely",
+            item_id="other",
+            concept_id="a_different_concept",
+        )
+        view = replace(view, reflections=view.reflections + (elsewhere,))
+        for concept_id in {u.concept_id for u in view.reflections}:
+            assert all(u.concept_id == concept_id for u in view.said_about(concept_id))
+        assert elsewhere not in view.said_about("integer_arithmetic")
 
     def test_it_is_not_sent_to_the_verifier(self, toy) -> None:
         # The tell: prose reaching the verifier comes back UNPARSEABLE and is
@@ -281,6 +382,116 @@ class TestReflectionIsNotAnAnswer:
         profile = sample_profile("L1", 1, toy.misconceptions, SimulatorConfig())
         learner = SimulatedLearner(profile, toy, SimulatorConfig())
         assert learner.reflect(toy.items.all()[0], "what are you unsure of?") is None
+
+
+class TestShowingYourWorking:
+    """Volunteered steps, on the same terms as a reflection.
+
+    A person who worked a problem on paper has reasoning the final answer does
+    not carry. Without a channel for it the tutor can only infer the steps, and
+    inferring them is what produced a hint telling someone their division was
+    correct when they had multiplied.
+    """
+
+    def _session(self, toy, working: str | None):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config()
+        learner = HumanLearner(
+            lambda item, attempt: "999",
+            ask_working=(lambda item, response: working) if working else None,
+        )
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        return session, session.run()
+
+    def test_it_reaches_the_blackboard_marked_as_working(self, toy) -> None:
+        session, _ = self._session(toy, "I multiplied instead of dividing")
+        working = [u for u in session.board.state.reflections if u.kind == "working"]
+        assert working
+        assert working[0].text == "I multiplied instead of dividing"
+
+    def test_it_is_not_sent_to_the_verifier(self, toy) -> None:
+        # The tell: prose reaching the verifier comes back UNPARSEABLE and is
+        # counted as a step nobody could measure.
+        shown, _ = self._session(toy, "first I squared it, then I subtracted")
+        silent, _ = self._session(toy, None)
+        assert shown.board.unmeasurable == silent.board.unmeasurable
+
+    def test_it_costs_no_attempt(self, toy) -> None:
+        _, with_working = self._session(toy, "first I squared it")
+        _, without = self._session(toy, None)
+        assert with_working.items_attempted == without.items_attempted
+
+    def test_it_updates_no_estimate(self, toy) -> None:
+        shown, _ = self._session(toy, "I am certain this is right")
+        silent, _ = self._session(toy, None)
+        assert shown.board.state.mastery == silent.board.state.mastery
+
+    def test_it_is_kept_apart_from_a_reflection(self, toy) -> None:
+        # One is a reply to a question the tutor asked, the other is volunteered.
+        # The tutor introduces them differently, so they cannot be merged.
+        session, _ = self._session(toy, "I divided by two")
+        kinds = {u.kind for u in session.board.state.reflections}
+        assert kinds == {"working"}
+
+    def test_a_simulated_learner_shows_none(self, toy) -> None:
+        # Its answer comes from a buggy rule, not from steps. Keeping this empty
+        # is what keeps the channel out of every cohort number.
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import SimulatedLearner, sample_profile
+
+        profile = sample_profile("L1", 1, toy.misconceptions, SimulatorConfig())
+        learner = SimulatedLearner(profile, toy, SimulatorConfig())
+        assert learner.show_working(toy.items.all()[0], "3*x") is None
+
+
+class TestRunningOutOfAttemptsIsReported:
+    """Previously indistinguishable from nothing happening.
+
+    The next question simply appeared, and a person had no way to tell whether
+    they had got the last one right: *"Why did it go to a new question after
+    attempt 3? I don't know if I got the answer right."*
+    """
+
+    def _observed(self, toy, answer: str):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        class Watcher(Watching):
+            def __init__(self) -> None:
+                self.finished: list[tuple[str, bool]] = []
+
+            def item_finished(self, item, solved) -> None:  # noqa: ANN001
+                self.finished.append((item.id, solved))
+
+        watcher = Watcher()
+        config = human_config()
+        learner = HumanLearner(lambda item, attempt: answer)
+        session = build_session(
+            "human", config.seed, toy, config, learner=learner, observer=watcher
+        )
+        session.diagnostic = Nothing()
+        return watcher, session.run()
+
+    def test_an_exhausted_item_is_reported_unsolved(self, toy) -> None:
+        watcher, _ = self._observed(toy, "999")
+        assert watcher.finished
+        assert all(not solved for _, solved in watcher.finished)
+
+    def test_every_item_worked_is_closed_out_exactly_once(self, toy) -> None:
+        # Once per *working* of an item, not once per item: the same item is
+        # deliberately given again while the concept is unmastered, and a
+        # learner is owed the outcome of each attempt at it.
+        watcher, outcome = self._observed(toy, "999")
+        assert len(watcher.finished) == outcome.items_attempted
 
 
 class TestCrossConceptDiagnosesAreCounted:

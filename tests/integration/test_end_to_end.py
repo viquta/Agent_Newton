@@ -169,6 +169,46 @@ class TestTheArmsDiffer:
         assert coupled.learner.profile.initial == decoupled.learner.profile.initial
 
 
+class TestItemVariantsDoNotMoveTheNumbers:
+    """Varying a repeated question is visible to a person and invisible here.
+
+    A variant changes the wording, the numbers and the params — never the id,
+    the concept or the probes. The simulated learner fires on ``probes`` and
+    rolls on ``item_id``, so which variant it is asked cannot change whether a
+    misconception fires; and whichever wrong answer the rule computes, the
+    verifier judges it incorrect. Every cohort figure is therefore unchanged by
+    the whole feature, which was checked against the re-run and holds exactly.
+
+    Worth a guard rather than a note. A template that later changed ``probes``
+    or the id would shift every measured result, and it would not look wrong —
+    it would look like the numbers had moved.
+    """
+
+    def test_a_cohort_is_unaffected_by_the_templates(self) -> None:
+        from dataclasses import replace as replace_field
+
+        config = config_for("calculus", "coupled")
+        with_variants = registry.load_domain("calculus")
+        without = replace_field(with_variants, templates={})
+        assert with_variants.templates, "calculus declares no templates"
+
+        for i in range(6):
+            varied = build_session(f"L{i:04d}", config.seed, with_variants, config).run()
+            plain = build_session(f"L{i:04d}", config.seed, without, config).run()
+            assert varied.items_attempted == plain.items_attempted
+            assert varied.remediation_ratio == plain.remediation_ratio
+            assert varied.goals_mastered == plain.goals_mastered
+            assert varied.distance_to_goal == plain.distance_to_goal
+            assert varied.diagnoses == plain.diagnoses
+
+    def test_but_the_learner_is_asked_something_different(self) -> None:
+        # The other half of the claim: if the questions were identical the
+        # invariance above would be trivial rather than reassuring.
+        domain = registry.load_domain("calculus")
+        item = domain.items.bank("practice")[0]
+        assert domain.variant(item, 1).prompt != item.prompt
+
+
 class TestModelBackedAgentsAreAvailable:
     """P8 replaced the refusals. Assembly must still not contact a server."""
 

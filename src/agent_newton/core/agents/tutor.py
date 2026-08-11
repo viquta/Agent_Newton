@@ -39,9 +39,16 @@ class TemplateTutor:
         view: StateView,
         domain: Domain,
         *,
+        response: str,
         failed_attempts: int,
         moves_this_item: Sequence[TutorMove],
     ) -> Hint:
+        # ``response`` is deliberately unused. This tutor's text comes from the
+        # catalogue at the level the scaffolding rule asks for, and the cohorts
+        # run it — so its output must not vary with anything the model-backed
+        # tutor gained. There is a test asserting exactly that.
+        del response
+
         # Mastery is only available in the coupled view. Without it the tutor
         # falls back to the bottom of the band, which is the conservative
         # reading: assume little and scaffold accordingly.

@@ -163,29 +163,60 @@ class DemoObserver:
             line.append(f"  (diagnosed: {diagnosis.misconception_id})", style="dim")
         self._console.print(line)
 
+    def item_finished(self, item: Item, solved: bool) -> None:
+        if solved:
+            return
+        # Running out of attempts used to look exactly like nothing happening:
+        # the next question appeared and there was no way to tell whether the
+        # last one had been right. Say so, and give the answer — the item is
+        # over, so nothing is given away.
+        self._console.print(
+            Panel(
+                Text.from_markup(
+                    f"That is all the attempts for this one. The answer was "
+                    f"[bold]{item.answer}[/bold].\n"
+                    f"You will see this idea again — the next question on it "
+                    f"will use different numbers.",
+                ),
+                title="moving on",
+                border_style="yellow",
+                padding=(0, 2),
+            )
+        )
+
     def reflection_recorded(self, item: Item, text: str) -> None:
         self._console.print(
             Text("  ✎ noted — ", style="magenta") + Text(text, style="dim magenta")
         )
 
+    def working_recorded(self, item: Item, text: str) -> None:
+        self._console.print(
+            Text("  ✎ your working — ", style="magenta") + Text(text, style="dim magenta")
+        )
+
     def phase_started(self, phase: str, total: int) -> None:
         label = {"pretest": "Pre-test", "posttest": "Post-test"}.get(phase, phase)
+        body = Text(
+            f"{label} — {total} questions.\n\n"
+            "No feedback and no hints: this measures what you can do unaided, so "
+            "telling you the answers would change what it measures.\n"
+        )
+        if phase == "pretest":
+            # Whether it steers has to match what the config actually does. The
+            # two sentences are opposites, and a person who has just answered
+            # fifteen questions will notice which one was true.
+            body.append(
+                "What you get wrong here decides what the training works on "
+                "first.\n"
+                if self._config.cohort.seed_from_pretest
+                else "It does not steer the training that follows — the tutoring "
+                "starts from scratch and learns from your practice answers, not "
+                "from these.\n"
+            )
+        body.append("Type :q at any point to stop.")
         self._console.print()
         self._console.print(
-            Panel(
-                Text(
-                    f"{label} — {total} questions.\n\n"
-                    "No feedback and no hints: this measures what you can do "
-                    "unaided, so telling you the answers would change what it "
-                    "measures.\n"
-                    "It also does not steer the training that follows — the "
-                    "tutoring starts from scratch and learns from your practice "
-                    "answers, not from these.\n"
-                    "Type :q at any point to stop.",
-                ),
-                title=f"{label.lower()} · {total} questions",
-                border_style="yellow",
-            )
+            Panel(body, title=f"{label.lower()} · {total} questions", border_style="yellow")
         )
 
     def phase_answer(self, phase: str, index: int, total: int, item: Item) -> None:
@@ -205,6 +236,27 @@ class DemoObserver:
                 style="dim",
             )
         if phase == "pretest":
+            missed = result.concepts_missed
+            if missed:
+                # Aggregates are not what someone who has just sat a test wants
+                # back. Naming the concepts is the part they asked for; whether
+                # it actually steers is the flag above.
+                body.append("\nWhat you got wrong:\n", style="bold")
+                for concept_id in missed:
+                    body.append(f"  · {self._domain.concepts.get(concept_id).name}\n")
+                body.append(
+                    "\nThe training will start with these.\n"
+                    if self._config.cohort.seed_from_pretest
+                    else "\nThe training does not use this — it starts from "
+                    "scratch.\n",
+                    style="dim",
+                )
+            else:
+                body.append(
+                    "\nNothing missed — the training will work through the "
+                    "syllabus from the start.\n",
+                    style="dim",
+                )
             body.append(
                 "\nTraining starts now. From here you get feedback, hints, and "
                 "the panel showing what the system believes about you.",
@@ -267,7 +319,17 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
             show_default=False,
         ).strip()
 
-    learner = HumanLearner(ask, ask_reflection=ask_reflection)
+    def ask_working(item: Item, response: str) -> str:
+        # Asked after the answer has been graded and recorded, so it cannot
+        # become a hint the learner writes for themselves. Optional every time:
+        # a channel you have to fill in is a tax on answering.
+        return Prompt.ask(
+            "  [magenta]your working[/magenta]  [dim](optional — enter to skip)[/dim]",
+            default="",
+            show_default=False,
+        ).strip()
+
+    learner = HumanLearner(ask, ask_reflection=ask_reflection, ask_working=ask_working)
     session = build_session(
         learner.learner_id, config.seed, domain, config, learner=learner,
         observer=observer,
@@ -284,6 +346,9 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
                 "several roots, separate them with commas: [dim]0, 2[/dim].\n"
                 "[bold]When the tutor asks you a question in words[/bold], answer in "
                 "words — that reply is kept and is not graded.\n"
+                "[bold]After every answer you may show your working[/bold], in words or "
+                "maths. It is never graded and never costs an attempt; the tutor reads "
+                "it, so a hint can address your actual steps. Press enter to skip.\n"
                 "[bold]:q[/bold] stops at any point.\n\n"
                 "During training the panel shows what the system believes about you "
                 "and why it chooses what it chooses. Nothing here knows the right "
@@ -317,7 +382,7 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
                 "responses": [
                     {"item_id": i, "response": r} for i, r in learner.responses
                 ],
-                "reflections": list(session.board.state.reflections),
+                "said": [u.model_dump() for u in session.board.state.reflections],
                 "mastery": dict(session.board.state.mastery),
                 "goal": outcome.goal,
                 "goals_mastered": outcome.goals_mastered,
@@ -327,11 +392,14 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
                     "correct": outcome.pretest.correct,
                     "total": outcome.pretest.total,
                     "administered": outcome.pretest.administered,
+                    "concepts_missed": list(outcome.pretest.concepts_missed),
+                    "seeded_the_learner_model": config.cohort.seed_from_pretest,
                 },
                 "posttest": {
                     "correct": outcome.posttest.correct,
                     "total": outcome.posttest.total,
                     "administered": outcome.posttest.administered,
+                    "concepts_missed": list(outcome.posttest.concepts_missed),
                 },
                 "cross_concept_diagnoses": outcome.cross_concept_diagnoses,
                 "unmeasurable_steps": outcome.unmeasurable_steps,
@@ -358,8 +426,12 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
     summary.add_row("goals mastered", str(outcome.goals_mastered))
     summary.add_row("concepts to the next goal", str(outcome.distance_to_goal))
     summary.add_row("steps the verifier could not read", str(outcome.unmeasurable_steps))
-    if session.board.state.reflections:
-        summary.add_row("things you said", str(len(session.board.state.reflections)))
+    said = session.board.state.reflections
+    if said:
+        summary.add_row(
+            "things you said", str(sum(1 for u in said if u.kind == "reflection"))
+        )
+        summary.add_row("working you showed", str(sum(1 for u in said if u.kind == "working")))
     if outcome.cross_concept_diagnoses:
         # Visible rather than quietly dropped: the diagnostic may name a
         # misconception from a concept other than the one being worked.

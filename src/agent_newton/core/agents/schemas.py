@@ -39,9 +39,12 @@ UNKNOWN = "unknown"
 MAX_CANDIDATES = 4
 
 
-@lru_cache(maxsize=8)
+# Sized for one entry per concept plus the whole catalogue, since the label
+# space offered is now per item. Too small a cache would rebuild a model class
+# on nearly every diagnosis.
+@lru_cache(maxsize=64)
 def diagnosis_schema(domain_name: str, ids: tuple[str, ...]) -> type[BaseModel]:
-    """Reply shape for the diagnostic agent, closed over this catalogue."""
+    """Reply shape for the diagnostic agent, closed over the labels on offer."""
     labels = Literal[ids + (UNKNOWN,)]  # type: ignore[valid-type]
     return create_model(
         f"Diagnosis_{domain_name}",

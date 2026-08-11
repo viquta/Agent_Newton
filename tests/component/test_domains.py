@@ -20,8 +20,10 @@ from agent_newton.domains.base import (
 from agent_newton.domains.content import YamlConceptGraph
 from agent_newton.domains.validate import (
     ANSWERS_VERIFY,
+    CONCEPT_HAS_A_LABEL,
     GOALS_ARE_REACHABLE,
     RULES_PRODUCE_ERRORS,
+    TEMPLATES_ARE_SOUND,
     validate,
 )
 
@@ -29,6 +31,11 @@ from agent_newton.domains.validate import (
 @pytest.fixture(scope="module")
 def toy():
     return registry.load_domain("toy_algebra")
+
+
+@pytest.fixture(scope="module")
+def calculus():
+    return registry.load_domain("calculus")
 
 
 class TestRegistry:
@@ -328,8 +335,164 @@ class TestValidator:
         problems = validate(broken).problems
         assert any(p.check == "misconception_probed_in_tests" for p in problems)
 
+    def test_warns_about_a_concept_with_no_misconception(self, toy) -> None:
+        # Silent until a human session produced a diagnosis naming a
+        # misconception from a different concept entirely. Every label offered
+        # for a wrong answer on such a concept belongs to another one, so the
+        # agent picks the nearest plausible fit rather than abstaining.
+        warnings = validate(toy).warnings
+        assert any(p.check == CONCEPT_HAS_A_LABEL for p in warnings)
+
+    def test_the_warning_is_not_raised_when_every_concept_has_one(self) -> None:
+        # The guard must be able to stay quiet, or it says nothing about the
+        # domain it is checking. Calculus is the case where it does.
+        calculus = registry.load_domain("calculus")
+        assert not [
+            p for p in validate(calculus).warnings if p.check == CONCEPT_HAS_A_LABEL
+        ]
+
+    def test_a_concept_with_no_practice_items_is_not_warned_about(self, toy) -> None:
+        # Nothing can be asked about it, so nothing can be misdiagnosed on it.
+        labelled = {m.concept_id for m in toy.misconceptions.all()}
+        unlabelled = [c for c in toy.concepts.ids() if c not in labelled]
+        assert unlabelled, "the fixture no longer has an unlabelled concept"
+        broken = replace(
+            toy,
+            items=_ItemBankStub(
+                [i for i in toy.items.all() if i.concept_id not in unlabelled]
+            ),
+        )
+        assert not [
+            p for p in validate(broken).warnings if p.check == CONCEPT_HAS_A_LABEL
+        ]
+
     def test_counts_the_goals(self, toy) -> None:
         assert validate(toy).stats["goals"] == 1
+
+    def test_catches_a_template_that_does_not_reproduce_its_item(self, toy) -> None:
+        # The property everything else rests on. If draw 0 differs from the
+        # YAML, the file stops being the definition and anything naming the item
+        # by id — the verifier gold set, a stored transcript — silently changes
+        # meaning.
+        item = toy.items.bank("practice")[0]
+
+        class Drifting:
+            item_id = item.id
+
+            def variant(self, base, draw):  # noqa: ANN001
+                return replace(base, prompt=f"{base.prompt} (draw {draw})")
+
+        broken = replace(toy, templates={item.id: Drifting()})
+        # `Domain.variant` short-circuits draw 0, so ask the template directly:
+        # what is being checked is the template's own contract.
+        assert Drifting().variant(item, 0) != item
+        assert any(p.check == TEMPLATES_ARE_SOUND for p in validate(broken).problems)
+
+    def test_catches_a_variant_whose_answer_does_not_verify(self, toy) -> None:
+        item = toy.items.bank("practice")[0]
+
+        class Desynchronised:
+            item_id = item.id
+
+            def variant(self, base, draw):  # noqa: ANN001
+                if draw == 0:
+                    return base
+                return replace(base, prompt=f"take {draw}", answer="not an answer")
+
+        broken = replace(toy, templates={item.id: Desynchronised()})
+        assert any(p.check == TEMPLATES_ARE_SOUND for p in validate(broken).problems)
+
+    def test_catches_params_that_drift_from_the_question(self, toy) -> None:
+        # The dangerous one, and the reason prompt, answer and params are
+        # regenerated together: params left behind from a different question
+        # make the buggy rule produce an answer that is correct for *this* one,
+        # so the misconception becomes invisible to the diagnostic agent.
+        #
+        # Note what is *not* checkable here: whether the prompt and the answer
+        # describe the same question. Nothing short of solving the prompt could
+        # tell, which is why draw 0 pins the pair against the reviewed YAML and
+        # the arithmetic is kept in one place per item.
+        item = next(i for i in toy.items.bank("practice") if i.probes)
+
+        class StaleParams:
+            item_id = item.id
+
+            def variant(self, base, draw):  # noqa: ANN001
+                if draw == 0:
+                    return base
+                return replace(base, prompt=f"take {draw}", params={})
+
+        broken = replace(toy, templates={item.id: StaleParams()})
+        assert any(
+            p.check == TEMPLATES_ARE_SOUND and "drifted apart" in p.message
+            for p in validate(broken).problems
+        )
+
+    def test_catches_a_template_that_repeats_a_prompt(self, toy) -> None:
+        item = toy.items.bank("practice")[0]
+
+        class Static:
+            item_id = item.id
+
+            def variant(self, base, draw):  # noqa: ANN001
+                return base
+
+        broken = replace(toy, templates={item.id: Static()})
+        assert any(
+            p.check == TEMPLATES_ARE_SOUND and "repeats a prompt" in p.message
+            for p in validate(broken).problems
+        )
+
+
+class TestCalculusVariants:
+    """The generated questions, checked as behaviour rather than as content.
+
+    `domain validate` already checks every draw against the verifier. What is
+    left is the property the feature exists for: asking again asks something
+    different.
+    """
+
+    def test_every_practice_item_has_a_template(self, calculus) -> None:
+        # A concept is worked until mastery, and any item without one is asked
+        # verbatim until then.
+        missing = [
+            i.id for i in calculus.items.bank("practice") if i.id not in calculus.templates
+        ]
+        assert not missing, f"practice items with no variants: {missing}"
+
+    def test_asking_again_asks_something_different(self, calculus) -> None:
+        for item in calculus.items.bank("practice"):
+            prompts = {calculus.variant(item, draw).prompt for draw in range(5)}
+            assert len(prompts) == 5, f"{item.id} repeats within five repetitions"
+
+    def test_the_first_asking_is_the_item_as_written(self, calculus) -> None:
+        for item in calculus.items.bank("practice"):
+            assert calculus.variant(item, 0) == item
+
+    def test_a_variant_is_the_same_item(self, calculus) -> None:
+        # The session counts repetitions by id and the planner selects by id, so
+        # a variant that changed either would be a different item wearing the
+        # same name.
+        for item in calculus.items.bank("practice"):
+            variant = calculus.variant(item, 3)
+            assert variant.id == item.id
+            assert variant.concept_id == item.concept_id
+            assert variant.bank == item.bank
+            assert variant.probes == item.probes
+
+    def test_the_draw_alone_decides_the_variant(self, calculus) -> None:
+        # No generator state: reproducibility must not depend on call ordering.
+        item = calculus.items.bank("practice")[0]
+        forwards = [calculus.variant(item, d) for d in range(6)]
+        backwards = [calculus.variant(item, d) for d in reversed(range(6))]
+        assert forwards == list(reversed(backwards))
+
+    def test_test_bank_items_are_not_varied(self, calculus) -> None:
+        # The held-out banks are the measuring instrument. Varying them would
+        # make a pre-test and a post-test score incomparable between learners.
+        for bank in ("pretest", "posttest"):
+            for item in calculus.items.bank(bank):
+                assert calculus.variant(item, 4) == item
 
     def test_catches_a_goal_that_is_not_a_concept(self, toy) -> None:
         broken = replace(toy, concepts=_GraphWithGoals(toy.concepts, ("ghost",)))

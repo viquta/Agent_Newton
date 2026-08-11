@@ -60,6 +60,24 @@ def observe(prior: float, correct: bool, params: BKTConfig) -> float:
     return _clamp(transition(posterior(prior, correct, params), params))
 
 
+def revise(prior: float, correct: bool, params: BKTConfig) -> float:
+    """Update for an observation that carried **no opportunity to learn**.
+
+    :func:`observe` without the transition. The transition encodes "what is not
+    yet known may be learned at this opportunity", which is true of a practice
+    item — the learner is told something and may take it in — and false of a
+    held-out test item, which is answered unaided and without feedback by
+    design.
+
+    The difference is not cosmetic and it changes the sign. From the default
+    prior of 0.15 an incorrect answer revises to 0.02, but the transition then
+    carries it to 0.22 — *above* where it started. Used to fold a pre-test into
+    the learner model, :func:`observe` would therefore raise the estimate on
+    every question the learner got wrong.
+    """
+    return _clamp(posterior(prior, correct, params))
+
+
 def initial(params: BKTConfig) -> float:
     """Mastery estimate for a concept with no observations yet."""
     return _clamp(params.p_init)

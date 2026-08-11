@@ -142,6 +142,37 @@ class BuggyRule(Protocol):
         ...
 
 
+@runtime_checkable
+class ItemTemplate(Protocol):
+    """Generates numeric variants of one item, so repeated practice varies.
+
+    A concept the learner has not yet mastered is worked until it is, and most
+    concepts carry a single item — so without this the same question is asked
+    verbatim until the posterior clears the band. A person told us what that is:
+    memorising an answer, not learning a method.
+
+    ``prompt``, ``answer`` and ``params`` are regenerated **together** from the
+    same draw. Regenerating any one alone would desynchronise the buggy rules,
+    which compute against ``params``, from the question actually asked.
+
+    Two properties implementations must hold, both checked by the validator:
+
+    * **Draw 0 is the item as written.** The YAML stays the readable
+      definition, and anything referring to an item by id — the verifier gold
+      set, a stored transcript — keeps meaning what it meant.
+    * **Deterministic in the draw.** Same item, same draw, same variant. The
+      draw is the repetition count, which the session already tracks, so no
+      generator state is involved and a seeded cohort stays reproducible.
+    """
+
+    @property
+    def item_id(self) -> str: ...
+
+    def variant(self, base: Item, draw: int) -> Item:
+        """The ``draw``-th version of ``base``. ``draw == 0`` returns it as written."""
+        ...
+
+
 class ConceptGraph(Protocol):
     """Prerequisite DAG. Also the substrate the ZPD frontier is computed over."""
 
@@ -201,9 +232,22 @@ class Domain:
     items: ItemBank
     verifier: Verifier
     buggy_rules: dict[str, BuggyRule] = field(default_factory=dict)
+    templates: dict[str, ItemTemplate] = field(default_factory=dict)
 
     def buggy_rule(self, misconception_id: str) -> BuggyRule | None:
         return self.buggy_rules.get(misconception_id)
+
+    def variant(self, item: Item, draw: int) -> Item:
+        """The ``draw``-th version of ``item``, or ``item`` if it has no template.
+
+        Optional by design: an item with no template is simply asked again as
+        written, which is what every item did before templates existed. That
+        keeps this an improvement to content rather than a requirement on it.
+        """
+        template = self.templates.get(item.id)
+        if template is None or draw == 0:
+            return item
+        return template.variant(item, draw)
 
     def content_hashes(self) -> dict[str, str]:
         """Hashes for the run manifest.

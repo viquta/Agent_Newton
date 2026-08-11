@@ -15,6 +15,7 @@ from pathlib import Path
 
 from agent_newton.domains.base import Domain
 from agent_newton.domains.calculus.rules import RULES
+from agent_newton.domains.calculus.templates import TEMPLATES
 from agent_newton.domains.calculus.verifier import SymbolicVerifier
 from agent_newton.domains.content import (
     YamlConceptGraph,
@@ -33,4 +34,5 @@ def build() -> Domain:
         items=YamlItemBank.from_dir(_HERE / "items"),
         verifier=SymbolicVerifier(),
         buggy_rules={rule.misconception_id: rule for rule in RULES},
+        templates={template.item_id: template for template in TEMPLATES},
     )

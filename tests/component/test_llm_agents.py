@@ -15,7 +15,12 @@ import pytest
 from agent_newton.config import BKTConfig, Config, ZPDConfig
 from agent_newton.core.agents.base import Diagnosis, OracleAccess
 from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
-from agent_newton.core.agents.schemas import MAX_CANDIDATES, diagnosis_schema, plan_schema
+from agent_newton.core.agents.schemas import (
+    MAX_CANDIDATES,
+    UNKNOWN,
+    diagnosis_schema,
+    plan_schema,
+)
 from agent_newton.core.orchestration.session import build_session
 from agent_newton.core.pedagogy import HintLevel, TutorMove
 from agent_newton.core.state import bkt
@@ -34,6 +39,7 @@ class Scripted:
     def __init__(self, *replies: str) -> None:
         self._replies = list(replies) or ["{}"]
         self.calls: list[str] = []
+        self.systems: list[str] = []
 
     @property
     def label(self) -> str:
@@ -41,6 +47,7 @@ class Scripted:
 
     def generate(self, prompt: str, schema, system):  # noqa: ANN001
         self.calls.append(prompt)
+        self.systems.append(system or "")
         text = self._replies[min(len(self.calls) - 1, len(self._replies) - 1)]
         return Completion(text=text, model="model-1", provider="fake")
 
@@ -153,8 +160,66 @@ class TestTheCandidateListIsBounded:
         assert reply.misconception_id == label  # pyright: ignore[reportAttributeAccessIssue]
 
 
+class TestTheLabelSpaceOnOffer:
+    """Which misconceptions a diagnosis may choose between.
+
+    With the whole catalogue on offer the agent names a misconception from an
+    unrelated concept rather than abstaining — three of them in one human
+    sitting, each shown to the learner as an explanation of their error.
+    """
+
+    def _diagnose(self, toy, label_space, label):
+        provider = Scripted(
+            json.dumps({"misconception_id": label, "confidence": 0.9})
+        )
+        item = next(i for i in toy.items.bank("practice") if i.probes)
+        LLMDiagnostic(provider, label_space=label_space).diagnose(item, "3*x", toy)
+        return item, provider
+
+    def test_the_narrow_space_offers_only_the_item_s_concept(self, toy) -> None:
+        item, provider = self._diagnose(toy, "concept", item_label(toy))
+        offered = {m.id for m in toy.misconceptions.for_concept(item.concept_id)}
+        elsewhere = {m.id for m in toy.misconceptions.all()} - offered
+
+        assert offered, "the fixture item's concept has no misconceptions"
+        assert all(label in provider.calls[0] for label in offered)
+        assert not any(label in provider.calls[0] for label in elsewhere)
+
+    def test_the_wide_space_offers_everything(self, toy) -> None:
+        _, provider = self._diagnose(toy, "catalogue", item_label(toy))
+        assert all(m.id in provider.calls[0] for m in toy.misconceptions.all())
+
+    def test_a_label_from_another_concept_is_not_even_expressible(self, toy) -> None:
+        # The schema becomes the decoding grammar, so under the narrow space an
+        # incoherent label is impossible rather than merely discouraged.
+        item = next(i for i in toy.items.bank("practice") if i.probes)
+        own = tuple(m.id for m in toy.misconceptions.for_concept(item.concept_id))
+        schema = diagnosis_schema(toy.name, own)
+        rendered = schema.model_json_schema()
+
+        allowed = set(rendered["properties"]["misconception_id"]["enum"])
+        assert allowed == set(own) | {UNKNOWN}
+
+    def test_a_concept_with_no_entry_falls_back_to_the_catalogue(self, toy) -> None:
+        # Offering nothing would leave 'unknown' the only legal reply, which is
+        # not a measurement. toy_algebra has such a concept.
+        bare = next(
+            i
+            for i in toy.items.bank("practice")
+            if not toy.misconceptions.for_concept(i.concept_id)
+        )
+        provider = Scripted(json.dumps({"misconception_id": UNKNOWN, "confidence": 0.1}))
+        LLMDiagnostic(provider, label_space="concept").diagnose(bare, "3*x", toy)
+        assert all(m.id in provider.calls[0] for m in toy.misconceptions.all())
+
+
+def item_label(toy) -> str:
+    item = next(i for i in toy.items.bank("practice") if i.probes)
+    return item.probes[0]
+
+
 class TestLLMTutor:
-    def _hint(self, toy, diagnosis, moves=(), attempts=1):
+    def _hint(self, toy, diagnosis, moves=(), attempts=1, response="3*x + 4"):
         provider = Scripted(json.dumps({"text": "Look at the second term."}))
         tutor = LLMTutor(provider, BAND)
         hint = tutor.respond(
@@ -162,6 +227,7 @@ class TestLLMTutor:
             diagnosis,
             view_for(toy),
             toy,
+            response=response,
             failed_attempts=attempts,
             moves_this_item=list(moves),
         )
@@ -201,11 +267,37 @@ class TestLLMTutor:
             Diagnosis("distribute_first_term_only", 0.9),
             view_for(toy),
             toy,
+            response="3*x + 4",
             failed_attempts=1,
             moves_this_item=[TutorMove.REFLECT],
         )
         assert hint.text
         assert hint.targets == "distribute_first_term_only"
+
+    def test_the_step_being_responded_to_reaches_the_model(self, toy) -> None:
+        # Without this the tutor has only the misconception's description and
+        # reconstructs a step to match it. A human session was told its
+        # calculation was correct when it had in fact multiplied.
+        _, provider = self._hint(
+            toy, Diagnosis("distribute_first_term_only", 0.9), response="3*x + 4"
+        )
+        assert "3*x + 4" in provider.calls[0]
+
+    def test_the_model_is_told_not_to_narrate_the_working(self, toy) -> None:
+        # The response alone is not enough: a model handed a step will still
+        # assert which part of it the student got right. The instruction is
+        # what stops that, so it has to be present.
+        provider = Scripted(json.dumps({"text": "Look again."}))
+        LLMTutor(provider, BAND).respond(
+            toy.items.get("ta_dist_p1"),
+            Diagnosis(None),
+            view_for(toy),
+            toy,
+            response="3*x + 4",
+            failed_attempts=1,
+            moves_this_item=[],
+        )
+        assert "unless their step shows it" in provider.systems[0]
 
 
 class TestLLMPlannerGuardrails:

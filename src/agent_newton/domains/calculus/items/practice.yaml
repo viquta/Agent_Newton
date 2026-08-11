@@ -22,14 +22,24 @@ items:
     concept_id: average_rate_of_change
     prompt: "For y = x^2, find the average rate of change from x = 1 to x = 3."
     answer: "4"
+    probes: [rate_as_difference_not_ratio]
+    # f(3) - f(1) = 9 - 1, never divided by 3 - 1.
+    params: { difference: 8 }
 
   # --- limit_concept ------------------------------------------------------
+  # P and Q were named here without ever being defined, and a person said so:
+  # "the hint did not explain what Q and P were. It was very confusing." An
+  # item may not depend on notation it does not introduce.
   - id: ca_tan_p1
     concept_id: limit_concept
     prompt: >-
-      The gradient of the tangent to y = x^2 at x = 2 is the limit of the
-      secant gradients as Q approaches P. Find it.
+      The tangent to y = x^2 at x = 2 is the limit of the gradients of the
+      secants joining that point to a nearby point on the curve, as the nearby
+      point approaches it. Find the tangent's gradient.
     answer: "4"
+    probes: [tangent_as_secant]
+    # The secant from x = 2 to x = 3: (9 - 4)/1. The limit is never taken.
+    params: { secant_gradient: 5 }
 
   # --- instantaneous_rate_of_change ---------------------------------------
   - id: ca_inst_p1
@@ -75,6 +85,8 @@ items:
     concept_id: polynomial_differentiation
     prompt: "Differentiate: y = x^3 - 3x^2 + 4"
     answer: "3*x**2 - 6*x"
+    probes: [constant_term_differentiated]
+    params: { constant: 4 }
 
   # --- stationary_points --------------------------------------------------
   - id: ca_stat_p1

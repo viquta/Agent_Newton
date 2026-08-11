@@ -16,12 +16,16 @@ items:
     bank: pretest
     prompt: "For y = x^2, find the average rate of change from x = 2 to x = 5."
     answer: "7"
+    probes: [rate_as_difference_not_ratio]
+    params: { difference: 21 }
 
   - id: ca_tan_pre1
     concept_id: limit_concept
     bank: pretest
     prompt: "Find the gradient of the tangent to y = x^2 at x = 5."
     answer: "10"
+    probes: [tangent_as_secant]
+    params: { secant_gradient: 11 }
 
   - id: ca_inst_pre1
     concept_id: instantaneous_rate_of_change
@@ -60,6 +64,8 @@ items:
     bank: pretest
     prompt: "Differentiate: y = 2x^3 + x^2 - 5"
     answer: "6*x**2 + 2*x"
+    probes: [constant_term_differentiated]
+    params: { constant: -5 }
 
   - id: ca_stat_pre1
     concept_id: stationary_points

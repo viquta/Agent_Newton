@@ -31,6 +31,20 @@ from agent_newton.domains.base import Domain, Item, Verdict
 
 
 @dataclass(frozen=True, slots=True)
+class ItemResult:
+    """How one held-out item was answered.
+
+    Carries the verdict rather than a bare boolean so an unreadable answer stays
+    distinguishable from a wrong one — the same distinction the verifier draws
+    and the learner model honours.
+    """
+
+    item_id: str
+    concept_id: str
+    verdict: Verdict
+
+
+@dataclass(frozen=True, slots=True)
 class TestResult:
     """One administration of a held-out bank."""
 
@@ -39,10 +53,28 @@ class TestResult:
     unmeasurable: int = 0
     #: Misconceptions that fired during the test — what the learner still shows.
     exhibited: frozenset[str] = field(default_factory=frozenset)
+    #: Every item, in the order administered. Aggregates alone cannot say *what*
+    #: was missed, which is what a learner is owed after sitting a test and what
+    #: seeding the learner model from a pre-test would need.
+    per_item: tuple[ItemResult, ...] = ()
 
     @property
     def score(self) -> float:
         return self.correct / self.total if self.total else 0.0
+
+    @property
+    def concepts_missed(self) -> tuple[str, ...]:
+        """Concepts answered incorrectly, in order, without repeats.
+
+        Unreadable answers are excluded: the verifier could not measure, which
+        is not a finding about the learner and must not be shown to one as if
+        it were.
+        """
+        missed: list[str] = []
+        for result in self.per_item:
+            if result.verdict is Verdict.INCORRECT and result.concept_id not in missed:
+                missed.append(result.concept_id)
+        return tuple(missed)
 
     @property
     def administered(self) -> bool:
@@ -137,6 +169,7 @@ def administer(
     correct = 0
     unmeasurable = 0
     exhibited: set[str] = set()
+    per_item: list[ItemResult] = []
 
     for index, item in enumerate(items):
         step = learner.answer(item, attempt=0)
@@ -144,6 +177,7 @@ def administer(
             on_answer(index, len(items), item)
         response = surface.render(item, step)
         result = domain.verifier.verify(item, response)
+        per_item.append(ItemResult(item.id, item.concept_id, result.verdict))
 
         if not result.is_evidence:
             unmeasurable += 1
@@ -158,4 +192,5 @@ def administer(
         total=len(items),
         unmeasurable=unmeasurable,
         exhibited=frozenset(exhibited),
+        per_item=tuple(per_item),
     )

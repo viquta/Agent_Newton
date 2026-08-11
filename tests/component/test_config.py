@@ -6,6 +6,8 @@ plausible-looking config edit could silently invalidate results.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -168,3 +170,48 @@ class TestSmokeConfig:
         config = Config.from_yaml("experiments/configs/smoke.yaml")
         assert not config.uses_llm(), "the smoke config must never invoke a model"
         assert config.domain == "toy_algebra"
+
+
+CONFIG_DIR = Path("experiments/configs")
+#: The one config a person sits in front of. Everywhere else is an experiment.
+HUMAN_CONFIGS = {"demo.yaml"}
+
+
+class TestPretestSeedingStaysOutOfExperiments:
+    """Seeding from the pre-test must not reach a cohort by accident.
+
+    It updates no state a test was not entitled to update, but it changes the
+    *starting frontier* — and the coupled planner routes from the frontier while
+    the decoupled one structurally cannot. A cohort run with it on would report
+    an advantage handed to one arm before the first item, indistinguishable from
+    the effect under study.
+    """
+
+    def _experiment_configs(self) -> list[Path]:
+        return sorted(
+            path
+            for path in CONFIG_DIR.glob("*.yaml")
+            if path.name not in HUMAN_CONFIGS
+        )
+
+    def test_there_are_experiment_configs_to_check(self) -> None:
+        # Without this the scan below passes vacuously if the directory moves.
+        assert self._experiment_configs()
+
+    def test_no_experiment_config_seeds_from_the_pretest(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert not config.cohort.seed_from_pretest, (
+                f"{path.name} seeds the learner model from the pre-test; that "
+                f"moves the starting frontier and only one arm can use one"
+            )
+
+    def test_the_default_is_off(self) -> None:
+        assert not Config().cohort.seed_from_pretest
+
+    def test_the_check_can_fail(self, tmp_path: Path) -> None:
+        # A guard that cannot fail proves nothing. This is the shape the scan
+        # above is looking for, and it must be rejected.
+        stray = tmp_path / "stray.yaml"
+        stray.write_text("domain: toy_algebra\ncohort:\n  seed_from_pretest: true\n")
+        assert Config.from_yaml(stray).cohort.seed_from_pretest
