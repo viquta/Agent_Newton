@@ -117,6 +117,19 @@ def demo(
     config_path: Path = typer.Option(
         Path("experiments/configs/demo.yaml"), "--config", help="A human session config."
     ),
+    learner: str = typer.Option(
+        "human",
+        "--learner",
+        help="Who is sitting down. The same name twice picks up where that "
+        "learner left off; a new name starts fresh.",
+    ),
+    elapsed_days: float | None = typer.Option(
+        None,
+        "--elapsed-days",
+        help="Pretend this many days have passed since this learner's last "
+        "sitting, instead of using the real gap. For exercising decay without "
+        "waiting weeks for it.",
+    ),
 ) -> None:
     """Work through a session yourself, with the blackboard visible.
 
@@ -131,7 +144,7 @@ def demo(
     """
     from agent_newton.demo import run_demo
 
-    run_demo(config_path, console)
+    run_demo(config_path, console, learner_id=learner, elapsed_days=elapsed_days)
 
 
 @eval_app.command("verifier")

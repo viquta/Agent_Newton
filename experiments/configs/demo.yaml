@@ -57,6 +57,17 @@ zpd:
   theta_lower: 0.70
   theta_upper: 0.90
 
+# What a gap between sittings does to the model's belief. Off by default and off
+# for every cohort — a single-session run must behave exactly as it did before
+# sequences existed. On here because the demo is where coming back is the point.
+#
+# Two weeks halves the distance from a posterior to the prior, so a concept left
+# at 0.96 reads about 0.55 a month later and has fallen back into the frontier:
+# it will be offered again. Nothing schedules that review — the estimate simply
+# went stale and the route passes through it once more.
+decay:
+  half_life_days: 14.0
+
 arbitration:
   theta: 0.15
   k_repeats: 2

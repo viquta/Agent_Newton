@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 from rich.columns import Columns
@@ -34,7 +35,7 @@ from rich.table import Table
 from rich.text import Text
 
 from agent_newton.config import Config
-from agent_newton.core.agents.base import Diagnosis, Hint
+from agent_newton.core.agents.base import Diagnosis, Hint, Resumable
 from agent_newton.core.orchestration.session import Watching, build_session
 from agent_newton.core.simulator.human import HumanLearner
 from agent_newton.core.state import bkt, route
@@ -42,6 +43,7 @@ from agent_newton.core.state.store import Blackboard
 from agent_newton.domains import registry
 from agent_newton.manifest import RunManifest
 from agent_newton.runs import new_run_dir
+from agent_newton.store import LearnerStore
 from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
 
 #: Where a mastery bar sits between "no idea" and "done".
@@ -329,6 +331,24 @@ class Quit(Exception):
     """The person asked to stop."""
 
 
+def _days_since(store: LearnerStore, learner_id: str, config: Config) -> float:
+    """Real time since this learner's last sitting, in days.
+
+    Wall-clock, because for a person the gap is a fact about their life rather
+    than a parameter. A cohort declares its gaps instead, which is why the
+    sequence runner passes them in and this only applies to the demo.
+
+    Zero for a first sitting, and zero when the previous session was never
+    closed — an unfinished record should not be read as a gap of unknown length.
+    """
+    sessions = store.sessions(learner_id, config.arm)
+    finished = [s for s in sessions if s["ended_at"]]
+    if not finished:
+        return 0.0
+    last = datetime.fromisoformat(finished[-1]["ended_at"])
+    return max(0.0, (datetime.now(timezone.utc) - last).total_seconds() / 86_400)
+
+
 def _what_to_work_on(session, config: Config, domain: Domain) -> Panel:  # noqa: ANN001
     """What the sitting says is still outstanding.
 
@@ -440,7 +460,19 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
     return run_dir
 
 
-def run_demo(config_path: Path, console: Console | None = None) -> None:
+def run_demo(
+    config_path: Path,
+    console: Console | None = None,
+    learner_id: str = "human",
+    elapsed_days: float | None = None,
+) -> None:
+    """One sitting for one learner.
+
+    ``learner_id`` is who is sitting down. The same id twice picks up where that
+    learner left off; a new id starts fresh. ``elapsed_days`` overrides the real
+    gap since their last sitting, which is how decay can be exercised without
+    waiting weeks for it.
+    """
     console = console or Console()
     config = Config.from_yaml(config_path)
     domain = registry.load_domain(config.domain)
@@ -501,10 +533,29 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
             optional=True,
         )
 
-    learner = HumanLearner(ask, ask_reflection=ask_reflection, ask_working=ask_working)
+    learner = HumanLearner(
+        ask, learner_id=learner_id,
+        ask_reflection=ask_reflection, ask_working=ask_working,
+    )
+
+    store = LearnerStore(config.paths.store_path)
+    store.ensure_learner(learner_id, "human", config.domain)
+    previous = store.latest_state(learner_id, config.arm)
+    gap = elapsed_days if elapsed_days is not None else _days_since(store, learner_id, config)
+    session_id = store.open_session(
+        learner_id=learner_id,
+        arm=config.arm,
+        config_hash=config.content_hash(),
+        elapsed_days=gap,
+        decay_half_life_days=config.decay.half_life_days,
+    )
+
     session = build_session(
-        learner.learner_id, config.seed, domain, config, learner=learner,
+        learner_id, config.seed, domain, config, learner=learner,
         observer=observer,
+        state=previous,
+        planner_state=store.latest_planner_state(learner_id, config.arm),
+        elapsed_days=gap,
     )
 
     console.print(
@@ -548,6 +599,22 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
     # that was stopped part-way is still the only data of its kind this project
     # has, and it is unrepeatable.
     run_dir = _store(config, domain, session, learner, outcome)
+
+    # And into the store, so the next sitting can pick this learner up. Also on
+    # every exit path: someone who stops half-way has still done the work, and
+    # making them lose it would teach them to never stop.
+    store.close_session(
+        session_id,
+        state=session.board.state,
+        audit_log=session.board.audit_log,
+        planner_state=(
+            session.planner.snapshot()
+            if isinstance(session.planner, Resumable)
+            else None
+        ),
+        stop_reason=outcome.stop_reason if outcome else "interrupted",
+    )
+    store.close()
 
     if outcome is None:
         console.print(

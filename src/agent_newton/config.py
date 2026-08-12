@@ -316,6 +316,10 @@ class CohortConfig(BaseModel):
 class PathsConfig(BaseModel):
     results_dir: Path = Path("results")
     cache_dir: Path = Path(".cache/llm")
+    #: Where learners persist between sittings. One file, so a sequence can be
+    #: queried in one place — and so a human learner and a simulated one can be
+    #: compared without joining across two stores.
+    store_path: Path = Path("results/learners.db")
 
 
 class Config(BaseModel):
