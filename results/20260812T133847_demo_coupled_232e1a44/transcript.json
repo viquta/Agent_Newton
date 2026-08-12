@@ -1,0 +1,2243 @@
+{
+  "learner_id": "victor",
+  "completed": true,
+  "responses": [
+    {
+      "item_id": "ca_lim_pre1",
+      "response": "6"
+    },
+    {
+      "item_id": "ca_avg_pre1",
+      "response": "7"
+    },
+    {
+      "item_id": "ca_tan_pre1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_inst_pre1",
+      "response": "8"
+    },
+    {
+      "item_id": "ca_fp_pre1",
+      "response": "t^2+2ht+h^2"
+    },
+    {
+      "item_id": "ca_pow_pre1",
+      "response": "7x^6"
+    },
+    {
+      "item_id": "ca_neg_pre1",
+      "response": "-6x^-3"
+    },
+    {
+      "item_id": "ca_poly_pre1",
+      "response": "6x^2+2x"
+    },
+    {
+      "item_id": "ca_stat_pre1",
+      "response": "0, 2"
+    },
+    {
+      "item_id": "ca_prod_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_quot_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_chain_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_anti_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_usub_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_lim_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_avg_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_tan_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_inst_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_fp_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_pow_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_neg_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_poly_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_stat_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_prod_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_quot_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_chain_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_impl_post1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_anti_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_usub_post1",
+      "response": ""
+    }
+  ],
+  "said": [
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    }
+  ],
+  "mastery": {
+    "limits_of_sequences": 0.9781288156668767,
+    "average_rate_of_change": 0.9781288156668767,
+    "limit_concept": 0.9781288156668767,
+    "instantaneous_rate_of_change": 0.9781288156668767,
+    "derivative_from_first_principles": 0.9781288156668767,
+    "power_rule": 0.9781288156668767,
+    "negative_fractional_exponents": 0.9781288156668767,
+    "polynomial_differentiation": 0.9781288156668767,
+    "stationary_points": 0.9781288156668767,
+    "product_rule": 0.22857142857142856,
+    "quotient_rule": 0.00025651001678353094,
+    "chain_rule": 0.00025651001678353094,
+    "implicit_differentiation": 0.00025651001678353094,
+    "antiderivative": 0.00025651001678353094,
+    "integration_by_substitution": 0.00025651001678353094
+  },
+  "error_trace": [
+    {
+      "t": 87,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 88,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 89,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 92,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 93,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 96,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 97,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 98,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 101,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 102,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 105,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 106,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 107,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 110,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 111,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 114,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 115,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 116,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 119,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 120,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    }
+  ],
+  "unmeasurable_steps": 26,
+  "audit_log": [
+    {
+      "version": 112,
+      "cause": "annotation",
+      "summary": "resumed learner 'victor'",
+      "evidence": {
+        "concepts": 15,
+        "arm": "coupled",
+        "known_concepts": 15,
+        "prior_steps": 60
+      }
+    },
+    {
+      "version": 113,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(limits_of_sequences) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 114,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(average_rate_of_change) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 115,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(limit_concept) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 116,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(instantaneous_rate_of_change) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 117,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(derivative_from_first_principles) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 118,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(power_rule) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "power_rule",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 119,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(negative_fractional_exponents) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 120,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(polynomial_differentiation) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "polynomial_differentiation",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 121,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(stationary_points) 0.941 -> 0.329",
+      "evidence": {
+        "concept_id": "stationary_points",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.941455015066724,
+        "mastery_after": 0.3292098840865697
+      }
+    },
+    {
+      "version": 122,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(product_rule) 0.229 -> 0.168",
+      "evidence": {
+        "concept_id": "product_rule",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.16779100054804102
+      }
+    },
+    {
+      "version": 123,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(quotient_rule) 0.000 -> 0.116",
+      "evidence": {
+        "concept_id": "quotient_rule",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.11611337944415173
+      }
+    },
+    {
+      "version": 124,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(chain_rule) 0.000 -> 0.116",
+      "evidence": {
+        "concept_id": "chain_rule",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.11611337944415173
+      }
+    },
+    {
+      "version": 125,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(implicit_differentiation) 0.000 -> 0.116",
+      "evidence": {
+        "concept_id": "implicit_differentiation",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.11611337944415173
+      }
+    },
+    {
+      "version": 126,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(antiderivative) 0.000 -> 0.116",
+      "evidence": {
+        "concept_id": "antiderivative",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.11611337944415173
+      }
+    },
+    {
+      "version": 127,
+      "cause": "decay",
+      "summary": "30 day(s) elapsed; P(integration_by_substitution) 0.000 -> 0.116",
+      "evidence": {
+        "concept_id": "integration_by_substitution",
+        "elapsed_days": 30.0,
+        "half_life_days": 14.0,
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.11611337944415173
+      }
+    },
+    {
+      "version": 128,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(limits_of_sequences) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 129,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(average_rate_of_change) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 130,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(limit_concept) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 131,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(instantaneous_rate_of_change) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 132,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(derivative_from_first_principles) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 133,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(power_rule) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "power_rule",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 134,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(negative_fractional_exponents) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 135,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(polynomial_differentiation) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "polynomial_differentiation",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 136,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(stationary_points) 0.329 -> 0.978",
+      "evidence": {
+        "concept_id": "stationary_points",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.9781288156668767
+      }
+    },
+    {
+      "version": 137,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(product_rule) 0.168 -> 0.000",
+      "evidence": {
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.16779100054804102,
+        "mastery_after": 0.0003936364505598828
+      }
+    },
+    {
+      "version": 138,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(quotient_rule) 0.116 -> 0.000",
+      "evidence": {
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.11611337944415173,
+        "mastery_after": 0.00025651001678353094
+      }
+    },
+    {
+      "version": 139,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(chain_rule) 0.116 -> 0.000",
+      "evidence": {
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.11611337944415173,
+        "mastery_after": 0.00025651001678353094
+      }
+    },
+    {
+      "version": 140,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(implicit_differentiation) 0.116 -> 0.000",
+      "evidence": {
+        "concept_id": "implicit_differentiation",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.11611337944415173,
+        "mastery_after": 0.00025651001678353094
+      }
+    },
+    {
+      "version": 141,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(antiderivative) 0.116 -> 0.000",
+      "evidence": {
+        "concept_id": "antiderivative",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.11611337944415173,
+        "mastery_after": 0.00025651001678353094
+      }
+    },
+    {
+      "version": 142,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(integration_by_substitution) 0.116 -> 0.000",
+      "evidence": {
+        "concept_id": "integration_by_substitution",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.11611337944415173,
+        "mastery_after": 0.00025651001678353094
+      }
+    },
+    {
+      "version": 143,
+      "cause": "replan",
+      "summary": "replan triggered by no_plan",
+      "evidence": {}
+    },
+    {
+      "version": 144,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.000 -> 0.200",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.0003936364505598828,
+        "mastery_after": 0.2000393772078223,
+        "delta": 0.19964574075726244,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 145,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.200 -> 0.224",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2000393772078223,
+        "mastery_after": 0.22424820993240466,
+        "delta": 0.024208832724582352,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 146,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 147,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 148,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "product_rule",
+        "before": 0.0003936364505598828,
+        "after": 0.22424820993240466,
+        "delta": 0.2238545734818448,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 149,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 150,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.224 -> 0.228",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22424820993240466,
+        "mastery_after": 0.22789910475594888,
+        "delta": 0.0036508948235442207,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 151,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.228 -> 0.228",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22789910475594888,
+        "mastery_after": 0.22846645516789024,
+        "delta": 0.0005673504119413642,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 152,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "product_rule",
+        "before": 0.0003936364505598828,
+        "after": 0.22846645516789024,
+        "delta": 0.22807281871733037,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 153,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 154,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 155,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 156,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.228 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22846645516789024,
+        "mastery_after": 0.2285550283601104,
+        "delta": 8.857319222016491e-05,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 157,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 158,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2285550283601104,
+        "mastery_after": 0.22856886608437532,
+        "delta": 1.3837724264914586e-05,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 159,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22856886608437532,
+        "mastery_after": 0.2285710281839487,
+        "delta": 2.1620995733773185e-06,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 160,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 161,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 162,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 163,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 164,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2285710281839487,
+        "mastery_after": 0.22857136601091224,
+        "delta": 3.3782696354234254e-07,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 165,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857136601091224,
+        "mastery_after": 0.2285714187963486,
+        "delta": 5.2785436355229365e-08,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 166,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 167,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 168,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 169,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 170,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2285714187963486,
+        "mastery_after": 0.22857142704407235,
+        "delta": 8.247723753962433e-09,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 171,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 172,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142704407235,
+        "mastery_after": 0.2285714283327792,
+        "delta": 1.2887068356892684e-09,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 173,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2285714283327792,
+        "mastery_after": 0.22857142853413961,
+        "delta": 2.0136042833129864e-10,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 174,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 175,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 176,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 177,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 178,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142853413961,
+        "mastery_after": 0.22857142856560217,
+        "delta": 3.146255478370108e-11,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 179,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142856560217,
+        "mastery_after": 0.2285714285705182,
+        "delta": 4.9160397974645775e-12,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 180,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 181,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 182,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 183,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 184,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2285714285705182,
+        "mastery_after": 0.22857142857128632,
+        "delta": 7.681077995869146e-13,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 185,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 186,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857128632,
+        "mastery_after": 0.22857142857140633,
+        "delta": 1.2001510896197942e-13,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 187,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857140633,
+        "mastery_after": 0.2285714285714251,
+        "delta": 1.8762769116165146e-14,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 188,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 189,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 190,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 191,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 192,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2285714285714251,
+        "mastery_after": 0.22857142857142804,
+        "delta": 2.942091015256665e-15,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 193,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142804,
+        "mastery_after": 0.2285714285714285,
+        "delta": 4.718447854656915e-16,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 194,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 195,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 196,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 197,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 198,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2285714285714285,
+        "mastery_after": 0.22857142857142856,
+        "delta": 5.551115123125783e-17,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 199,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 200,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 201,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 202,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 203,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 204,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 205,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 206,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 207,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 208,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 209,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 210,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 211,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 212,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 213,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 214,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 215,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 216,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 217,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 218,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 219,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 220,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 221,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 222,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 223,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 224,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 225,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 226,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 227,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 228,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 229,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 230,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 231,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 232,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "product_rule_as_product_of_derivatives",
+        "count": 20,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 233,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 234,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 235,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.229 -> 0.229",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22857142857142856,
+        "mastery_after": 0.22857142857142856,
+        "delta": 0.0,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 236,
+      "cause": "annotation",
+      "summary": "item budget spent",
+      "evidence": {
+        "items_given": 20,
+        "max_items": 20
+      }
+    }
+  ],
+  "stop_reason": "budget_spent",
+  "goal": "quotient_rule",
+  "goals_mastered": 2,
+  "distance_to_goal": 2,
+  "items_attempted": 20,
+  "pretest": {
+    "correct": 9,
+    "total": 15,
+    "administered": true,
+    "concepts_missed": [
+      "product_rule",
+      "quotient_rule",
+      "chain_rule",
+      "implicit_differentiation",
+      "antiderivative",
+      "integration_by_substitution"
+    ],
+    "seeded_the_learner_model": true
+  },
+  "posttest": {
+    "correct": 0,
+    "total": 15,
+    "administered": true,
+    "concepts_missed": [
+      "average_rate_of_change",
+      "derivative_from_first_principles",
+      "polynomial_differentiation",
+      "quotient_rule",
+      "antiderivative"
+    ]
+  },
+  "cross_concept_diagnoses": 0
+}
