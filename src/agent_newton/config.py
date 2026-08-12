@@ -271,6 +271,24 @@ class CohortConfig(BaseModel):
     #: inflates the effect being measured. On for the demo, where a person who
     #: has just sat a test reasonably expects it to count for something.
     seed_from_pretest: bool = False
+    #: How many observations one pre-test answer is worth when seeding.
+    #:
+    #: At 1 a correct answer lifts a concept from the prior to about 0.44,
+    #: well under ``theta_upper``, so a concept the learner has just
+    #: demonstrated stays selectable and costs roughly two more items to
+    #: re-prove. A human sitting measured the cost: 21 of 24 training steps went
+    #: to concepts the pre-test already had right, and five real gaps were never
+    #: reached inside the budget.
+    #:
+    #: Above 1 the answer is treated as that many independent observations, so
+    #: it can clear the band and the concept is skipped. The justification is
+    #: that a held-out answer is given unaided while a practice answer may
+    #: follow a hint. The cost, stated because it is real: each concept has one
+    #: pre-test item, so a lucky guess skips it for the whole sitting.
+    #:
+    #: Inert unless ``seed_from_pretest`` is on, and that is off for every
+    #: cohort.
+    pretest_weight: int = Field(default=1, ge=1)
 
 
 class PathsConfig(BaseModel):

@@ -1,0 +1,1187 @@
+{
+  "learner_id": "human",
+  "completed": true,
+  "responses": [
+    {
+      "item_id": "ca_lim_pre1",
+      "response": "6"
+    },
+    {
+      "item_id": "ca_avg_pre1",
+      "response": "7"
+    },
+    {
+      "item_id": "ca_tan_pre1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_inst_pre1",
+      "response": "8"
+    },
+    {
+      "item_id": "ca_fp_pre1",
+      "response": "t^2+2ht+h^2"
+    },
+    {
+      "item_id": "ca_pow_pre1",
+      "response": "7x^6"
+    },
+    {
+      "item_id": "ca_neg_pre1",
+      "response": "-6x^-3"
+    },
+    {
+      "item_id": "ca_poly_pre1",
+      "response": "6x^2+2x"
+    },
+    {
+      "item_id": "ca_stat_pre1",
+      "response": "0, 2"
+    },
+    {
+      "item_id": "ca_prod_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_quot_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_chain_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_anti_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_usub_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "response": "4"
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "response": "7"
+    },
+    {
+      "item_id": "ca_lim_p1",
+      "response": "4"
+    },
+    {
+      "item_id": "ca_lim_p2",
+      "response": "4"
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": "4"
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": "6"
+    },
+    {
+      "item_id": "ca_inst_p1",
+      "response": "6"
+    },
+    {
+      "item_id": "ca_inst_p1",
+      "response": "8"
+    },
+    {
+      "item_id": "ca_fp_p1",
+      "response": "x^2+2hx+h^2"
+    },
+    {
+      "item_id": "ca_fp_p1",
+      "response": "t^2+2th+h^2"
+    },
+    {
+      "item_id": "ca_pow_p1",
+      "response": "5x^4"
+    },
+    {
+      "item_id": "ca_pow_p2",
+      "response": "12x^2"
+    },
+    {
+      "item_id": "ca_neg_p1",
+      "response": "-4x^-3"
+    },
+    {
+      "item_id": "ca_neg_p1",
+      "response": "-9x^-4"
+    },
+    {
+      "item_id": "ca_poly_p1",
+      "response": "3x^2+6x"
+    },
+    {
+      "item_id": "ca_poly_p1",
+      "response": "3x^2-6x"
+    },
+    {
+      "item_id": "ca_poly_p1",
+      "response": "3x^2-4x"
+    },
+    {
+      "item_id": "ca_poly_p1",
+      "response": "3x^2-8x"
+    },
+    {
+      "item_id": "ca_poly_p1",
+      "response": "3x^2-10x"
+    },
+    {
+      "item_id": "ca_stat_p1",
+      "response": "0, 2"
+    },
+    {
+      "item_id": "ca_stat_p1",
+      "response": "0, 3"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "idk"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "2x sin(x)"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "2x"
+    },
+    {
+      "item_id": "ca_lim_post1",
+      "response": "30"
+    },
+    {
+      "item_id": "ca_avg_post1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_tan_post1",
+      "response": "6"
+    },
+    {
+      "item_id": "ca_inst_post1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_fp_post1",
+      "response": "a^2+2ah+h^2"
+    },
+    {
+      "item_id": "ca_pow_post1",
+      "response": "9x^8"
+    },
+    {
+      "item_id": "ca_neg_post1",
+      "response": "-10x^-3"
+    },
+    {
+      "item_id": "ca_poly_post1",
+      "response": "9x^2-4x"
+    },
+    {
+      "item_id": "ca_stat_post1",
+      "response": "0, 3"
+    },
+    {
+      "item_id": "ca_prod_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_quot_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_chain_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_anti_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_usub_post1",
+      "response": "99"
+    }
+  ],
+  "said": [
+    {
+      "text": "I didn't see that it was a minus sign, so I put a plus sign by mistake.",
+      "item_id": "ca_poly_p1",
+      "concept_id": "polynomial_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "how is this wrong?",
+      "item_id": "ca_poly_p1",
+      "concept_id": "polynomial_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "what does sin mean?",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I don't know how to differentiate sin(x)",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "what even is sin(x)",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "this is not helping me, i feel frustrated",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    }
+  ],
+  "mastery": {
+    "limits_of_sequences": 0.964006285667025,
+    "average_rate_of_change": 0.964006285667025,
+    "limit_concept": 0.964006285667025,
+    "instantaneous_rate_of_change": 0.964006285667025,
+    "derivative_from_first_principles": 0.964006285667025,
+    "power_rule": 0.964006285667025,
+    "negative_fractional_exponents": 0.964006285667025,
+    "polynomial_differentiation": 0.954965578493486,
+    "stationary_points": 0.964006285667025,
+    "product_rule": 0.2245663854784376,
+    "quotient_rule": 0.021582733812949638,
+    "chain_rule": 0.021582733812949638,
+    "implicit_differentiation": 0.021582733812949638,
+    "antiderivative": 0.021582733812949638,
+    "integration_by_substitution": 0.021582733812949638
+  },
+  "error_trace": [
+    {
+      "t": 15,
+      "item_id": "ca_poly_p1",
+      "concept_id": "polynomial_differentiation",
+      "misconception_label": null,
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 17,
+      "item_id": "ca_poly_p1",
+      "concept_id": "polynomial_differentiation",
+      "misconception_label": null,
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 23,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 24,
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "misconception_label": "product_rule_as_product_of_derivatives",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    }
+  ],
+  "unmeasurable_steps": 1,
+  "audit_log": [
+    {
+      "version": 1,
+      "cause": "annotation",
+      "summary": "initialised learner 'human'",
+      "evidence": {
+        "seed": 20260812,
+        "concepts": 15,
+        "arm": "coupled"
+      }
+    },
+    {
+      "version": 2,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(limits_of_sequences) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 3,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(average_rate_of_change) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 4,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(limit_concept) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 5,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(instantaneous_rate_of_change) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 6,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(derivative_from_first_principles) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 7,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(power_rule) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "power_rule",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 8,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(negative_fractional_exponents) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 9,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(polynomial_differentiation) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "polynomial_differentiation",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 10,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(stationary_points) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "stationary_points",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 11,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(product_rule) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 12,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(quotient_rule) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 13,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(chain_rule) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 14,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(implicit_differentiation) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "implicit_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 15,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(antiderivative) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "antiderivative",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 16,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(integration_by_substitution) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "integration_by_substitution",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 17,
+      "cause": "plan",
+      "summary": "goal set to 'negative_fractional_exponents' (consolidate)",
+      "evidence": {
+        "goal": "negative_fractional_exponents",
+        "emphasis": "consolidate",
+        "reason": "7 concept(s) still needed for negative_fractional_exponents"
+      }
+    },
+    {
+      "version": 18,
+      "cause": "replan",
+      "summary": "replan triggered by no_plan",
+      "evidence": {}
+    },
+    {
+      "version": 19,
+      "cause": "observation",
+      "summary": "correct on ca_avg_p1; P(average_rate_of_change) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 20,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "average_rate_of_change",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 21,
+      "cause": "observation",
+      "summary": "correct on ca_avg_p1; P(average_rate_of_change) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 22,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "average_rate_of_change",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 23,
+      "cause": "observation",
+      "summary": "correct on ca_lim_p1; P(limits_of_sequences) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_lim_p1",
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 24,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "limits_of_sequences",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 25,
+      "cause": "observation",
+      "summary": "correct on ca_lim_p2; P(limits_of_sequences) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_lim_p2",
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 26,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "limits_of_sequences",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 27,
+      "cause": "observation",
+      "summary": "correct on ca_tan_p1; P(limit_concept) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 28,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "limit_concept",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 29,
+      "cause": "observation",
+      "summary": "correct on ca_tan_p1; P(limit_concept) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 30,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "limit_concept",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 31,
+      "cause": "observation",
+      "summary": "correct on ca_inst_p1; P(instantaneous_rate_of_change) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_inst_p1",
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 32,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "instantaneous_rate_of_change",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 33,
+      "cause": "observation",
+      "summary": "correct on ca_inst_p1; P(instantaneous_rate_of_change) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_inst_p1",
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 34,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "instantaneous_rate_of_change",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 35,
+      "cause": "observation",
+      "summary": "correct on ca_fp_p1; P(derivative_from_first_principles) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_fp_p1",
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 36,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "derivative_from_first_principles",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 37,
+      "cause": "observation",
+      "summary": "correct on ca_fp_p1; P(derivative_from_first_principles) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_fp_p1",
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 38,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "derivative_from_first_principles",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 39,
+      "cause": "observation",
+      "summary": "correct on ca_pow_p1; P(power_rule) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_pow_p1",
+        "concept_id": "power_rule",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 40,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "power_rule",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 41,
+      "cause": "observation",
+      "summary": "correct on ca_pow_p2; P(power_rule) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_pow_p2",
+        "concept_id": "power_rule",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 42,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "power_rule",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 43,
+      "cause": "observation",
+      "summary": "correct on ca_neg_p1; P(negative_fractional_exponents) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_neg_p1",
+        "concept_id": "negative_fractional_exponents",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 44,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "negative_fractional_exponents",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 45,
+      "cause": "observation",
+      "summary": "correct on ca_neg_p1; P(negative_fractional_exponents) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_neg_p1",
+        "concept_id": "negative_fractional_exponents",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 46,
+      "cause": "plan",
+      "summary": "goal set to 'stationary_points' (consolidate)",
+      "evidence": {
+        "goal": "stationary_points",
+        "emphasis": "consolidate",
+        "reason": "2 concept(s) still needed for stationary_points"
+      }
+    },
+    {
+      "version": 47,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "negative_fractional_exponents",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 48,
+      "cause": "observation",
+      "summary": "incorrect on ca_poly_p1; P(polynomial_differentiation) 0.443 -> 0.272",
+      "evidence": {
+        "item_id": "ca_poly_p1",
+        "concept_id": "polynomial_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.2722408026755853,
+        "delta": -0.17038214814408675,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 49,
+      "cause": "annotation",
+      "summary": "working on ca_poly_p1",
+      "evidence": {
+        "item_id": "ca_poly_p1",
+        "concept_id": "polynomial_differentiation",
+        "reflection": "I didn't see that it was a minus sign, so I put a plus sign by mistake.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 50,
+      "cause": "observation",
+      "summary": "correct on ca_poly_p1; P(polynomial_differentiation) 0.272 -> 0.702",
+      "evidence": {
+        "item_id": "ca_poly_p1",
+        "concept_id": "polynomial_differentiation",
+        "verdict": "correct",
+        "mastery_before": 0.2722408026755853,
+        "mastery_after": 0.701866758006508,
+        "delta": 0.4296259553309227,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 51,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "polynomial_differentiation",
+        "before": 0.44262295081967207,
+        "after": 0.701866758006508,
+        "delta": 0.25924380718683593,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 52,
+      "cause": "observation",
+      "summary": "incorrect on ca_poly_p1; P(polynomial_differentiation) 0.702 -> 0.382",
+      "evidence": {
+        "item_id": "ca_poly_p1",
+        "concept_id": "polynomial_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.701866758006508,
+        "mastery_after": 0.38189363425540657,
+        "delta": -0.31997312375110143,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 53,
+      "cause": "annotation",
+      "summary": "working on ca_poly_p1",
+      "evidence": {
+        "item_id": "ca_poly_p1",
+        "concept_id": "polynomial_differentiation",
+        "reflection": "how is this wrong?",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 54,
+      "cause": "observation",
+      "summary": "correct on ca_poly_p1; P(polynomial_differentiation) 0.382 -> 0.788",
+      "evidence": {
+        "item_id": "ca_poly_p1",
+        "concept_id": "polynomial_differentiation",
+        "verdict": "correct",
+        "mastery_before": 0.38189363425540657,
+        "mastery_after": 0.7883766042893118,
+        "delta": 0.4064829700339052,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 55,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "polynomial_differentiation",
+        "before": 0.44262295081967207,
+        "after": 0.7883766042893118,
+        "delta": 0.3457536534696397,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 56,
+      "cause": "observation",
+      "summary": "correct on ca_poly_p1; P(polynomial_differentiation) 0.788 -> 0.955",
+      "evidence": {
+        "item_id": "ca_poly_p1",
+        "concept_id": "polynomial_differentiation",
+        "verdict": "correct",
+        "mastery_before": 0.7883766042893118,
+        "mastery_after": 0.954965578493486,
+        "delta": 0.16658897420417418,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 57,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "polynomial_differentiation",
+        "mastery": 0.954965578493486
+      }
+    },
+    {
+      "version": 58,
+      "cause": "observation",
+      "summary": "correct on ca_stat_p1; P(stationary_points) 0.443 -> 0.825",
+      "evidence": {
+        "item_id": "ca_stat_p1",
+        "concept_id": "stationary_points",
+        "verdict": "correct",
+        "mastery_before": 0.44262295081967207,
+        "mastery_after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 59,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "stationary_points",
+        "before": 0.44262295081967207,
+        "after": 0.8250803858520899,
+        "delta": 0.3824574350324178,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 60,
+      "cause": "observation",
+      "summary": "correct on ca_stat_p1; P(stationary_points) 0.825 -> 0.964",
+      "evidence": {
+        "item_id": "ca_stat_p1",
+        "concept_id": "stationary_points",
+        "verdict": "correct",
+        "mastery_before": 0.8250803858520899,
+        "mastery_after": 0.964006285667025,
+        "delta": 0.13892589981493508,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 61,
+      "cause": "plan",
+      "summary": "goal set to 'quotient_rule' (consolidate)",
+      "evidence": {
+        "goal": "quotient_rule",
+        "emphasis": "consolidate",
+        "reason": "2 concept(s) still needed for quotient_rule"
+      }
+    },
+    {
+      "version": 62,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "stationary_points",
+        "mastery": 0.964006285667025
+      }
+    },
+    {
+      "version": 63,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_prod_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "unparseable",
+        "detail": "unknown symbol(s) in 'idk': d, i, k"
+      }
+    },
+    {
+      "version": 64,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "what does sin mean?",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 65,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.022 -> 0.202",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.021582733812949638,
+        "mastery_after": 0.20219981668194317,
+        "delta": 0.18061708286899353,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 66,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "I don't know how to differentiate sin(x)",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 67,
+      "cause": "annotation",
+      "summary": "reflection on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "what even is sin(x)",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 68,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.202 -> 0.225",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.20219981668194317,
+        "mastery_after": 0.2245663854784376,
+        "delta": 0.02236656879649443,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 69,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "this is not helping me, i feel frustrated",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 70,
+      "cause": "annotation",
+      "summary": "item budget spent",
+      "evidence": {
+        "items_given": 20,
+        "max_items": 20
+      }
+    }
+  ],
+  "stop_reason": "budget_spent",
+  "goal": "quotient_rule",
+  "goals_mastered": 2,
+  "distance_to_goal": 2,
+  "items_attempted": 20,
+  "pretest": {
+    "correct": 9,
+    "total": 15,
+    "administered": true,
+    "concepts_missed": [
+      "product_rule",
+      "quotient_rule",
+      "chain_rule",
+      "implicit_differentiation",
+      "antiderivative",
+      "integration_by_substitution"
+    ],
+    "seeded_the_learner_model": true
+  },
+  "posttest": {
+    "correct": 7,
+    "total": 15,
+    "administered": true,
+    "concepts_missed": [
+      "limits_of_sequences",
+      "limit_concept",
+      "product_rule",
+      "quotient_rule",
+      "chain_rule",
+      "implicit_differentiation",
+      "antiderivative",
+      "integration_by_substitution"
+    ]
+  },
+  "cross_concept_diagnoses": 0
+}

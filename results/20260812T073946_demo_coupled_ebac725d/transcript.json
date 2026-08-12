@@ -1,0 +1,243 @@
+{
+  "learner_id": "human",
+  "completed": false,
+  "responses": [
+    {
+      "item_id": "ca_lim_pre1",
+      "response": "testing"
+    },
+    {
+      "item_id": "ca_avg_pre1",
+      "response": "hello"
+    },
+    {
+      "item_id": "ca_tan_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_inst_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_fp_pre1",
+      "response": "t^2+2ht+h^2"
+    },
+    {
+      "item_id": "ca_pow_pre1",
+      "response": "6x^7"
+    },
+    {
+      "item_id": "ca_neg_pre1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_poly_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_stat_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_quot_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_chain_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_anti_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_usub_pre1",
+      "response": "99"
+    }
+  ],
+  "said": [],
+  "mastery": {
+    "limit_concept": 0.021582733812949638,
+    "instantaneous_rate_of_change": 0.021582733812949638,
+    "derivative_from_first_principles": 0.44262295081967207,
+    "power_rule": 0.021582733812949638,
+    "polynomial_differentiation": 0.021582733812949638,
+    "stationary_points": 0.021582733812949638,
+    "product_rule": 0.021582733812949638,
+    "quotient_rule": 0.021582733812949638,
+    "chain_rule": 0.021582733812949638,
+    "implicit_differentiation": 0.021582733812949638,
+    "antiderivative": 0.021582733812949638,
+    "integration_by_substitution": 0.021582733812949638
+  },
+  "error_trace": [],
+  "unmeasurable_steps": 0,
+  "audit_log": [
+    {
+      "version": 1,
+      "cause": "annotation",
+      "summary": "initialised learner 'human'",
+      "evidence": {
+        "seed": 20260812,
+        "concepts": 15,
+        "arm": "coupled"
+      }
+    },
+    {
+      "version": 2,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(limit_concept) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 3,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(instantaneous_rate_of_change) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 4,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(derivative_from_first_principles) 0.150 -> 0.443",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "correct",
+        "mastery_before": 0.15,
+        "mastery_after": 0.44262295081967207
+      }
+    },
+    {
+      "version": 5,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(power_rule) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "power_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 6,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(polynomial_differentiation) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "polynomial_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 7,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(stationary_points) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "stationary_points",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 8,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(product_rule) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 9,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(quotient_rule) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 10,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(chain_rule) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 11,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(implicit_differentiation) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "implicit_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 12,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(antiderivative) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "antiderivative",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 13,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(integration_by_substitution) 0.150 -> 0.022",
+      "evidence": {
+        "concept_id": "integration_by_substitution",
+        "verdict": "incorrect",
+        "mastery_before": 0.15,
+        "mastery_after": 0.021582733812949638
+      }
+    },
+    {
+      "version": 14,
+      "cause": "plan",
+      "summary": "goal set to 'negative_fractional_exponents' (consolidate)",
+      "evidence": {
+        "goal": "negative_fractional_exponents",
+        "emphasis": "consolidate",
+        "reason": "7 concept(s) still needed for negative_fractional_exponents"
+      }
+    },
+    {
+      "version": 15,
+      "cause": "replan",
+      "summary": "replan triggered by no_plan",
+      "evidence": {}
+    }
+  ]
+}

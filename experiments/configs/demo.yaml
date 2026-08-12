@@ -29,6 +29,11 @@ cohort:
   # the pre-test showed. It stays off for cohorts because it moves the starting
   # frontier, which only the coupled arm can route from — see CohortConfig.
   seed_from_pretest: true
+  # Three observations' worth, which is what it takes for one correct unaided
+  # answer to clear theta_upper and skip the concept. At 1 a sitting spent 21 of
+  # its 24 training steps re-proving concepts the pre-test had already shown,
+  # and never reached five of the six real gaps.
+  pretest_weight: 3
 
 simulator:
   learner: human

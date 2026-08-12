@@ -194,7 +194,9 @@ class Blackboard:
         )
         return True
 
-    def seed_from_test(self, results: Iterable[tuple[str, Verdict]]) -> int:
+    def seed_from_test(
+        self, results: Iterable[tuple[str, Verdict]], weight: int = 1
+    ) -> int:
         """Fold a held-out test's results into the learner model. Returns the count.
 
         One BKT update per measurable item, before any practice happens. Close
@@ -220,13 +222,23 @@ class Blackboard:
         Unreadable answers are skipped, for the reason they are skipped
         everywhere: the verifier failed to measure, which says nothing about
         mastery.
+
+        ``weight`` treats one answer as that many independent observations. At
+        1 a correct answer lands well below ``theta_upper``, so a concept the
+        learner has just demonstrated is still selectable and costs more items
+        to re-prove; a human sitting spent 21 of 24 training steps that way.
+        Applied in both directions: it says how much one held-out item is worth,
+        and weighting only the direction that suits the budget would be a thumb
+        on the scale rather than a claim about evidence.
         """
         seeded = 0
         for concept_id, verdict in results:
             if verdict not in (Verdict.CORRECT, Verdict.INCORRECT):
                 continue
             before = self.probability(concept_id)
-            after = bkt.revise(before, verdict is Verdict.CORRECT, self._config.bkt)
+            after = before
+            for _ in range(weight):
+                after = bkt.revise(after, verdict is Verdict.CORRECT, self._config.bkt)
             self._state.mastery[concept_id] = after
             seeded += 1
             self._bump(
@@ -235,6 +247,7 @@ class Blackboard:
                 f"P({concept_id}) {before:.3f} -> {after:.3f}",
                 concept_id=concept_id,
                 verdict=verdict.value,
+                weight=weight,
                 mastery_before=before,
                 mastery_after=after,
             )

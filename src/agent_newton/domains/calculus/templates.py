@@ -225,17 +225,17 @@ class StationaryPoints(_Template):
 
 
 class ProductRule(_Template):
-    """y = x^n·sin(x)."""
+    """y = (x^p + 1)(x^q + 2). Two polynomials, so nothing outside the graph."""
 
     item_id = "ca_prod_p1"
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        n = 2 + draw
-        df = _term(n, n - 1)
+        p, q = 2, 3 + draw
+        df, dg = _term(p, p - 1), _term(q, q - 1)
         return (
-            f"Differentiate: y = x^{n} sin(x)",
-            f"{df}*sin(x) + x**{n}*cos(x)",
-            {"f": f"x**{n}", "g": "sin(x)", "df": df, "dg": "cos(x)"},
+            f"Differentiate: y = (x^{p} + 1)(x^{q} + 2)",
+            f"{df}*(x**{q} + 2) + (x**{p} + 1)*{dg}",
+            {"f": f"x**{p} + 1", "g": f"x**{q} + 2", "df": df, "dg": dg},
         )
 
 
@@ -253,17 +253,17 @@ class QuotientRule(_Template):
         )
 
 
-class ChainRuleSine(_Template):
-    """y = sin(x^n)."""
+class ChainRuleCubed(_Template):
+    """y = (x^m + 1)^3. The inner derivative is what gets dropped."""
 
     item_id = "ca_chain_p1"
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        n = 2 + draw
+        m = 2 + draw
         return (
-            f"Differentiate: y = sin(x^{n})",
-            f"{_term(n, n - 1)}*cos(x**{n})",
-            {"outer_derivative": f"cos(x**{n})"},
+            f"Differentiate: y = (x^{m} + 1)^3",
+            f"{_term(3 * m, m - 1)}*(x**{m} + 1)**2",
+            {"outer_derivative": f"3*(x**{m} + 1)**2"},
         )
 
 
@@ -311,16 +311,16 @@ class GeneralAntiderivative(_Template):
 
 
 class SubstitutionIntegral(_Template):
-    """cos(kx), whose integral needs dividing by k."""
+    """(kx + 1)^3, whose integral needs dividing by the inner derivative k."""
 
     item_id = "ca_usub_p1"
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
         k = 2 + draw
         return (
-            f"Integrate cos({k}x) with respect to x. Omit the constant.",
-            f"sin({k}*x)/{k}",
-            {"without_du": f"sin({k}*x)"},
+            f"Integrate ({k}x + 1)^3 with respect to x. Omit the constant.",
+            f"({k}*x + 1)**4/{4 * k}",
+            {"without_du": f"({k}*x + 1)**4/4", "up_to_constant": True},
         )
 
 
@@ -338,7 +338,7 @@ TEMPLATES: Sequence[ItemTemplate] = (
     StationaryPoints(),
     ProductRule(),
     QuotientRule(),
-    ChainRuleSine(),
+    ChainRuleCubed(),
     ChainRulePower(),
     ImplicitCircle(),
     GeneralAntiderivative(),

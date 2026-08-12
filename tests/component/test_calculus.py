@@ -256,9 +256,13 @@ class TestBuggyRules:
         assert len({rule.apply(entry) for _ in range(10)}) == 1
 
     def test_chain_rule_error_is_the_documented_one(self, calculus) -> None:
-        # d/dx sin(x^2) given as cos(x^2): the outer derivative alone.
+        # d/dx (x^2 + 1)^3 given as 3(x^2 + 1)^2: the outer derivative alone,
+        # with the inner derivative 2x dropped.
         entry = calculus.items.get("ca_chain_p1")
-        assert calculus.buggy_rule("chain_rule_omits_inner").apply(entry) == "cos(x**2)"
+        assert (
+            calculus.buggy_rule("chain_rule_omits_inner").apply(entry)
+            == "3*(x**2 + 1)**2"
+        )
 
 
 class TestDomainContent:
@@ -285,3 +289,54 @@ class TestDomainContent:
     def test_graph_reaches_the_advanced_topics(self, calculus) -> None:
         prerequisites = calculus.concepts.all_prerequisites("integration_by_substitution")
         assert {"chain_rule", "power_rule", "limits_of_sequences"} <= prerequisites
+
+
+#: Functions no concept in this graph teaches. An item using one asks the
+#: learner for knowledge the syllabus never supplies, and the planner cannot
+#: route to a gap that is not a concept.
+UNTAUGHT = ("sin", "cos", "tan", "log", "ln", "exp", "sqrt")
+
+
+class TestItemsStayInsideTheGraph:
+    """No item may assume knowledge the concept graph does not contain.
+
+    A person met ``y = x^2 sin(x)`` under the product rule and asked three
+    times, in three channels, what sin(x) was. Nothing in the graph teaches the
+    derivatives of trig functions, so the planner had no concept to route to and
+    the tutor could only keep explaining the product rule. The session could not
+    help them, and no amount of tutoring quality would have changed that.
+
+    ``domain validate`` checks that every concept on a goal's route has practice
+    items. It cannot check this: it has no way to know which functions the graph
+    covers. So the list is stated here, next to the domain it describes.
+    """
+
+    def test_no_item_uses_an_untaught_function(self, calculus) -> None:
+        offenders = [
+            (item.id, name)
+            for item in calculus.items.all()
+            for name in UNTAUGHT
+            if f"{name}(" in item.prompt or f"{name}(" in item.answer
+        ]
+        assert not offenders, f"items assuming untaught functions: {offenders}"
+
+    def test_no_generated_variant_reintroduces_one(self, calculus) -> None:
+        # The templates regenerate the prompt and answer, so an item cleaned up
+        # in the YAML could still produce a trig variant on the second asking.
+        offenders = [
+            (item.id, draw, name)
+            for item in calculus.items.bank("practice")
+            for draw in range(8)
+            for name in UNTAUGHT
+            if f"{name}(" in calculus.variant(item, draw).prompt
+            or f"{name}(" in calculus.variant(item, draw).answer
+        ]
+        assert not offenders, f"variants assuming untaught functions: {offenders}"
+
+    def test_the_check_can_fail(self, calculus) -> None:
+        # A guard that cannot fail proves nothing. This is the shape it looks
+        # for, and it must be caught.
+        from dataclasses import replace
+
+        stray = replace(calculus.items.bank("practice")[0], answer="cos(x)")
+        assert any(f"{name}(" in stray.answer for name in UNTAUGHT)

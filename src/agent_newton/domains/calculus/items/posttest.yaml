@@ -76,10 +76,10 @@ items:
   - id: ca_prod_post1
     concept_id: product_rule
     bank: posttest
-    prompt: "Differentiate: y = x^4 sin(x)"
-    answer: "4*x**3*sin(x) + x**4*cos(x)"
+    prompt: "Differentiate: y = (x^4 + 1)(x^2 + 3)"
+    answer: "4*x**3*(x**2 + 3) + (x**4 + 1)*2*x"
     probes: [product_rule_as_product_of_derivatives]
-    params: { f: "x**4", g: "sin(x)", df: "4*x**3", dg: "cos(x)" }
+    params: { f: "x**4 + 1", g: "x**2 + 3", df: "4*x**3", dg: "2*x" }
 
   - id: ca_quot_post1
     concept_id: quotient_rule
@@ -92,10 +92,10 @@ items:
   - id: ca_chain_post1
     concept_id: chain_rule
     bank: posttest
-    prompt: "Differentiate: y = sin(x^4)"
-    answer: "4*x**3*cos(x**4)"
+    prompt: "Differentiate: y = (x^4 + 1)^2"
+    answer: "8*x**3*(x**4 + 1)"
     probes: [chain_rule_omits_inner]
-    params: { outer_derivative: "cos(x**4)" }
+    params: { outer_derivative: "2*(x**4 + 1)" }
 
   - id: ca_impl_post1
     concept_id: implicit_differentiation
@@ -116,7 +116,7 @@ items:
   - id: ca_usub_post1
     concept_id: integration_by_substitution
     bank: posttest
-    prompt: "Integrate cos(4x) with respect to x. Omit the constant."
-    answer: "sin(4*x)/4"
+    prompt: "Integrate (4x + 1)^3 with respect to x. Omit the constant."
+    answer: "(4*x + 1)**4/16"
     probes: [usub_forgets_du]
-    params: { without_du: "sin(4*x)" }
+    params: { without_du: "(4*x + 1)**4/4", up_to_constant: true }

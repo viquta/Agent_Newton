@@ -310,6 +310,25 @@ class SymbolicVerifier:
         except UnparseableResponse as exc:
             return VerificationResult(Verdict.UNPARSEABLE, item.answer, str(exc))
 
+        if item.params.get("up_to_constant"):
+            # An antiderivative is determined only up to a constant, so two of
+            # them agree exactly when their derivatives do. Comparing the
+            # expressions instead charges an error to a learner who multiplied
+            # out and dropped a constant the question told them to omit — a
+            # correct answer scored as a mistake, which then writes an error
+            # event and aims a hint at a misconception nobody held.
+            #
+            # Opt-in per item, and deliberately **not** set on the
+            # antiderivative items: there the constant is the whole point, and
+            # ignoring it would make the misconception being probed invisible.
+            try:
+                expected = tuple(sympy.diff(e, _SYMBOLS["x"]) for e in expected)
+                given = tuple(sympy.diff(g, _SYMBOLS["x"]) for g in given)
+            except Exception as exc:  # pragma: no cover - sympy internals
+                return VerificationResult(
+                    Verdict.UNPARSEABLE, item.answer, f"could not differentiate: {exc}"
+                )
+
         if len(given) != len(expected):
             return VerificationResult(
                 Verdict.INCORRECT,

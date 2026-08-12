@@ -97,12 +97,17 @@ items:
     params: { nonzero_root: 2 }
 
   # --- product_rule -------------------------------------------------------
+  # Polynomials, not trig. A learner met y = x^2 sin(x) here and asked three
+  # times what sin(x) was; nothing in the graph teaches it, so the planner could
+  # not route to their actual gap and the tutor could only keep explaining the
+  # product rule. An item must not depend on knowledge the graph does not
+  # contain — there is a test on it.
   - id: ca_prod_p1
     concept_id: product_rule
-    prompt: "Differentiate: y = x^2 sin(x)"
-    answer: "2*x*sin(x) + x**2*cos(x)"
+    prompt: "Differentiate: y = (x^2 + 1)(x^3 + 2)"
+    answer: "2*x*(x**3 + 2) + (x**2 + 1)*3*x**2"
     probes: [product_rule_as_product_of_derivatives]
-    params: { f: "x**2", g: "sin(x)", df: "2*x", dg: "cos(x)" }
+    params: { f: "x**2 + 1", g: "x**3 + 2", df: "2*x", dg: "3*x**2" }
 
   # --- quotient_rule ------------------------------------------------------
   - id: ca_quot_p1
@@ -115,10 +120,10 @@ items:
   # --- chain_rule ---------------------------------------------------------
   - id: ca_chain_p1
     concept_id: chain_rule
-    prompt: "Differentiate: y = sin(x^2)"
-    answer: "2*x*cos(x**2)"
+    prompt: "Differentiate: y = (x^2 + 1)^3"
+    answer: "6*x*(x**2 + 1)**2"
     probes: [chain_rule_omits_inner]
-    params: { outer_derivative: "cos(x**2)" }
+    params: { outer_derivative: "3*(x**2 + 1)**2" }
 
   - id: ca_chain_p2
     concept_id: chain_rule
@@ -146,7 +151,9 @@ items:
   # --- integration_by_substitution ----------------------------------------
   - id: ca_usub_p1
     concept_id: integration_by_substitution
-    prompt: "Integrate cos(2x) with respect to x. Omit the constant."
-    answer: "sin(2*x)/2"
+    prompt: "Integrate (2x + 1)^3 with respect to x. Omit the constant."
+    answer: "(2*x + 1)**4/8"
     probes: [usub_forgets_du]
-    params: { without_du: "sin(2*x)" }
+    # The question says to omit the constant, so an expanded answer that drops
+    # it is equally correct — compare derivatives, not expressions.
+    params: { without_du: "(2*x + 1)**4/4", up_to_constant: true }

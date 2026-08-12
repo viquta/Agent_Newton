@@ -174,7 +174,8 @@ class Session:
             # Off for every cohort — see CohortConfig. It moves the starting
             # frontier, and only one arm can route from a frontier.
             self.board.seed_from_test(
-                (result.concept_id, result.verdict) for result in pretest.per_item
+                ((result.concept_id, result.verdict) for result in pretest.per_item),
+                weight=self.config.cohort.pretest_weight,
             )
 
         given: Counter[str] = Counter()
