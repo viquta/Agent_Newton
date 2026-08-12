@@ -23,6 +23,7 @@ as unavailable, never as zero.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 
 from rich.columns import Columns
@@ -194,6 +195,30 @@ class DemoObserver:
             Text("  ✎ your working — ", style="magenta") + Text(text, style="dim magenta")
         )
 
+    def training_finished(self, reason: str, items: int) -> None:
+        # Without this the post-test simply appeared, and a sitting that ended
+        # on a failed item read as the system giving up rather than as the
+        # budget running out.
+        said = {
+            "budget_spent": (
+                f"That is the {items}-question training budget spent. It is a "
+                f"setting, not a judgement — you were mid-concept and there was "
+                f"more to do."
+            ),
+            "every_goal_reached": (
+                f"Every goal reached, in {items} questions. There was nothing "
+                f"left to work toward."
+            ),
+            "nothing_left_to_select": (
+                f"Training ran out of material after {items} questions — nothing "
+                f"selectable was left on the way to the goal."
+            ),
+        }.get(reason, f"Training finished after {items} questions.")
+        self._console.print()
+        self._console.print(
+            Panel(Text(said), title="training over", border_style="yellow", padding=(0, 2))
+        )
+
     def phase_started(self, phase: str, total: int) -> None:
         label = {"pretest": "Pre-test", "posttest": "Post-test"}.get(phase, phase)
         body = Text(
@@ -281,6 +306,117 @@ class Quit(Exception):
     """The person asked to stop."""
 
 
+def _what_to_work_on(session, config: Config, domain: Domain) -> Panel:  # noqa: ANN001
+    """What the sitting says is still outstanding.
+
+    Asked for after a sitting ended mid-concept: *"make a note that this skill
+    is something to work more on in the future"*. Derived from the state — the
+    unmastered concepts on the way to the goal, and the misconceptions that
+    actually recurred — rather than from whatever the planner happened to be
+    holding when the session stopped.
+    """
+    graph = domain.concepts
+    mastery = dict(session.board.state.mastery)
+    prior = bkt.initial(config.bkt)
+
+    goal = route.next_goal(graph.goals(), mastery, config.zpd, prior)
+    body = Text()
+
+    if goal is None:
+        body.append("Every declared goal is mastered. Nothing is outstanding.\n")
+        return Panel(body, title="what to work on next", border_style="magenta")
+
+    remaining = route.remaining(goal, mastery, graph, config.zpd, prior)
+    body.append("Next goal  ", style="dim")
+    body.append(f"{graph.get(goal).name}\n\n", style="bold magenta")
+
+    if remaining:
+        body.append("Still to master on the way there:\n", style="bold")
+        for concept_id in remaining:
+            value = mastery.get(concept_id, prior)
+            body.append(f"  · {graph.get(concept_id).name}")
+            body.append(f"   {value:.2f}\n", style="dim")
+
+    # The error trace is a rolling window, so a repeat here means the
+    # misconception kept coming back rather than merely appearing once.
+    repeated = Counter(
+        event.misconception_label
+        for event in session.board.state.error_trace
+        if event.misconception_label
+    )
+    persistent = [(label, n) for label, n in repeated.most_common() if n > 1]
+    if persistent:
+        body.append("\nThese kept coming back:\n", style="bold")
+        for label, count in persistent:
+            described = " ".join(domain.misconceptions.get(label).description.split())
+            body.append(f"  · {described}")
+            body.append(f"   ({count} times)\n", style="dim")
+
+    return Panel(body, title="what to work on next", border_style="magenta")
+
+
+def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  # noqa: ANN001
+    """Write the sitting to disk. Called however the sitting ended.
+
+    ``outcome`` is None when the person stopped part-way, in which case the
+    outcome-derived figures are absent rather than zero — the session did not
+    finish, so it has no pre/post gain and no final distance to a goal, and
+    writing zeros would put numbers into the record that mean the opposite of
+    what they say.
+    """
+    run_id, run_dir = new_run_dir(config)
+    manifest = RunManifest.create(config, run_id)
+    for field, value in domain.content_hashes().items():
+        setattr(manifest, field, value)
+    manifest.write(run_dir)
+
+    record: dict = {
+        "learner_id": learner.learner_id,
+        "completed": outcome is not None,
+        "responses": [{"item_id": i, "response": r} for i, r in learner.responses],
+        "said": [u.model_dump() for u in session.board.state.reflections],
+        "mastery": dict(session.board.state.mastery),
+        "error_trace": [e.model_dump() for e in session.board.state.error_trace],
+        "unmeasurable_steps": session.board.unmeasurable,
+        "audit_log": [
+            {
+                "version": r.version,
+                "cause": r.cause,
+                "summary": r.summary,
+                "evidence": r.evidence,
+            }
+            for r in session.board.audit_log
+        ],
+    }
+    if outcome is not None:
+        record.update(
+            {
+                "stop_reason": outcome.stop_reason,
+                "goal": outcome.goal,
+                "goals_mastered": outcome.goals_mastered,
+                "distance_to_goal": outcome.distance_to_goal,
+                "items_attempted": outcome.items_attempted,
+                "pretest": {
+                    "correct": outcome.pretest.correct,
+                    "total": outcome.pretest.total,
+                    "administered": outcome.pretest.administered,
+                    "concepts_missed": list(outcome.pretest.concepts_missed),
+                    "seeded_the_learner_model": config.cohort.seed_from_pretest,
+                },
+                "posttest": {
+                    "correct": outcome.posttest.correct,
+                    "total": outcome.posttest.total,
+                    "administered": outcome.posttest.administered,
+                    "concepts_missed": list(outcome.posttest.concepts_missed),
+                },
+                "cross_concept_diagnoses": outcome.cross_concept_diagnoses,
+            }
+        )
+
+    (run_dir / "transcript.json").write_text(json.dumps(record, indent=2) + "\n")
+    return run_dir
+
+
 def run_demo(config_path: Path, console: Console | None = None) -> None:
     console = console or Console()
     config = Config.from_yaml(config_path)
@@ -295,6 +431,24 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
 
     observer = DemoObserver(console, domain, config)
 
+    def _asked(prompt: str, *, optional: bool = False) -> str:
+        """Read one line, honouring :q wherever it is typed.
+
+        Every prompt goes through here. The intro says ":q stops at any point",
+        and it only checked the answer prompt — so typing it at the working or
+        reflection prompt was silently recorded as prose and the sitting carried
+        on. A stated affordance that works in one place out of three is worse
+        than not offering it.
+        """
+        said = (
+            Prompt.ask(prompt, default="", show_default=False)
+            if optional
+            else Prompt.ask(prompt)
+        ).strip()
+        if said == QUIT:
+            raise Quit
+        return said
+
     def ask(item: Item, attempt: int) -> str:
         console.print()
         console.print(
@@ -305,29 +459,24 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
                 border_style="cyan",
             )
         )
-        answer = Prompt.ask(f"  your answer  [dim]({QUIT} to stop)[/dim]").strip()
-        if answer == QUIT:
-            raise Quit
-        return answer
+        return _asked(f"  your answer  [dim]({QUIT} to stop)[/dim]")
 
     def ask_reflection(item: Item, prompt: str) -> str:
         # Prose, not an answer. It never reaches the verifier and costs no
         # attempt — see Session._work_item.
-        return Prompt.ask(
+        return _asked(
             "  [magenta]in your own words[/magenta]  [dim](enter to skip)[/dim]",
-            default="",
-            show_default=False,
-        ).strip()
+            optional=True,
+        )
 
     def ask_working(item: Item, response: str) -> str:
         # Asked after the answer has been graded and recorded, so it cannot
         # become a hint the learner writes for themselves. Optional every time:
         # a channel you have to fill in is a tax on answering.
-        return Prompt.ask(
+        return _asked(
             "  [magenta]your working[/magenta]  [dim](optional — enter to skip)[/dim]",
-            default="",
-            show_default=False,
-        ).strip()
+            optional=True,
+        )
 
     learner = HumanLearner(ask, ask_reflection=ask_reflection, ask_working=ask_working)
     session = build_session(
@@ -360,58 +509,29 @@ def run_demo(config_path: Path, console: Console | None = None) -> None:
         )
     )
 
+    outcome = None
     try:
         outcome = session.run()
     except (Quit, KeyboardInterrupt):
         console.print("\n[dim]stopped — the state so far:[/dim]")
-        console.print(observer.board_panel(session.board))
-        return
 
     console.print()
     console.print(observer.board_panel(session.board))
+    console.print(_what_to_work_on(session, config, domain))
 
-    run_id, run_dir = new_run_dir(config)
-    manifest = RunManifest.create(config, run_id)
-    for field, value in domain.content_hashes().items():
-        setattr(manifest, field, value)
-    manifest.write(run_dir)
-    (run_dir / "transcript.json").write_text(
-        json.dumps(
-            {
-                "learner_id": outcome.learner_id,
-                "responses": [
-                    {"item_id": i, "response": r} for i, r in learner.responses
-                ],
-                "said": [u.model_dump() for u in session.board.state.reflections],
-                "mastery": dict(session.board.state.mastery),
-                "goal": outcome.goal,
-                "goals_mastered": outcome.goals_mastered,
-                "distance_to_goal": outcome.distance_to_goal,
-                "items_attempted": outcome.items_attempted,
-                "pretest": {
-                    "correct": outcome.pretest.correct,
-                    "total": outcome.pretest.total,
-                    "administered": outcome.pretest.administered,
-                    "concepts_missed": list(outcome.pretest.concepts_missed),
-                    "seeded_the_learner_model": config.cohort.seed_from_pretest,
-                },
-                "posttest": {
-                    "correct": outcome.posttest.correct,
-                    "total": outcome.posttest.total,
-                    "administered": outcome.posttest.administered,
-                    "concepts_missed": list(outcome.posttest.concepts_missed),
-                },
-                "cross_concept_diagnoses": outcome.cross_concept_diagnoses,
-                "unmeasurable_steps": outcome.unmeasurable_steps,
-                "audit_log": [
-                    {"version": r.version, "cause": r.cause, "summary": r.summary}
-                    for r in session.board.audit_log
-                ],
-            },
-            indent=2,
+    # Written on **every** exit path. Returning early on an interrupt is what
+    # this used to do, and it meant four human sittings produced no record at
+    # all: no transcript, no working, no reflections, no audit log. A sitting
+    # that was stopped part-way is still the only data of its kind this project
+    # has, and it is unrepeatable.
+    run_dir = _store(config, domain, session, learner, outcome)
+
+    if outcome is None:
+        console.print(
+            f"\n[dim]saved to {run_dir} — stopped part-way, so there is no "
+            f"pre/post figure[/dim]"
         )
-        + "\n"
-    )
+        return
 
     summary = Table(title="session", show_header=False, box=None)
     summary.add_row("items attempted", str(outcome.items_attempted))

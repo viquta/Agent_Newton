@@ -494,6 +494,191 @@ class TestRunningOutOfAttemptsIsReported:
         assert len(watcher.finished) == outcome.items_attempted
 
 
+class TestASittingIsKeptHoweverItEnds:
+    """The demo returned before writing whenever the person stopped part-way.
+
+    Four human sittings produced no record on disk at all — no transcript, no
+    working, no reflections, no audit log — because every one of them was ended
+    with :q or Ctrl-C. A sitting is unrepeatable and is the only data of its
+    kind this project has, so an interrupted one must still be stored.
+    """
+
+    def _session(self, toy, tmp_path):
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.demo import _store
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 3, "administer_tests": False},
+            paths={"results_dir": str(tmp_path), "cache_dir": str(tmp_path / "c")},
+        )
+        learner = HumanLearner(
+            lambda item, attempt: "999",
+            ask_working=lambda item, response: "I guessed",
+        )
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        return config, session, learner, _store
+
+    def test_an_interrupted_sitting_is_written(self, toy, tmp_path) -> None:
+        import json
+
+        config, session, learner, store = self._session(toy, tmp_path)
+        # Stopped part-way: some work happened, then the person quit, so there
+        # is no SessionOutcome at all.
+        session._work_item(toy.items.bank("practice")[0], [])
+        run_dir = store(config, toy, session, learner, None)
+
+        record = json.loads((run_dir / "transcript.json").read_text())
+        assert record["completed"] is False
+        assert record["responses"], "the answers were lost"
+        assert record["said"], "the working was lost"
+        assert record["audit_log"], "the audit log was lost"
+        assert (run_dir / "manifest.json").exists()
+
+    def test_an_interrupted_sitting_reports_no_outcome_figures(
+        self, toy, tmp_path
+    ) -> None:
+        # Absent, not zero. The session did not finish, so it has no gain and no
+        # final distance, and a zero would say the opposite of what it means.
+        import json
+
+        config, session, learner, store = self._session(toy, tmp_path)
+        session._work_item(toy.items.bank("practice")[0], [])
+        run_dir = store(config, toy, session, learner, None)
+
+        record = json.loads((run_dir / "transcript.json").read_text())
+        for absent in ("pretest", "posttest", "goals_mastered", "distance_to_goal"):
+            assert absent not in record
+
+    def test_a_completed_sitting_carries_them(self, toy, tmp_path) -> None:
+        import json
+
+        config, session, learner, store = self._session(toy, tmp_path)
+        outcome = session.run()
+        run_dir = store(config, toy, session, learner, outcome)
+
+        record = json.loads((run_dir / "transcript.json").read_text())
+        assert record["completed"] is True
+        assert record["stop_reason"] == outcome.stop_reason
+        assert record["items_attempted"] == outcome.items_attempted
+
+
+class TestWhyTrainingStopped:
+    """The three exits are different events and must be told apart.
+
+    Running out of budget recorded nothing at all, so a sitting that ended
+    mid-concept looked to the person like the system giving up on them: the
+    post-test simply appeared after a failed item.
+    """
+
+    def _run(self, toy, *, max_items: int):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": max_items, "administer_tests": False}
+        )
+        learner = HumanLearner(lambda item, attempt: "999")
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        return session, session.run()
+
+    def test_a_spent_budget_says_so(self, toy) -> None:
+        session, outcome = self._run(toy, max_items=3)
+        assert outcome.stop_reason == "budget_spent"
+        assert any("item budget spent" in r.summary for r in session.board.audit_log)
+
+    def test_a_spent_budget_is_not_an_exhaustion(self, toy) -> None:
+        # `items_to_exhaustion` means the material ran out. A capped session did
+        # not run out of anything, and reporting it as though it had would read
+        # a setting as a result.
+        _, outcome = self._run(toy, max_items=3)
+        assert outcome.items_to_exhaustion is None
+
+    def test_running_out_of_material_says_something_different(self, toy) -> None:
+        # Answering correctly masters concepts until nothing is selectable.
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(cohort={"n_learners": 1, "max_items": 400,
+                                      "administer_tests": False})
+        learner = HumanLearner(lambda item, attempt: toy.items.get(item.id).answer)
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        outcome = session.run()
+        assert outcome.stop_reason in ("every_goal_reached", "nothing_left_to_select")
+        assert outcome.items_to_exhaustion is not None
+
+    def test_the_observer_is_told(self, toy) -> None:
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        class Watcher(Watching):
+            def __init__(self) -> None:
+                self.finished: list[tuple[str, int]] = []
+
+            def training_finished(self, reason, items) -> None:  # noqa: ANN001
+                self.finished.append((reason, items))
+
+        watcher = Watcher()
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 3, "administer_tests": False}
+        )
+        learner = HumanLearner(lambda item, attempt: "999")
+        session = build_session(
+            "human", config.seed, toy, config, learner=learner, observer=watcher
+        )
+        session.diagnostic = Nothing()
+        outcome = session.run()
+
+        assert watcher.finished == [("budget_spent", outcome.items_attempted)]
+
+    def test_it_is_reported_before_the_post_test(self, toy) -> None:
+        # Order matters for a person: the explanation has to arrive before the
+        # thing it explains, or it is not an explanation.
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        class Watcher(Watching):
+            def __init__(self) -> None:
+                self.order: list[str] = []
+
+            def training_finished(self, reason, items) -> None:  # noqa: ANN001
+                self.order.append("training_finished")
+
+            def phase_started(self, phase, total) -> None:  # noqa: ANN001
+                self.order.append(f"phase:{phase}")
+
+        watcher = Watcher()
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 2, "administer_tests": True}
+        )
+        learner = HumanLearner(lambda item, attempt: "999")
+        session = build_session(
+            "human", config.seed, toy, config, learner=learner, observer=watcher
+        )
+        session.diagnostic = Nothing()
+        session.run()
+
+        assert watcher.order == ["phase:pretest", "training_finished", "phase:posttest"]
+
+
 class TestCrossConceptDiagnosesAreCounted:
     def test_a_coherent_diagnosis_is_not_counted(self, toy) -> None:
         from agent_newton.core.agents.base import Diagnosis

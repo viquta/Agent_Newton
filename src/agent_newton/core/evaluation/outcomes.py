@@ -140,6 +140,12 @@ class SessionOutcome:
     #: the target would measure the two arms against different goals. Zero when
     #: every declared goal is mastered; None when the domain declares none.
     distance_to_goal: int | None = None
+    #: Why training stopped: ``budget_spent``, ``every_goal_reached`` or
+    #: ``nothing_left_to_select``. Distinct from ``items_to_exhaustion``, which
+    #: says *when* the material ran out and is None when it did not. A session
+    #: that spent its budget and one that taught everything it had both end, and
+    #: comparing arms without separating them would read a cap as a result.
+    stop_reason: str = "budget_spent"
 
     @property
     def gain(self) -> float:

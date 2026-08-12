@@ -94,6 +94,16 @@ class SessionObserver(Protocol):
 
     def working_recorded(self, item: Item, text: str) -> None: ...
 
+    def training_finished(self, reason: str, items: int) -> None:
+        """Training is over, and why.
+
+        The three reasons are different events — the budget ran out, every goal
+        was reached, or nothing was left to select — and without saying which,
+        the post-test appearing straight after a failed item reads as the system
+        giving up on the learner.
+        """
+        ...
+
     def phase_started(self, phase: str, total: int) -> None: ...
 
     def phase_answer(self, phase: str, index: int, total: int, item: Item) -> None: ...
@@ -128,6 +138,9 @@ class Watching:
         return None
 
     def working_recorded(self, item: Item, text: str) -> None:
+        return None
+
+    def training_finished(self, reason: str, items: int) -> None:
         return None
 
     def phase_started(self, phase: str, total: int) -> None:
@@ -167,6 +180,11 @@ class Session:
         given: Counter[str] = Counter()
         diagnoses: list[tuple[str | None, str | None]] = []
         exhausted: int | None = None
+        #: Why training stopped. Overwritten by any of the early exits; if none
+        #: fires, the budget is what ended it. Recorded because the three are
+        #: not the same event and a reader — or a learner watching — cannot tell
+        #: them apart from the fact that training simply stopped.
+        stop_reason = "budget_spent"
 
         #: The concept currently being worked. The *goal* lives on the board;
         #: this is only where the learner is along the way to it.
@@ -191,6 +209,7 @@ class Session:
                     goal_changes += 1
                 if self.board.plan is None and self._wants_a_goal():
                     exhausted = sum(given.values())
+                    stop_reason = "every_goal_reached"
                     self.board.annotate(
                         "every goal reached", items_given=sum(given.values())
                     )
@@ -201,6 +220,7 @@ class Session:
                     # Nothing left to teach: the frontier emptied, or the
                     # syllabus ran out. When that happened is an outcome.
                     exhausted = sum(given.values())
+                    stop_reason = "nothing_left_to_select"
                     self.board.annotate(
                         "nothing left to select", items_given=sum(given.values())
                     )
@@ -217,11 +237,29 @@ class Session:
                 item = self._next_item_for(working, given)
                 if item is None:
                     exhausted = sum(given.values())
+                    stop_reason = "nothing_left_to_select"
+                    self.board.annotate(
+                        "no item left on the current concept",
+                        items_given=sum(given.values()),
+                        concept_id=working,
+                    )
                     break
 
             given[item.id] += 1
             self.arbitration.note_item()
             self._work_item(item, diagnoses, repetition=given[item.id] - 1)
+
+        if stop_reason == "budget_spent":
+            # The one exit that recorded nothing. To a person it looked like the
+            # session breaking off after a failed item — the post-test simply
+            # appeared — because nothing said that the budget was what ended it.
+            self.board.annotate(
+                "item budget spent",
+                items_given=sum(given.values()),
+                max_items=self.config.cohort.max_items,
+            )
+        if self.observer is not None:
+            self.observer.training_finished(stop_reason, sum(given.values()))
 
         posttest = self._administer("posttest")
 
@@ -240,6 +278,7 @@ class Session:
             goal=self.board.plan.goal if self.board.plan else None,
             goal_changes=goal_changes,
             goals_mastered=self._goals_mastered(),
+            stop_reason=stop_reason,
             cross_concept_diagnoses=self._cross_concept(),
             distance_to_goal=self._distance_to_goal(),
         )
