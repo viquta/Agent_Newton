@@ -525,5 +525,196 @@ def evaluate_diagnostic(
         console.print("\n[green]no confusions[/green]")
 
 
+@eval_app.command("tutor")
+def evaluate_tutor(
+    domain_name: str = typer.Option("calculus", "--domain", help="Domain to evaluate on."),
+    model: str = typer.Option("gemma4:12b", "--model", help="Model writing the hints."),
+    provider: str = typer.Option("ollama", "--provider"),
+    think: bool | None = typer.Option(None, "--think/--no-think"),
+    judge_model: str | None = typer.Option(
+        None,
+        "--judge-model",
+        help="Second model, for the checks no predicate can decide. Must differ "
+        "from --model: a model grading its own replies measures its taste, not "
+        "its faithfulness.",
+    ),
+    judge_think: bool | None = typer.Option(
+        None,
+        "--judge-think/--no-judge-think",
+        help="Reasoning mode for the judge. Left unset rather than inherited "
+        "from --think: the two roles are different jobs, and a mode chosen to "
+        "keep a tutor responsive at a keyboard has no bearing on how carefully "
+        "a judge should read.",
+    ),
+    gold: Path | None = typer.Option(
+        None, "--gold", help="Hand-labelled set the judge is calibrated against."
+    ),
+    limit: int | None = typer.Option(
+        None, "--limit", help="Stop after N turns. For smoke-testing: the bank is "
+        "ordered, so a truncated run is not a balanced sample."
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="List the cases and exit."),
+) -> None:
+    """Score a tutor on the turns a learner would read.
+
+    The deterministic checks decide what has a right answer — whether a hint
+    gives the answer away is settled by the domain's verifier, so equivalence
+    rather than spelling. They need no model beyond the one writing the hints.
+
+    ``--judge-model`` adds the two checks that are judgements: whether a reply
+    keeps to what the student's step shows, and whether the assigned support
+    levels are visible in the text. The judge is scored against the hand-labelled
+    set first, and its agreement is reported beside its verdicts.
+
+    Safe to interrupt. Identical prompts hit the response cache.
+    """
+    from agent_newton.config import ZPDConfig
+    from agent_newton.core.agents.llm import LLMTutor
+    from agent_newton.core.evaluation import tutor as evaluation
+    from agent_newton.llm.factory import build_provider
+
+    try:
+        domain = registry.load_domain(domain_name)
+    except DomainError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    band = ZPDConfig()
+    todo = evaluation.cases(domain, band)[:limit]
+    if dry_run:
+        console.print(f"{len(todo)} turns on {domain_name}")
+        for case in todo:
+            console.print(f"  {case.id:64} P={case.mastery:.2f}  -> {case.wrong_answer}")
+        return
+
+    if judge_model is not None and judge_model == model:
+        console.print(
+            "[red]the judge must differ from the tutor[/red] — a model grading "
+            "its own replies measures its taste rather than their faithfulness"
+        )
+        raise typer.Exit(code=1)
+
+    cache = Path(".cache/llm")
+    spec = ModelSpec(provider=provider, model=model, think=think)  # pyright: ignore[reportArgumentType]
+    agent = LLMTutor(build_provider(spec, cache), band)
+
+    suffix = "" if think is None else f"_think-{str(think).lower()}"
+    directory = (
+        out or Path("results") / f"tutor_{domain_name}_{model.replace(':', '-')}{suffix}"
+    )
+    directory.mkdir(parents=True, exist_ok=True)
+
+    console.print(
+        f"[bold]{len(todo)} turns[/bold] on {domain_name} with {provider}/{model}\n"
+        f"writing to {directory}  ·  safe to interrupt, cached runs resume\n"
+    )
+
+    collected: list[evaluation.Turn] = []
+    with (directory / "turns.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            ["case_id", "item_id", "concept_id", "misconception_id", "move", "level",
+             "targets", "wrong_answer", "text", "violations", "seconds"]
+        )
+        for n, turn in enumerate(evaluation.ask(domain, agent, band, todo), start=1):
+            item = domain.items.get(turn.case.item_id)
+            violations = evaluation.check_turn(turn, item, domain)
+            collected.append(turn)
+            writer.writerow([
+                turn.case.id, turn.case.item_id, turn.case.concept_id,
+                turn.case.misconception_id, turn.move, turn.level, turn.targets or "",
+                turn.case.wrong_answer, turn.text,
+                "; ".join(v.rule for v in violations), f"{turn.seconds:.1f}",
+            ])
+            handle.flush()  # partial results survive an interrupt
+            mark = "[green]OK  [/green]" if not violations else "[red]FAIL[/red]"
+            console.print(
+                f"  {n:>3}/{len(todo)} {mark} {turn.seconds:5.1f}s  "
+                f"{turn.move:10} {turn.level:12} {turn.case.item_id}"
+            )
+            for violation in violations:
+                console.print(f"        [red]{violation}[/red]")
+
+    report = evaluation.score(domain, collected)
+
+    summary: dict = {
+        "domain": domain_name,
+        "model": spec.label(),
+        "turns": report.total,
+        "clean": report.clean,
+        "clean_rate": report.clean_rate,
+        "fallbacks": report.fallbacks,
+        "violations_by_rule": report.by_rule(),
+        "rate_by_rule": report.rate_by_rule(),
+        "by_level": report.by_level(),
+        "by_move": report.by_move(),
+        # Only practice turns are ever read by a learner — the test banks are
+        # administered without hints — so that row is the rate a running system
+        # exposes anyone to.
+        "by_bank": report.by_bank(domain),
+        "seconds": report.seconds,
+    }
+
+    if judge_model is not None:
+        judge_spec = ModelSpec(provider=provider, model=judge_model, think=judge_think)  # pyright: ignore[reportArgumentType]
+        judge = build_provider(judge_spec, cache)
+        path = gold or Path("tests/fixtures/gold") / f"{domain_name}_tutor_cases.yaml"
+        try:
+            labelled = evaluation.load_gold(path, domain)
+        except (DomainError, FileNotFoundError) as exc:
+            console.print(f"[red]{path} is not usable:[/red] {exc}")
+            raise typer.Exit(code=1)
+
+        console.print(f"\ncalibrating the judge on {len(labelled)} hand-labelled cases")
+        judged = evaluation.calibrate(judge, domain, labelled)
+        console.print(f"  agreement with the hand labels: {judged.agreement:.1%}")
+        for case_id, hand, read in judged.disagreements():
+            console.print(f"  [yellow]{case_id}[/yellow]: labelled {hand}, judged {read}")
+
+        console.print(f"\njudging {len(collected)} turns")
+        evaluation.judge_turns(judge, domain, collected, judged)
+        ranking = evaluation.rank_levels(judge, domain, collected)
+
+        summary["judge"] = {
+            "model": judge_spec.label(),
+            "gold_set": str(path),
+            "calibration_cases": len(labelled),
+            # Reported first, and deliberately: the grounded rate below is only
+            # as good as this figure, and a reader who takes one without the
+            # other has a rate whose error is unknown.
+            "agreement_with_hand_labels": judged.agreement,
+            "disagreements": [c for c, _, _ in judged.disagreements()],
+            "grounded_rate": judged.grounded_rate,
+            "unobtainable": judged.unobtainable,
+            "level_order_agreement": ranking.agreement,
+            "level_pairs": len(ranking.scored),
+        }
+
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    console.print()
+    table = Table(title="tutor turns", show_header=False, box=None)
+    table.add_row("turns", str(report.total))
+    table.add_row("clean", f"{report.clean_rate:.1%}")
+    for rule, count in sorted(report.by_rule().items(), key=lambda kv: -kv[1]):
+        table.add_row(f"  {rule}", f"{count} ({count / report.total:.1%})")
+    for level, row in report.by_level().items():
+        table.add_row(f"  at {level}", f"{row['clean_rate']:.1%} of {int(row['turns'])}")
+    table.add_row("fallbacks", str(report.fallbacks))
+    table.add_row("total time", f"{report.seconds / 60:.1f} min")
+    if "judge" in summary:
+        table.add_row("judge agreement", f"{summary['judge']['agreement_with_hand_labels']:.1%}")
+        table.add_row("grounded", f"{summary['judge']['grounded_rate']:.1%}")
+        table.add_row("level order seen", f"{summary['judge']['level_order_agreement']:.1%}")
+    console.print(table)
+
+    if report.failures():
+        console.print(
+            f"\n[red]{len(report.failures())} turn(s) broke a stated rule[/red] — "
+            f"see turns.csv"
+        )
+
+
 if __name__ == "__main__":
     app()

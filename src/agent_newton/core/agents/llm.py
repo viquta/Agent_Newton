@@ -73,6 +73,11 @@ _TUTOR_SYSTEM = (
 # is now in the prompt, and the instruction keeps the model from embroidering
 # past it.
 
+#: Said when the model produces nothing usable. A constant because the tutor
+#: evaluation counts these apart from bad hints — a failure to produce a turn is
+#: not a wrongly-pitched one — and a literal in two places would drift.
+FALLBACK_HINT = "That step is not right yet — take another look at it."
+
 _PLANNER_SYSTEM = (
     "You choose what a student should work on next, given what they have shown "
     "they can and cannot do. Choose exactly one concept from those offered."
@@ -227,7 +232,7 @@ class LLMTutor:
             # A hint is prose; failing to produce it should not end a session.
             # Falling back keeps the turn's *targeting* intact, which is the
             # part that affects the learner.
-            text = "That step is not right yet — take another look at it."
+            text = FALLBACK_HINT
 
         return Hint(
             text=text,

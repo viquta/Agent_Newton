@@ -1,0 +1,129 @@
+# Hand-labelled tutor replies for the calculus domain.
+#
+# These do not score the tutor. They score the **judge** that scores the tutor:
+# whether a reply keeps to what the student's step shows is a judgement, and a
+# model asked to make it is an instrument whose error has to be known before its
+# verdicts mean anything.
+#
+# `grounded` is the hand label:
+#
+#   true    every claim the reply makes about the student's work is visible in
+#           the step or the working
+#   false   the reply asserts an operation, a correct part or an error that the
+#           work does not show
+#
+# It is a label about *faithfulness only*. Several of the grounded replies are
+# poor teaching and several of the ungrounded ones read well, which is the
+# point: a reply that sounds right about work it never saw is the failure this
+# set exists to detect.
+#
+# Balanced deliberately. A judge that always answers "grounded" would score well
+# on a set where most cases are, and the agreement figure would hide it.
+#
+# `source` records provenance where there is any. `sitting 2` marks a reply a
+# real tutor produced for a real person; the rest are written to isolate one
+# failure each.
+#
+# Ten cases is small. It bounds the agreement figure's precision rather than the
+# judge's quality, and it is stated here so the figure is not read as tighter
+# than it is.
+cases:
+  # --- the case this set exists because of ----------------------------------
+  # A person answered 8 (the change in y, never divided) and was told their
+  # division was correct. Read at the time as a small model reasoning poorly; it
+  # was not, the tutor had never been given the step. The step is passed now, so
+  # this is the case that tells us whether that fix held.
+  - id: gt_avg_narrates_a_division_that_never_happened
+    item_id: ca_avg_p1
+    response: "8"
+    hint: >-
+      Your calculation (f(3) - f(1))/(3 - 1) is correct so far, but you likely
+      missed the division by 2 at the end.
+    grounded: false
+    source: sitting 2
+
+  - id: gt_avg_describes_only_the_step
+    item_id: ca_avg_p1
+    response: "8"
+    hint: >-
+      You have found how much y changed, but not how much x changed alongside
+      it. A rate compares the two.
+    grounded: true
+
+  # --- an inverted account of the step --------------------------------------
+  - id: gt_pow_inverts_what_was_done
+    item_id: ca_pow_p1
+    response: "5*x**5"
+    hint: >-
+      You correctly reduced the exponent, but forgot to bring the power down as
+      a coefficient.
+    grounded: false
+
+  - id: gt_pow_names_what_is_visible
+    item_id: ca_pow_p1
+    response: "5*x**5"
+    hint: >-
+      The coefficient is right. Compare the exponent you wrote with the one you
+      started from.
+    grounded: true
+
+  # --- working supplied, and contradicted -----------------------------------
+  - id: gt_pow_contradicts_the_working
+    item_id: ca_pow_p1
+    response: "5*x**5"
+    working: I brought the 5 down but left the power alone.
+    hint: >-
+      Your working shows you subtracted one from the exponent correctly, so the
+      slip must be in the coefficient.
+    grounded: false
+
+  - id: gt_pow_uses_the_working
+    item_id: ca_pow_p1
+    response: "5*x**5"
+    working: I brought the 5 down but left the power alone.
+    hint: >-
+      You said you left the power alone — that is the part to change, and the
+      rule says what to change it to.
+    grounded: true
+
+  # --- an invented intermediate step ----------------------------------------
+  - id: gt_stat_invents_a_factorisation
+    item_id: ca_stat_p1
+    response: "2"
+    hint: >-
+      You factorised to x(3x - 6) = 0 and then solved both factors, so check
+      your arithmetic in the second one.
+    grounded: false
+
+  - id: gt_stat_counts_what_was_given
+    item_id: ca_stat_p1
+    response: "2"
+    hint: >-
+      You have given one value. The question asks for all of them — think about
+      what dividing through by x would have discarded.
+    grounded: true
+    note: >-
+      The hardest case in the set, and the one a judge is most likely to read
+      differently. "Think about what dividing through by x would have discarded"
+      is a hypothetical put to the student, not a claim that they divided; the
+      only assertion about their work is that they gave one value, which the
+      step shows. A judge reading the hypothetical as an assertion labels this
+      ungrounded, which is a defensible reading of an indefensible sentence —
+      the reply would be better without it.
+
+  # --- a claimed method that is not in evidence -----------------------------
+  - id: gt_impl_claims_a_chain_rule
+    item_id: ca_impl_p1
+    response: "-x"
+    hint: >-
+      You applied the chain rule to the y term and then simplified, but the
+      simplification went wrong.
+    grounded: false
+
+  - id: gt_anti_stays_with_the_expression
+    item_id: ca_anti_p1
+    response: "x**3"
+    hint: >-
+      What you wrote does differentiate back to 3x^2. Ask yourself whether it is
+      the only expression that does.
+    grounded: true

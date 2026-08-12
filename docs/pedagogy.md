@@ -80,3 +80,44 @@ also says what to do.
 
 The rule is inert until a misconception is confirmed: with nothing to reflect
 on, plain remediation is unconstrained.
+
+## Measuring the turns the rules produce
+
+The predicates above choose a move and a support level. They say nothing about
+the words carrying them, and a reply can satisfy every one of them while doing
+the opposite of what its level means — a `NUDGE` that states the answer breaks
+no predicate.
+
+`core/evaluation/tutor.py` measures the text. Two layers, and they are not
+interchangeable.
+
+**Deterministic checks** decide what has a right answer, and gate CI:
+
+| check | what it decides |
+|---|---|
+| `answer_leaked` | any fragment of the reply verifies as the answer, below `WORKED_STEP` |
+| `latex_in_reply` | a backslash command, or the control character it becomes once a JSON reply is unescaped |
+| `reflect_tells` | a reflective prompt that hands over the answer |
+| `over_length` | more than two sentences |
+
+`answer_leaked` asks the domain's own verifier rather than comparing strings, so
+`5x^4` and `5*x**4` are the same disclosure. Fragments the question already
+contains are excluded: a number the learner was given cannot be given away.
+
+**Judged checks** decide what does not. Whether a reply keeps to what the
+student's step shows, and whether the assigned levels are visible in the text,
+are judgements. A second model makes them, and it is scored against
+`tests/fixtures/gold/calculus_tutor_cases.yaml` first — so the report carries its
+agreement with the hand labels beside its verdicts.
+
+Report the agreement whenever the verdicts are quoted. A judge whose agreement
+is unknown produces rates whose error is unknown.
+
+```bash
+uv run agent-newton evaluate tutor --domain calculus --no-think \
+    --judge-model <a different model>
+```
+
+Split by bank as well as by level and move. Only `practice` turns reach a
+learner — the test banks are administered without hints — so that row is the
+rate a running system exposes anyone to.
