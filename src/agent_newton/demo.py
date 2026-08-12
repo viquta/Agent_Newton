@@ -35,7 +35,7 @@ from rich.text import Text
 
 from agent_newton.config import Config
 from agent_newton.core.agents.base import Diagnosis, Hint
-from agent_newton.core.orchestration.session import build_session
+from agent_newton.core.orchestration.session import Watching, build_session
 from agent_newton.core.simulator.human import HumanLearner
 from agent_newton.core.state import bkt, route
 from agent_newton.core.state.store import Blackboard
@@ -74,11 +74,14 @@ def _bar(value: float, band) -> Text:
     return text
 
 
-class DemoObserver:
+class DemoObserver(Watching):
     """Renders the blackboard between steps.
 
     Only reads. It cannot change what the session does, which is what keeps the
     demo a view of the real system rather than a variant of it.
+
+    Subclasses :class:`Watching` so a hook added to the session later does not
+    break a sitting the first time the loop reaches it.
     """
 
     def __init__(self, console: Console, domain: Domain, config: Config) -> None:
@@ -193,6 +196,26 @@ class DemoObserver:
     def working_recorded(self, item: Item, text: str) -> None:
         self._console.print(
             Text("  ✎ your working — ", style="magenta") + Text(text, style="dim magenta")
+        )
+
+    def session_resumed(self, elapsed_days: float, concepts_decayed: int) -> None:
+        # Said plainly, because a returning learner will otherwise see estimates
+        # lower than the ones they left with and read it as the system having
+        # forgotten *them*, rather than as it being less sure after a gap.
+        days = f"{elapsed_days:.0f} day" + ("" if 0.5 <= elapsed_days < 1.5 else "s")
+        self._console.print()
+        self._console.print(
+            Panel(
+                Text(
+                    f"Welcome back — it has been about {days}.\n"
+                    f"I have become less certain about {concepts_decayed} thing(s) "
+                    f"you had shown me, so some of them may come round again. "
+                    f"Nothing you did was forgotten; the estimates just went stale.",
+                ),
+                title="picking up where you left off",
+                border_style="magenta",
+                padding=(0, 2),
+            )
         )
 
     def training_finished(self, reason: str, items: int) -> None:

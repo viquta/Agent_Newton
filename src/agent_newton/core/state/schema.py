@@ -27,7 +27,13 @@ from pydantic import BaseModel, Field
 #: posterior, but a seeded update comes from a held-out test rather than from
 #: practice, so anything counting what the learner did during the session must
 #: be able to leave it out.
-Cause = Literal["observation", "seed", "plan", "replan", "reset", "annotation"]
+#: ``decay`` is separate again, for the same reason: it moves posteriors without
+#: the learner having done anything at all. Anything counting evidence must be
+#: able to leave it out, and anything asking why an estimate fell must be able to
+#: tell "they got it wrong" from "time passed".
+Cause = Literal[
+    "observation", "seed", "decay", "plan", "replan", "reset", "annotation"
+]
 
 
 class Emphasis(str, Enum):
@@ -132,6 +138,23 @@ class LearnerState(BaseModel):
 
     #: Most recent errors, oldest first, bounded by the configured length.
     error_trace: list[ErrorEvent] = Field(default_factory=list)
+
+    #: item_id -> times this learner has been given it, over their whole
+    #: history. Session-local until sessions could span sittings, and moving it
+    #: here is not bookkeeping tidiness: the simulated learner's answer is a
+    #: function of the repetition index, and the item templates draw their
+    #: variant from it. A count that restarted each session would replay session
+    #: one's answers *and* its questions — the same defect the rule engine fixed
+    #: at P6, returning by a different door.
+    items_given: dict[str, int] = Field(default_factory=dict)
+
+    #: Item-level correctness, oldest first. This is the whole of what the
+    #: decoupled view carries, so it lives on the state rather than on the
+    #: blackboard: a learner resuming a sequence must bring it with them, or the
+    #: decoupled arm would restart its run of consecutive answers every session
+    #: while the coupled arm resumed with everything. That difference would not
+    #: be the manipulation — it would be one arm being handed persistence.
+    outcomes: list[bool] = Field(default_factory=list)
 
     #: What the learner said, in words, most recent last. Prose, not evidence:
     #: it updates no estimate and enters no error trace, because it is not a

@@ -95,6 +95,94 @@ def test_the_check_would_catch_a_back_channel() -> None:
     assert any(isinstance(found, forbidden) for found in _reachable(tutor))
 
 
+class TestPersistenceIsNotABackChannel:
+    """The store keeps beliefs and ground truth in one database file.
+
+    In memory the separation is structural: a profile is an object the agents are
+    never handed. A shared database threatens that, because anything holding a
+    connection could read the table the diagnostic agent exists to infer. So the
+    split is restored in code — ``LearnerStore`` cannot touch profiles at all,
+    and ``ProfileStore`` lives in a module agents may not import.
+    """
+
+    def _agent_sources(self) -> list[tuple[str, str]]:
+        from pathlib import Path
+
+        import agent_newton.core.agents as agents_pkg
+
+        root = Path(agents_pkg.__file__).parent
+        return [(p.name, p.read_text()) for p in sorted(root.glob("*.py"))]
+
+    #: The import, not the words. ``OracleAccess.observe_ground_truth`` is a
+    #: method name that legitimately appears throughout the agents, and matching
+    #: on the bare phrase flagged the very capability that makes reading ground
+    #: truth explicit.
+    GROUND_TRUTH_IMPORT = "store.ground_truth"
+
+    def test_no_agent_module_imports_ground_truth(self) -> None:
+        offenders = [
+            name
+            for name, source in self._agent_sources()
+            if self.GROUND_TRUTH_IMPORT in source
+        ]
+        assert not offenders, (
+            f"{offenders} import the ground-truth store; the diagnostic agent "
+            f"exists to infer what it holds, so an accuracy figure measured with "
+            f"it in scope would mean nothing"
+        )
+
+    def test_no_agent_module_imports_the_store_at_all(self) -> None:
+        # Even the belief side. The store is the runner's, and an agent holding
+        # one could read across sessions without the state carrying it — which
+        # is the same back channel, wearing a database.
+        offenders = [
+            name
+            for name, source in self._agent_sources()
+            if "agent_newton.store" in source
+        ]
+        assert not offenders, f"{offenders} import the store directly"
+
+    def test_the_check_can_fail(self, tmp_path) -> None:
+        # The shape it looks for, so the scan is not passing vacuously.
+        stray = tmp_path / "stray_agent.py"
+        stray.write_text("from agent_newton.store.ground_truth import ProfileStore\n")
+        assert self.GROUND_TRUTH_IMPORT in stray.read_text()
+
+    def test_the_check_does_not_fire_on_the_capability_name(self) -> None:
+        # `observe_ground_truth` is how reading ground truth is made an explicit
+        # capability rather than an argument every agent happens to receive. The
+        # scan must not flag the thing that keeps the line honest.
+        assert self.GROUND_TRUTH_IMPORT not in "def observe_ground_truth(self, label): ..."
+
+    def test_the_learner_store_cannot_read_profiles(self) -> None:
+        from agent_newton.store import LearnerStore
+
+        surface = [name for name in dir(LearnerStore) if not name.startswith("_")]
+        assert not [name for name in surface if "profile" in name.lower()]
+
+    def test_a_profile_is_not_reachable_from_any_agent(self) -> None:
+        # The in-memory property, restated now that profiles are persisted:
+        # `build_session` samples one and hands it only to the learner and, when
+        # the config names it, to the oracle planner.
+        from agent_newton.core.simulator.profile import MisconceptionProfile
+
+        config = Config.model_validate(
+            {"domain": "toy_algebra", "arm": "coupled",
+             "agents": {"tutor": {"impl": "template"},
+                        "diagnostic": {"impl": "llm"},
+                        "planner": {"impl": "goal_directed"}}}
+        )
+        session = build_session("L0000", 1, registry.load_domain("toy_algebra"), config)
+        for role, agent in (
+            ("tutor", session.tutor),
+            ("diagnostic", session.diagnostic),
+            ("planner", session.planner),
+        ):
+            assert not [
+                f for f in _reachable(agent) if isinstance(f, MisconceptionProfile)
+            ], f"the {role} can reach the learner's true profile"
+
+
 class TestReplanningFiresExactlyWhenItShould:
     """The condition, checked over generated states rather than examples."""
 

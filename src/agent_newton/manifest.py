@@ -75,6 +75,12 @@ class RunManifest(BaseModel):
     models: dict[str, str] = Field(default_factory=dict)
     uses_llm: bool = False
 
+    #: Belief half-life in days, or None when the model does not go stale.
+    #: Recorded and checked for comparability: two runs under different decay
+    #: are two different learner models, and pooling them would average
+    #: estimates that mean different things.
+    decay_half_life_days: float | None = None
+
     python_version: str = Field(default_factory=platform.python_version)
     platform: str = Field(default_factory=platform.platform)
 
@@ -108,6 +114,7 @@ class RunManifest(BaseModel):
             seed=config.seed,
             models=models,
             uses_llm=config.uses_llm(),
+            decay_half_life_days=config.decay.half_life_days,
         )
 
     def write(self, run_dir: Path) -> Path:
@@ -150,6 +157,11 @@ def assert_poolable(manifests: Sequence[RunManifest]) -> None:
         ),
         ("item_bank_hash", "learners were given different items"),
         ("concept_graph_hash", "the prerequisite graph differs, so the ZPD frontier differs"),
+        (
+            "decay_half_life_days",
+            "the belief half-life differs, so a posterior means a different "
+            "thing in each run and the frontiers are not on the same scale",
+        ),
     ):
         values = _distinct(field)
         if len(values) > 1:

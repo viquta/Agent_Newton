@@ -20,7 +20,7 @@ from __future__ import annotations
 from typing import Any, Iterable, Literal
 
 from agent_newton.config import Config
-from agent_newton.core.state import bkt, zpd
+from agent_newton.core.state import bkt, decay, zpd
 from agent_newton.core.state.schema import (
     AuditRecord,
     Cause,
@@ -42,7 +42,6 @@ class Blackboard:
         self._graph = graph
         self._config = config
         self._audit: list[AuditRecord] = []
-        self._outcomes: list[bool] = []
         self._frontier_cache: tuple[int, Frontier] | None = None
         #: Observations discarded because they were not evidence. Reported per
         #: run: a high rate means the verifier is failing, not the learner.
@@ -102,13 +101,13 @@ class Blackboard:
                 mastery=dict(self._state.mastery),
                 error_trace=tuple(self._state.error_trace),
                 frontier=self.frontier,
-                outcomes=tuple(self._outcomes),
+                outcomes=tuple(self._state.outcomes),
                 version=self._state.version,
                 plan=self._state.plan,
                 reflections=tuple(self._state.reflections),
             )
         return ItemCorrectnessView(
-            outcomes=tuple(self._outcomes),
+            outcomes=tuple(self._state.outcomes),
             version=self._state.version,
             plan=self._state.plan,
         )
@@ -134,6 +133,7 @@ class Blackboard:
         result: VerificationResult,
         misconception_label: str | None = None,
         confidence: float = 0.0,
+        attempt: int = 0,
     ) -> bool:
         """Record one graded step. Returns whether it counted as evidence.
 
@@ -141,8 +141,16 @@ class Blackboard:
         log — the attempt happened, and hiding it would make the record
         incomplete — but leaves mastery, the outcome stream and the error trace
         untouched.
+
+        ``attempt`` is here only so the first attempt at an item increments the
+        lifetime count of how often it has been given. Doing it on this path
+        rather than a separate one keeps the invariant at the top of this
+        module: nothing changes state without bumping the version and writing an
+        audit entry.
         """
         self._state.t += 1
+        if attempt == 0:
+            self._state.items_given[item_id] = self._state.items_given.get(item_id, 0) + 1
 
         if not result.is_evidence:
             self.unmeasurable += 1
@@ -161,7 +169,7 @@ class Blackboard:
         after = bkt.observe(before, correct, self._config.bkt)
 
         self._state.mastery[concept_id] = after
-        self._outcomes.append(correct)
+        self._state.outcomes.append(correct)
 
         if not correct:
             self._state.error_trace.append(
@@ -253,6 +261,44 @@ class Blackboard:
             )
         return seeded
 
+    def apply_decay(self, elapsed_days: float) -> int:
+        """Let the model go stale over a gap between sessions. Returns the count.
+
+        Every *observed* concept relaxes toward the prior. Unobserved concepts
+        are skipped because they are already at the prior — decaying them would
+        write an estimate that says nothing, and would make an untouched concept
+        indistinguishable in the audit log from one that was worked and
+        forgotten.
+
+        The error trace and the outcome stream are untouched. What the learner
+        did is a fact about the past and does not become less true; it is the
+        *inference* from it that goes stale.
+        """
+        if not self._config.decay.enabled or elapsed_days <= 0.0:
+            return 0
+        half_life = self._config.decay.half_life_days
+        assert half_life is not None  # enabled implies it is set
+        prior = bkt.initial(self._config.bkt)
+
+        moved = 0
+        for concept_id, before in list(self._state.mastery.items()):
+            after = decay.relax(before, prior, elapsed_days, half_life)
+            if after == before:
+                continue
+            self._state.mastery[concept_id] = after
+            moved += 1
+            self._bump(
+                "decay",
+                f"{elapsed_days:g} day(s) elapsed; "
+                f"P({concept_id}) {before:.3f} -> {after:.3f}",
+                concept_id=concept_id,
+                elapsed_days=elapsed_days,
+                half_life_days=half_life,
+                mastery_before=before,
+                mastery_after=after,
+            )
+        return moved
+
     def record_replan(self, summary: str, **evidence: Any) -> None:
         """Record a planning decision and what triggered it.
 
@@ -330,5 +376,32 @@ def new_blackboard(
         seed=seed,
         concepts=len(graph.ids()),
         arm=config.arm,
+    )
+    return board
+
+
+def resumed_blackboard(
+    state: LearnerState,
+    graph: ConceptGraph,
+    config: Config,
+) -> Blackboard:
+    """A blackboard for a learner picking up where they left off.
+
+    The state carries: mastery, the error trace, the plan, what the learner
+    said, the outcome stream and ``t``. The audit log does not — it is the
+    record of *one* session, written to the store when that session ended, and
+    starting a new one with the last one's log would make every run's log grow
+    without bound and stop being readable as the account of a sitting.
+
+    The version counter continues rather than restarting, so an audit entry's
+    version still orders events within a learner's whole history.
+    """
+    board = Blackboard(state, graph, config)
+    board.annotate(
+        f"resumed learner {state.learner_id!r}",
+        concepts=len(graph.ids()),
+        arm=config.arm,
+        known_concepts=len(state.mastery),
+        prior_steps=state.t,
     )
     return board

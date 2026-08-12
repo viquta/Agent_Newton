@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Any, Mapping, Protocol, runtime_checkable
 
 from agent_newton.config import Config
 from agent_newton.core.agents.base import (
@@ -24,6 +24,7 @@ from agent_newton.core.agents.base import (
     Hint,
     OracleAccess,
     Planner,
+    Resumable,
     Tutor,
 )
 from agent_newton.core.agents.diagnostic import NoisedOracleDiagnostic, OracleDiagnostic
@@ -49,7 +50,9 @@ from agent_newton.core.simulator import (
     sample_profile,
 )
 from agent_newton.core.simulator.engine import Learner
-from agent_newton.core.state.store import Blackboard, new_blackboard
+from agent_newton.core.simulator.profile import MisconceptionProfile
+from agent_newton.core.state.schema import LearnerState
+from agent_newton.core.state.store import Blackboard, new_blackboard, resumed_blackboard
 from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
 
 
@@ -93,6 +96,14 @@ class SessionObserver(Protocol):
     def reflection_recorded(self, item: Item, text: str) -> None: ...
 
     def working_recorded(self, item: Item, text: str) -> None: ...
+
+    def session_resumed(self, elapsed_days: float, concepts_decayed: int) -> None:
+        """A gap since the last sitting, and what it did to the model.
+
+        Fires only when something actually moved, so a first session and a
+        no-gap sequence stay silent.
+        """
+        ...
 
     def training_finished(self, reason: str, items: int) -> None:
         """Training is over, and why.
@@ -140,6 +151,9 @@ class Watching:
     def working_recorded(self, item: Item, text: str) -> None:
         return None
 
+    def session_resumed(self, elapsed_days: float, concepts_decayed: int) -> None:
+        return None
+
     def training_finished(self, reason: str, items: int) -> None:
         return None
 
@@ -167,8 +181,19 @@ class Session:
     config: Config
     arbitration: ArbitrationPolicy
     observer: SessionObserver | None = None
+    #: Days since this learner's previous session. Drives decay; zero for a
+    #: first sitting and for every single-session run, which is what keeps those
+    #: identical to what they were before sequences existed.
+    elapsed_days: float = 0.0
 
     def run(self) -> SessionOutcome:
+        # Before anything is measured. The pre-test then measures what the
+        # learner can currently do, and seeding folds *that* in — decaying
+        # afterwards would throw away the evidence just collected.
+        decayed = self.board.apply_decay(self.elapsed_days)
+        if decayed and self.observer is not None:
+            self.observer.session_resumed(self.elapsed_days, decayed)
+
         pretest = self._administer("pretest")
         if self.config.cohort.seed_from_pretest:
             # Off for every cohort — see CohortConfig. It moves the starting
@@ -178,6 +203,19 @@ class Session:
                 weight=self.config.cohort.pretest_weight,
             )
 
+        # Two counts, because they answer different questions.
+        #
+        # `lifetime` is how often this learner has ever been given each item. It
+        # drives the repetition index — which decides the simulated learner's
+        # answer and which variant of the question is asked — and it drives
+        # least-used selection, so someone returning gets fresh numbers rather
+        # than session one again. It lives on the state and is incremented by
+        # `record_observation`.
+        #
+        # `given` counts only this sitting, and is what `items_attempted`
+        # reports. Conflating them would make a second session look like it
+        # attempted everything the first one did.
+        lifetime = self.board.state.items_given
         given: Counter[str] = Counter()
         diagnoses: list[tuple[str | None, str | None]] = []
         exhausted: int | None = None
@@ -216,7 +254,7 @@ class Session:
                     )
                     break
 
-                item = self.planner.select(self.board.view(), self.domain, given)
+                item = self.planner.select(self.board.view(), self.domain, lifetime)
                 if item is None:
                     # Nothing left to teach: the frontier emptied, or the
                     # syllabus ran out. When that happened is an outcome.
@@ -235,7 +273,7 @@ class Session:
                     # it is the difference between the threshold deciding and
                     # the rate limit deciding.
                     self.board.annotate(decision.summary, **decision.evidence)
-                item = self._next_item_for(working, given)
+                item = self._next_item_for(working, lifetime)
                 if item is None:
                     exhausted = sum(given.values())
                     stop_reason = "nothing_left_to_select"
@@ -246,9 +284,12 @@ class Session:
                     )
                     break
 
+            # Before the item is worked, so it is the count of previous
+            # givings; `record_observation` does the incrementing.
+            repetition = lifetime.get(item.id, 0)
             given[item.id] += 1
             self.arbitration.note_item()
-            self._work_item(item, diagnoses, repetition=given[item.id] - 1)
+            self._work_item(item, diagnoses, repetition=repetition)
 
         if stop_reason == "budget_spent":
             # The one exit that recorded nothing. To a person it looked like the
@@ -401,8 +442,13 @@ class Session:
                 counts[record.summary.replace("replan triggered by ", "")] += 1
         return dict(counts)
 
-    def _next_item_for(self, concept_id: str | None, given: Counter[str]):
-        """Continue with the current plan: the least-practised item on it."""
+    def _next_item_for(self, concept_id: str | None, given: Mapping[str, int]):
+        """Continue with the current plan: the least-practised item on it.
+
+        ``given`` is the lifetime count, so a learner returning to a concept
+        gets the item they have seen least often across their whole history
+        rather than the one they saw least this sitting.
+        """
         if concept_id is None:
             return None
         items = self.domain.items.for_concept(concept_id, "practice")
@@ -451,6 +497,7 @@ class Session:
                 result=result,
                 misconception_label=diagnosis.misconception_id,
                 confidence=diagnosis.confidence,
+                attempt=attempt,
             )
 
             if self.observer is not None:
@@ -527,6 +574,10 @@ def build_session(
     config: Config,
     learner: Learner | None = None,
     observer: SessionObserver | None = None,
+    state: LearnerState | None = None,
+    profile: MisconceptionProfile | None = None,
+    planner_state: Mapping[str, Any] | None = None,
+    elapsed_days: float = 0.0,
 ) -> Session:
     """Assemble a session from a config.
 
@@ -537,6 +588,13 @@ def build_session(
     ``learner`` and ``observer`` let a front end put a person in this loop and
     watch it, rather than writing a second loop that would drift from the one
     the cohorts run.
+
+    ``state``, ``profile`` and ``elapsed_days`` are how a learner continues a
+    sequence. Both must be passed together for a simulated learner: the state is
+    what the system believes and the profile is what is true, and resuming one
+    without the other would put a model that remembers alongside a learner who
+    starts over — or the reverse. The caller supplies them because it holds the
+    store; nothing here reads a database.
     """
     agents = config.agents
     cache_dir = config.paths.cache_dir
@@ -566,7 +624,12 @@ def build_session(
     # usable: no planner that routes from the learner model can run on a view
     # that carries none.
     prior = bkt.initial(config.bkt)
-    profile = sample_profile(learner_id, seed, domain.misconceptions, config.simulator)
+    # A resumed profile carries the remediation and forgetting of every prior
+    # session; a fresh one is drawn from the seed. Same draw either way for a
+    # first session, which is what keeps single-session runs unchanged.
+    profile = profile or sample_profile(
+        learner_id, seed, domain.misconceptions, config.simulator
+    )
 
     if config.arm == "decoupled":
         planner: Planner = FixedOrderPlanner(
@@ -592,9 +655,20 @@ def build_session(
         planner = OraclePlanner(profile.firing, config.zpd, prior)
     else:
         planner = GoalDirectedPlanner(config.zpd, prior, agents.planner.emphasis)
+    # Only a planner that declares `Resumable` has anything to take back,
+    # and only the decoupled one does — see the protocol for why that is the
+    # architecture showing through rather than an oversight.
+    if planner_state is not None and isinstance(planner, Resumable):
+        planner.restore(planner_state)
+
+    board = (
+        resumed_blackboard(state, domain.concepts, config)
+        if state is not None
+        else new_blackboard(learner_id, seed, domain.concepts, config)
+    )
     return Session(
         learner=learner or SimulatedLearner(profile, domain, config.simulator),
-        board=new_blackboard(learner_id, seed, domain.concepts, config),
+        board=board,
         planner=planner,
         tutor=tutor,
         diagnostic=diagnostic,
@@ -603,4 +677,5 @@ def build_session(
         config=config,
         arbitration=ArbitrationPolicy(config.arbitration),
         observer=observer,
+        elapsed_days=elapsed_days,
     )

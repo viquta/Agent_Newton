@@ -31,7 +31,7 @@ learner still had everything to learn.
 from __future__ import annotations
 
 import hashlib
-from typing import Mapping
+from typing import Any, Mapping
 
 from agent_newton.config import ZPDConfig
 from agent_newton.core.agents.base import StateView
@@ -322,6 +322,24 @@ class FixedOrderPlanner:
         #: it, a streak that persists would advance the position on *every*
         #: call rather than once, racing through the syllabus an item at a time.
         self._advanced_at = 0
+
+    def snapshot(self) -> dict[str, Any]:
+        """Where this walk had got to. Satisfies ``Resumable``.
+
+        The position advances on a streak of correct answers *at the moment
+        select is called*, so it cannot be recovered from the outcome stream
+        alone — the stream does not record when the planner was asked. It has to
+        be carried.
+
+        That this planner needs carrying and the coupled one does not is the
+        architecture showing through: a planner routing from the blackboard
+        keeps nothing, because the blackboard already persists.
+        """
+        return {"position": self._position, "advanced_at": self._advanced_at}
+
+    def restore(self, snapshot: Mapping[str, Any]) -> None:
+        self._position = int(snapshot.get("position", 0))
+        self._advanced_at = int(snapshot.get("advanced_at", 0))
 
     def _walk(self, domain: Domain) -> list[str]:
         """The concepts this planner will walk, in order.

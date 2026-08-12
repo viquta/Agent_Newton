@@ -235,6 +235,28 @@ class ZPDConfig(BaseModel):
         return self
 
 
+class DecayConfig(BaseModel):
+    """How the learner model goes stale between sessions.
+
+    Off by default: ``half_life_days = None`` means no decay, so every
+    single-session run behaves exactly as it did before this existed and the
+    first study's numbers stay reproducible.
+
+    Applies to the shared state, so it is **identical in both arms** — but only
+    the coupled arm can see the result, because only its view carries the
+    posteriors. That asymmetry is the manipulation, not a confound: a planner
+    that cannot read mastery cannot notice that mastery has decayed.
+    """
+
+    #: Days for a posterior to close half the distance to the prior. None
+    #: disables decay entirely.
+    half_life_days: float | None = Field(default=None, gt=0.0)
+
+    @property
+    def enabled(self) -> bool:
+        return self.half_life_days is not None
+
+
 class ArbitrationConfig(BaseModel):
     """When real-time evidence may revise the plan."""
 
@@ -310,6 +332,7 @@ class Config(BaseModel):
     bkt: BKTConfig = Field(default_factory=lambda: BKTConfig())
     zpd: ZPDConfig = Field(default_factory=lambda: ZPDConfig())
     arbitration: ArbitrationConfig = Field(default_factory=lambda: ArbitrationConfig())
+    decay: DecayConfig = Field(default_factory=lambda: DecayConfig())
     paths: PathsConfig = Field(default_factory=lambda: PathsConfig())
 
     @model_validator(mode="after")

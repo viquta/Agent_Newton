@@ -13,7 +13,7 @@ returns a decision; the session writes the consequences back.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping, Protocol, Sequence, runtime_checkable
+from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
 
 from agent_newton.core.pedagogy import HintLevel, TutorMove
 from agent_newton.core.state.schema import Plan
@@ -78,6 +78,35 @@ class Diagnostic(Protocol):
     """Classifies an incorrect step into the domain's misconception catalogue."""
 
     def diagnose(self, item: Item, response: str, domain: Domain) -> Diagnosis: ...
+
+
+@runtime_checkable
+class Resumable(Protocol):
+    """An agent whose own bookkeeping has to survive between sessions.
+
+    Kept as a capability, like :class:`OracleAccess`, so that carrying agent
+    state across a gap is something an implementation declares rather than
+    something the runner assumes it may do.
+
+    Only the decoupled planner needs this, and that is the architectural point
+    rather than an accident: it walks a syllabus and its position in that walk
+    is the only progress signal it has, so the position lives inside it. The
+    coupled planner holds nothing — everything it needs is on the blackboard,
+    which already persists. Without this, a returning learner would restart the
+    decoupled walk at the first concept every session, and the coupled arm would
+    win a comparison about persistence rather than about routing.
+
+    The snapshot never reaches a view, so it is not a channel between agents: it
+    goes from an agent to the store and back to the same agent.
+    """
+
+    def snapshot(self) -> dict[str, Any]:
+        """Serialisable internal state."""
+        ...
+
+    def restore(self, snapshot: Mapping[str, Any]) -> None:
+        """Take back a snapshot produced by an earlier session."""
+        ...
 
 
 @runtime_checkable
