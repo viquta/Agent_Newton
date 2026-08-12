@@ -22,12 +22,16 @@ comparable — stated here rather than left to be assumed.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
-from typing import Callable, Sequence
+from typing import TYPE_CHECKING, Callable, Sequence
 
 from agent_newton.core.simulator import SurfaceRenderer
 from agent_newton.core.simulator.engine import Learner
 from agent_newton.domains.base import Domain, Item, Verdict
+
+if TYPE_CHECKING:  # the audit log's shape, without importing the state layer
+    from agent_newton.core.state.schema import AuditRecord
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,7 +64,35 @@ class TestResult:
 
     @property
     def score(self) -> float:
+        """Correct out of everything administered.
+
+        Unreadable answers sit in this denominator, so it is the raw test score
+        and not a statement about the learner. Use :attr:`measured_score` for
+        that, and see it for why the two are kept apart.
+        """
         return self.correct / self.total if self.total else 0.0
+
+    @property
+    def measured_score(self) -> float:
+        """Correct out of what the verifier could actually read.
+
+        The verifier failing to parse an answer is a failure to measure, not a
+        finding about the learner — the same distinction ``is_evidence`` draws
+        for the learner model, and ``concepts_missed`` draws below. It was not
+        drawn here, so a bank with ten unreadable answers and five wrong ones
+        reported zero, while the panel showing it said unreadable answers were
+        not counted.
+
+        Zero when nothing was measurable: no answer was read, so the learner
+        demonstrated nothing either way, and there is no score to state.
+        """
+        measured = self.total - self.unmeasurable
+        return self.correct / measured if measured > 0 else 0.0
+
+    @property
+    def measured(self) -> int:
+        """Answers the verifier could read. The denominator that means something."""
+        return self.total - self.unmeasurable
 
     @property
     def concepts_missed(self) -> tuple[str, ...]:
@@ -154,8 +186,136 @@ class SessionOutcome:
         Meaningful only when both banks were administered — see
         ``TestResult.administered``. Zero otherwise, and zero would read as "no
         improvement" rather than "not measured".
+
+        Taken over what the verifier could read. An answer it could not parse
+        says nothing about whether the learner improved, and leaving it in the
+        denominator charges the verifier's failure to the teaching. For a
+        simulated cohort the two are identical — ``domain validate`` requires
+        every stated answer to verify correct and every buggy rule's output to
+        verify incorrect, so nothing unreadable can be produced — and there is a
+        test on that, which is what makes this inert for every measured result.
         """
-        return self.posttest.score - self.pretest.score
+        return self.posttest.measured_score - self.pretest.measured_score
+
+    @property
+    def normalised_gain(self) -> float | None:
+        """Gain as a share of the improvement that was available.
+
+        ``(post - pre) / (1 - pre)``. Raw gain is bounded by how much a learner
+        did not already know, and that bound is not the same for everyone: a
+        cohort whose mean pre-test is 0.91 has nine points of room, so an
+        improvement of five reads as small while being most of what could be
+        had.
+
+        None when the pre-test was perfect. Nothing was available to gain, so
+        the ratio is undefined — unavailable rather than zero, on the same
+        grounds as ``remediation_ratio`` for a person. A learner at ceiling can
+        only lose, and averaging them in as a zero would report that loss as an
+        absence of teaching.
+        """
+        if not (self.pretest.administered and self.posttest.administered):
+            return None
+        headroom = 1.0 - self.pretest.measured_score
+        if headroom <= 0.0:
+            return None
+        return self.gain / headroom
+
+
+@dataclass(frozen=True, slots=True)
+class ConceptChange:
+    """What happened to one concept between the two held-out banks.
+
+    An aggregate cannot answer "did this teach me anything". A sitting can end
+    with a lower post-test than pre-test and still have taught everything it
+    reached, or improve without having touched a single thing the learner did
+    not already know — both have happened, and both were only visible once the
+    banks were compared concept by concept.
+    """
+
+    concept_id: str
+    before: Verdict | None
+    after: Verdict | None
+
+    @property
+    def state(self) -> str:
+        """``fixed``, ``lost``, ``still_wrong``, ``still_right`` or ``unmeasured``.
+
+        ``unmeasured`` covers a concept the verifier could not read at either
+        end. It is not a fifth kind of learning outcome; it is the absence of a
+        measurement, and folding it into ``still_wrong`` would report a failure
+        to parse as a failure to learn.
+        """
+        if self.before not in (Verdict.CORRECT, Verdict.INCORRECT):
+            return "unmeasured"
+        if self.after not in (Verdict.CORRECT, Verdict.INCORRECT):
+            return "unmeasured"
+        if self.before is Verdict.INCORRECT:
+            return "fixed" if self.after is Verdict.CORRECT else "still_wrong"
+        return "still_right" if self.after is Verdict.CORRECT else "lost"
+
+
+def per_concept_change(
+    pretest: TestResult, posttest: TestResult
+) -> tuple[ConceptChange, ...]:
+    """Concept by concept, what moved between the two banks.
+
+    Both banks carry one item per concept, so a concept's verdict is that item's.
+    Where a bank holds several, the last is taken: they are administered in
+    order and the later one is the more recent measurement.
+    """
+    before = {result.concept_id: result.verdict for result in pretest.per_item}
+    after = {result.concept_id: result.verdict for result in posttest.per_item}
+    return tuple(
+        ConceptChange(concept_id, before.get(concept_id), after.get(concept_id))
+        for concept_id in sorted(set(before) | set(after))
+    )
+
+
+def dose_by_concept(audit_log: Sequence["AuditRecord"]) -> dict[str, int]:
+    """Training steps spent on each concept, from the audit log.
+
+    Read from ``observation`` entries only. Seeding a learner model from a
+    held-out test moves posteriors without the learner having practised
+    anything, and decay moves them without the learner having done anything at
+    all — counting either as instruction would report the model changing its
+    mind as time spent teaching.
+
+    State-derived, so it means the same thing whichever planner ran, and it
+    needs no ground-truth profile: it is the one measure of what the tutoring
+    *did* that is available for a person.
+    """
+    spent: Counter[str] = Counter()
+    for record in audit_log:
+        if record.cause == "observation":
+            concept_id = record.evidence.get("concept_id")
+            if concept_id:
+                spent[str(concept_id)] += 1
+    return dict(spent)
+
+
+def dose_on_gap(
+    audit_log: Sequence["AuditRecord"], pretest: TestResult
+) -> float | None:
+    """The share of training that went to something the pre-test showed wrong.
+
+    None when the pre-test was not administered, or when it found no gaps —
+    there was nothing to aim at, so a share of zero would read as a failure to
+    aim rather than as an absence of targets.
+
+    This is what a sitting needs and could not previously produce. A session
+    once spent 21 of 24 steps re-proving concepts the pre-test had already shown
+    the learner knew, and it took a hand count of the transcript to see it.
+    """
+    if not pretest.administered:
+        return None
+    gaps = set(pretest.concepts_missed)
+    if not gaps:
+        return None
+    spent = dose_by_concept(audit_log)
+    total = sum(spent.values())
+    if total == 0:
+        return None
+    return sum(count for c, count in spent.items() if c in gaps) / total
 
 
 def administer(

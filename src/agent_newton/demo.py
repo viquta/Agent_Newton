@@ -38,6 +38,7 @@ from agent_newton.config import Config
 from agent_newton.core.agents.base import Diagnosis, Hint, Resumable
 from agent_newton.core.orchestration.session import Watching, build_session
 from agent_newton.core.simulator.human import HumanLearner
+from agent_newton.core.evaluation import outcomes
 from agent_newton.core.state import bkt, route
 from agent_newton.core.state.store import Blackboard
 from agent_newton.domains import registry
@@ -277,12 +278,17 @@ class DemoObserver(Watching):
     def phase_finished(self, phase: str, result) -> None:  # noqa: ANN001
         label = {"pretest": "Pre-test", "posttest": "Post-test"}.get(phase, phase)
         body = Text()
-        body.append(f"{result.correct} of {result.total} correct", style="bold")
-        body.append(f"   ({result.score:.0%})\n", style="bold")
+        # Out of what could be read, not out of what was asked. The two differ
+        # only when the verifier failed to parse something, and the sentence
+        # below has always promised those are not held against the learner —
+        # while the percentage beside it counted every one of them as wrong.
+        body.append(f"{result.correct} of {result.measured} correct", style="bold")
+        body.append(f"   ({result.measured_score:.0%})\n", style="bold")
         if result.unmeasurable:
             body.append(
-                f"{result.unmeasurable} answer(s) the verifier could not read — "
-                f"not counted against you.\n",
+                f"{result.unmeasurable} of the {result.total} answer(s) could not "
+                f"be read by the verifier, so they are left out of that score "
+                f"rather than counted against you.\n",
                 style="dim",
             )
         if phase == "pretest":
@@ -380,6 +386,17 @@ def _what_to_work_on(session, config: Config, domain: Domain) -> Panel:  # noqa:
             body.append(f"  · {graph.get(concept_id).name}")
             body.append(f"   {value:.2f}\n", style="dim")
 
+    # Asked for directly: *"if I get 3 times wrong on a question, it should skip
+    # it, note it as a weakness, and move on"*. Only populated when the sitting
+    # sets a visit cap; without one nothing is ever set aside.
+    if session.board.weaknesses:
+        body.append("\nSet aside for now, and worth coming back to:\n", style="bold")
+        for concept_id in sorted(session.board.weaknesses):
+            body.append(f"  · {graph.get(concept_id).name}")
+            body.append(
+                f"   worked {session.board.visits(concept_id)} time(s)\n", style="dim"
+            )
+
     # The error trace is a rolling window, so a repeat here means the
     # misconception kept coming back rather than merely appearing once.
     repeated = Counter(
@@ -396,6 +413,83 @@ def _what_to_work_on(session, config: Config, domain: Domain) -> Panel:  # noqa:
             body.append(f"   ({count} times)\n", style="dim")
 
     return Panel(body, title="what to work on next", border_style="magenta")
+
+
+def _did_this_teach(session, outcome, domain: Domain) -> Panel:  # noqa: ANN001
+    """What the sitting actually moved, concept by concept.
+
+    A pre-to-post percentage cannot answer the question a sitting is for. One
+    sitting read −13% and looked like the system harming the learner; the cause
+    was that 21 of its 24 training steps went to concepts the pre-test had
+    already shown were fine, so nothing it taught was anything that needed
+    teaching. That took a hand count of the transcript to find. It prints
+    itself now.
+    """
+    body = Text()
+    graph = domain.concepts
+
+    aimed = outcomes.dose_on_gap(session.board.audit_log, outcome.pretest)
+    if aimed is not None:
+        body.append("Aimed at what you got wrong  ", style="dim")
+        body.append(f"{aimed:.0%}", style="bold")
+        body.append(" of the training\n", style="dim")
+    spent = outcomes.dose_by_concept(session.board.audit_log)
+    if spent:
+        gaps = set(outcome.pretest.concepts_missed)
+        body.append("\nWhere the time went:\n", style="bold")
+        for concept_id, steps in sorted(spent.items(), key=lambda kv: -kv[1]):
+            mark = "·" if concept_id in gaps else " "
+            body.append(f"  {mark} {graph.get(concept_id).name}")
+            body.append(f"   {steps} step(s)\n", style="dim")
+        if gaps:
+            body.append(
+                "  · marks something the pre-test showed you had not got yet\n",
+                style="dim",
+            )
+
+    if not (outcome.pretest.administered and outcome.posttest.administered):
+        return Panel(body, title="did this teach you anything", border_style="green")
+
+    changed = outcomes.per_concept_change(outcome.pretest, outcome.posttest)
+    by_state: dict[str, list[str]] = {}
+    for change in changed:
+        by_state.setdefault(change.state, []).append(change.concept_id)
+
+    labels = {
+        "fixed": ("Now right, and were wrong before", "green"),
+        "lost": ("Were right before, and slipped", "red"),
+        "still_wrong": ("Still to get", "yellow"),
+        "unmeasured": ("Could not be read at one end or the other", "dim"),
+    }
+    body.append("\nBetween the two tests:\n", style="bold")
+    for state, (label, colour) in labels.items():
+        found = by_state.get(state, [])
+        if not found:
+            continue
+        body.append(f"  {label}: ", style=colour)
+        body.append(f"{len(found)}\n", style=f"bold {colour}")
+        for concept_id in found:
+            body.append(f"      {graph.get(concept_id).name}\n", style="dim")
+
+    normalised = outcome.normalised_gain
+    if normalised is None:
+        body.append(
+            "\nYou had the pre-test entirely right, so there was no room to "
+            "improve on it — the training was working on what comes after.\n",
+            style="dim",
+        )
+    else:
+        # Raw gain is bounded by what was not already known, and that bound
+        # differs between people. Stating the share makes a small-looking figure
+        # readable rather than discouraging.
+        available = 1.0 - outcome.pretest.measured_score
+        body.append(
+            f"\nThat is {normalised:.0%} of the {available:.0%} you had left to "
+            f"gain.\n",
+            style="dim",
+        )
+
+    return Panel(body, title="did this teach you anything", border_style="green")
 
 
 def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  # noqa: ANN001
@@ -417,6 +511,14 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
         "learner_id": learner.learner_id,
         "completed": outcome is not None,
         "responses": [{"item_id": i, "response": r} for i, r in learner.responses],
+        # What the tutor said back. Already in the audit log below, and lifted
+        # out because a transcript of a sitting is unreadable if half of the
+        # conversation has to be recovered by filtering on a cause string.
+        "turns": [
+            r.evidence | {"version": r.version}
+            for r in session.board.audit_log
+            if r.cause == "tutor"
+        ],
         "said": [u.model_dump() for u in session.board.state.reflections],
         "mastery": dict(session.board.state.mastery),
         "error_trace": [e.model_dump() for e in session.board.state.error_trace],
@@ -442,6 +544,12 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
                 "pretest": {
                     "correct": outcome.pretest.correct,
                     "total": outcome.pretest.total,
+                    # Raw and measured are both kept. They differ exactly when
+                    # the verifier could not read an answer, and a transcript
+                    # showing only one cannot say which of the two a figure was.
+                    "unmeasurable": outcome.pretest.unmeasurable,
+                    "score": outcome.pretest.score,
+                    "measured_score": outcome.pretest.measured_score,
                     "administered": outcome.pretest.administered,
                     "concepts_missed": list(outcome.pretest.concepts_missed),
                     "seeded_the_learner_model": config.cohort.seed_from_pretest,
@@ -449,9 +557,32 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
                 "posttest": {
                     "correct": outcome.posttest.correct,
                     "total": outcome.posttest.total,
+                    "unmeasurable": outcome.posttest.unmeasurable,
+                    "score": outcome.posttest.score,
+                    "measured_score": outcome.posttest.measured_score,
                     "administered": outcome.posttest.administered,
                     "concepts_missed": list(outcome.posttest.concepts_missed),
                 },
+                "gain": outcome.gain,
+                "normalised_gain": outcome.normalised_gain,
+                # What the sitting moved and where its time went. Derived here
+                # rather than left to be recomputed, because the last sitting's
+                # finding came from doing this by hand off the transcript.
+                "per_concept_change": [
+                    {
+                        "concept_id": change.concept_id,
+                        "before": change.before.value if change.before else None,
+                        "after": change.after.value if change.after else None,
+                        "state": change.state,
+                    }
+                    for change in outcomes.per_concept_change(
+                        outcome.pretest, outcome.posttest
+                    )
+                ],
+                "dose_by_concept": outcomes.dose_by_concept(session.board.audit_log),
+                "dose_on_gap": outcomes.dose_on_gap(
+                    session.board.audit_log, outcome.pretest
+                ),
                 "cross_concept_diagnoses": outcome.cross_concept_diagnoses,
             }
         )
@@ -623,12 +754,29 @@ def run_demo(
         )
         return
 
+    console.print(_did_this_teach(session, outcome, domain))
+
     summary = Table(title="session", show_header=False, box=None)
     summary.add_row("items attempted", str(outcome.items_attempted))
     if outcome.pretest.administered and outcome.posttest.administered:
-        summary.add_row("pre-test", f"{outcome.pretest.score:.0%}")
-        summary.add_row("post-test", f"{outcome.posttest.score:.0%}")
+        # Out of what the verifier could read. An answer it could not parse is
+        # not a wrong one, and the panel has always said so — the score did not,
+        # which made the two disagree in front of the person they were about.
+        summary.add_row(
+            "pre-test",
+            f"{outcome.pretest.measured_score:.0%}"
+            f" of {outcome.pretest.measured} read",
+        )
+        summary.add_row(
+            "post-test",
+            f"{outcome.posttest.measured_score:.0%}"
+            f" of {outcome.posttest.measured} read",
+        )
         summary.add_row("gain", f"{outcome.gain:+.0%}")
+        if outcome.normalised_gain is not None:
+            summary.add_row(
+                "of what was there to gain", f"{outcome.normalised_gain:.0%}"
+            )
     else:
         # A skipped bank and a bank scored zero both read 0.0, and they mean
         # opposite things.

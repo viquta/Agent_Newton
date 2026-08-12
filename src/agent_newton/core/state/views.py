@@ -53,6 +53,16 @@ class FullStateView:
     #: carries it: it is something the learner told us about themselves, which
     #: is exactly what the decoupled arm does without.
     reflections: tuple[Utterance, ...] = ()
+    #: Concepts worked often enough in this sitting to be set aside for now.
+    #: Empty unless ``cohort.max_visits_per_concept`` is set, which is every run
+    #: that has produced a measured number.
+    #:
+    #: On the view rather than inside the planner. A planner that kept its own
+    #: record of where it had dwelt would be holding private state, which is the
+    #: thing the blackboard design exists to avoid — and the asymmetry between
+    #: the two planners' memory is an argument the project makes, so it must not
+    #: be quietly spent here.
+    weaknesses: frozenset[str] = frozenset()
 
     def consecutive_correct(self) -> int:
         count = 0

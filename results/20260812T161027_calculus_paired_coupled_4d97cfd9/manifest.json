@@ -1,0 +1,24 @@
+{
+  "run_id": "20260812T161027_calculus_paired_coupled_4d97cfd9",
+  "run_name": "calculus_paired",
+  "created_at": "2026-08-12T16:10:27+00:00",
+  "git_sha": "40320d186c5b90336c1bb3e8a4bf6df4803ff7e6",
+  "git_dirty": true,
+  "config_hash": "4d97cfd97da3448a",
+  "arm": "coupled",
+  "domain": "calculus",
+  "seed": 20260811,
+  "catalogue_hash": "38c3bd32f0796856",
+  "item_bank_hash": "b124ef0f3134b1d8",
+  "concept_graph_hash": "0d8b6ce2179205c4",
+  "models": {
+    "tutor": "<template>",
+    "diagnostic": "<oracle>",
+    "planner": "<goal_directed>",
+    "simulator_surface": "<symbolic>"
+  },
+  "uses_llm": false,
+  "decay_half_life_days": null,
+  "python_version": "3.14.5",
+  "platform": "macOS-15.7.7-arm64-arm-64bit-Mach-O"
+}

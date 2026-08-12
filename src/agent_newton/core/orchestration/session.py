@@ -229,6 +229,13 @@ class Session:
         #: this is only where the learner is along the way to it.
         working: str | None = None
         goal_changes = 0
+        #: Set when the last item exhausted the dwelling cap. Selection has to be
+        #: reopened for the concept to actually be left: without it the weakness
+        #: is recorded, the frontier widens, and the loop carries on asking for
+        #: the next item on the concept it just set aside — because nothing else
+        #: reconsiders. Always False when no cap is configured, which is every
+        #: cohort.
+        set_aside = False
 
         for _ in range(self.config.cohort.max_items):
             decision = self.arbitration.evaluate(
@@ -239,7 +246,7 @@ class Session:
                 prior=bkt.initial(self.config.bkt),
             )
 
-            if decision.replan:
+            if decision.replan or set_aside:
                 # Macro first: is the target still the right one? Then micro:
                 # what to work on the way to it. Both come from the planner, and
                 # the goal is written to the board before the item is chosen, so
@@ -265,8 +272,17 @@ class Session:
                     )
                     break
                 working = item.concept_id
-                self.board.record_replan(decision.summary, **decision.evidence)
+                if decision.replan:
+                    self.board.record_replan(decision.summary, **decision.evidence)
+                else:
+                    # Its own trigger name, so the threshold sweep reads it apart
+                    # from the ones the arbitration policy owns. It cannot fire
+                    # without a dwelling cap, and no experiment config sets one.
+                    self.board.record_replan(
+                        "replan triggered by concept_set_aside", set_aside=True
+                    )
                 self.arbitration.accept(dict(self.board.state.mastery))
+                set_aside = False
             else:
                 if decision.suppressed_by:
                     # A trigger that fired and was held back is worth recording:
@@ -289,6 +305,14 @@ class Session:
             repetition = lifetime.get(item.id, 0)
             given[item.id] += 1
             self.arbitration.note_item()
+            # Counted always, acted on only when a cap is configured — which is
+            # no cohort. `consolidate` ranks by recent errors, so failing a
+            # concept attracts more of the same, and with the pre-test skipping
+            # what a learner has demonstrated there are fewer places left to be
+            # moved along to.
+            set_aside = self.board.note_visit(
+                item.concept_id, self.config.cohort.max_visits_per_concept
+            )
             self._work_item(item, diagnoses, repetition=repetition)
 
         if stop_reason == "budget_spent":
@@ -536,6 +560,20 @@ class Session:
                 # Recorded rather than raised: one bad turn should not abort a
                 # cohort, but it must not pass unnoticed either.
                 self.board.annotate(f"pedagogy violation: {violation}", rule=violation.rule)
+
+            # Written before the observer sees it, so a violation and the turn
+            # that caused it are adjacent in the log. Nothing downstream reads
+            # this; it exists so a sitting can be read back afterwards, and so
+            # the tutor's output can be scored against the rules that chose its
+            # move and its support level.
+            self.board.record_turn(
+                item_id=item.id,
+                concept_id=item.concept_id,
+                move=hint.move.value,
+                level=hint.level.label,
+                targets=hint.targets,
+                text=hint.text,
+            )
 
             if self.observer is not None:
                 self.observer.tutor_replied(item, hint)

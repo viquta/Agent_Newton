@@ -70,6 +70,17 @@ def run(config: Config) -> dict:
         "mean_pretest": _mean(o.pretest.score for o in outcomes),
         "mean_posttest": _mean(o.posttest.score for o in outcomes),
         "mean_gain": _mean(o.gain for o in outcomes),
+        # Raw gain is bounded by how much each learner did not already know, and
+        # that bound is not the same for everyone. Reported beside the raw
+        # figure rather than instead of it: they answer different questions, and
+        # the declared primary outcome is not re-picked by adding a scale.
+        "mean_normalised_gain": _mean(
+            o.normalised_gain for o in outcomes if o.normalised_gain is not None
+        ),
+        # Learners whose pre-test was already perfect. They are in the raw mean
+        # and can only lose, so a cohort with many of them reports teaching as
+        # absent when there was nothing left to teach.
+        "learners_at_ceiling": sum(1 for o in outcomes if o.normalised_gain is None),
         "mean_items": _mean(o.items_attempted for o in outcomes),
         # Skipped where unavailable, as for distance: a person has no profile to
         # measure a reduction against, and a zero would read as "none happened".
@@ -77,6 +88,14 @@ def run(config: Config) -> dict:
             o.remediation_ratio for o in outcomes if o.remediation_ratio is not None
         ),
         "unmeasurable_steps": sum(o.unmeasurable_steps for o in outcomes),
+        # Held-out answers the verifier could not read. Recorded because it was
+        # not: a bank scoring badly because it could not be parsed looks exactly
+        # like a bank scoring badly, and nothing here would have shown which.
+        # Expected to be zero for a simulated cohort — `domain validate` admits
+        # no item whose answer or whose buggy-rule output fails to verify — so a
+        # non-zero here means the bank has drifted from what was validated.
+        "unmeasurable_pretest": sum(o.pretest.unmeasurable for o in outcomes),
+        "unmeasurable_posttest": sum(o.posttest.unmeasurable for o in outcomes),
         # Mastery-derived, so it means the same thing in both arms. The
         # planner's own retarget count does not — see SessionOutcome.
         "mean_goals_mastered": _mean(o.goals_mastered for o in outcomes),
@@ -95,6 +114,7 @@ def run(config: Config) -> dict:
                 "pretest": o.pretest.score,
                 "posttest": o.posttest.score,
                 "gain": o.gain,
+                "normalised_gain": o.normalised_gain,
                 "items": o.items_attempted,
                 "items_to_exhaustion": o.items_to_exhaustion,
                 "remediation": o.remediation_ratio,

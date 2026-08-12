@@ -104,6 +104,9 @@ class GoalDirectedPlanner:
             graph=domain.concepts,
             band=self._band,
             prior=self._prior,
+            # Read from the view rather than tracked here. Empty unless the
+            # dwelling cap is configured, and it is off for every cohort.
+            deprioritised=full.weaknesses,
         )
         if step is None:
             return None

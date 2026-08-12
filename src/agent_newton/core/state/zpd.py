@@ -50,15 +50,33 @@ def compute(
     graph: ConceptGraph,
     band: ZPDConfig,
     prior: float,
+    waived: frozenset[str] = frozenset(),
 ) -> Frontier:
     """Derive the frontier from mastery estimates and the prerequisite graph.
 
     Pure: same inputs, same output. The blackboard caches the result per state
     version so every agent sees one consistent zone within a step.
+
+    ``waived`` concepts stop blocking their dependants. They remain in the
+    frontier themselves — they are still unmastered — so nothing is withdrawn;
+    what changes is that the material behind them opens.
+
+    **This relaxes the prerequisite rule, and it is the only thing that can.**
+    A learner who cannot get past a concept is held by the graph rather than by
+    the ranking: its dependants are unreachable while it is unmastered, so the
+    frontier narrows to that one concept and no amount of reordering finds
+    anything else to offer. Moving them along therefore means stepping past an
+    unmet prerequisite, deliberately, with the concept recorded as outstanding.
+
+    Empty by default. Only ``cohort.max_visits_per_concept`` fills it, that is
+    unset in every experiment config, and there is a test on both.
     """
 
     def p(concept_id: str) -> float:
         return mastery.get(concept_id, prior)
+
+    def satisfied(concept_id: str) -> bool:
+        return concept_id in waived or p(concept_id) > band.theta_lower
 
     unmastered = [c for c in graph.ids() if p(c) < band.theta_upper]
 
@@ -69,7 +87,7 @@ def compute(
         return Frontier(frozenset(), reason="all concepts mastered")
 
     in_zone = frozenset(
-        c for c in unmastered if all(p(q) > band.theta_lower for q in graph.prerequisites(c))
+        c for c in unmastered if all(satisfied(q) for q in graph.prerequisites(c))
     )
     if in_zone:
         return Frontier(in_zone)

@@ -123,12 +123,35 @@ def rank(
     error_trace: Sequence[ErrorEvent],
     graph: ConceptGraph,
     prior: float,
+    deprioritised: frozenset[str] = frozenset(),
 ) -> tuple[str, ...]:
     """Order candidates by what the learner is here for.
 
     Both orders break ties on depth then id, so neither depends on the order
     concepts happen to be declared in the domain's YAML.
+
+    ``deprioritised`` concepts sort last under either emphasis. They are not
+    removed: a learner who has been stuck on something should be moved along,
+    not have the material withdrawn, and if nothing else on the way to the goal
+    is available then the alternative to offering it again is offering nothing.
+    Empty by default, which is every run that does not set
+    ``cohort.max_visits_per_concept``.
+
+    Once *everything* available has been set aside the ordering within that
+    group decides again, so a learner who is stuck on all of it settles on
+    whichever concept the emphasis ranks first. That is the intended end state
+    rather than a gap: every concept is on the record as outstanding, and the
+    remaining budget goes to the one the evidence says is hardest.
     """
+    if deprioritised:
+        held = tuple(c for c in available if c in deprioritised)
+        rest = tuple(c for c in available if c not in deprioritised)
+        if rest:
+            return rank(rest, emphasis, mastery, error_trace, graph, prior) + rank(
+                held, emphasis, mastery, error_trace, graph, prior
+            )
+        available = held
+
     if emphasis is Emphasis.ADVANCE:
         # Deepest first: as soon as a further concept becomes reachable, work
         # it, leaving shallower ones at whatever they have reached. The band's
@@ -183,6 +206,7 @@ def next_step(
     graph: ConceptGraph,
     band: ZPDConfig,
     prior: float,
+    deprioritised: frozenset[str] = frozenset(),
 ) -> Step | None:
     """The concept to work next on the way to ``goal``.
 
@@ -192,12 +216,15 @@ def next_step(
     available = candidates(goal, frontier, graph)
 
     if available:
-        chosen = rank(available, emphasis, mastery, error_trace, graph, prior)[0]
+        chosen = rank(
+            available, emphasis, mastery, error_trace, graph, prior, deprioritised
+        )[0]
+        held = " (worked enough for now)" if chosen in deprioritised else ""
         return Step(
             concept_id=chosen,
             reason=(
                 f"{emphasis.value} toward {goal}: chose {chosen} from "
-                f"{len(available)} candidate(s)"
+                f"{len(available)} candidate(s){held}"
             ),
         )
 

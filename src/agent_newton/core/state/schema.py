@@ -31,8 +31,14 @@ from pydantic import BaseModel, Field
 #: the learner having done anything at all. Anything counting evidence must be
 #: able to leave it out, and anything asking why an estimate fell must be able to
 #: tell "they got it wrong" from "time passed".
+#:
+#: ``tutor`` is what the system said back. It moves no estimate, so it could have
+#: been an annotation; it is its own cause because a reader looking for what the
+#: tutor did should not have to sift it out of everything else that changes
+#: nothing, and because a transcript without it cannot show what the learner was
+#: actually taught.
 Cause = Literal[
-    "observation", "seed", "decay", "plan", "replan", "reset", "annotation"
+    "observation", "seed", "decay", "plan", "replan", "reset", "annotation", "tutor"
 ]
 
 

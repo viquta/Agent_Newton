@@ -46,6 +46,13 @@ class Blackboard:
         #: Observations discarded because they were not evidence. Reported per
         #: run: a high rate means the verifier is failing, not the learner.
         self.unmeasurable = 0
+        #: Times each concept has been worked in *this* sitting, and the ones
+        #: worked often enough to be set aside. Session-scoped rather than on
+        #: the state, so neither is persisted: being stuck on something in
+        #: March is not a reason to skip it in May, and the decay model is what
+        #: decides whether a concept comes round again.
+        self._visits: dict[str, int] = {}
+        self._weak: set[str] = set()
 
     # -- reading ----------------------------------------------------------
 
@@ -72,6 +79,10 @@ class Blackboard:
                 self._graph,
                 self._config.zpd,
                 prior=bkt.initial(self._config.bkt),
+                # Always empty unless a dwelling cap is configured. Marking a
+                # weakness bumps the version, so the cache invalidates at
+                # exactly the step the zone changes.
+                waived=self.weaknesses,
             )
             self._frontier_cache = (self._state.version, frontier)
         return self._frontier_cache[1]
@@ -83,6 +94,18 @@ class Blackboard:
     def plan(self) -> Plan | None:
         """What this learner is working toward. None before the first plan."""
         return self._state.plan
+
+    @property
+    def weaknesses(self) -> frozenset[str]:
+        """Concepts worked enough in this sitting to be set aside for now.
+
+        Always empty unless ``cohort.max_visits_per_concept`` is set, which is
+        every run that has produced a measured number.
+        """
+        return frozenset(self._weak)
+
+    def visits(self, concept_id: str) -> int:
+        return self._visits.get(concept_id, 0)
 
     def view(self, arm: str | None = None) -> FullStateView | ItemCorrectnessView:
         """The view this arm's planner receives.
@@ -105,6 +128,7 @@ class Blackboard:
                 version=self._state.version,
                 plan=self._state.plan,
                 reflections=tuple(self._state.reflections),
+                weaknesses=self.weaknesses,
             )
         return ItemCorrectnessView(
             outcomes=tuple(self._state.outcomes),
@@ -337,6 +361,66 @@ class Blackboard:
             concept_id=concept_id,
             reflection=text,
             kind=kind,
+        )
+
+    def note_visit(self, concept_id: str, cap: int | None) -> bool:
+        """Count one working of this concept. Returns whether it just became a weakness.
+
+        ``cap`` of None is unlimited, and nothing is recorded beyond the count —
+        which is what every run that produced a measured number does.
+
+        Above the cap the concept is set aside rather than withdrawn: it sorts
+        last, so it is still offered when nothing else on the way to the goal
+        is available. Withdrawing it would mean a learner whose only remaining
+        work is the thing they are stuck on gets no work at all.
+        """
+        self._visits[concept_id] = self._visits.get(concept_id, 0) + 1
+        if cap is None or self._visits[concept_id] < cap or concept_id in self._weak:
+            return False
+        self._weak.add(concept_id)
+        self._bump(
+            "annotation",
+            f"{concept_id} worked {self._visits[concept_id]} time(s); setting it "
+            f"aside for now and noting it as something to come back to",
+            concept_id=concept_id,
+            visits=self._visits[concept_id],
+            max_visits_per_concept=cap,
+            weakness=True,
+        )
+        return True
+
+    def record_turn(
+        self,
+        *,
+        item_id: str,
+        concept_id: str,
+        move: str,
+        level: str,
+        targets: str | None,
+        text: str,
+    ) -> None:
+        """Record what the tutor said, and under which rules it said it.
+
+        Changes no estimate: a hint is instruction, and whether it worked shows
+        up in the next graded step rather than here. It is recorded because it
+        was not, and a sitting's transcript consequently held every answer the
+        learner gave and nothing the system replied — leaving no way to read back
+        what a person was actually taught.
+
+        ``move`` and ``level`` are the rules' decisions rather than the model's,
+        so storing them beside the text is what makes a turn checkable after the
+        fact: a reply can be read against the support level it was supposed to
+        carry.
+        """
+        self._bump(
+            "tutor",
+            f"{move} at {level} on {item_id}",
+            item_id=item_id,
+            concept_id=concept_id,
+            move=move,
+            level=level,
+            targets=targets,
+            text=text,
         )
 
     def record_plan(self, plan: Plan, **evidence: Any) -> Plan:

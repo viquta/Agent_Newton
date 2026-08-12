@@ -142,6 +142,236 @@ class TestTheLoopBehaves:
         assert noisy.remediation_ratio < accurate.remediation_ratio
 
 
+class TestTheDwellingCap:
+    """Off by default, and it must stay exactly off.
+
+    ``consolidate`` ranks by recent errors, so a learner who keeps failing a
+    concept keeps being given it. That is what consolidation means; what it
+    lacks is a floor. With the pre-test now skipping demonstrated concepts there
+    are fewer places left to be moved along to, and a verification run put every
+    one of its sixty steps on a single concept.
+    """
+
+    def _concepts_worked(self, session) -> dict[str, int]:  # noqa: ANN001
+        from agent_newton.core.evaluation.outcomes import dose_by_concept
+
+        return dose_by_concept(session.board.audit_log)
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_the_default_changes_nothing(self, domain_name: str, arm: str) -> None:
+        # The whole point of a swept parameter whose default is today: every
+        # number already measured must be reproduced by the code that has it.
+        _, capped = run(domain_name, arm, cohort={"max_visits_per_concept": None})
+        _, plain = run(domain_name, arm)
+        assert capped.items_attempted == plain.items_attempted
+        assert capped.remediation_ratio == plain.remediation_ratio
+        assert capped.goals_mastered == plain.goals_mastered
+        assert capped.posttest.correct == plain.posttest.correct
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_nothing_is_set_aside_without_a_cap(self, domain_name: str) -> None:
+        session, _ = run(domain_name, "coupled")
+        assert session.board.weaknesses == frozenset()
+
+    def test_a_stuck_learner_is_moved_along(self) -> None:
+        # A person who answers nothing correctly. Uncapped, consolidation keeps
+        # returning to whatever they last failed.
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.simulator.human import HumanLearner
+
+        def stuck(**cohort):
+            config = config_for(
+                "calculus", "coupled",
+                cohort={"max_items": 30, "administer_tests": False, **cohort},
+            )
+            domain = registry.load_domain("calculus")
+            learner = HumanLearner(lambda item, attempt: "999")
+            session = build_session(
+                "L0000", config.seed, domain, config, learner=learner
+            )
+
+            class Nothing:
+                def diagnose(self, item, response, domain):  # noqa: ANN001
+                    return Diagnosis(None)
+
+            session.diagnostic = Nothing()
+            session.run()
+            return session
+
+        uncapped = self._concepts_worked(stuck())
+        capped = self._concepts_worked(stuck(max_visits_per_concept=3))
+        assert max(uncapped.values()) > max(capped.values())
+        assert len(capped) > len(uncapped), "the cap reached no new material"
+
+    def test_the_weakness_is_recorded_and_auditable(self) -> None:
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.simulator.human import HumanLearner
+
+        config = config_for(
+            "calculus", "coupled",
+            cohort={
+                "max_items": 30, "administer_tests": False,
+                "max_visits_per_concept": 3,
+            },
+        )
+        domain = registry.load_domain("calculus")
+        learner = HumanLearner(lambda item, attempt: "999")
+        session = build_session("L0000", config.seed, domain, config, learner=learner)
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        session.diagnostic = Nothing()
+        session.run()
+
+        assert session.board.weaknesses
+        noted = [r for r in session.board.audit_log if r.evidence.get("weakness")]
+        assert noted
+        for record in noted:
+            assert record.evidence["visits"] >= 3
+            assert record.evidence["concept_id"] in session.board.weaknesses
+
+    def test_the_set_aside_concept_is_still_reachable_at_the_end(self) -> None:
+        # Set aside, not withdrawn. A learner whose only remaining work is the
+        # thing they are stuck on must still be given work rather than none.
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.simulator.human import HumanLearner
+
+        config = config_for(
+            "calculus", "coupled",
+            cohort={
+                "max_items": 60, "administer_tests": False,
+                "max_visits_per_concept": 2,
+            },
+        )
+        domain = registry.load_domain("calculus")
+        learner = HumanLearner(lambda item, attempt: "999")
+        session = build_session("L0000", config.seed, domain, config, learner=learner)
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        session.diagnostic = Nothing()
+        outcome = session.run()
+        # The budget is what ends it, not an empty frontier: every concept
+        # having been set aside must not read as nothing left to teach.
+        assert outcome.stop_reason == "budget_spent"
+        assert outcome.items_attempted == 60
+
+
+class TestTheHeldOutBanksAreAlwaysReadable:
+    """What makes the measured score inert for every simulated result.
+
+    ``gain`` is taken over what the verifier could read rather than over what
+    was administered. For a person the two differ; for a simulated learner they
+    cannot, because ``domain validate`` admits no item whose stated answer fails
+    to verify correct and no buggy rule whose output fails to verify incorrect —
+    so the only two responses a simulated learner can give are both readable.
+
+    Asserted rather than reasoned about. If the bank ever drifts from what was
+    validated, this is what says so, and until then it is the proof that a
+    change to the denominator moved no cohort number.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_no_test_answer_is_unreadable(self, domain_name: str, arm: str) -> None:
+        for _, outcome in run_cohort(domain_name, arm):
+            assert outcome.pretest.unmeasurable == 0
+            assert outcome.posttest.unmeasurable == 0
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_so_the_two_scores_agree(self, domain_name: str) -> None:
+        for _, outcome in run_cohort(domain_name, "coupled"):
+            assert outcome.pretest.score == outcome.pretest.measured_score
+            assert outcome.posttest.score == outcome.posttest.measured_score
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_normalised_gain_is_available_for_someone(self, domain_name: str) -> None:
+        # It is None only at ceiling. A cohort where it is None for everyone
+        # would mean the pre-test has no room in it at all, and the gain outcome
+        # would be measuring nothing.
+        normalised = [o.normalised_gain for _, o in run_cohort(domain_name, "coupled")]
+        assert any(g is not None for g in normalised)
+
+
+class TestTheTutorsTurnsAreKept:
+    """What the system said back is half of a sitting, and it was not recorded.
+
+    A transcript held every answer the learner gave and nothing the tutor
+    replied, so there was no way to read back what a person had been taught —
+    including for the sittings whose whole purpose was to judge the tutoring.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_every_turn_reaches_the_audit_log(self, domain_name: str) -> None:
+        session, _ = run(domain_name, "coupled")
+        turns = [r for r in session.board.audit_log if r.cause == "tutor"]
+        assert turns, "the tutor spoke and none of it was recorded"
+        for record in turns:
+            assert record.evidence["text"]
+            assert record.evidence["move"] in ("hint", "reflect", "remediate")
+            assert record.evidence["level"] in ("nudge", "targeted", "worked_step")
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_a_turn_moves_no_estimate(self, domain_name: str) -> None:
+        # A hint is instruction. Whether it worked shows up in the next graded
+        # step, not in the record of having said it.
+        session, _ = run(domain_name, "coupled")
+        for record in session.board.audit_log:
+            if record.cause == "tutor":
+                assert "mastery_after" not in record.evidence
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_only_remediation_carries_a_target(self, domain_name: str) -> None:
+        # The error-first rule's price: a reflective prompt costs a turn and
+        # teaches nothing, so it aims at nothing.
+        session, _ = run(domain_name, "coupled")
+        for record in session.board.audit_log:
+            if record.cause == "tutor" and record.evidence["move"] != "remediate":
+                assert record.evidence["targets"] is None
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_recording_them_is_not_counted_as_a_replan(self, domain_name: str) -> None:
+        # `_trigger_counts` reads the audit log by cause, and the threshold
+        # sweep reads those counts.
+        session, outcome = run(domain_name, "coupled")
+        replans = sum(
+            1 for r in session.board.audit_log if r.cause == "replan"
+        )
+        assert sum(outcome.triggers.values()) == replans
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_recording_them_changes_no_outcome(self, domain_name: str, arm: str) -> None:
+        """Turns bump the state version, and nothing may depend on its value.
+
+        The frontier cache keys on the version, and a plan records the version
+        it was set at. Neither is read as a quantity, but the whole comparison
+        would be worthless if one were — so it is asserted rather than assumed.
+        """
+        from agent_newton.core.state.store import Blackboard
+
+        original = Blackboard.record_turn
+        try:
+            Blackboard.record_turn = lambda self, **kwargs: None  # type: ignore[assignment]
+            _, silent = run(domain_name, arm)
+        finally:
+            Blackboard.record_turn = original  # type: ignore[assignment]
+        _, recorded = run(domain_name, arm)
+
+        assert recorded.items_attempted == silent.items_attempted
+        assert recorded.remediation_ratio == silent.remediation_ratio
+        assert recorded.goals_mastered == silent.goals_mastered
+        assert recorded.distance_to_goal == silent.distance_to_goal
+        assert recorded.pretest.correct == silent.pretest.correct
+        assert recorded.posttest.correct == silent.posttest.correct
+        assert recorded.triggers == silent.triggers
+
+
 class TestTheArmsDiffer:
     @pytest.mark.parametrize("domain_name", DOMAINS)
     def test_they_select_different_work(self, domain_name: str) -> None:

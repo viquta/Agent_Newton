@@ -554,6 +554,22 @@ class TestASittingIsKeptHoweverItEnds:
         for absent in ("pretest", "posttest", "goals_mastered", "distance_to_goal"):
             assert absent not in record
 
+    def test_the_transcript_carries_what_the_tutor_said(self, toy, tmp_path) -> None:
+        # Half of a sitting is the replies. Lifted out of the audit log because
+        # a transcript that has to be filtered by cause string to find the
+        # teaching is not a record of a conversation.
+        import json
+
+        config, session, learner, store = self._session(toy, tmp_path)
+        outcome = session.run()
+        run_dir = store(config, toy, session, learner, outcome)
+
+        record = json.loads((run_dir / "transcript.json").read_text())
+        assert record["turns"], "the tutor's replies were lost"
+        for turn in record["turns"]:
+            assert turn["text"] and turn["move"] and turn["level"]
+            assert turn["item_id"] and turn["concept_id"]
+
     def test_a_completed_sitting_carries_them(self, toy, tmp_path) -> None:
         import json
 
@@ -565,6 +581,75 @@ class TestASittingIsKeptHoweverItEnds:
         assert record["completed"] is True
         assert record["stop_reason"] == outcome.stop_reason
         assert record["items_attempted"] == outcome.items_attempted
+
+
+class TestTheSittingSaysWhetherItTaughtAnything:
+    """The question a sitting exists to answer, and could not.
+
+    A pre-to-post percentage cannot say whether the training reached anything
+    that needed teaching. One sitting read −13% and looked like the system
+    harming the learner; it had spent 21 of its 24 steps on concepts the
+    pre-test had already shown were fine. Finding that took a hand count of the
+    transcript.
+    """
+
+    def _run(self, toy, answer: str = "999"):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 4, "administer_tests": True}
+        )
+        learner = HumanLearner(lambda item, attempt: answer)
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        return config, session, session.run()
+
+    def test_the_panel_renders(self, toy) -> None:
+        from rich.console import Console
+
+        from agent_newton.demo import _did_this_teach
+
+        config, session, outcome = self._run(toy)
+        panel = _did_this_teach(session, outcome, toy)
+        # Rendered rather than merely constructed: a Text built from a concept
+        # id that does not resolve raises here and nowhere earlier.
+        Console(width=90, file=open("/dev/null", "w")).print(panel)
+        assert panel.title == "did this teach you anything"
+
+    def test_the_transcript_carries_what_moved_and_where_the_time_went(
+        self, toy, tmp_path
+    ) -> None:
+        import json
+
+        from agent_newton.demo import _store
+
+        config, session, outcome = self._run(toy)
+        config.paths.results_dir = tmp_path
+        config.paths.cache_dir = tmp_path / "c"
+        run_dir = _store(config, toy, session, learner=session.learner, outcome=outcome)
+
+        record = json.loads((run_dir / "transcript.json").read_text())
+        assert record["per_concept_change"]
+        assert {c["state"] for c in record["per_concept_change"]} <= {
+            "fixed", "lost", "still_wrong", "still_right", "unmeasured"
+        }
+        assert record["dose_by_concept"]
+        assert "dose_on_gap" in record
+        assert "normalised_gain" in record
+
+    def test_the_dose_only_counts_training(self, toy) -> None:
+        # The banks are administered around the training and update nothing;
+        # counting them would report measurement as instruction.
+        from agent_newton.core.evaluation.outcomes import dose_by_concept
+
+        _, session, outcome = self._run(toy)
+        assert sum(dose_by_concept(session.board.audit_log).values()) <= (
+            outcome.items_attempted * 3
+        )
 
 
 class TestWhyTrainingStopped:

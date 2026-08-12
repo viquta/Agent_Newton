@@ -215,3 +215,42 @@ class TestPretestSeedingStaysOutOfExperiments:
         stray = tmp_path / "stray.yaml"
         stray.write_text("domain: toy_algebra\ncohort:\n  seed_from_pretest: true\n")
         assert Config.from_yaml(stray).cohort.seed_from_pretest
+
+
+class TestTheDwellingCapStaysOutOfExperiments:
+    """A cap on how long a concept may be worked changes what one arm does.
+
+    Only the coupled planner dwells — the decoupled one advances on consecutive
+    correct answers and never revisits — so a cap set for a cohort would change
+    one arm's behaviour and not the other's, on top of the manipulation under
+    test. It stays a swept parameter whose default is today's behaviour, so that
+    every number already measured was measured without it.
+    """
+
+    def _experiment_configs(self) -> list[Path]:
+        return sorted(
+            path
+            for path in CONFIG_DIR.glob("*.yaml")
+            if path.name not in HUMAN_CONFIGS
+        )
+
+    def test_no_experiment_config_caps_dwelling(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert config.cohort.max_visits_per_concept is None, (
+                f"{path.name} caps how long a concept may be worked; only the "
+                f"coupled arm dwells, so that changes one arm and not the other"
+            )
+
+    def test_the_default_is_unlimited(self) -> None:
+        # None rather than a large number: unlimited is what every measured
+        # result was produced under, and a large default would be a policy
+        # nobody chose.
+        assert Config().cohort.max_visits_per_concept is None
+
+    def test_the_check_can_fail(self, tmp_path: Path) -> None:
+        stray = tmp_path / "stray.yaml"
+        stray.write_text(
+            "domain: toy_algebra\ncohort:\n  max_visits_per_concept: 3\n"
+        )
+        assert Config.from_yaml(stray).cohort.max_visits_per_concept == 3

@@ -311,6 +311,25 @@ class CohortConfig(BaseModel):
     #: Inert unless ``seed_from_pretest`` is on, and that is off for every
     #: cohort.
     pretest_weight: int = Field(default=1, ge=1)
+    #: Times a concept may be worked before it stops being chosen.
+    #:
+    #: None is unlimited, which is what every run does today and what every
+    #: measured result was produced under. Kept as a swept parameter including
+    #: its own absence rather than switched on: a dwelling policy tuned until
+    #: the coupled arm wins would assume the conclusion, while a swept one
+    #: supports the far better claim that the advantage appears above a stated
+    #: amount of persistence.
+    #:
+    #: The behaviour it changes: ``consolidate`` ranks by recent errors, so a
+    #: concept a learner keeps failing attracts further selection. That is the
+    #: intent — difficulty is where consolidation belongs — but it has no floor,
+    #: and with the pre-test now skipping demonstrated concepts a stuck learner
+    #: has fewer places to be moved along to. One verification run put all sixty
+    #: of its steps on a single concept.
+    #:
+    #: Set, the concept is recorded as a weakness and ranked last, so it is
+    #: chosen only when nothing else on the way to the goal is available.
+    max_visits_per_concept: int | None = Field(default=None, ge=1)
 
 
 class PathsConfig(BaseModel):

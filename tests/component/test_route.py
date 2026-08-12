@@ -240,6 +240,88 @@ class TestEmphasis:
         assert len(chosen) == 1
 
 
+class TestSettingAConceptAside:
+    """The dwelling cap, which is off unless a config asks for it.
+
+    ``consolidate`` ranks by recent errors, so a concept a learner keeps failing
+    attracts further selection. That is what consolidation means and it has no
+    floor: a learner who stays stuck can spend a whole budget in one place.
+    """
+
+    def _step(self, mastery, trace=(), deprioritised=frozenset()):
+        return route.next_step(
+            goal="d",
+            emphasis=Emphasis.CONSOLIDATE,
+            mastery=mastery,
+            error_trace=trace,
+            frontier=frontier_for(mastery),
+            graph=CHAIN,
+            band=BAND,
+            prior=PRIOR,
+            deprioritised=deprioritised,
+        )
+
+    def test_without_a_cap_failure_keeps_attracting_selection(self) -> None:
+        # Today's behaviour, and what every measured result was produced under.
+        mastery = {"a": MASTERED, "b": 0.5, "c": 0.5}
+        trace = tuple(ErrorEvent(t=n, item_id="i", concept_id="c") for n in range(5))
+        step = self._step(mastery, trace)
+        assert step is not None and step.concept_id == "c"
+
+    def test_a_concept_set_aside_yields_to_anything_else(self) -> None:
+        mastery = {"a": MASTERED, "b": 0.5, "c": 0.5}
+        trace = tuple(ErrorEvent(t=n, item_id="i", concept_id="c") for n in range(5))
+        step = self._step(mastery, trace, deprioritised=frozenset({"c"}))
+        assert step is not None and step.concept_id == "b"
+
+    def test_it_is_set_aside_rather_than_withdrawn(self) -> None:
+        # A learner whose only remaining work is the thing they are stuck on
+        # must still be given work. Withdrawing it would end the session.
+        mastery = {"a": MASTERED, "b": MASTERED, "c": 0.5}
+        step = self._step(mastery, deprioritised=frozenset({"c"}))
+        assert step is not None and step.concept_id == "c"
+
+    def test_the_reason_says_it_was_set_aside(self) -> None:
+        mastery = {"a": MASTERED, "b": MASTERED, "c": 0.5}
+        step = self._step(mastery, deprioritised=frozenset({"c"}))
+        assert step is not None and "worked enough for now" in step.reason
+
+    def test_an_empty_set_changes_no_ordering(self) -> None:
+        # The default. It must be exactly the old code path, or every measured
+        # result would have moved.
+        mastery = {"a": MASTERED, "b": 0.5, "c": 0.2}
+        trace = (ErrorEvent(t=1, item_id="i", concept_id="b"),)
+        assert route.rank(
+            ("b", "c"), Emphasis.CONSOLIDATE, mastery, trace, CHAIN, PRIOR
+        ) == route.rank(
+            ("b", "c"), Emphasis.CONSOLIDATE, mastery, trace, CHAIN, PRIOR, frozenset()
+        )
+
+    def test_the_ordering_within_each_group_is_unchanged(self) -> None:
+        # Deprioritising moves a concept to the back; it does not reshuffle what
+        # is in front of it, or what is behind.
+        mastery = {"a": MASTERED, "b": 0.5, "c": 0.2, "e": 0.4}
+        plain = route.rank(
+            ("b", "c", "e"), Emphasis.CONSOLIDATE, mastery, (), CHAIN, PRIOR
+        )
+        held = route.rank(
+            ("b", "c", "e"), Emphasis.CONSOLIDATE, mastery, (), CHAIN, PRIOR,
+            frozenset({plain[0]}),
+        )
+        assert held == plain[1:] + (plain[0],)
+
+    def test_advance_honours_it_too(self) -> None:
+        # Both emphases route toward a goal, and a learner set aside from a
+        # concept should not be handed it back by asking to move on.
+        mastery = {"a": MASTERED, "b": 0.5, "c": 0.5}
+        step = route.next_step(
+            goal="d", emphasis=Emphasis.ADVANCE, mastery=mastery, error_trace=(),
+            frontier=frontier_for(mastery), graph=CHAIN, band=BAND, prior=PRIOR,
+            deprioritised=frozenset({"b"}),
+        )
+        assert step is not None and step.concept_id == "c"
+
+
 class TestNothingLeft:
     def test_returns_none_when_the_goal_is_done(self) -> None:
         mastery = {c: MASTERED for c in ("a", "b", "c", "d")}
