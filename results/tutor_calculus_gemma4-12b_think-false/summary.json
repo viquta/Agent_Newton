@@ -58,5 +58,18 @@
       "clean_rate": 1.0
     }
   },
-  "seconds": 0.13687896728515625
+  "seconds": 0.08479809761047363,
+  "judge": {
+    "model": "ollama/gemma4:26b",
+    "gold_set": "tests/fixtures/gold/calculus_tutor_cases.yaml",
+    "calibration_cases": 10,
+    "agreement_with_hand_labels": 0.9,
+    "disagreements": [
+      "gt_stat_counts_what_was_given"
+    ],
+    "grounded_rate": 0.8695652173913043,
+    "unobtainable": 121,
+    "level_order_agreement": 0.813953488372093,
+    "level_pairs": 86
+  }
 }
