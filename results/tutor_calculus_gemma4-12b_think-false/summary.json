@@ -1,0 +1,62 @@
+{
+  "domain": "calculus",
+  "model": "ollama/gemma4:12b (think=false)",
+  "turns": 329,
+  "clean": 329,
+  "clean_rate": 1.0,
+  "fallbacks": 0,
+  "violations_by_rule": {},
+  "rate_by_rule": {},
+  "by_level": {
+    "nudge": {
+      "turns": 94,
+      "clean": 94,
+      "clean_rate": 1.0
+    },
+    "targeted": {
+      "turns": 141,
+      "clean": 141,
+      "clean_rate": 1.0
+    },
+    "worked_step": {
+      "turns": 94,
+      "clean": 94,
+      "clean_rate": 1.0
+    }
+  },
+  "by_move": {
+    "hint": {
+      "turns": 141,
+      "clean": 141,
+      "clean_rate": 1.0
+    },
+    "reflect": {
+      "turns": 47,
+      "clean": 47,
+      "clean_rate": 1.0
+    },
+    "remediate": {
+      "turns": 141,
+      "clean": 141,
+      "clean_rate": 1.0
+    }
+  },
+  "by_bank": {
+    "posttest": {
+      "turns": 105,
+      "clean": 105,
+      "clean_rate": 1.0
+    },
+    "practice": {
+      "turns": 119,
+      "clean": 119,
+      "clean_rate": 1.0
+    },
+    "pretest": {
+      "turns": 105,
+      "clean": 105,
+      "clean_rate": 1.0
+    }
+  },
+  "seconds": 0.13687896728515625
+}

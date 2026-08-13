@@ -245,10 +245,17 @@ def ask(
 
 # --- deterministic checks ----------------------------------------------------
 
-#: Runs of characters that could be an expression. Deliberately generous: a
-#: fragment that is not one comes back UNPARSEABLE from the verifier and costs
-#: nothing, whereas a missed fragment is a leak nobody sees.
-_MATHS = re.compile(r"[A-Za-z0-9_.^*/+()\-]+")
+#: Runs of characters that could be an expression, **including the spaces an
+#: operator is usually written with**. Deliberately generous: a fragment that is
+#: not an expression comes back UNPARSEABLE from the verifier and costs nothing,
+#: whereas a missed fragment is a leak nobody sees.
+#:
+#: Splitting on whitespace instead is the obvious version and it is wrong. Most
+#: answers here have a space around their operator — ``x**3 + C``,
+#: ``3*x**2 - 6*x`` — so a reply stating one verbatim came apart into ``x**3``,
+#: ``+`` and ``C``, none of which verifies, and the leak went unreported.
+_TERM = r"[A-Za-z0-9_.^*/()]+"
+_MATHS = re.compile(rf"{_TERM}(?:\s*[-+*/^]\s*{_TERM})*")
 
 #: A backslash command, or the control character one becomes after a JSON reply
 #: has been unescaped. The second form is the one a learner actually saw:

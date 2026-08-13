@@ -117,6 +117,24 @@ class TestLeakingTheAnswer:
         item = calculus.items.get("ca_pow_p1")
         assert evaluation.leaks_answer("You should reach 5x^4 here.", item, calculus)
 
+    @pytest.mark.parametrize(
+        ("item_id", "text"),
+        [
+            # Most answers in this bank have a space around their operator, and
+            # splitting the reply on whitespace took them apart into fragments
+            # none of which verifies. A whole run of 329 turns reported no leak
+            # at all, partly because of this.
+            ("ca_anti_p1", "The expression should be x^3 + C."),
+            ("ca_poly_p1", "Differentiating term by term gives 3x^2 - 6x here."),
+            ("ca_stat_p1", "The two roots are 0, 2."),
+        ],
+    )
+    def test_an_answer_written_with_spaces_is_caught(
+        self, calculus, item_id: str, text: str
+    ) -> None:
+        item = calculus.items.get(item_id)
+        assert evaluation.leaks_answer(text, item, calculus)
+
     def test_a_genuine_nudge_does_not_trip_it(self, calculus) -> None:
         item = calculus.items.get("ca_pow_p1")
         assert not evaluation.leaks_answer(
