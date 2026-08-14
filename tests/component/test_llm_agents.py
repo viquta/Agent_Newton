@@ -9,6 +9,7 @@ for.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -256,7 +257,7 @@ class TestLLMTutor:
         # constraint a model can talk itself out of is not a constraint.
         hint, provider = self._hint(toy, Diagnosis(None), attempts=0)
         assert hint.level is HintLevel.WORKED_STEP
-        assert "work the step through" in provider.calls[0]
+        assert "work the step through" in provider.calls[0].lower()
 
     def test_a_failed_call_still_produces_a_turn(self, toy) -> None:
         # A hint is prose; losing it should not end a session. What matters is
@@ -282,6 +283,74 @@ class TestLLMTutor:
             toy, Diagnosis("distribute_first_term_only", 0.9), response="3*x + 4"
         )
         assert "3*x + 4" in provider.calls[0]
+
+    def _at(self, toy, mastery: float, attempts: int = 0):
+        """A turn at whatever level this mastery and failure count produce."""
+        from agent_newton.core.state.views import FullStateView
+
+        item = toy.items.get("ta_dist_p1")
+        view = view_for(toy)
+        assert isinstance(view, FullStateView)
+        view = replace(view, mastery={item.concept_id: mastery})
+        provider = Scripted(json.dumps({"text": "look again"}))
+        hint = LLMTutor(provider, BAND).respond(
+            item, Diagnosis(None), view, toy,
+            response="3*x + 4", failed_attempts=attempts, moves_this_item=[],
+        )
+        return hint, provider
+
+    def test_the_length_budget_belongs_to_the_level(self, toy) -> None:
+        # The system prompt used to demand two sentences of everything, which
+        # made "work the step through" impossible to obey — so the model
+        # restated the rule abstractly instead of working anything.
+        from agent_newton.core.agents.llm import _TUTOR_SYSTEM
+
+        assert "at most two sentences" not in _TUTOR_SYSTEM.lower()
+
+        nudge, brief = self._at(toy, mastery=0.95)
+        assert nudge.level is HintLevel.NUDGE
+        assert "two sentences" in brief.calls[0].lower()
+
+        worked, roomy = self._at(toy, mastery=0.05)
+        assert worked.level is HintLevel.WORKED_STEP
+        assert "two sentences" not in roomy.calls[0].lower()
+        assert "six short lines" in roomy.calls[0].lower()
+
+    def test_a_worked_step_uses_the_student_s_own_expression(self, toy) -> None:
+        # The complaint the level exists to answer: a rule stated in symbols
+        # with nothing mapped onto the expression in front of the learner.
+        _, provider = self._at(toy, mastery=0.05)
+        prompt = provider.calls[0].lower()
+        assert "own expression" in prompt
+        assert "line at a time" in prompt
+
+    def test_words_from_an_earlier_question_are_marked_as_such(self, toy) -> None:
+        # Filtering by concept is not enough. Working shown on the previous
+        # question arrived unlabelled and the tutor told a learner to review
+        # their derivative of u^4 on a question containing no u^4.
+        from agent_newton.core.state.schema import Utterance
+        from agent_newton.core.state.views import FullStateView
+
+        item = toy.items.get("ta_dist_p1")
+        view = view_for(toy)
+        assert isinstance(view, FullStateView)
+        view = replace(
+            view,
+            reflections=(
+                Utterance(text="said here", item_id=item.id,
+                          concept_id=item.concept_id, kind="working"),
+                Utterance(text="said before", item_id="some_other_item",
+                          concept_id=item.concept_id, kind="working"),
+            ),
+        )
+        provider = Scripted(json.dumps({"text": "look again"}))
+        LLMTutor(provider, BAND).respond(
+            item, Diagnosis(None), view, toy,
+            response="3*x + 4", failed_attempts=1, moves_this_item=[],
+        )
+        prompt = provider.calls[0]
+        assert "said here" in prompt and "on this question" in prompt
+        assert "said before" in prompt and "on an earlier question" in prompt
 
     def test_the_model_is_told_not_to_narrate_the_working(self, toy) -> None:
         # The response alone is not enough: a model handed a step will still

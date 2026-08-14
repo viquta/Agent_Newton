@@ -51,8 +51,9 @@ _DIAGNOSTIC_SYSTEM = (
 )
 
 _TUTOR_SYSTEM = (
-    "You are a mathematics tutor. Reply with at most two sentences, addressed to "
-    "the student. Never state the final answer unless explicitly asked to. "
+    "You are a mathematics tutor. Reply addressed to the student, within the "
+    "length the instruction gives you. Never state the final answer unless the "
+    "instruction says you may. "
     "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
     "Never use LaTeX or backslash commands. "
     "Describe only what the student's written step actually shows. Do not tell "
@@ -190,10 +191,27 @@ class LLMTutor:
         required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
         move = required or (TutorMove.REMEDIATE if diagnosis.named else TutorMove.HINT)
 
+        # The length budget belongs to the level, not to the system prompt. It
+        # used to say "at most two sentences" globally, which made a worked step
+        # impossible: the level asks the tutor to work the step through and the
+        # prompt forbade the room to do it, so the model restated the rule in
+        # the abstract instead. A learner put a chatbot's answer beside it and
+        # said the difference plainly — the other one decomposed the problem and
+        # substituted their own expression, and this one did not.
         instruction = {
-            HintLevel.NUDGE: "Point at the part of the step that is wrong, without naming it.",
-            HintLevel.TARGETED: "Name the specific error, but do not give the answer.",
-            HintLevel.WORKED_STEP: "Explain the error and work the step through.",
+            HintLevel.NUDGE: (
+                "Point at the part of the step that is wrong, without naming it. "
+                "At most two sentences."
+            ),
+            HintLevel.TARGETED: (
+                "Name the specific error, but do not give the answer. "
+                "At most two sentences."
+            ),
+            HintLevel.WORKED_STEP: (
+                "Work the step through. Name the rule, substitute this student's "
+                "own expression into it, and show the working one line at a "
+                "time. You may state the result. Up to six short lines."
+            ),
         }[level]
         if move is TutorMove.REFLECT:
             instruction = (
@@ -210,13 +228,26 @@ class LLMTutor:
         # Only what was said about *this* concept. Taking the last two
         # regardless of subject once had the tutor ask a learner differentiating
         # 2/x^2 to revisit their explanation of limits.
+        #
+        # And each utterance says which question it was about, because filtering
+        # by concept alone is not enough: working shown on the previous question
+        # arrived as unlabelled context for the next one, and the tutor told a
+        # learner to review their derivative of u^4 on a question containing no
+        # u^4. Words from an earlier question are still worth having — they are
+        # how the tutor knows what this learner keeps finding hard — but they
+        # have to be marked as being about something else.
         said = ""
         if isinstance(view, FullStateView):
             for utterance in view.said_about(item.concept_id):
+                when = (
+                    "on this question"
+                    if utterance.item_id == item.id
+                    else "on an earlier question, not the one above"
+                )
                 label = (
-                    "The student showed this working"
+                    f"The student showed this working {when}"
                     if utterance.kind == "working"
-                    else "The student said, when asked what they were unsure of"
+                    else f"The student said {when}, when asked what they were unsure of"
                 )
                 said += f"\n{label}: {utterance.text}"
         prompt = (

@@ -57,8 +57,19 @@ LATEX_IN_REPLY = "latex_in_reply"
 REFLECT_TELLS = "reflect_tells"
 OVER_LENGTH = "over_length"
 
-#: Sentences a turn may carry. The tutor's system prompt asks for at most two.
-MAX_SENTENCES = 2
+#: Sentences a turn may carry, per support level.
+#:
+#: Per level rather than one number, because the levels are asked for different
+#: things. A worked step is instructed to name the rule, substitute the
+#: student's own expression and show the working a line at a time; two sentences
+#: cannot hold that. This check previously enforced two everywhere and would
+#: have marked a proper worked step as a violation — penalising the tutor for
+#: obeying the instruction it was given.
+MAX_SENTENCES: dict[str, int] = {
+    HintLevel.NUDGE.label: 2,
+    HintLevel.TARGETED.label: 2,
+    HintLevel.WORKED_STEP.label: 6,
+}
 
 
 # --- cases -------------------------------------------------------------------
@@ -347,11 +358,12 @@ def check_turn(turn: Turn, item: Item, domain: Domain) -> tuple[Violation, ...]:
             Violation(REFLECT_TELLS, "the reflective prompt gives the answer away")
         )
 
-    if len(_SENTENCE_END.findall(text)) > MAX_SENTENCES:
+    allowed = MAX_SENTENCES.get(turn.level, 2)
+    if len(_SENTENCE_END.findall(text)) > allowed:
         found.append(
             Violation(
                 OVER_LENGTH,
-                f"the reply runs to more than {MAX_SENTENCES} sentences",
+                f"a {turn.level} reply runs to more than {allowed} sentences",
             )
         )
 

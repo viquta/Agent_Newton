@@ -250,7 +250,14 @@ class TestAReflectiveTurnMustNotCorrect:
 
 
 class TestLength:
-    def test_a_third_sentence_is_caught(self, calculus) -> None:
+    """The budget belongs to the level, not to every reply alike.
+
+    It was one number, and it was two — which would have marked a proper worked
+    step as a violation for obeying the instruction telling it to show the
+    working a line at a time.
+    """
+
+    def test_a_third_sentence_is_caught_at_nudge(self, calculus) -> None:
         turn = turn_for(calculus, "One thing. Then another. And a third.")
         item = calculus.items.get(turn.case.item_id)
         rules = [v.rule for v in evaluation.check_turn(turn, item, calculus)]
@@ -260,6 +267,28 @@ class TestLength:
         turn = turn_for(calculus, "One thing. Then another.")
         item = calculus.items.get(turn.case.item_id)
         assert evaluation.check_turn(turn, item, calculus) == ()
+
+    def test_a_worked_step_may_run_longer(self, calculus) -> None:
+        # Six short lines is what the level asks for; two would make the
+        # instruction impossible to follow.
+        turn = turn_for(
+            calculus,
+            "Use the product rule. Take the first factor. Differentiate it. "
+            "Leave the second alone. Now swap the roles. Add the two pieces.",
+            level=HintLevel.WORKED_STEP,
+        )
+        item = calculus.items.get(turn.case.item_id)
+        rules = [v.rule for v in evaluation.check_turn(turn, item, calculus)]
+        assert OVER_LENGTH not in rules
+
+    def test_but_not_indefinitely(self, calculus) -> None:
+        turn = turn_for(
+            calculus, "One. Two. Three. Four. Five. Six. Seven.",
+            level=HintLevel.WORKED_STEP,
+        )
+        item = calculus.items.get(turn.case.item_id)
+        rules = [v.rule for v in evaluation.check_turn(turn, item, calculus)]
+        assert OVER_LENGTH in rules
 
 
 class TestAFallbackIsNotABadHint:
