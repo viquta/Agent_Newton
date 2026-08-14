@@ -53,6 +53,7 @@ from agent_newton.core.simulator.engine import Learner
 from agent_newton.core.simulator.profile import MisconceptionProfile
 from agent_newton.core.state.schema import LearnerState
 from agent_newton.core.state.store import Blackboard, new_blackboard, resumed_blackboard
+from agent_newton.core.state.views import FullStateView
 from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
 
 
@@ -82,12 +83,21 @@ class SessionObserver(Protocol):
         self, item: Item, response: str, result: VerificationResult, diagnosis: Diagnosis
     ) -> None: ...
 
-    def item_finished(self, item: Item, solved: bool) -> None:
+    def item_finished(
+        self, item: Item, solved: bool, reason: str = "attempts_spent"
+    ) -> None:
         """The session is done with this item, whether or not it was answered.
 
         Exists because running out of attempts previously looked identical to
         nothing happening: the next question simply appeared, and a person had
         no way to tell whether they had got the last one right.
+
+        ``reason`` refines the unsolved case, which now has two forms that must
+        not be reported as one: ``attempts_spent`` means the tries ran out, and
+        ``unreadable`` means nothing the learner sent could be read, so no
+        attempt was spent and nothing about them was measured. Telling someone
+        "that is all the attempts" when they still have all of them is the same
+        category error the attempt budget itself carried.
         """
         ...
 
@@ -139,7 +149,9 @@ class Watching:
     ) -> None:
         return None
 
-    def item_finished(self, item: Item, solved: bool) -> None:
+    def item_finished(
+        self, item: Item, solved: bool, reason: str = "attempts_spent"
+    ) -> None:
         return None
 
     def tutor_replied(self, item: Item, hint: Hint) -> None:
@@ -544,7 +556,7 @@ class Session:
         replies: list[str] = []
         confirmed = False
 
-        # Four counters over the same steps, because they answer different
+        # Three counters over the same steps, because they answer different
         # questions — and conflating two of them is what made an answer nobody
         # could read cost the learner one of their tries.
         #
@@ -554,16 +566,33 @@ class Session:
         # attempt budget would spend the learner's turns on the verifier's
         # failure — but without a bound of their own an empty answer would be
         # asked for forever, so both bind.
-        # `unresolved` is every step that left the item unsolved, either kind.
-        # It is what the scaffolding rule escalates on: an unreadable answer
-        # costs nothing and still means the learner has not got there.
         # `step_index` is every step in order, whatever came of it. It tells
         # `record_observation` which step was the first, so the lifetime count
         # of how often this item has been given still moves exactly once.
         attempts = 0
         unreadable = 0
-        unresolved = 0
         step_index = 0
+
+        # What this arm's view believed when the question was posed, and the
+        # baseline the scaffolding rule reads. Taken once, here, for two
+        # reasons.
+        #
+        # It must be read *before* any of this item's answers are recorded. The
+        # tutor read it from the live view instead, so the wrong answer it was
+        # responding to had already lowered the posterior — one failure at 0.40
+        # lands at 0.26, under `theta_lower / 2`, which is a full worked step on
+        # its own before any escalation is added.
+        #
+        # And it is read from `self.board.view()`, the arm's own window, so a
+        # decoupled tutor still gets the 0.0 its view would have yielded. Taking
+        # it from the state directly would hand that arm a posterior the
+        # manipulation withholds.
+        seen = self.board.view()
+        mastery = (
+            seen.probability(item.concept_id, 0.0)
+            if isinstance(seen, FullStateView)
+            else 0.0
+        )
 
         # A concept is worked until its posterior clears the band, and most
         # concepts carry one item — so without this the same question is asked
@@ -618,19 +647,27 @@ class Session:
 
             if result.verdict is Verdict.CORRECT:
                 if self.observer is not None:
-                    self.observer.item_finished(item, solved=True)
+                    self.observer.item_finished(item, solved=True, reason="solved")
                 return
+
+            # Readable failures *before* this one. Read before the counter
+            # moves, because the tutor is only ever called after a failure — a
+            # count including the current step made the mastery baseline the one
+            # level a learner could never be given, and `nudge` unreachable.
+            prior_failures = attempts
 
             if result.is_evidence:
                 attempts += 1
             else:
                 unreadable += 1
-            # Counted whichever it was: the learner has still not got there, and
-            # that is what the scaffolding rule escalates on. An unreadable
-            # answer costs no attempt and still raises the support, which is the
-            # only reading under which repeating the previous reply would be
-            # the wrong thing to do.
-            unresolved += 1
+                # And an unreadable step leaves `prior_failures` where it was.
+                # Support is earned on work the verifier could read: escalating
+                # on a blank submission bought a full worked step, answer
+                # included, for typing nothing — at no cost, since the step
+                # spends no attempt either. A person found that within a minute
+                # and described it exactly: "the system's hint cheated for me."
+                # What stops the reply repeating is `said_this_item`, which
+                # costs nothing that was not earned.
 
             hint = self.tutor.respond(
                 item,
@@ -638,7 +675,8 @@ class Session:
                 self.board.view(),
                 self.domain,
                 response=response,
-                unresolved_steps=unresolved,
+                mastery=mastery,
+                prior_failures=prior_failures,
                 moves_this_item=moves,
                 said_this_item=replies,
             )
@@ -703,14 +741,18 @@ class Session:
                         self.config.cohort.max_unreadable_per_item
                     ),
                 )
-                break
+                if self.observer is not None:
+                    self.observer.item_finished(
+                        item, solved=False, reason="unreadable"
+                    )
+                return
 
         # The attempts ran out. Said explicitly, because it previously looked
         # exactly like nothing happening — the next question simply appeared,
         # and a person had no way to tell whether they had got the last one
         # right. Nothing about the loop changes here; it is a report.
         if self.observer is not None:
-            self.observer.item_finished(item, solved=False)
+            self.observer.item_finished(item, solved=False, reason="attempts_spent")
 
 
 def build_session(

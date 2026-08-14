@@ -66,6 +66,20 @@ class Tutor(Protocol):
     Carried through the session like ``moves_this_item`` rather than read from
     anywhere — an agent is told what it said, not given a channel to another
     agent.
+
+    ``mastery`` and ``prior_failures`` are the scaffolding rule's two inputs,
+    and the session supplies both rather than leaving the tutor to read them.
+    Not a loss of autonomy — the level was never the tutor's to choose — but a
+    matter of *when* each is read, which the tutor cannot know: ``mastery`` is
+    the posterior as it stood when the question was posed, before this answer
+    moved it, and ``prior_failures`` excludes the step being responded to. The
+    tutor read the view instead, so both inputs already carried the current
+    failure and every turn in two human sittings came out at ``worked_step``.
+
+    The session derives ``mastery`` from **its own arm's view**, so a tutor in
+    the decoupled arm still gets the 0.0 its view would have yielded. The
+    ablation is unaffected: nothing here is a channel to state the arm
+    withholds.
     """
 
     def respond(
@@ -76,7 +90,8 @@ class Tutor(Protocol):
         domain: Domain,
         *,
         response: str,
-        unresolved_steps: int,
+        mastery: float,
+        prior_failures: int,
         moves_this_item: Sequence[TutorMove],
         said_this_item: Sequence[str] = (),
     ) -> Hint: ...

@@ -394,6 +394,53 @@ class TestATestDoesNotNameTheConcept:
         assert observer.testing is False
 
 
+class TestMovingOnSaysWhichWayItEnded:
+    """"That is all the attempts for this one" — when none had been spent.
+
+    Two ways of not finishing an item, and they had one message between them.
+    After three unreadable answers the attempts are all still there and nothing
+    about the learner was measured; saying the tries ran out is the same
+    category error the attempt budget itself used to carry, told to the person
+    it is about.
+    """
+
+    def _said(self, toy, reason: str) -> str:
+        import io
+
+        from rich.console import Console
+
+        from agent_newton.demo import DemoObserver
+
+        console = Console(file=io.StringIO(), width=90)
+        item = toy.items.bank("practice")[0]
+        # The pair the session always passes together: `solved` and a reason
+        # that agrees with it.
+        DemoObserver(console, toy, human_config()).item_finished(
+            item, solved=reason == "solved", reason=reason
+        )
+        printed = console.file.getvalue()  # type: ignore[attr-defined]
+        return " ".join(printed.replace("│", " ").split())
+
+    def test_spent_attempts_say_so(self, toy) -> None:
+        assert "all the attempts" in self._said(toy, "attempts_spent")
+
+    def test_unreadable_answers_say_something_else(self, toy) -> None:
+        said = self._said(toy, "unreadable")
+        assert "all the attempts" not in said
+        assert "no attempts were used" in said
+
+    def test_both_still_give_the_answer(self, toy) -> None:
+        # The item is over either way, and the next question on the concept
+        # carries different numbers — which is what makes the reveal teaching
+        # rather than a leak.
+        answer = toy.items.bank("practice")[0].answer
+        assert answer in self._said(toy, "unreadable")
+        assert answer in self._said(toy, "attempts_spent")
+
+    def test_a_solved_item_says_nothing(self, toy) -> None:
+        assert self._said(toy, "solved").strip() == ""
+
+
 class TestAShortenedBankSaysWhyItIsShort:
     """A returning learner has sat the long version and would notice.
 
@@ -625,7 +672,7 @@ class TestRunningOutOfAttemptsIsReported:
             def __init__(self) -> None:
                 self.finished: list[tuple[str, bool]] = []
 
-            def item_finished(self, item, solved) -> None:  # noqa: ANN001
+            def item_finished(self, item, solved, reason="attempts_spent") -> None:  # noqa: ANN001
                 self.finished.append((item.id, solved))
 
         watcher = Watcher()
@@ -697,6 +744,54 @@ class TestAnUnreadableAnswerIsNotAnAttempt:
             if record.cause == "observation"
         ]
 
+    @staticmethod
+    def _recording():
+        """A tutor that keeps the scaffolding rule's two inputs, per turn."""
+        from agent_newton.core.agents.base import Hint
+        from agent_newton.core.pedagogy import HintLevel, TutorMove
+
+        class Recording:
+            def __init__(self) -> None:
+                self.failures: list[int] = []
+                self.mastery: list[float] = []
+
+            def respond(self, item, diagnosis, view, domain, **kwargs):  # noqa: ANN001
+                self.failures.append(kwargs["prior_failures"])
+                self.mastery.append(kwargs["mastery"])
+                return Hint(
+                    text=f"turn {len(self.failures)}",
+                    move=TutorMove.HINT,
+                    level=HintLevel.NUDGE,
+                )
+
+        return Recording()
+
+    def _with_tutor(self, toy, tutor, answers: list[str], **cohort):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        replies = iter(answers)
+        last = answers[-1]
+        config = human_config(
+            cohort={
+                "n_learners": 1,
+                "max_items": 1,
+                "administer_tests": False,
+                **cohort,
+            }
+        )
+        session = build_session(
+            "human", config.seed, toy, config,
+            learner=HumanLearner(lambda item, attempt: next(replies, last)),
+        )
+        session.diagnostic = Nothing()
+        session.tutor = tutor
+        session.run()
+        return session
+
     def test_a_readable_wrong_answer_still_spends_one(self, toy) -> None:
         # The budget has to keep binding, or the fix below is just a loop that
         # never ends.
@@ -747,49 +842,60 @@ class TestAnUnreadableAnswerIsNotAnAttempt:
         session, _ = self._run(toy, ["no idea"], max_unreadable_per_item=3)
         assert set(session.board.state.items_given.values()) == {1}
 
-    def test_support_escalates_even_though_no_attempt_was_spent(self, toy) -> None:
-        """The other half of the decision, and the half a person notices.
+    def test_it_buys_no_support_either(self, toy) -> None:
+        """⚠️ This test asserted the opposite, and the opposite was wrong.
 
-        A learner who has now not answered twice is stuck, and the one reply
-        that is certainly not working is the one already given. Support
-        escalates on the step rather than on the attempt.
+        The reasoning was that a learner who has not answered twice is stuck and
+        needs more help. True — but the help at the top of the ladder *is the
+        answer*, and an unreadable step costs no attempt, so escalating on one
+        made the full worked step free and repeatable. A person found it inside
+        a minute: type nothing, read the solution, type the solution back, and
+        the model records mastery. That is the copying failure the held-out
+        banks caught in an earlier sitting, now available on demand.
+
+        So support is earned on work the verifier could read. What stops the
+        reply repeating is that the tutor is handed what it already said, which
+        gives away nothing that was not earned.
         """
-        from agent_newton.core.agents.base import Diagnosis, Hint
-        from agent_newton.core.pedagogy import HintLevel, TutorMove
+        tutor = self._recording()
+        self._with_tutor(toy, tutor, ["no idea"], max_unreadable_per_item=3)
+        assert tutor.failures == [0, 0, 0]
 
-        class Recording:
-            def __init__(self) -> None:
-                self.steps: list[int] = []
+    def test_a_readable_failure_is_what_moves_it(self, toy) -> None:
+        # The guard can fail: if nothing ever raised the count, the assertion
+        # above would hold for a reason that has nothing to do with readability.
+        tutor = self._recording()
+        self._with_tutor(toy, tutor, ["999"], max_steps_per_item=3)
+        assert tutor.failures == [0, 1, 2]
 
-            def respond(self, item, diagnosis, view, domain, **kwargs):  # noqa: ANN001
-                self.steps.append(kwargs["unresolved_steps"])
-                return Hint(
-                    text=f"turn {len(self.steps)}",
-                    move=TutorMove.HINT,
-                    level=HintLevel.NUDGE,
-                )
+    def test_the_step_being_answered_is_not_counted_against_itself(self, toy) -> None:
+        """The first hint is at the mastery baseline, not one rung above it.
 
-        class Nothing:
-            def diagnose(self, item, response, domain):  # noqa: ANN001
-                return Diagnosis(None)
+        The tutor is only ever called after a failure, so a count that included
+        the current step made the baseline unreachable — every first hint came
+        out one level high, and ``nudge`` could not occur at all. Two human
+        sittings ran entirely at ``worked_step`` on the strength of it.
+        """
+        tutor = self._recording()
+        self._with_tutor(toy, tutor, ["999"], max_steps_per_item=3)
+        assert tutor.failures[0] == 0
 
-        replies = iter(["no idea"])
-        config = human_config(
-            cohort={
-                "n_learners": 1,
-                "max_items": 1,
-                "administer_tests": False,
-                "max_unreadable_per_item": 3,
-            }
+    def test_the_tutor_is_told_what_was_believed_before_the_answer(self, toy) -> None:
+        """And the posterior it is given does not move within the item.
+
+        A wrong answer lowers the estimate immediately, so a tutor reading the
+        live view was handed a belief the failure had already revised — the same
+        failure then raised the level a second time through the escalation. At
+        0.40 one wrong answer lands at 0.26, which is a full worked step on its
+        own.
+        """
+        tutor = self._recording()
+        session = self._with_tutor(toy, tutor, ["999"], max_steps_per_item=3)
+        assert len(set(tutor.mastery)) == 1, "the baseline moved within the item"
+        # And it is a belief the board actually held, rather than a constant.
+        assert tutor.mastery[0] == pytest.approx(0.0) or tutor.mastery[0] in set(
+            session.board.state.mastery.values()
         )
-        tutor = Recording()
-        learner = HumanLearner(lambda item, attempt: next(replies, "no idea"))
-        session = build_session("human", config.seed, toy, config, learner=learner)
-        session.diagnostic = Nothing()
-        session.tutor = tutor
-        session.run()
-
-        assert tutor.steps == [1, 2, 3]
 
     def test_the_tutor_is_given_what_it_already_said(self, toy) -> None:
         # Which is what stops the three identical replies: the prompt is
@@ -831,6 +937,89 @@ class TestAnUnreadableAnswerIsNotAnAttempt:
         session.run()
 
         assert tutor.said == [[], ["turn 1"], ["turn 1", "turn 2"]]
+
+
+class TestTheScaffoldingLadderIsReachable:
+    """⚠️ Two human sittings ran entirely at ``worked_step``. This is the guard.
+
+    The first was diagnosed as the seeded value: ``pretest_weight: 3`` drove a
+    missed concept to 0.0003, under ``theta_lower / 2``, where the rule gives
+    maximum support. ``seed_floor`` lifted that to 0.40 — and the second sitting
+    came out at ``worked_step`` on five of its six turns anyway, because the
+    diagnosis had been incomplete. The failure being responded to was counted
+    twice more: once in the posterior, which the tutor read live *after* the
+    answer had lowered it, and once in the escalation, which included the
+    current step. Either alone put a 0.40 concept at the top of the ladder.
+
+    Asserted on the turns the session recorded rather than on ``hint_level``,
+    because ``hint_level`` was correct throughout. It was being called with
+    arguments the running system never otherwise produced.
+    """
+
+    def _levels(self, toy, answer: str, bank_answer: str = "999", **cohort) -> list[str]:
+        """Turn levels on the first training item.
+
+        ``bank_answer`` is answered during the held-out banks and ``answer``
+        during training, because the two have to differ for the unreadable case:
+        an unreadable pre-test answer measures nothing and therefore seeds
+        nothing, so the floor would not bind and the concept would sit at the
+        prior — which gives a worked step for a reason that has nothing to do
+        with the rule under test.
+        """
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={
+                "n_learners": 1,
+                "max_items": 1,
+                "administer_tests": True,
+                "seed_from_pretest": True,
+                "pretest_weight": 3,
+                "seed_floor": 0.40,
+                **cohort,
+            }
+        )
+        session = build_session(
+            "human", config.seed, toy, config,
+            learner=HumanLearner(
+                lambda item, attempt: answer if item.bank == "practice" else bank_answer
+            ),
+        )
+        session.diagnostic = Nothing()
+        session.run()
+
+        turns = [r for r in session.board.audit_log if r.cause == "tutor"]
+        assert turns, "the sitting produced no tutor turns"
+        first = turns[0].evidence["item_id"]
+        return [t.evidence["level"] for t in turns if t.evidence["item_id"] == first]
+
+    def test_a_seeded_gap_starts_below_a_worked_step(self, toy) -> None:
+        # Everything wrong, so every concept is seeded to the floor. The first
+        # hint on the first item is the one both sittings got wrong.
+        assert self._levels(toy, "999")[0] == "targeted"
+
+    def test_and_escalates_on_the_next_failure(self, toy) -> None:
+        # The other half: starting lower must not mean staying lower. This is
+        # the ladder `seed_floor` was introduced to provide.
+        assert self._levels(toy, "999")[:2] == ["targeted", "worked_step"]
+
+    def test_an_unreadable_step_never_reaches_a_worked_step(self, toy) -> None:
+        # The free answer, from the session end: nothing readable was submitted,
+        # so nothing earned the level that states the result.
+        levels = self._levels(toy, "no idea", max_unreadable_per_item=3)
+        assert levels == ["targeted"] * 3
+
+    def test_a_nudge_is_reachable_at_all(self, toy) -> None:
+        # It was not. With the current step counted, the lowest level any
+        # learner could be given was one above their baseline, so `nudge`
+        # required a mastery no learner in the band could hold.
+        from agent_newton.core.pedagogy import HintLevel, hint_level
+
+        assert hint_level(0.96, 0, ZPDConfig()) is HintLevel.NUDGE
 
 
 class TestASittingIsKeptHoweverItEnds:

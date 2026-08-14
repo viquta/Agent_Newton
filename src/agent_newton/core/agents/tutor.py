@@ -22,7 +22,6 @@ from agent_newton.core.pedagogy import (
     next_required_move,
 )
 from agent_newton.config import ZPDConfig
-from agent_newton.core.state.views import FullStateView
 from agent_newton.domains.base import Domain, Item
 
 
@@ -40,7 +39,8 @@ class TemplateTutor:
         domain: Domain,
         *,
         response: str,
-        unresolved_steps: int,
+        mastery: float,
+        prior_failures: int,
         moves_this_item: Sequence[TutorMove],
         said_this_item: Sequence[str] = (),
     ) -> Hint:
@@ -56,15 +56,10 @@ class TemplateTutor:
         # tutor that writes prose can say the same thing differently.
         del response, said_this_item
 
-        # Mastery is only available in the coupled view. Without it the tutor
-        # falls back to the bottom of the band, which is the conservative
-        # reading: assume little and scaffold accordingly.
-        mastery = (
-            view.probability(item.concept_id, 0.0)
-            if isinstance(view, FullStateView)
-            else 0.0
-        )
-        level = hint_level(mastery, unresolved_steps, self._band)
+        # The session supplies the scaffolding rule's inputs. Reading them here
+        # is what put the failure being responded to into both of them — see the
+        # Tutor protocol.
+        level = hint_level(mastery, prior_failures, self._band)
 
         required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
         if required is TutorMove.REFLECT:

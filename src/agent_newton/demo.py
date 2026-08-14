@@ -198,18 +198,33 @@ class DemoObserver(Watching):
             line.append(f"  (diagnosed: {diagnosis.misconception_id})", style="dim")
         self._console.print(line)
 
-    def item_finished(self, item: Item, solved: bool) -> None:
+    def item_finished(
+        self, item: Item, solved: bool, reason: str = "attempts_spent"
+    ) -> None:
         if solved:
             return
         # Running out of attempts used to look exactly like nothing happening:
         # the next question appeared and there was no way to tell whether the
         # last one had been right. Say so, and give the answer — the item is
-        # over, so nothing is given away.
+        # over, so nothing is given away, and the next question on this concept
+        # carries different numbers.
+        #
+        # The two ways of not finishing are said differently, because they are
+        # not the same thing and the learner is the one who can tell: after
+        # three unreadable answers nobody's attempts were spent and nothing
+        # about them was measured, and "that is all the attempts for this one"
+        # was simply false.
+        said = (
+            f"None of that could be read, so no attempts were used and nothing "
+            f"was recorded about you. The answer was [bold]{item.answer}[/bold]."
+            if reason == "unreadable"
+            else f"That is all the attempts for this one. The answer was "
+            f"[bold]{item.answer}[/bold]."
+        )
         self._console.print(
             Panel(
                 Text.from_markup(
-                    f"That is all the attempts for this one. The answer was "
-                    f"[bold]{item.answer}[/bold].\n"
+                    f"{said}\n"
                     f"You will see this idea again — the next question on it "
                     f"will use different numbers.",
                 ),

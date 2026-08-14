@@ -11,7 +11,8 @@ Four rules:
 * **Band membership** — an item may be selected only if its concept is in the
   current frontier.
 * **Scaffolding** — how much support a hint gives is chosen from the mastery
-  estimate and how many steps on this item have already failed to resolve it.
+  estimate as it stood when the question was posed, and how many readable
+  attempts at this item have already failed.
 * **Fading** — support is non-increasing in mastery, all else equal. This is a
   monotonicity property, so it can be checked across a grid rather than
   spot-checked.
@@ -86,22 +87,32 @@ def may_select(concept_id: str, frontier: Frontier) -> Violation | None:
 
 def hint_level(
     mastery: float,
-    unresolved_steps: int,
+    prior_failures: int,
     band: ZPDConfig,
 ) -> HintLevel:
     """How much support to give.
 
-    Two inputs. The mastery estimate sets the baseline: a learner near the top
-    of the band needs a nudge, one near the bottom needs the step worked. Steps
-    on the *current* item that did not resolve it escalate from there, so a
-    learner who is stuck is not nudged repeatedly.
+    Two inputs, and they must stay independent or the same failure raises the
+    level twice.
 
-    ``unresolved_steps`` counts steps rather than attempts, and the two are no
-    longer the same thing: a response the verifier could not read costs no
-    attempt — it is a failure to measure, not a wrong answer — but it still
-    leaves the learner not having got there. Support escalates on it. Saying
-    the same thing again to someone who has now not answered twice is the one
-    reply that is certainly not working.
+    ``mastery`` is what was believed **when the question was posed** — not what
+    is believed after the answer being responded to has been folded in. One
+    wrong answer at 0.40 moves the posterior to 0.26, which is below
+    ``theta_lower / 2`` and therefore a full worked step on its own; adding an
+    escalation on top of that counts the same failure in both inputs. Two human
+    sittings received a worked step on every single turn that way.
+
+    ``prior_failures`` counts readable answers on this item that were already
+    wrong **before** this one. Excluding the current step is what makes the
+    mastery baseline reachable: the tutor is only ever called after a failure,
+    so a count that included it meant the baseline was the one level a learner
+    could never be given. ``nudge`` was unreachable outright.
+
+    Readable only. A response the verifier could not read is a failure to
+    measure, not a wrong answer, and support is earned on work that could be
+    read: an unreadable step that escalated bought a full worked step — answer
+    included — for a blank submission, at no cost, which is a way to be handed
+    the answer rather than a way to be taught.
 
     Escalation is why fading is stated "all else equal" — it varies support at
     fixed mastery, and would otherwise look like a violation.
@@ -113,12 +124,12 @@ def hint_level(
     else:
         base = HintLevel.WORKED_STEP
 
-    escalated = int(base) + max(0, unresolved_steps)
+    escalated = int(base) + max(0, prior_failures)
     return HintLevel(min(escalated, int(HintLevel.WORKED_STEP)))
 
 
 def check_fading(
-    band: ZPDConfig, unresolved_steps: int = 0, steps: int = 50
+    band: ZPDConfig, prior_failures: int = 0, steps: int = 50
 ) -> Violation | None:
     """Verify support is non-increasing in mastery across the whole range.
 
@@ -129,7 +140,7 @@ def check_fading(
     previous = HintLevel.WORKED_STEP
     for index in range(steps + 1):
         mastery = index / steps
-        level = hint_level(mastery, unresolved_steps, band)
+        level = hint_level(mastery, prior_failures, band)
         if level > previous:
             return Violation(
                 "fading",

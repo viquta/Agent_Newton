@@ -399,6 +399,57 @@ class TestTheArmsDiffer:
         assert coupled.learner.profile.initial == decoupled.learner.profile.initial
 
 
+class TestTheSupportLevelCannotMoveACohort:
+    """Which rung the ladder stops on changes the words and nothing else.
+
+    Worth proving rather than assuming, because it is what makes the scaffolding
+    rule safe to correct: a hint reaches a simulated learner through
+    ``receive_hint``, which is handed the misconception the hint *targets* and
+    not the level it was pitched at. So remediation — the only channel by which
+    tutoring changes a simulated outcome — is level-independent.
+
+    Forced to either extreme rather than compared against a stored baseline: a
+    baseline would only say the numbers did not move this time, while this says
+    the level cannot move them at all.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_forcing_it_high_or_low_changes_nothing(
+        self, domain_name: str, arm: str, monkeypatch
+    ) -> None:
+        from agent_newton.core.agents import tutor as tutor_module
+        from agent_newton.core.pedagogy import HintLevel
+
+        def run_at(level: HintLevel):
+            monkeypatch.setattr(
+                tutor_module, "hint_level", lambda mastery, prior, band: level
+            )
+            return [
+                run(domain_name, arm, f"L{i:04d}")[1] for i in range(4)
+            ]
+
+        lowest = run_at(HintLevel.NUDGE)
+        highest = run_at(HintLevel.WORKED_STEP)
+        for quiet, loud in zip(lowest, highest):
+            assert quiet.items_attempted == loud.items_attempted
+            assert quiet.diagnoses == loud.diagnoses
+            assert quiet.remediation_ratio == loud.remediation_ratio
+            assert quiet.goals_mastered == loud.goals_mastered
+            assert quiet.gain == loud.gain
+
+    def test_the_level_still_reaches_the_record(self) -> None:
+        # The other half: it must not be inert *everywhere*, or a sitting could
+        # not be read back against the support it was given — which is how both
+        # collapses were found.
+        session, _ = run("calculus", "coupled", cohort={"max_items": 4})
+        levels = {
+            r.evidence["level"] for r in session.board.audit_log if r.cause == "tutor"
+        }
+        assert levels, "no tutor turn was recorded"
+        assert levels <= {"nudge", "targeted", "worked_step"}
+
+
 class TestTheUnreadableCapCannotMoveACohort:
     """A budget only a person can reach.
 

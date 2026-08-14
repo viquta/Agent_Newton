@@ -90,7 +90,7 @@ class TurnCase:
     misconception_id: str
     wrong_answer: str
     mastery: float
-    unresolved_steps: int
+    prior_failures: int
     diagnosed: bool
     moves_so_far: tuple[TutorMove, ...] = ()
     working: str = ""
@@ -101,6 +101,11 @@ def _mastery_for(level: HintLevel, band: ZPDConfig) -> float:
 
     Derived from the band rather than written down, so a threshold sweep moves
     the case set with the policy instead of leaving it measuring the old one.
+
+    "No failed attempts" is a situation a session actually reaches: the tutor is
+    given the posterior as it stood when the question was posed, and the failure
+    it is responding to is not counted twice. Until that was fixed these cases
+    described a regime the running system never entered.
     """
     if level is HintLevel.NUDGE:
         return min(1.0, (band.theta_lower + 1.0) / 2)
@@ -130,7 +135,7 @@ def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
                     misconception_id=misconception_id,
                     wrong_answer=wrong,
                     mastery=_mastery_for(level, band),
-                    unresolved_steps=0,
+                    prior_failures=0,
                     diagnosed=False,
                 )
             )
@@ -142,7 +147,7 @@ def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
                 misconception_id=misconception_id,
                 wrong_answer=wrong,
                 mastery=_mastery_for(HintLevel.TARGETED, band),
-                unresolved_steps=0,
+                prior_failures=0,
                 diagnosed=True,
             )
         )
@@ -155,7 +160,7 @@ def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
                     misconception_id=misconception_id,
                     wrong_answer=wrong,
                     mastery=_mastery_for(level, band),
-                    unresolved_steps=0,
+                    prior_failures=0,
                     diagnosed=True,
                     moves_so_far=(TutorMove.REFLECT,),
                 )
@@ -238,7 +243,8 @@ def ask(
             view_for(case, band),
             domain,
             response=case.wrong_answer,
-            unresolved_steps=case.unresolved_steps,
+            mastery=case.mastery,
+            prior_failures=case.prior_failures,
             moves_this_item=list(case.moves_so_far),
         )
         turn = Turn(

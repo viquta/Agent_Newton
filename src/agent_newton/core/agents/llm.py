@@ -179,16 +179,14 @@ class LLMTutor:
         domain: Domain,
         *,
         response: str,
-        unresolved_steps: int,
+        mastery: float,
+        prior_failures: int,
         moves_this_item: Sequence[TutorMove],
         said_this_item: Sequence[str] = (),
     ) -> Hint:
-        mastery = (
-            view.probability(item.concept_id, 0.0)
-            if isinstance(view, FullStateView)
-            else 0.0
-        )
-        level = hint_level(mastery, unresolved_steps, self._band)
+        # Both inputs come from the session. Read from the view here, they each
+        # carried the failure being responded to — see the Tutor protocol.
+        level = hint_level(mastery, prior_failures, self._band)
         required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
         move = required or (TutorMove.REMEDIATE if diagnosis.named else TutorMove.HINT)
 

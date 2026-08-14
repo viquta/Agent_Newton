@@ -229,7 +229,8 @@ class TestLLMTutor:
             view_for(toy),
             toy,
             response=response,
-            unresolved_steps=attempts,
+            mastery=0.0,
+            prior_failures=attempts,
             moves_this_item=list(moves),
         )
         return hint, provider
@@ -269,7 +270,8 @@ class TestLLMTutor:
             view_for(toy),
             toy,
             response="3*x + 4",
-            unresolved_steps=1,
+            mastery=0.0,
+            prior_failures=1,
             moves_this_item=[TutorMove.REFLECT],
         )
         assert hint.text
@@ -295,7 +297,8 @@ class TestLLMTutor:
         provider = Scripted(json.dumps({"text": "look again"}))
         hint = LLMTutor(provider, BAND).respond(
             item, Diagnosis(None), view, toy,
-            response="3*x + 4", unresolved_steps=attempts, moves_this_item=[],
+            response="3*x + 4", mastery=mastery, prior_failures=attempts,
+            moves_this_item=[],
         )
         return hint, provider
 
@@ -346,7 +349,7 @@ class TestLLMTutor:
         provider = Scripted(json.dumps({"text": "look again"}))
         LLMTutor(provider, BAND).respond(
             item, Diagnosis(None), view, toy,
-            response="3*x + 4", unresolved_steps=1, moves_this_item=[],
+            response="3*x + 4", mastery=0.0, prior_failures=1, moves_this_item=[],
         )
         prompt = provider.calls[0]
         assert "said here" in prompt and "on this question" in prompt
@@ -363,7 +366,8 @@ class TestLLMTutor:
             view_for(toy),
             toy,
             response="3*x + 4",
-            unresolved_steps=1,
+            mastery=0.0,
+            prior_failures=1,
             moves_this_item=[],
         )
         assert "unless their step shows it" in provider.systems[0]
@@ -387,7 +391,8 @@ class TestTheTutorDoesNotSayTheSameThingTwice:
             view_for(toy),
             toy,
             response="",
-            unresolved_steps=1,
+            mastery=0.0,
+            prior_failures=1,
             moves_this_item=[],
             said_this_item=list(said),
         )
@@ -428,7 +433,8 @@ class TestTheTutorDoesNotSayTheSameThingTwice:
                 view_for(toy),
                 toy,
                 response="3*x + 4",
-                unresolved_steps=1,
+                mastery=0.0,
+                prior_failures=1,
                 moves_this_item=[TutorMove.REFLECT],
                 said_this_item=said,
             )
