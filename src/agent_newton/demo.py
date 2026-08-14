@@ -77,6 +77,28 @@ def _bar(value: float, band) -> Text:
     return text
 
 
+def question_title(
+    domain: Domain, item: Item, attempt: int, *, testing: bool
+) -> str:
+    """The heading above a question.
+
+    ⚠️ **The concept is named during training and withheld during a test.**
+    Every question used to be titled ``calculus · chain_rule``, including in the
+    held-out banks — which told the learner which rule to reach for on a test
+    meant to measure what they can do unaided. A person noticed: *"I'm kind of
+    cheating here cause I can see what I need to use to solve it."* Every
+    absolute pre- and post-test score recorded before this is inflated by it.
+
+    During training it stays, because there the panel showing what the system
+    believes and why is the entire point of the demo.
+    """
+    if testing:
+        return domain.name
+    return f"{domain.name} · {item.concept_id}" + (
+        f" · attempt {attempt + 1}" if attempt else ""
+    )
+
+
 class DemoObserver(Watching):
     """Renders the blackboard between steps.
 
@@ -93,6 +115,12 @@ class DemoObserver(Watching):
         self._config = config
         self._prior = bkt.initial(config.bkt)
         self._seen_versions = 0
+        #: True while a held-out bank is being administered. The front end reads
+        #: it to withhold the concept name — see :func:`question_title`. Held
+        #: here rather than passed around because the session already tells the
+        #: observer when a phase starts and ends, and adding a second channel
+        #: for the same fact would let the two disagree.
+        self.testing = False
 
     def board_panel(self, board: Blackboard) -> Panel:
         graph = self._domain.concepts
@@ -246,6 +274,9 @@ class DemoObserver(Watching):
         )
 
     def phase_started(self, phase: str, total: int) -> None:
+        # The bank is held out, so the concept names come off the questions
+        # until it is over.
+        self.testing = True
         label = {"pretest": "Pre-test", "posttest": "Post-test"}.get(phase, phase)
         body = Text(
             f"{label} — {total} questions.\n\n"
@@ -276,6 +307,7 @@ class DemoObserver(Watching):
         )
 
     def phase_finished(self, phase: str, result) -> None:  # noqa: ANN001
+        self.testing = False
         label = {"pretest": "Pre-test", "posttest": "Post-test"}.get(phase, phase)
         body = Text()
         # Out of what could be read, not out of what was asked. The two differ
@@ -699,8 +731,7 @@ def run_demo(
         console.print(
             Panel(
                 Text(" ".join(item.prompt.split()), style="bold"),
-                title=f"{domain.name} · {item.concept_id}"
-                + (f" · attempt {attempt + 1}" if attempt else ""),
+                title=question_title(domain, item, attempt, testing=observer.testing),
                 border_style="cyan",
             )
         )

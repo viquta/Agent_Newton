@@ -346,6 +346,54 @@ class TestSeedingLeavesRoomToScaffold:
         assert set(bare) == set(floored)
 
 
+class TestATestDoesNotNameTheConcept:
+    """The banks measure unaided ability, and the heading was naming the method.
+
+    Every question was titled ``calculus · chain_rule``, in the held-out banks
+    as well as in training: *"I'm kind of cheating here cause I can see what I
+    need to use to solve it."*
+    """
+
+    def test_training_still_names_it(self, toy) -> None:
+        from agent_newton.demo import question_title
+
+        item = toy.items.bank("practice")[0]
+        assert item.concept_id in question_title(toy, item, 0, testing=False)
+
+    def test_a_test_does_not(self, toy) -> None:
+        from agent_newton.demo import question_title
+
+        item = toy.items.bank("pretest")[0]
+        title = question_title(toy, item, 0, testing=True)
+        assert item.concept_id not in title
+        assert title == toy.name
+
+    def test_the_attempt_number_is_training_only(self, toy) -> None:
+        # A test gives one attempt, so there is nothing to number — and the
+        # number would be a second thing the heading leaked.
+        from agent_newton.demo import question_title
+
+        item = toy.items.bank("practice")[0]
+        assert "attempt 2" in question_title(toy, item, 1, testing=False)
+        assert "attempt" not in question_title(toy, item, 1, testing=True)
+
+    def test_the_flag_follows_the_phase(self, toy) -> None:
+        # Read from the session's own phase hooks rather than tracked twice.
+        from rich.console import Console
+
+        from agent_newton.core.evaluation.outcomes import TestResult
+        from agent_newton.demo import DemoObserver
+
+        observer = DemoObserver(
+            Console(file=open("/dev/null", "w")), toy, human_config()
+        )
+        assert observer.testing is False
+        observer.phase_started("pretest", 6)
+        assert observer.testing is True
+        observer.phase_finished("pretest", TestResult(correct=1, total=6))
+        assert observer.testing is False
+
+
 class TestReflectionIsNotAnAnswer:
     """The tutor asks a question in words; the reply is words.
 
