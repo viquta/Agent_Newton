@@ -271,14 +271,22 @@ def per_concept_change(
     )
 
 
+#: The audit cause that counts as instruction.
+#:
+#: Seeding a learner model from a held-out test moves posteriors without the
+#: learner having practised anything, and decay moves them without the learner
+#: having done anything at all — counting either as instruction would report the
+#: model changing its mind as time spent teaching. Named here rather than
+#: written twice: ``evaluation/teaching.py`` draws the same line over the stored
+#: history, and the two must not drift.
+INSTRUCTION_CAUSE = "observation"
+
+
 def dose_by_concept(audit_log: Sequence["AuditRecord"]) -> dict[str, int]:
     """Training steps spent on each concept, from the audit log.
 
-    Read from ``observation`` entries only. Seeding a learner model from a
-    held-out test moves posteriors without the learner having practised
-    anything, and decay moves them without the learner having done anything at
-    all — counting either as instruction would report the model changing its
-    mind as time spent teaching.
+    Read from :data:`INSTRUCTION_CAUSE` entries only — see there for why seeding
+    and decay are excluded.
 
     State-derived, so it means the same thing whichever planner ran, and it
     needs no ground-truth profile: it is the one measure of what the tutoring
@@ -286,7 +294,7 @@ def dose_by_concept(audit_log: Sequence["AuditRecord"]) -> dict[str, int]:
     """
     spent: Counter[str] = Counter()
     for record in audit_log:
-        if record.cause == "observation":
+        if record.cause == INSTRUCTION_CAUSE:
             concept_id = record.evidence.get("concept_id")
             if concept_id:
                 spent[str(concept_id)] += 1

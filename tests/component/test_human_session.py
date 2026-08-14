@@ -652,6 +652,62 @@ class TestTheSittingSaysWhetherItTaughtAnything:
         )
 
 
+class TestTheHistoryAcrossSittings:
+    """What has been tried on a concept over a whole history.
+
+    None for a first sitting: there is no history to be across, and an empty
+    panel saying so would be noise.
+    """
+
+    def _store_with(self, tmp_path, sittings: int):
+        from agent_newton.core.state.schema import AuditRecord, LearnerState
+        from agent_newton.store import LearnerStore
+
+        store = LearnerStore(tmp_path / "learners.db")
+        store.ensure_learner("L1", "human", "toy_algebra")
+        for _ in range(sittings):
+            session_id = store.open_session(
+                learner_id="L1", arm="coupled", config_hash="h", elapsed_days=7.0
+            )
+            store.close_session(
+                session_id,
+                state=LearnerState(learner_id="L1", seed=1),
+                audit_log=[
+                    AuditRecord(
+                        version=1, cause="observation", summary="",
+                        evidence={
+                            "item_id": "ta_dist_p1", "concept_id": "distribute",
+                            "verdict": "incorrect",
+                            "mastery_before": 0.15, "mastery_after": 0.12,
+                        },
+                    )
+                ],
+            )
+        return store
+
+    def test_a_first_sitting_has_no_history(self, toy, tmp_path) -> None:
+        from agent_newton.demo import _across_sittings
+
+        store = self._store_with(tmp_path, sittings=1)
+        assert _across_sittings(store, "L1", human_config(), toy) is None
+        store.close()
+
+    def test_a_returning_learner_gets_one(self, toy, tmp_path) -> None:
+        from rich.console import Console
+
+        from agent_newton.demo import _across_sittings
+
+        store = self._store_with(tmp_path, sittings=3)
+        panel = _across_sittings(store, "L1", human_config(), toy)
+        store.close()
+
+        assert panel is not None
+        # Rendered, not merely built: a concept id that does not resolve to a
+        # name raises here and nowhere earlier.
+        Console(width=90, file=open("/dev/null", "w")).print(panel)
+        assert panel.title == "across your sittings"
+
+
 class TestWhyTrainingStopped:
     """The three exits are different events and must be told apart.
 

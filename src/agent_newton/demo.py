@@ -492,6 +492,65 @@ def _did_this_teach(session, outcome, domain: Domain) -> Panel:  # noqa: ANN001
     return Panel(body, title="did this teach you anything", border_style="green")
 
 
+def _across_sittings(  # noqa: ANN001
+    store: LearnerStore, learner_id: str, config: Config, domain: Domain
+) -> Panel | None:
+    """What has been tried on each concept over this learner's whole history.
+
+    None for a first sitting, where there is no history to be across.
+
+    A learner who never grasps something despite sustained teaching is an
+    ordinary case rather than a failure. What can be shown either way is what
+    was tried — and, where the repertoire was not exhausted, what was not. That
+    last part is the one that can come back against the system.
+    """
+    from agent_newton.core.evaluation.teaching import records
+
+    history = [r for r in records(store, learner_id, config.arm) if r.sittings_spanned > 1]
+    if not history:
+        return None
+
+    graph = domain.concepts
+    body = Text()
+    body.append(
+        "Concepts you have worked in more than one sitting.\n\n", style="dim"
+    )
+    for record in sorted(history, key=lambda r: -r.attempts)[:6]:
+        body.append(f"  {graph.get(record.concept_id).name}\n", style="bold")
+        body.append(
+            f"      {record.attempts} question(s) over {record.sittings_spanned} "
+            f"sittings, {record.days_spanned:.0f} days\n",
+            style="dim",
+        )
+        if record.movement is not None:
+            direction = "up" if record.movement > 0 else "down" if record.movement < 0 else "flat"
+            body.append(
+                f"      the estimate has gone {direction} "
+                f"({record.movement:+.2f}) over that time\n",
+                style="dim",
+            )
+        outstanding = record.not_attempted
+        if outstanding is None:
+            # Sittings before turns were kept. Absent, not untried.
+            body.append(
+                "      what was said was not kept for some of these sittings\n",
+                style="dim",
+            )
+        elif outstanding:
+            body.append(
+                f"      not yet tried here: "
+                f"{', '.join(sorted(x.split(':', 1)[1] for x in outstanding))}\n",
+                style="dim yellow",
+            )
+        else:
+            body.append(
+                "      every kind of help available has been tried on this\n",
+                style="dim green",
+            )
+
+    return Panel(body, title="across your sittings", border_style="magenta")
+
+
 def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  # noqa: ANN001
     """Write the sitting to disk. Called however the sitting ended.
 
@@ -745,7 +804,13 @@ def run_demo(
         ),
         stop_reason=outcome.stop_reason if outcome else "interrupted",
     )
+    # Read *after* closing the session, so this sitting is part of the history
+    # rather than the one thing missing from it.
+    across = _across_sittings(store, learner_id, config, domain)
     store.close()
+
+    if across is not None:
+        console.print(across)
 
     if outcome is None:
         console.print(

@@ -716,5 +716,142 @@ def evaluate_tutor(
         )
 
 
+@app.command("history")
+def history(
+    learner: str = typer.Argument(..., help="Whose history to read."),
+    arm: str = typer.Option("coupled", "--arm", help="Histories are per arm."),
+    concept: list[str] | None = typer.Option(
+        None, "--concept", help="Restrict to these concepts. Repeatable."
+    ),
+    store_path: Path = typer.Option(
+        Path("results/learners.db"), "--store", help="Learner store to read."
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+) -> None:
+    """What the system did about each skill, across every sitting.
+
+    A learner who never grasps a concept despite sustained, appropriate teaching
+    is an ordinary pedagogical case rather than a failed experiment. What can be
+    established either way is whether the instruction was appropriate — which is
+    a claim about the system's behaviour, so it holds for a person, for whom
+    remediation and diagnostic accuracy are both unavailable.
+
+    Reads only. Nothing here writes to the store.
+    """
+    from agent_newton.core.evaluation.teaching import records, repertoire, summarise
+    from agent_newton.store import LearnerStore
+
+    if not store_path.exists():
+        console.print(f"[red]no learner store at {store_path}[/red]")
+        raise typer.Exit(code=1)
+
+    with LearnerStore(store_path) as store:
+        found = records(store, learner, arm, concepts=concept or None)
+
+    if not found:
+        # Distinct from a learner who was taught nothing: this one has no
+        # history in this arm at all.
+        console.print(
+            f"[yellow]no history for {learner!r} in the {arm} arm[/yellow] — "
+            f"histories are kept per arm, so check the other one"
+        )
+        raise typer.Exit(code=1)
+
+    directory = out or Path("results") / f"history_{learner}_{arm}"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    # Rows as CSV, aggregate as JSON — the shape every row-level evaluation here
+    # uses. Flat on purpose: this is what a figure is drawn from, so nesting it
+    # would only have to be undone again.
+    with (directory / "records.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            ["learner_id", "arm", "concept_id", "seq", "elapsed_days", "attempts",
+             "correct", "unmeasurable", "nudge", "targeted", "worked_step", "hints",
+             "reflects", "remediates", "remediation_targets", "distinct_items",
+             "seeded", "decayed", "mastery_before", "mastery_after",
+             "instruction_recorded"]
+        )
+        for record in found:
+            for s in record.sittings:
+                writer.writerow([
+                    s.learner_id, s.arm, s.concept_id, s.seq, f"{s.elapsed_days:g}",
+                    s.attempts, s.correct, s.unmeasurable,
+                    s.levels.get("nudge", 0), s.levels.get("targeted", 0),
+                    s.levels.get("worked_step", 0),
+                    s.moves.get("hint", 0), s.moves.get("reflect", 0),
+                    s.moves.get("remediate", 0),
+                    "; ".join(s.remediation_targets), s.distinct_items,
+                    s.seeded, s.decayed,
+                    "" if s.mastery_before is None else f"{s.mastery_before:.4f}",
+                    "" if s.mastery_after is None else f"{s.mastery_after:.4f}",
+                    s.instruction_recorded,
+                ])
+
+    summary = summarise(found)
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    console.print(
+        f"[bold]{len(found)} concept(s)[/bold] over {summary['sittings']} sitting(s) "
+        f"for {learner} ({arm})\nwriting to {directory}\n"
+    )
+
+    table = Table(title="teaching history", box=None)
+    table.add_column("concept")
+    table.add_column("sittings", justify="right")
+    table.add_column("days", justify="right")
+    table.add_column("attempts", justify="right")
+    table.add_column("moved", justify="right")
+    table.add_column("never tried")
+    for record in sorted(found, key=lambda r: -r.attempts):
+        outstanding = record.not_attempted
+        table.add_row(
+            record.concept_id,
+            str(record.sittings_spanned),
+            f"{record.days_spanned:g}",
+            str(record.attempts),
+            "—" if record.movement is None else f"{record.movement:+.2f}",
+            # None is unavailable, not "nothing outstanding" — the sittings
+            # simply did not keep what the tutor said.
+            "[dim]not recorded[/dim]" if outstanding is None
+            else "[green]nothing[/green]" if not outstanding
+            else ", ".join(sorted(x.split(":", 1)[1] for x in outstanding)),
+        )
+    console.print(table)
+
+    if not summary["instruction_recorded"]:
+        console.print(
+            "\n[yellow]No sitting in this history recorded what the tutor said.[/yellow]\n"
+            "Turns have only been kept since 2026-08-12, so the instruction half "
+            "is unavailable rather than empty — this is not evidence that nothing "
+            "was taught."
+        )
+        return
+
+    # The case the record exists for: sustained teaching, nothing moving.
+    stuck = [
+        r for r in found
+        if r.attempts >= 10 and (r.movement or 0.0) <= 0.0
+    ]
+    for record in stuck:
+        outstanding = record.not_attempted
+        console.print(
+            f"\n[yellow]{record.concept_id}[/yellow]: {record.attempts} attempts over "
+            f"{record.sittings_spanned} sitting(s) and {record.days_spanned:g} days, "
+            f"and the estimate did not rise."
+        )
+        if outstanding:
+            console.print(
+                f"  [red]The repertoire was not exhausted[/red] — never reached: "
+                f"{', '.join(sorted(outstanding))}. That is a gap in the teaching, "
+                f"not in the learner."
+            )
+        elif outstanding is not None:
+            console.print(
+                "  Every instructional move available was used. Whatever else is "
+                "true, the system did not fail to try."
+            )
+
+
 if __name__ == "__main__":
     app()
