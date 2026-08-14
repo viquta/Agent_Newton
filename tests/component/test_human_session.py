@@ -14,11 +14,13 @@ from dataclasses import replace
 import pytest
 from pydantic import ValidationError
 
-from agent_newton.config import Config
+from agent_newton.config import Config, ZPDConfig
 from agent_newton.core.orchestration.session import Watching, build_session
 from agent_newton.core.simulator.engine import Learner, SimulatedLearner
 from agent_newton.core.simulator.human import HumanLearner
+from agent_newton.core.state.store import new_blackboard
 from agent_newton.domains import registry
+from agent_newton.domains.base import Verdict
 
 
 @pytest.fixture(scope="module")
@@ -274,6 +276,74 @@ class TestThePreTestCanSteerTheTraining:
         _, plain = self._run(toy, seed_from_pretest=False, answer="999")
         assert seeded.pretest.correct == plain.pretest.correct
         assert seeded.pretest.total == plain.pretest.total
+
+
+class TestSeedingLeavesRoomToScaffold:
+    """Two correct things combined into a wrong one.
+
+    Weighting a held-out answer up drove a missed concept to about 0.0003, and
+    ``hint_level`` gives a worked step below ``theta_lower / 2``. So every
+    concept the pre-test flagged received maximum support on its first attempt
+    and never a nudge — the ladder was dead on exactly the concepts being
+    taught. Neither rule was wrong alone, which is why no test saw it.
+    """
+
+    def _seeded(self, toy, *, weight: int, floor: float, verdict: Verdict):
+        config = human_config(
+            cohort={"seed_from_pretest": True, "pretest_weight": weight,
+                    "seed_floor": floor}
+        )
+        board = new_blackboard("L1", 1, toy.concepts, config)
+        board.seed_from_test([("distribute", verdict)], weight=weight, floor=floor)
+        return board.probability("distribute")
+
+    def test_without_a_floor_a_missed_concept_lands_at_the_bottom(self, toy) -> None:
+        from agent_newton.core.pedagogy import HintLevel, hint_level
+
+        seeded = self._seeded(toy, weight=3, floor=0.0, verdict=Verdict.INCORRECT)
+        assert seeded < 0.01
+        assert hint_level(seeded, 0, ZPDConfig()) is HintLevel.WORKED_STEP
+
+    def test_the_floor_leaves_the_ladder_intact(self, toy) -> None:
+        from agent_newton.core.pedagogy import HintLevel, hint_level
+
+        band = ZPDConfig()
+        seeded = self._seeded(toy, weight=3, floor=0.40, verdict=Verdict.INCORRECT)
+        assert seeded == pytest.approx(0.40)
+        # Starts lower and escalates, which is what the band is for.
+        assert hint_level(seeded, 0, band) is HintLevel.TARGETED
+        assert hint_level(seeded, 1, band) is HintLevel.WORKED_STEP
+
+    def test_the_concept_is_still_a_priority(self, toy) -> None:
+        # Far below theta_upper, so it stays selectable and still sorts ahead of
+        # anything the learner has demonstrated.
+        seeded = self._seeded(toy, weight=3, floor=0.40, verdict=Verdict.INCORRECT)
+        assert seeded < ZPDConfig().theta_upper
+
+    def test_the_floor_never_binds_on_a_correct_answer(self, toy) -> None:
+        # It is a floor, not a clamp: a demonstrated concept must still clear
+        # the band, or seeding would stop skipping what the learner knows.
+        seeded = self._seeded(toy, weight=3, floor=0.40, verdict=Verdict.CORRECT)
+        assert seeded > ZPDConfig().theta_upper
+
+    def test_the_default_is_no_floor(self, toy) -> None:
+        # Every measured result was produced without one.
+        assert Config().cohort.seed_floor == 0.0
+
+    def test_a_floor_that_would_unlock_dependants_is_refused(self) -> None:
+        # A prerequisite above theta_lower opens what depends on it, so a floor
+        # there would let a *wrong* answer open the material behind it.
+        with pytest.raises(ValidationError, match="unlock its dependants"):
+            human_config(cohort={"seed_floor": 0.70}, zpd={"theta_lower": 0.70,
+                                                           "theta_upper": 0.90})
+
+    def test_the_frontier_is_unchanged_by_a_legal_floor(self, toy) -> None:
+        from agent_newton.core.state import zpd
+
+        band = ZPDConfig()
+        bare = zpd.compute({"integer_arithmetic": 0.0003}, toy.concepts, band, 0.15)
+        floored = zpd.compute({"integer_arithmetic": 0.40}, toy.concepts, band, 0.15)
+        assert set(bare) == set(floored)
 
 
 class TestReflectionIsNotAnAnswer:

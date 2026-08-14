@@ -34,6 +34,18 @@ cohort:
   # its 24 training steps re-proving concepts the pre-test had already shown,
   # and never reached five of the six real gaps.
   pretest_weight: 3
+  # The lowest a seeded estimate may land. Without it, weighting the evidence
+  # up also drove every missed concept to about 0.0003 — below theta_lower/2,
+  # where the scaffolding rule gives a worked step on the first attempt. A
+  # sitting spent 41 steps that way and never saw a nudge or a targeted hint.
+  #
+  # At 0.40 the concept is still far below theta_upper, so it stays selectable
+  # and still ranks first under consolidate, but support now starts at
+  # `targeted` and escalates to `worked_step` on failure — which is the ladder
+  # the band was there to provide. It must stay under theta_lower (0.70) or a
+  # wrong pre-test answer would unlock the material behind it; the config
+  # refuses that.
+  seed_floor: 0.40
 
 simulator:
   learner: human

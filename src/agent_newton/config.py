@@ -311,6 +311,25 @@ class CohortConfig(BaseModel):
     #: Inert unless ``seed_from_pretest`` is on, and that is off for every
     #: cohort.
     pretest_weight: int = Field(default=1, ge=1)
+    #: Floor a seeded estimate may not fall below. 0.0 is no floor.
+    #:
+    #: Exists because two correct things combined into a wrong one. Seeding at
+    #: ``pretest_weight: 3`` drops a missed concept to about 0.0003, and
+    #: ``hint_level`` returns ``WORKED_STEP`` for anything under
+    #: ``theta_lower / 2``. So every concept the pre-test flagged as a gap
+    #: received maximum support from its first attempt, for the whole sitting —
+    #: the scaffolding ladder was dead on exactly the concepts being taught. A
+    #: human sitting spent 41 steps that way and never saw a nudge or a targeted
+    #: hint; the teaching record's ``not_attempted`` is what showed it.
+    #:
+    #: A floor keeps the concept a priority — still far below ``theta_upper``,
+    #: so it stays selectable and still ranks first under ``consolidate`` — while
+    #: leaving room for support to start lower and escalate.
+    #:
+    #: **It must stay below ``theta_lower``.** A prerequisite above that opens
+    #: its dependants, so a floor at or above it would let a *wrong* pre-test
+    #: answer unlock the material behind it. There is a check on that.
+    seed_floor: float = Field(default=0.0, ge=0.0, lt=1.0)
     #: Times a concept may be worked before it stops being chosen.
     #:
     #: None is unlimited, which is what every run does today and what every
@@ -357,6 +376,24 @@ class Config(BaseModel):
     arbitration: ArbitrationConfig = Field(default_factory=lambda: ArbitrationConfig())
     decay: DecayConfig = Field(default_factory=lambda: DecayConfig())
     paths: PathsConfig = Field(default_factory=lambda: PathsConfig())
+
+    @model_validator(mode="after")
+    def _check_seed_floor(self) -> Config:
+        """A seeded estimate may not reach the level that unlocks dependants.
+
+        The frontier admits a concept when every prerequisite clears
+        ``theta_lower``. A floor at or above it would mean a pre-test answer the
+        learner got *wrong* opened the material behind it — the opposite of what
+        seeding is for, and it would happen silently.
+        """
+        if self.cohort.seed_floor >= self.zpd.theta_lower:
+            raise ValueError(
+                f"cohort.seed_floor ({self.cohort.seed_floor}) must stay below "
+                f"zpd.theta_lower ({self.zpd.theta_lower}): a seeded concept at "
+                f"or above it would unlock its dependants, so a wrong pre-test "
+                f"answer would open the material that depends on it"
+            )
+        return self
 
     @model_validator(mode="after")
     def _check_simulator_family(self) -> Config:

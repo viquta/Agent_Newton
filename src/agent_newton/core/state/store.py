@@ -227,7 +227,10 @@ class Blackboard:
         return True
 
     def seed_from_test(
-        self, results: Iterable[tuple[str, Verdict]], weight: int = 1
+        self,
+        results: Iterable[tuple[str, Verdict]],
+        weight: int = 1,
+        floor: float = 0.0,
     ) -> int:
         """Fold a held-out test's results into the learner model. Returns the count.
 
@@ -262,6 +265,16 @@ class Blackboard:
         Applied in both directions: it says how much one held-out item is worth,
         and weighting only the direction that suits the budget would be a thumb
         on the scale rather than a claim about evidence.
+
+        ``floor`` is the lowest a seeded estimate may land. It binds only on the
+        way down — a correct answer lands far above any legal floor — and it
+        exists because weighting the evidence up also drove a missed concept to
+        about 0.0003, where the scaffolding rule reads bottom-of-band and gives
+        maximum support on the first attempt. The learner then received a worked
+        step every time, on every concept the pre-test had flagged, and never a
+        nudge. The floor keeps the concept a priority without claiming the
+        learner is at the very bottom of it; see ``CohortConfig.seed_floor`` for
+        why it must stay under ``theta_lower``.
         """
         seeded = 0
         for concept_id, verdict in results:
@@ -271,6 +284,7 @@ class Blackboard:
             after = before
             for _ in range(weight):
                 after = bkt.revise(after, verdict is Verdict.CORRECT, self._config.bkt)
+            after = max(after, floor)
             self._state.mastery[concept_id] = after
             seeded += 1
             self._bump(
