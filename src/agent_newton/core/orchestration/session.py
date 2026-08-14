@@ -185,6 +185,10 @@ class Session:
     #: first sitting and for every single-session run, which is what keeps those
     #: identical to what they were before sequences existed.
     elapsed_days: float = 0.0
+    #: Whether this session picked up stored state. Only ``cohort.pretest_scope``
+    #: reads it, and only to decide whether there is a history to narrow the
+    #: held-out banks against — a first sitting has none and needs the baseline.
+    resumed: bool = False
 
     def run(self) -> SessionOutcome:
         # Before anything is measured. The pre-test then measures what the
@@ -194,7 +198,13 @@ class Session:
         if decayed and self.observer is not None:
             self.observer.session_resumed(self.elapsed_days, decayed)
 
-        pretest = self._administer("pretest")
+        # Fixed once, before the pre-test, and used again for the post-test.
+        # Recomputing it after training would ask the two banks about different
+        # concepts and call the difference a gain. Computed after decay, so a
+        # concept that went stale over the gap is back on the route and is
+        # re-checked — which is the measurement a returning learner is here for.
+        measured = self._bank_scope()
+        pretest = self._administer("pretest", measured)
         if self.config.cohort.seed_from_pretest:
             # Off for every cohort — see CohortConfig. It moves the starting
             # frontier, and only one arm can route from a frontier.
@@ -328,7 +338,7 @@ class Session:
         if self.observer is not None:
             self.observer.training_finished(stop_reason, sum(given.values()))
 
-        posttest = self._administer("posttest")
+        posttest = self._administer("posttest", measured)
 
         return SessionOutcome(
             learner_id=self.learner.learner_id,
@@ -350,16 +360,56 @@ class Session:
             distance_to_goal=self._distance_to_goal(),
         )
 
-    def _administer(self, bank) -> TestResult:
+    def _bank_scope(self) -> frozenset[str] | None:
+        """Which concepts this sitting's held-out banks measure. None is all.
+
+        ``full`` is None here, which is every cohort and every first sitting.
+
+        ``route`` narrows a returning learner's banks to what is still on the
+        way to their next goal — the concepts a sitting could plausibly move,
+        which is what makes the re-check short. Deliberately wider than the
+        frontier: training opens concepts behind it as prerequisites are met,
+        and a concept taught but not measured at both ends is a step nothing
+        can account for.
+
+        None again when there is no goal left to reach. There is no route to
+        narrow to, and the whole bank is the right instrument at that point
+        anyway — what a learner with everything mastered comes back to find out
+        is what has gone stale.
+        """
+        if self.config.cohort.pretest_scope != "route" or not self.resumed:
+            return None
+
+        mastery = dict(self.board.state.mastery)
+        prior = bkt.initial(self.config.bkt)
+        goal = route.next_goal(
+            self.domain.concepts.goals(), mastery, self.config.zpd, prior
+        )
+        if goal is None:
+            return None
+        on_route = route.remaining(
+            goal, mastery, self.domain.concepts, self.config.zpd, prior
+        )
+        return frozenset(on_route) or None
+
+    def _administer(self, bank, concepts: frozenset[str] | None = None) -> TestResult:
         """Run a held-out bank, unless the config says not to.
 
         A skipped bank returns an empty result rather than a zero score, so
         `TestResult.administered` can tell the two apart.
+
+        ``concepts`` restricts it to the items on those concepts. A restriction
+        that would leave nothing is ignored: an empty bank scores zero out of
+        zero, which reads as "not administered" and would silently drop the
+        measurement rather than shorten it.
         """
         if not self.config.cohort.administer_tests:
             return TestResult(correct=0, total=0)
 
         items = self.domain.items.bank(bank)
+        if concepts is not None:
+            narrowed = [item for item in items if item.concept_id in concepts]
+            items = narrowed or items
         if self.observer is None:
             return administer(items, self.learner, self.domain, self.surface)
 
@@ -774,4 +824,5 @@ def build_session(
         arbitration=ArbitrationPolicy(config.arbitration),
         observer=observer,
         elapsed_days=elapsed_days,
+        resumed=state is not None,
     )

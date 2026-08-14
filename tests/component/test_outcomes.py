@@ -233,3 +233,58 @@ class TestDose:
     def test_it_is_unavailable_when_no_training_happened(self) -> None:
         pretest = bank(("a", Verdict.INCORRECT))
         assert dose_on_gap([], pretest) is None
+
+
+class TestDoseWhenTheBankWasNarrowed:
+    """A returning learner may sit only the concepts on their route.
+
+    Then the pre-test has nothing to say about anything outside it, and the
+    share aimed at a gap has to be a share of the training it could speak
+    about. Left in the denominator, a concept the bank never asked about is
+    counted as though it had been shown fine — which is a claim the measurement
+    did not make.
+    """
+
+    def test_training_the_bank_never_asked_about_is_left_out(self) -> None:
+        # Four steps, two of them on a concept outside the bank: the share is
+        # one gap step out of the two that were measured, not out of four.
+        pretest = bank(("a", Verdict.INCORRECT), ("b", Verdict.CORRECT))
+        log = observed("a", "b", "elsewhere", "elsewhere")
+        assert dose_on_gap(log, pretest) == pytest.approx(0.5)
+
+    def test_counting_it_would_have_halved_the_figure(self) -> None:
+        # The guard stated as the number it prevents, so it can fail.
+        pretest = bank(("a", Verdict.INCORRECT), ("b", Verdict.CORRECT))
+        log = observed("a", "b", "elsewhere", "elsewhere")
+        spent = dose_by_concept(log)
+        assert sum(spent.values()) == 4
+        assert dose_on_gap(log, pretest) != pytest.approx(1 / 4)
+
+    def test_a_whole_bank_leaves_every_figure_where_it_was(self) -> None:
+        # Both shipped domains carry a pre-test item for every concept, so
+        # nothing measured under `pretest_scope: full` moves.
+        pretest = bank(("a", Verdict.INCORRECT), ("b", Verdict.CORRECT))
+        log = observed("a", "a", "b", "b")
+        spent = dose_by_concept(log)
+        whole = sum(n for c, n in spent.items() if c in {"a"}) / sum(spent.values())
+        assert dose_on_gap(log, pretest) == pytest.approx(whole)
+
+    def test_it_is_unavailable_when_nothing_measured_was_taught(self) -> None:
+        # Training happened, but none of it on a concept the bank covered. There
+        # is no share to state, and zero would read as a failure to aim.
+        pretest = bank(("a", Verdict.INCORRECT))
+        assert dose_on_gap(observed("elsewhere", "elsewhere"), pretest) is None
+
+    def test_the_bank_says_which_concepts_it_covered(self) -> None:
+        assert bank(("a", Verdict.INCORRECT), ("b", Verdict.CORRECT)).covered == {
+            "a",
+            "b",
+        }
+
+    def test_an_unreadable_answer_still_counts_as_covered(self) -> None:
+        # It was asked. That the verifier could not read the reply makes the
+        # concept unmeasured, not unasked — and `concepts_missed` already draws
+        # that line, so the two must not disagree.
+        narrowed = bank(("a", Verdict.UNPARSEABLE))
+        assert narrowed.covered == {"a"}
+        assert narrowed.concepts_missed == ()

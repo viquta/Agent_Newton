@@ -109,6 +109,18 @@ class TestResult:
         return tuple(missed)
 
     @property
+    def covered(self) -> frozenset[str]:
+        """Concepts this administration actually asked about.
+
+        Every concept in the domain when the whole bank was sat, which is every
+        cohort. Fewer when the bank was narrowed to a returning learner's route
+        — and then anything outside it was not measured, which is not the same
+        as having been measured and found fine. Derived from the items rather
+        than stored, so it cannot disagree with what was administered.
+        """
+        return frozenset(result.concept_id for result in self.per_item)
+
+    @property
     def administered(self) -> bool:
         """Whether the bank was actually run.
 
@@ -310,6 +322,18 @@ def dose_on_gap(
     there was nothing to aim at, so a share of zero would read as a failure to
     aim rather than as an absence of targets.
 
+    **Taken over the training the pre-test could speak about.** Steps spent on a
+    concept the bank never asked about are left out of both sides: the pre-test
+    did not show them right and did not show them wrong, and counting them in
+    the denominator would charge the aim for teaching the measurement had no
+    view of. Identical to dividing by the whole dose whenever the whole bank was
+    sat — both shipped domains carry a pre-test item for every concept — so this
+    is inert for every result measured under ``pretest_scope: full``, and there
+    is a test on that.
+
+    None again when nothing measured was taught, for the same reason as no gaps:
+    there is no share to state.
+
     This is what a sitting needs and could not previously produce. A session
     once spent 21 of 24 steps re-proving concepts the pre-test had already shown
     the learner knew, and it took a hand count of the transcript to see it.
@@ -319,7 +343,8 @@ def dose_on_gap(
     gaps = set(pretest.concepts_missed)
     if not gaps:
         return None
-    spent = dose_by_concept(audit_log)
+    covered = pretest.covered
+    spent = {c: n for c, n in dose_by_concept(audit_log).items() if c in covered}
     total = sum(spent.values())
     if total == 0:
         return None

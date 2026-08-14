@@ -394,6 +394,44 @@ class TestATestDoesNotNameTheConcept:
         assert observer.testing is False
 
 
+class TestAShortenedBankSaysWhyItIsShort:
+    """A returning learner has sat the long version and would notice.
+
+    And it is not only courtesy: a score out of a re-check is not the same
+    measurement as a score out of the whole bank, so the difference has to be
+    on the screen where the score is.
+    """
+
+    def _said(self, toy, total: int) -> str:
+        import io
+
+        from rich.console import Console
+
+        from agent_newton.demo import DemoObserver
+
+        console = Console(file=io.StringIO(), width=90)
+        DemoObserver(console, toy, human_config()).phase_started("pretest", total)
+        printed = console.file.getvalue()  # type: ignore[attr-defined]
+        # Panel borders out, wrapping undone: the assertion is about what was
+        # said, not about where rich decided to break the lines.
+        return " ".join(printed.replace("│", " ").split())
+
+    def test_a_short_bank_explains_itself(self, toy) -> None:
+        whole = len(toy.items.bank("pretest"))
+        assert "you have been here before" in self._said(toy, whole - 2)
+
+    def test_the_whole_bank_says_nothing_of_the_kind(self, toy) -> None:
+        whole = len(toy.items.bank("pretest"))
+        assert "you have been here before" not in self._said(toy, whole)
+
+    def test_it_reads_the_bank_rather_than_the_config(self, toy) -> None:
+        # Said from what is actually being administered. Read from the config
+        # instead, the two could disagree — and the sentence would be a claim
+        # about a setting rather than about the questions in front of someone.
+        whole = len(toy.items.bank("pretest"))
+        assert f"{whole - 2} of {whole}" in self._said(toy, whole - 2)
+
+
 class TestReflectionIsNotAnAnswer:
     """The tutor asks a question in words; the reply is words.
 

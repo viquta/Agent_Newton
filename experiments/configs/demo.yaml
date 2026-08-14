@@ -15,10 +15,15 @@ seed: 20260812
 
 cohort:
   n_learners: 1
-  # Short by design: this is a sitting at a keyboard, not a cohort run. Raised
-  # from 12 so that more of the sitting is the tutoring being evaluated and
-  # less of it is measurement.
-  max_items: 20
+  # Short by design: this is a sitting at a keyboard, not a cohort run.
+  #
+  # Cut from 20. Twenty practice items plus two fifteen-item banks ran two hours
+  # and the person answering said what that costs: "at some point I will tire
+  # out... it is very tiring". A measurement taken from someone who is tired is
+  # a worse measurement, so this is not only a comfort. Ten is the top of the
+  # range asked for, and with the banks below now short on a return the whole
+  # sitting is roughly a third of what it was.
+  max_items: 10
   max_steps_per_item: 3
   # Steps the verifier could not read, per item, before moving on. They cost no
   # attempt — nothing about the learner was measured — so something has to stop
@@ -28,6 +33,21 @@ cohort:
   # two held-out banks either side of the practice items — set it false for a
   # shorter demonstration, at the cost of the gain figure.
   administer_tests: true
+  # On here and nowhere else. A first sitting still sits the whole bank, because
+  # there is no history to narrow against and the baseline is what everything
+  # after it is read against. Every sitting after that re-checks only the
+  # concepts still on the way to the next goal, at both ends.
+  #
+  # The alternative that was in place — the same fixed fifteen items every
+  # sitting — was asked about twice unprompted ("is the pre-test only going to
+  # be in the first session? I hope so"), and it has a measurement problem
+  # besides the tedium: familiarity accumulates on exactly the items the outcome
+  # is read from. Running it once only is worse still, since it never measures
+  # what a gap between sittings has cost.
+  #
+  # It must stay `full` for every cohort. The banks are the instrument, and an
+  # arm that sat a different one is not comparable.
+  pretest_scope: route
   # On here and nowhere else. A person who has just answered fifteen questions
   # expects them to count for something, and the training now starts from what
   # the pre-test showed. It stays off for cohorts because it moves the starting

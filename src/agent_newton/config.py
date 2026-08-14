@@ -44,6 +44,10 @@ DiagnosticImpl = Literal["llm", "oracle", "noised_oracle"]
 #: own concept, or the whole catalogue. Recorded on the run manifest, because
 #: an accuracy figure measured over one is not comparable to the other.
 LabelSpace = Literal["concept", "catalogue"]
+#: Which of a held-out bank is administered. ``full`` is every item in it;
+#: ``route`` narrows a returning learner's banks to the concepts still on the
+#: way to their next goal. See ``CohortConfig.pretest_scope``.
+BankScope = Literal["full", "route"]
 #: ``goal_directed`` routes toward the domain's declared goals from the learner
 #: model. ``greedy`` is the undirected predecessor — frontier selection with no
 #: target — kept as the baseline the directed planner is compared against.
@@ -348,6 +352,42 @@ class CohortConfig(BaseModel):
     #: its dependants, so a floor at or above it would let a *wrong* pre-test
     #: answer unlock the material behind it. There is a check on that.
     seed_floor: float = Field(default=0.0, ge=0.0, lt=1.0)
+    #: How much of the held-out banks a **returning** learner sits.
+    #:
+    #: ``full`` administers every item in the bank every sitting, which is what
+    #: every measured result was produced under and what a cohort must keep: the
+    #: banks are the instrument, and an instrument that changes between arms or
+    #: between sittings measures nothing comparable.
+    #:
+    #: ``route`` narrows both banks to the concepts still on the way to the
+    #: learner's next goal. It applies only to a resumed sitting — a first one
+    #: has no history to narrow against and needs the baseline — and it exists
+    #: because the alternatives are worse for a person. Administering the same
+    #: fixed bank every sitting lets familiarity with it accumulate on exactly
+    #: the items the outcome is read from, and administering it only once never
+    #: re-measures what a gap has cost.
+    #:
+    #: Three consequences, all of which have to be honoured downstream:
+    #:
+    #: * **Both banks narrow to the same set**, fixed before the pre-test is
+    #:   sat. Scoping them independently, or recomputing the route after
+    #:   training, would compute a gain between two different instruments.
+    #: * **``concepts_missed`` means less than it did**: gaps outside the route
+    #:   are not measured, so they are not found. ``dose_on_gap`` divides by the
+    #:   training that went to concepts the bank actually covered, so it stays a
+    #:   share of what was measured rather than of everything.
+    #: * A learner with no goal left to reach falls back to the full bank. There
+    #:   is no route to narrow to, and a stale-estimate re-check across the whole
+    #:   syllabus is what a returning learner needs at that point anyway.
+    #:
+    #: One case is worth knowing about rather than discovering: a learner who
+    #: gets the whole re-check right has by that fact cleared the route it
+    #: measured, and the sitting then trains what lies beyond it — which the
+    #: banks did not ask about at either end. The gain is then a true statement
+    #: about concepts that were already fine, and the training that happened is
+    #: outside it. Marked in the sitting's own panel rather than folded into a
+    #: figure that could not see it.
+    pretest_scope: BankScope = "full"
     #: Times a concept may be worked before it stops being chosen.
     #:
     #: None is unlimited, which is what every run does today and what every

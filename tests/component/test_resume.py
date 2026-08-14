@@ -265,3 +265,122 @@ class TestAProfileMustTravelWithTheState:
         drawn = build_session("L1", 1, toy, config).learner.profile  # type: ignore[attr-defined]
         expected = sample_profile("L1", 1, toy.misconceptions, config.simulator)
         assert drawn.firing == expected.firing
+
+
+class TestAReturningLearnerRechecksTheRoute:
+    """The same fifteen questions, every sitting, before anything else happens.
+
+    Three cadences were possible and each fails somewhere. Sitting the whole
+    bank once never re-measures what a gap between sittings costs — which is the
+    thing a returning learner came back to find out. Sitting it every time is
+    what happened, and it lets familiarity accumulate on exactly the items the
+    outcome is read from, on top of being the longest part of a sitting that a
+    person said was already too long. Narrowing it to the route measures what
+    the sitting can actually move, and its cost is stated rather than hidden: a
+    gap outside the route is not looked for, so it is not found.
+    """
+
+    def _resumed(self, toy, mastery: dict[str, float], **cohort):
+        """A learner picking up with these posteriors already on the board."""
+        config = config_for(
+            cohort={"administer_tests": True, "max_items": 1, **cohort}
+        )
+        first = build_session("L0007", 20260812, toy, config)
+        first.board.state.mastery.update(mastery)
+        return build_session(
+            "L0007",
+            20260812,
+            toy,
+            config,
+            state=first.board.state,
+            profile=first.learner.profile,  # type: ignore[attr-defined]
+        )
+
+    @staticmethod
+    def _route(toy, mastery: dict[str, float], config) -> set[str]:
+        from agent_newton.core.state import route
+
+        prior = bkt.initial(config.bkt)
+        goal = route.next_goal(toy.concepts.goals(), mastery, config.zpd, prior)
+        assert goal is not None
+        return set(route.remaining(goal, mastery, toy.concepts, config.zpd, prior))
+
+    def test_the_default_is_the_whole_bank(self) -> None:
+        # Every measured result was produced under it, and a cohort must keep
+        # it: an arm that sat a different instrument is not comparable.
+        assert Config().cohort.pretest_scope == "full"
+
+    def test_a_first_sitting_sits_all_of_it(self, toy) -> None:
+        # There is no history to narrow against, and the baseline is what
+        # everything after it is read against.
+        config = config_for(
+            cohort={"administer_tests": True, "max_items": 1, "pretest_scope": "route"}
+        )
+        outcome = build_session("L0007", 20260812, toy, config).run()
+        assert outcome.pretest.total == len(toy.items.bank("pretest"))
+
+    def test_a_returning_one_sits_only_the_route(self, toy) -> None:
+        mastery = {"integer_arithmetic": 0.97, "combine_like_terms": 0.95}
+        session = self._resumed(toy, mastery, pretest_scope="route")
+        outcome = session.run()
+
+        assert outcome.pretest.total < len(toy.items.bank("pretest"))
+        assert outcome.pretest.covered <= self._route(toy, mastery, session.config)
+
+    def test_what_it_leaves_out_is_what_was_already_mastered(self, toy) -> None:
+        # The claim underneath the shorter bank: it is short because the learner
+        # did the work, not because the measurement was trimmed arbitrarily.
+        mastery = {"integer_arithmetic": 0.97, "combine_like_terms": 0.95}
+        outcome = self._resumed(toy, mastery, pretest_scope="route").run()
+        assert "integer_arithmetic" not in outcome.pretest.covered
+        assert "combine_like_terms" not in outcome.pretest.covered
+
+    def test_the_same_setting_off_sits_everything(self, toy) -> None:
+        # The guard can fail: resuming is not on its own what shortens the bank.
+        mastery = {"integer_arithmetic": 0.97, "combine_like_terms": 0.95}
+        outcome = self._resumed(toy, mastery, pretest_scope="full").run()
+        assert outcome.pretest.total == len(toy.items.bank("pretest"))
+
+    def test_both_ends_measure_the_same_concepts(self, toy) -> None:
+        # The load-bearing one. Training moves mastery, so a route recomputed
+        # after it would narrow to something else — and the gain would be a
+        # difference between two different instruments.
+        mastery = {"integer_arithmetic": 0.97, "combine_like_terms": 0.95}
+        outcome = self._resumed(
+            toy, mastery, pretest_scope="route", max_items=6
+        ).run()
+        assert outcome.pretest.covered == outcome.posttest.covered
+        assert outcome.pretest.total == outcome.posttest.total
+
+    def test_a_learner_with_no_goal_left_sits_the_whole_bank(self, toy) -> None:
+        # There is no route to narrow to, and what someone who has mastered
+        # everything comes back to find out is what has gone stale.
+        mastery = {concept_id: 0.99 for concept_id in toy.concepts.ids()}
+        outcome = self._resumed(toy, mastery, pretest_scope="route").run()
+        assert outcome.pretest.total == len(toy.items.bank("pretest"))
+
+    def test_a_narrowing_that_would_empty_the_bank_is_ignored(self, toy) -> None:
+        # An empty bank scores zero out of zero, which reads as "not
+        # administered" — the measurement would disappear rather than shorten.
+        from agent_newton.core.orchestration.session import Session
+
+        session = self._resumed(toy, {}, pretest_scope="route")
+        result = Session._administer(session, "pretest", frozenset({"no_such_concept"}))
+        assert result.total == len(toy.items.bank("pretest"))
+
+    def test_the_recheck_is_what_the_seeding_then_uses(self, toy) -> None:
+        # Seeding folds the pre-test into the model. With a narrowed bank it
+        # touches only the concepts sat, and the carried estimates for
+        # everything else stay as the last sitting left them.
+        mastery = {"integer_arithmetic": 0.97, "combine_like_terms": 0.95}
+        session = self._resumed(
+            toy, mastery, pretest_scope="route", seed_from_pretest=True
+        )
+        outcome = session.run()
+        seeded = {
+            r.evidence["concept_id"]
+            for r in session.board.audit_log
+            if r.cause == "seed"
+        }
+        assert seeded <= outcome.pretest.covered
+        assert "integer_arithmetic" not in seeded

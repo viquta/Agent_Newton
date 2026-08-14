@@ -125,12 +125,18 @@ run backwards, so a correct answer would *lower* the mastery estimate.
 | `max_items` | `20` | Practice items before the post-test, per learner |
 | `max_steps_per_item` | `3` | Readable steps allowed on one item before moving on |
 | `max_unreadable_per_item` | `3` | Steps the verifier could not read before giving up on an item |
+| `pretest_scope` | `full` | `route` narrows a **resumed** sitting's held-out banks to the concepts still on the way to the next goal |
 
 `max_steps_per_item` bounds steps the verifier could read. An unreadable
 response updates no estimate and enters no error trace, so it does not consume
 one; `max_unreadable_per_item` bounds those instead, and without it an
 unreadable answer could be asked for indefinitely. A simulated learner cannot
 produce one, so neither setting can move a cohort figure.
+
+`pretest_scope: route` applies only to a session resumed from stored state, and
+narrows the pre- and post-test to the same set — fixed before the pre-test is
+sat, so the two ends measure the same concepts. Keep it `full` for any
+comparison: the banks are the instrument.
 
 ## `paths`
 

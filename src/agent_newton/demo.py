@@ -283,6 +283,21 @@ class DemoObserver(Watching):
             "No feedback and no hints: this measures what you can do unaided, so "
             "telling you the answers would change what it measures.\n"
         )
+        whole = len(self._domain.items.bank(phase))  # type: ignore[arg-type]
+        if total < whole:
+            # Read off the bank rather than from the config, so what is said
+            # here cannot disagree with what is actually being administered.
+            # Said at all because a returning learner has sat the long version
+            # and would otherwise be left wondering what happened to it — and
+            # because a score out of a shorter bank is not the same measurement
+            # as the one they got last time.
+            body.append(
+                f"Short, because you have been here before: these are the {total} "
+                f"of {whole} that are on the way to your next goal. The rest is "
+                f"either behind you or too far ahead to be worth asking about "
+                f"today.\n",
+                style="dim",
+            )
         if phase == "pretest":
             # Whether it steers has to match what the config actually does. The
             # two sentences are opposites, and a person who has just answered
@@ -468,14 +483,26 @@ def _did_this_teach(session, outcome, domain: Domain) -> Panel:  # noqa: ANN001
     spent = outcomes.dose_by_concept(session.board.audit_log)
     if spent:
         gaps = set(outcome.pretest.concepts_missed)
+        covered = outcome.pretest.covered
+        # Only when the pre-test was narrowed to the route. Then some training
+        # went to concepts it never asked about, and those are outside the
+        # percentage above rather than counted against it — which has to be
+        # visible, or the share reads as covering everything below it.
+        unasked = [c for c in spent if outcome.pretest.administered and c not in covered]
         body.append("\nWhere the time went:\n", style="bold")
         for concept_id, steps in sorted(spent.items(), key=lambda kv: -kv[1]):
-            mark = "·" if concept_id in gaps else " "
+            mark = "·" if concept_id in gaps else "?" if concept_id in unasked else " "
             body.append(f"  {mark} {graph.get(concept_id).name}")
             body.append(f"   {steps} step(s)\n", style="dim")
         if gaps:
             body.append(
                 "  · marks something the pre-test showed you had not got yet\n",
+                style="dim",
+            )
+        if unasked:
+            body.append(
+                "  ? marks something the pre-test did not ask about, so it is "
+                "outside the share above\n",
                 style="dim",
             )
 
@@ -493,7 +520,13 @@ def _did_this_teach(session, outcome, domain: Domain) -> Panel:  # noqa: ANN001
         "still_wrong": ("Still to get", "yellow"),
         "unmeasured": ("Could not be read at one end or the other", "dim"),
     }
-    body.append("\nBetween the two tests:\n", style="bold")
+    # `still_right` is deliberately absent from `labels`: a concept that was
+    # fine at both ends is not something the sitting moved. So the heading is
+    # written only when something falls under it — otherwise a learner who
+    # passed the whole re-check gets a heading with nothing beneath it, which
+    # reads as a figure that failed to render.
+    if any(by_state.get(state) for state in labels):
+        body.append("\nBetween the two tests:\n", style="bold")
     for state, (label, colour) in labels.items():
         found = by_state.get(state, [])
         if not found:
@@ -643,6 +676,12 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
                     "measured_score": outcome.pretest.measured_score,
                     "administered": outcome.pretest.administered,
                     "concepts_missed": list(outcome.pretest.concepts_missed),
+                    # What the bank asked about at all. A score over a narrowed
+                    # bank is not comparable to one over the whole of it, and a
+                    # transcript recording only the score cannot say which it
+                    # was — nor which concepts a gap could have been found in.
+                    "concepts_measured": sorted(outcome.pretest.covered),
+                    "scope": config.cohort.pretest_scope,
                     "seeded_the_learner_model": config.cohort.seed_from_pretest,
                 },
                 "posttest": {
@@ -653,6 +692,7 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
                     "measured_score": outcome.posttest.measured_score,
                     "administered": outcome.posttest.administered,
                     "concepts_missed": list(outcome.posttest.concepts_missed),
+                    "concepts_measured": sorted(outcome.posttest.covered),
                 },
                 "gain": outcome.gain,
                 "normalised_gain": outcome.normalised_gain,
