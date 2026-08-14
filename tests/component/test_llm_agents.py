@@ -229,7 +229,7 @@ class TestLLMTutor:
             view_for(toy),
             toy,
             response=response,
-            failed_attempts=attempts,
+            unresolved_steps=attempts,
             moves_this_item=list(moves),
         )
         return hint, provider
@@ -269,7 +269,7 @@ class TestLLMTutor:
             view_for(toy),
             toy,
             response="3*x + 4",
-            failed_attempts=1,
+            unresolved_steps=1,
             moves_this_item=[TutorMove.REFLECT],
         )
         assert hint.text
@@ -295,7 +295,7 @@ class TestLLMTutor:
         provider = Scripted(json.dumps({"text": "look again"}))
         hint = LLMTutor(provider, BAND).respond(
             item, Diagnosis(None), view, toy,
-            response="3*x + 4", failed_attempts=attempts, moves_this_item=[],
+            response="3*x + 4", unresolved_steps=attempts, moves_this_item=[],
         )
         return hint, provider
 
@@ -346,7 +346,7 @@ class TestLLMTutor:
         provider = Scripted(json.dumps({"text": "look again"}))
         LLMTutor(provider, BAND).respond(
             item, Diagnosis(None), view, toy,
-            response="3*x + 4", failed_attempts=1, moves_this_item=[],
+            response="3*x + 4", unresolved_steps=1, moves_this_item=[],
         )
         prompt = provider.calls[0]
         assert "said here" in prompt and "on this question" in prompt
@@ -363,10 +363,77 @@ class TestLLMTutor:
             view_for(toy),
             toy,
             response="3*x + 4",
-            failed_attempts=1,
+            unresolved_steps=1,
             moves_this_item=[],
         )
         assert "unless their step shows it" in provider.systems[0]
+
+
+class TestTheTutorDoesNotSayTheSameThingTwice:
+    """Three empty answers to one question produced three identical replies.
+
+    Nothing was broken: the item, the response, the level and the move were all
+    unchanged, so the prompt was unchanged, so the response cache returned what
+    it had stored. Correct caching, and useless to the person reading it. The
+    fix is that the tutor is told what it already said, which changes the prompt
+    and gives the model something to do with the fact.
+    """
+
+    def _prompt(self, toy, said=()):
+        provider = Scripted(json.dumps({"text": "Look at the second term."}))
+        LLMTutor(provider, BAND).respond(
+            toy.items.get("ta_dist_p1"),
+            Diagnosis(None),
+            view_for(toy),
+            toy,
+            response="",
+            unresolved_steps=1,
+            moves_this_item=[],
+            said_this_item=list(said),
+        )
+        return provider.calls[0]
+
+    def test_identical_inputs_would_otherwise_produce_an_identical_prompt(
+        self, toy
+    ) -> None:
+        # The guard has to be able to fail, and this is the failure it prevents:
+        # everything the prompt is built from is the same on a repeat, and the
+        # cache is keyed on the prompt.
+        assert self._prompt(toy) == self._prompt(toy)
+
+    def test_having_already_replied_changes_the_prompt(self, toy) -> None:
+        assert self._prompt(toy, said=["Look at the second term."]) != self._prompt(toy)
+
+    def test_what_was_already_said_is_shown_to_the_model(self, toy) -> None:
+        prompt = self._prompt(toy, said=["Look at the second term."])
+        assert "Look at the second term." in prompt
+        assert "do not repeat" in prompt.lower()
+
+    def test_every_earlier_reply_is_carried_not_only_the_last(self, toy) -> None:
+        # Two replies that each avoided only their predecessor would alternate.
+        prompt = self._prompt(toy, said=["first thing", "second thing"])
+        assert "first thing" in prompt and "second thing" in prompt
+
+    def test_the_template_tutor_is_unaffected(self, toy) -> None:
+        # The cohorts run `impl: template`, and its text is a catalogue lookup
+        # at an assigned level — the same level on the same misconception is the
+        # same instruction. A wording that varied with the sitting's history
+        # would put that history into every measured number.
+        from agent_newton.core.agents.tutor import TemplateTutor
+
+        def hint(said):
+            return TemplateTutor(BAND).respond(
+                toy.items.get("ta_dist_p1"),
+                Diagnosis("distribute_first_term_only", 0.9),
+                view_for(toy),
+                toy,
+                response="3*x + 4",
+                unresolved_steps=1,
+                moves_this_item=[TutorMove.REFLECT],
+                said_this_item=said,
+            )
+
+        assert hint([]).text == hint(["something it said before"]).text
 
 
 class TestLLMPlannerGuardrails:

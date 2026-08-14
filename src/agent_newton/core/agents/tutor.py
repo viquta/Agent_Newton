@@ -40,14 +40,21 @@ class TemplateTutor:
         domain: Domain,
         *,
         response: str,
-        failed_attempts: int,
+        unresolved_steps: int,
         moves_this_item: Sequence[TutorMove],
+        said_this_item: Sequence[str] = (),
     ) -> Hint:
-        # ``response`` is deliberately unused. This tutor's text comes from the
-        # catalogue at the level the scaffolding rule asks for, and the cohorts
-        # run it — so its output must not vary with anything the model-backed
-        # tutor gained. There is a test asserting exactly that.
-        del response
+        # ``response`` and ``said_this_item`` are deliberately unused. This
+        # tutor's text comes from the catalogue at the level the scaffolding
+        # rule asks for, and the cohorts run it — so its output must not vary
+        # with anything the model-backed tutor gained. There is a test
+        # asserting exactly that.
+        #
+        # It therefore does repeat itself when the level does not move, which is
+        # a property of a catalogue lookup rather than an oversight: the same
+        # level on the same misconception *is* the same instruction. Only a
+        # tutor that writes prose can say the same thing differently.
+        del response, said_this_item
 
         # Mastery is only available in the coupled view. Without it the tutor
         # falls back to the bottom of the band, which is the conservative
@@ -57,7 +64,7 @@ class TemplateTutor:
             if isinstance(view, FullStateView)
             else 0.0
         )
-        level = hint_level(mastery, failed_attempts, self._band)
+        level = hint_level(mastery, unresolved_steps, self._band)
 
         required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
         if required is TutorMove.REFLECT:

@@ -119,11 +119,18 @@ run backwards, so a correct answer would *lower* the mastery estimate.
 
 ## `cohort`
 
-| Key | Default |
-|---|---|
-| `n_learners` | `3` |
-| `max_items` | `20` |
-| `max_steps_per_item` | `3` |
+| Key | Default | Meaning |
+|---|---|---|
+| `n_learners` | `3` | Learners in the cohort |
+| `max_items` | `20` | Practice items before the post-test, per learner |
+| `max_steps_per_item` | `3` | Readable steps allowed on one item before moving on |
+| `max_unreadable_per_item` | `3` | Steps the verifier could not read before giving up on an item |
+
+`max_steps_per_item` bounds steps the verifier could read. An unreadable
+response updates no estimate and enters no error trace, so it does not consume
+one; `max_unreadable_per_item` bounds those instead, and without it an
+unreadable answer could be asked for indefinitely. A simulated learner cannot
+produce one, so neither setting can move a cohort figure.
 
 ## `paths`
 

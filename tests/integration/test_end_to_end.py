@@ -399,6 +399,44 @@ class TestTheArmsDiffer:
         assert coupled.learner.profile.initial == decoupled.learner.profile.initial
 
 
+class TestTheUnreadableCapCannotMoveACohort:
+    """A budget only a person can reach.
+
+    Separating the attempt budget from unreadable responses changes what a
+    session does the moment one occurs — and a simulated learner cannot produce
+    one. Every response it gives is a buggy rule's output or the stated answer,
+    and ``domain validate`` requires the first to verify incorrect and the
+    second correct. So the whole of decision 1 is inert for every measured
+    result, which is a claim worth holding rather than asserting once.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_the_cap_changes_nothing(self, domain_name: str, arm: str) -> None:
+        for i in range(4):
+            tight = run(
+                domain_name, arm, f"L{i:04d}", cohort={"max_unreadable_per_item": 1}
+            )[1]
+            loose = run(
+                domain_name, arm, f"L{i:04d}", cohort={"max_unreadable_per_item": 9}
+            )[1]
+            assert tight.items_attempted == loose.items_attempted
+            assert tight.diagnoses == loose.diagnoses
+            assert tight.goals_mastered == loose.goals_mastered
+            assert tight.gain == loose.gain
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_because_the_cap_is_never_reached(self, domain_name: str) -> None:
+        # The reason it is inert, stated separately: if this ever fails the
+        # invariance above is a coincidence rather than a consequence.
+        for i in range(4):
+            session, outcome = run(domain_name, "coupled", f"L{i:04d}")
+            assert outcome.unmeasurable_steps == 0
+            assert not [
+                r for r in session.board.audit_log if "unreadable response(s)" in r.summary
+            ]
+
+
 class TestItemVariantsDoNotMoveTheNumbers:
     """Varying a repeated question is visible to a person and invisible here.
 

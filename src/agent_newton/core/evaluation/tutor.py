@@ -90,7 +90,7 @@ class TurnCase:
     misconception_id: str
     wrong_answer: str
     mastery: float
-    failed_attempts: int
+    unresolved_steps: int
     diagnosed: bool
     moves_so_far: tuple[TutorMove, ...] = ()
     working: str = ""
@@ -130,7 +130,7 @@ def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
                     misconception_id=misconception_id,
                     wrong_answer=wrong,
                     mastery=_mastery_for(level, band),
-                    failed_attempts=0,
+                    unresolved_steps=0,
                     diagnosed=False,
                 )
             )
@@ -142,7 +142,7 @@ def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
                 misconception_id=misconception_id,
                 wrong_answer=wrong,
                 mastery=_mastery_for(HintLevel.TARGETED, band),
-                failed_attempts=0,
+                unresolved_steps=0,
                 diagnosed=True,
             )
         )
@@ -155,7 +155,7 @@ def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
                     misconception_id=misconception_id,
                     wrong_answer=wrong,
                     mastery=_mastery_for(level, band),
-                    failed_attempts=0,
+                    unresolved_steps=0,
                     diagnosed=True,
                     moves_so_far=(TutorMove.REFLECT,),
                 )
@@ -238,7 +238,7 @@ def ask(
             view_for(case, band),
             domain,
             response=case.wrong_answer,
-            failed_attempts=case.failed_attempts,
+            unresolved_steps=case.unresolved_steps,
             moves_this_item=list(case.moves_so_far),
         )
         turn = Turn(

@@ -25,7 +25,7 @@ discouraged.
 ## Scaffolding
 
 ```python
-hint_level(mastery, failed_attempts, band) -> HintLevel
+hint_level(mastery, unresolved_steps, band) -> HintLevel
 ```
 
 `HintLevel` is ordered by how much support it carries:
@@ -37,14 +37,18 @@ hint_level(mastery, failed_attempts, band) -> HintLevel
 | `WORKED_STEP` | Shows the step |
 
 Two inputs. The mastery estimate sets the baseline — above `theta_lower` a
-nudge suffices, below half of it the step is worked. Failed attempts on the
-*current* item escalate from there, bounded at `WORKED_STEP`, so a learner who
-is stuck is not nudged repeatedly.
+nudge suffices, below half of it the step is worked. Steps on the *current*
+item that did not resolve it escalate from there, bounded at `WORKED_STEP`, so
+a learner who is stuck is not nudged repeatedly.
+
+Steps, not attempts, and the two differ: a response the verifier could not read
+costs no attempt — `cohort.max_steps_per_item` counts only measured ones — but
+it still leaves the learner not having got there, so support escalates on it.
 
 ## Fading
 
 ```python
-check_fading(band, failed_attempts=0) -> Violation | None
+check_fading(band, unresolved_steps=0) -> Violation | None
 ```
 
 Support is non-increasing in mastery, **all else equal**. Escalation on repeated

@@ -179,15 +179,16 @@ class LLMTutor:
         domain: Domain,
         *,
         response: str,
-        failed_attempts: int,
+        unresolved_steps: int,
         moves_this_item: Sequence[TutorMove],
+        said_this_item: Sequence[str] = (),
     ) -> Hint:
         mastery = (
             view.probability(item.concept_id, 0.0)
             if isinstance(view, FullStateView)
             else 0.0
         )
-        level = hint_level(mastery, failed_attempts, self._band)
+        level = hint_level(mastery, unresolved_steps, self._band)
         required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
         move = required or (TutorMove.REMEDIATE if diagnosis.named else TutorMove.HINT)
 
@@ -250,11 +251,35 @@ class LLMTutor:
                     else f"The student said {when}, when asked what they were unsure of"
                 )
                 said += f"\n{label}: {utterance.text}"
+
+        # What this tutor has already said on this question, and an instruction
+        # not to say it again. Two things needed it.
+        #
+        # The support level escalates on a step that did not resolve the item,
+        # so the prompt usually changes on its own — but the level has a
+        # ceiling, and at `worked_step` nothing else in the prompt moves when
+        # the student's response does not either. Three empty answers to one
+        # question therefore produced three byte-identical replies: same item,
+        # same response, same level, same move, so the response cache returned
+        # its stored text. Correct caching, useless teaching.
+        #
+        # Kept as an instruction rather than as a retry, because the honest
+        # reading of a student who has not got there twice is that the reply did
+        # not land — not that it needs to be phrased better in the abstract.
+        again = ""
+        if said_this_item:
+            already = "\n".join(f"- {text}" for text in said_this_item)
+            again = (
+                f"\n\nYou have already replied on this question, and it did not "
+                f"get them there:\n{already}\n"
+                f"Do not repeat any of that. Take a different line — be more "
+                f"concrete than you were, or start from something earlier."
+            )
         prompt = (
             f"Exercise: {item.prompt}\n"
             f"The student wrote: {response}\n"
             f"Correct answer: {item.answer}{context}{said}\n\n"
-            f"{instruction}"
+            f"{instruction}{again}"
         )
         try:
             reply = complete(self._provider, prompt, HintReply, system=_TUTOR_SYSTEM)

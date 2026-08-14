@@ -11,7 +11,7 @@ Four rules:
 * **Band membership** — an item may be selected only if its concept is in the
   current frontier.
 * **Scaffolding** — how much support a hint gives is chosen from the mastery
-  estimate and how many attempts on this item have already failed.
+  estimate and how many steps on this item have already failed to resolve it.
 * **Fading** — support is non-increasing in mastery, all else equal. This is a
   monotonicity property, so it can be checked across a grid rather than
   spot-checked.
@@ -86,15 +86,22 @@ def may_select(concept_id: str, frontier: Frontier) -> Violation | None:
 
 def hint_level(
     mastery: float,
-    failed_attempts: int,
+    unresolved_steps: int,
     band: ZPDConfig,
 ) -> HintLevel:
     """How much support to give.
 
     Two inputs. The mastery estimate sets the baseline: a learner near the top
-    of the band needs a nudge, one near the bottom needs the step worked.
-    Failed attempts on the *current* item escalate from there, so a learner who
-    is stuck is not nudged repeatedly.
+    of the band needs a nudge, one near the bottom needs the step worked. Steps
+    on the *current* item that did not resolve it escalate from there, so a
+    learner who is stuck is not nudged repeatedly.
+
+    ``unresolved_steps`` counts steps rather than attempts, and the two are no
+    longer the same thing: a response the verifier could not read costs no
+    attempt — it is a failure to measure, not a wrong answer — but it still
+    leaves the learner not having got there. Support escalates on it. Saying
+    the same thing again to someone who has now not answered twice is the one
+    reply that is certainly not working.
 
     Escalation is why fading is stated "all else equal" — it varies support at
     fixed mastery, and would otherwise look like a violation.
@@ -106,11 +113,13 @@ def hint_level(
     else:
         base = HintLevel.WORKED_STEP
 
-    escalated = int(base) + max(0, failed_attempts)
+    escalated = int(base) + max(0, unresolved_steps)
     return HintLevel(min(escalated, int(HintLevel.WORKED_STEP)))
 
 
-def check_fading(band: ZPDConfig, failed_attempts: int = 0, steps: int = 50) -> Violation | None:
+def check_fading(
+    band: ZPDConfig, unresolved_steps: int = 0, steps: int = 50
+) -> Violation | None:
     """Verify support is non-increasing in mastery across the whole range.
 
     Checked as a property rather than at sample points, because the rule is a
@@ -120,7 +129,7 @@ def check_fading(band: ZPDConfig, failed_attempts: int = 0, steps: int = 50) -> 
     previous = HintLevel.WORKED_STEP
     for index in range(steps + 1):
         mastery = index / steps
-        level = hint_level(mastery, failed_attempts, band)
+        level = hint_level(mastery, unresolved_steps, band)
         if level > previous:
             return Violation(
                 "fading",

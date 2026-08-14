@@ -58,6 +58,14 @@ class Tutor(Protocol):
     model-backed tutor has only the misconception's description to work from and
     reconstructs a plausible step rather than addressing the actual one — which
     is how a human session was told its calculation was correct when it was not.
+
+    ``said_this_item`` is what this tutor has already said on this item, oldest
+    first. It is here because a tutor with no memory of its own turn repeats it:
+    three empty answers to one question produced three identical replies, since
+    the prompt was unchanged and the response cache is keyed on the prompt.
+    Carried through the session like ``moves_this_item`` rather than read from
+    anywhere — an agent is told what it said, not given a channel to another
+    agent.
     """
 
     def respond(
@@ -68,8 +76,9 @@ class Tutor(Protocol):
         domain: Domain,
         *,
         response: str,
-        failed_attempts: int,
+        unresolved_steps: int,
         moves_this_item: Sequence[TutorMove],
+        said_this_item: Sequence[str] = (),
     ) -> Hint: ...
 
 

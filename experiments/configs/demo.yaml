@@ -20,6 +20,10 @@ cohort:
   # less of it is measurement.
   max_items: 20
   max_steps_per_item: 3
+  # Steps the verifier could not read, per item, before moving on. They cost no
+  # attempt — nothing about the learner was measured — so something has to stop
+  # an empty answer from being asked for indefinitely.
+  max_unreadable_per_item: 3
   # Kept on, so the sitting yields a real pre-to-post measurement. It adds the
   # two held-out banks either side of the practice items — set it false for a
   # shorter demonstration, at the cost of the gain figure.

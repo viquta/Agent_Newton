@@ -69,26 +69,26 @@ class TestScaffolding:
     def test_support_follows_the_mastery_estimate(
         self, mastery: float, expected: HintLevel
     ) -> None:
-        assert hint_level(mastery, failed_attempts=0, band=BAND) is expected
+        assert hint_level(mastery, unresolved_steps=0, band=BAND) is expected
 
     def test_repeated_failure_escalates_support(self) -> None:
         # A learner who is stuck must not be nudged over and over.
-        levels = [hint_level(0.85, failed_attempts=n, band=BAND) for n in range(3)]
+        levels = [hint_level(0.85, unresolved_steps=n, band=BAND) for n in range(3)]
         assert levels == [HintLevel.NUDGE, HintLevel.TARGETED, HintLevel.WORKED_STEP]
 
     def test_escalation_is_bounded(self) -> None:
-        assert hint_level(0.05, failed_attempts=99, band=BAND) is HintLevel.WORKED_STEP
+        assert hint_level(0.05, unresolved_steps=99, band=BAND) is HintLevel.WORKED_STEP
 
 
 class TestFading:
     def test_support_never_rises_with_mastery(self) -> None:
         assert check_fading(BAND) is None
 
-    @pytest.mark.parametrize("failed_attempts", [0, 1, 2, 5])
-    def test_holds_at_every_escalation_level(self, failed_attempts: int) -> None:
+    @pytest.mark.parametrize("unresolved_steps", [0, 1, 2, 5])
+    def test_holds_at_every_escalation_level(self, unresolved_steps: int) -> None:
         # "All else equal" means at fixed failure count. Escalation may raise
         # support, but never as a function of rising mastery.
-        assert check_fading(BAND, failed_attempts=failed_attempts) is None
+        assert check_fading(BAND, unresolved_steps=unresolved_steps) is None
 
     @pytest.mark.parametrize(
         "band",
@@ -114,7 +114,7 @@ class TestFading:
         original = policy.hint_level
         try:
             # Support rising with mastery — exactly what fading forbids.
-            policy.hint_level = lambda mastery, failed_attempts, band: (  # type: ignore[assignment]
+            policy.hint_level = lambda mastery, unresolved_steps, band: (  # type: ignore[assignment]
                 HintLevel.WORKED_STEP if mastery > 0.5 else HintLevel.NUDGE
             )
             violation = policy.check_fading(BAND)
@@ -196,7 +196,7 @@ class TestTemplateTutorIgnoresTheStep:
             board.view(),
             toy,
             response=response,
-            failed_attempts=1,
+            unresolved_steps=1,
             moves_this_item=[TutorMove.REFLECT],
         )
 

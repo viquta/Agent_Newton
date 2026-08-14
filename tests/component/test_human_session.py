@@ -612,6 +612,189 @@ class TestRunningOutOfAttemptsIsReported:
         assert len(watcher.finished) == outcome.items_attempted
 
 
+class TestAnUnreadableAnswerIsNotAnAttempt:
+    """``UNPARSEABLE`` is a failure to measure, and the loop charged for it.
+
+    The learner model has honoured the distinction from the start: an
+    unreadable response updates no estimate and enters no error trace. The
+    attempt budget did not, so a response nobody could read spent one of the
+    three tries at the item — the same category error the test score carried
+    until ``measured_score`` was drawn apart from ``score``.
+
+    It cannot be free either. Without a bound of its own, an empty answer would
+    be asked for indefinitely, so the two counters are separate and both bind.
+    """
+
+    def _run(self, toy, answers: list[str], **cohort):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        replies = iter(answers)
+        # The last scripted answer repeats, so a test states only the run it
+        # cares about rather than padding to the budget.
+        last = answers[-1]
+        config = human_config(
+            cohort={
+                "n_learners": 1,
+                "max_items": 1,
+                "administer_tests": False,
+                **cohort,
+            }
+        )
+        learner = HumanLearner(lambda item, attempt: next(replies, last))
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        outcome = session.run()
+        return session, outcome
+
+    @staticmethod
+    def _graded(session) -> list[str]:
+        """The verdict of every step the loop actually graded, in order."""
+        return [
+            record.evidence["verdict"]
+            for record in session.board.audit_log
+            if record.cause == "observation"
+        ]
+
+    def test_a_readable_wrong_answer_still_spends_one(self, toy) -> None:
+        # The budget has to keep binding, or the fix below is just a loop that
+        # never ends.
+        session, _ = self._run(toy, ["999"], max_steps_per_item=3)
+        assert self._graded(session) == ["incorrect"] * 3
+
+    def test_an_unreadable_one_does_not(self, toy) -> None:
+        # Same budget, one more step: the unreadable answer did not consume any
+        # of the three tries, because nothing about the learner was measured.
+        session, _ = self._run(toy, ["what does this mean", "999"], max_steps_per_item=3)
+        assert self._graded(session) == ["unparseable"] + ["incorrect"] * 3
+
+    def test_a_run_of_them_ends_the_item(self, toy) -> None:
+        session, _ = self._run(
+            toy, ["no idea"], max_steps_per_item=3, max_unreadable_per_item=3
+        )
+        assert self._graded(session) == ["unparseable"] * 3
+        assert session.board.unmeasurable == 3
+
+    def test_it_is_the_cap_that_ends_it(self, toy) -> None:
+        # And the cap is what decides when — not the attempt budget, which is
+        # untouched here and would otherwise have stopped it at three.
+        session, _ = self._run(
+            toy, ["no idea"], max_steps_per_item=3, max_unreadable_per_item=5
+        )
+        assert self._graded(session) == ["unparseable"] * 5
+
+    def test_the_reason_reaches_the_audit_log(self, toy) -> None:
+        # Ending an item having measured nothing is not the same event as
+        # running out of attempts, and a log that cannot tell them apart makes a
+        # failing verifier look like a failing learner.
+        session, _ = self._run(toy, ["no idea"], max_unreadable_per_item=2)
+        assert any(
+            "unreadable response(s)" in record.summary
+            for record in session.board.audit_log
+        )
+
+    def test_nothing_it_produced_was_evidence(self, toy) -> None:
+        session, _ = self._run(toy, ["no idea"], max_unreadable_per_item=3)
+        assert session.board.state.mastery == {}
+        assert not session.board.state.error_trace
+        assert not session.board.state.outcomes
+
+    def test_the_item_is_still_counted_as_given_exactly_once(self, toy) -> None:
+        # The lifetime count drives which variant is asked and which item is
+        # least practised. Counting a step rather than a giving would make an
+        # unreadable answer look like extra practice.
+        session, _ = self._run(toy, ["no idea"], max_unreadable_per_item=3)
+        assert set(session.board.state.items_given.values()) == {1}
+
+    def test_support_escalates_even_though_no_attempt_was_spent(self, toy) -> None:
+        """The other half of the decision, and the half a person notices.
+
+        A learner who has now not answered twice is stuck, and the one reply
+        that is certainly not working is the one already given. Support
+        escalates on the step rather than on the attempt.
+        """
+        from agent_newton.core.agents.base import Diagnosis, Hint
+        from agent_newton.core.pedagogy import HintLevel, TutorMove
+
+        class Recording:
+            def __init__(self) -> None:
+                self.steps: list[int] = []
+
+            def respond(self, item, diagnosis, view, domain, **kwargs):  # noqa: ANN001
+                self.steps.append(kwargs["unresolved_steps"])
+                return Hint(
+                    text=f"turn {len(self.steps)}",
+                    move=TutorMove.HINT,
+                    level=HintLevel.NUDGE,
+                )
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        replies = iter(["no idea"])
+        config = human_config(
+            cohort={
+                "n_learners": 1,
+                "max_items": 1,
+                "administer_tests": False,
+                "max_unreadable_per_item": 3,
+            }
+        )
+        tutor = Recording()
+        learner = HumanLearner(lambda item, attempt: next(replies, "no idea"))
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        session.tutor = tutor
+        session.run()
+
+        assert tutor.steps == [1, 2, 3]
+
+    def test_the_tutor_is_given_what_it_already_said(self, toy) -> None:
+        # Which is what stops the three identical replies: the prompt is
+        # otherwise the same on every one of them.
+        from agent_newton.core.agents.base import Diagnosis, Hint
+        from agent_newton.core.pedagogy import HintLevel, TutorMove
+
+        class Recording:
+            def __init__(self) -> None:
+                self.said: list[list[str]] = []
+
+            def respond(self, item, diagnosis, view, domain, **kwargs):  # noqa: ANN001
+                self.said.append(list(kwargs["said_this_item"]))
+                return Hint(
+                    text=f"turn {len(self.said)}",
+                    move=TutorMove.HINT,
+                    level=HintLevel.NUDGE,
+                )
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={
+                "n_learners": 1,
+                "max_items": 1,
+                "administer_tests": False,
+                "max_unreadable_per_item": 3,
+            }
+        )
+        tutor = Recording()
+        session = build_session(
+            "human", config.seed, toy, config,
+            learner=HumanLearner(lambda item, attempt: "no idea"),
+        )
+        session.diagnostic = Nothing()
+        session.tutor = tutor
+        session.run()
+
+        assert tutor.said == [[], ["turn 1"], ["turn 1", "turn 2"]]
+
+
 class TestASittingIsKeptHoweverItEnds:
     """The demo returned before writing whenever the person stopped part-way.
 

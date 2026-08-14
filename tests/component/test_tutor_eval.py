@@ -85,7 +85,7 @@ def turn_for(
         misconception_id=item.probes[0] if item.probes else "",
         wrong_answer="5*x**5",
         mastery=0.5,
-        failed_attempts=0,
+        unresolved_steps=0,
         diagnosed=move is not TutorMove.HINT,
         working=working,
     )
@@ -341,7 +341,7 @@ class TestTheCasesComeFromTheRules:
         from agent_newton.core.pedagogy import hint_level
 
         mastery = evaluation._mastery_for(level, BAND)
-        assert hint_level(mastery, failed_attempts=0, band=BAND) is level
+        assert hint_level(mastery, unresolved_steps=0, band=BAND) is level
 
     def test_every_case_resolves_to_a_real_item(self, calculus) -> None:
         for case in evaluation.cases(calculus, BAND):

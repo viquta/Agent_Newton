@@ -275,7 +275,25 @@ class CohortConfig(BaseModel):
     #: Practice items before the post-test, per learner.
     max_items: int = Field(default=20, ge=1)
     #: Max student steps allowed on one item before moving on.
+    #:
+    #: Steps the verifier could **read**. A response it could not parse is a
+    #: failure to measure rather than an attempt at the exercise — it updates no
+    #: estimate and enters no error trace — so charging one against this budget
+    #: would spend the learner's attempts on the verifier's failure.
+    #: ``max_unreadable_per_item`` bounds those separately.
     max_steps_per_item: int = Field(default=3, ge=1)
+    #: Responses the verifier could not read before an item is given up on.
+    #:
+    #: Needed because ``max_steps_per_item`` no longer bounds them: without a
+    #: cap of its own, someone pressing enter on an empty answer would be asked
+    #: the same question forever. Total per item rather than consecutive, so a
+    #: run broken up by a readable answer still terminates.
+    #:
+    #: Inert for every cohort. ``domain validate`` requires each buggy rule's
+    #: output to verify as incorrect and each stated answer to verify as
+    #: correct, so a simulated learner cannot produce an unreadable response at
+    #: all — there is a test on that.
+    max_unreadable_per_item: int = Field(default=3, ge=1)
     #: Whether to administer the held-out pre- and post-test banks.
     #:
     #: Always true for a cohort — they are what pre/post gain is measured from.

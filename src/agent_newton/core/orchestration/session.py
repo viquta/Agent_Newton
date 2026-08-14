@@ -489,8 +489,31 @@ class Session:
         repetition: int = 0,
     ) -> None:
         moves: list[TutorMove] = []
+        #: What the tutor has already said on this item. Handed back to it so it
+        #: does not repeat itself; see the Tutor protocol.
+        replies: list[str] = []
         confirmed = False
-        failed = 0
+
+        # Four counters over the same steps, because they answer different
+        # questions — and conflating two of them is what made an answer nobody
+        # could read cost the learner one of their tries.
+        #
+        # `attempts` is what the budget bounds: steps the verifier could read.
+        # `unreadable` is steps it could not, bounded separately. Those update
+        # no estimate and enter no error trace, so charging one against the
+        # attempt budget would spend the learner's turns on the verifier's
+        # failure — but without a bound of their own an empty answer would be
+        # asked for forever, so both bind.
+        # `unresolved` is every step that left the item unsolved, either kind.
+        # It is what the scaffolding rule escalates on: an unreadable answer
+        # costs nothing and still means the learner has not got there.
+        # `step_index` is every step in order, whatever came of it. It tells
+        # `record_observation` which step was the first, so the lifetime count
+        # of how often this item has been given still moves exactly once.
+        attempts = 0
+        unreadable = 0
+        unresolved = 0
+        step_index = 0
 
         # A concept is worked until its posterior clears the band, and most
         # concepts carry one item — so without this the same question is asked
@@ -501,8 +524,11 @@ class Session:
         if self.observer is not None:
             self.observer.item_started(item, self.board)
 
-        for attempt in range(self.config.cohort.max_steps_per_item):
-            step = self.learner.answer(item, attempt=attempt, repetition=repetition)
+        while attempts < self.config.cohort.max_steps_per_item:
+            # The learner is told which attempt this is, not which step: an
+            # unreadable one did not use anything up, and the heading a person
+            # reads must not say it did.
+            step = self.learner.answer(item, attempt=attempts, repetition=repetition)
             response = self.surface.render(item, step)
             result = self.domain.verifier.verify(item, response)
 
@@ -522,8 +548,9 @@ class Session:
                 result=result,
                 misconception_label=diagnosis.misconception_id,
                 confidence=diagnosis.confidence,
-                attempt=attempt,
+                attempt=step_index,
             )
+            step_index += 1
 
             if self.observer is not None:
                 self.observer.step_graded(item, response, result, diagnosis)
@@ -543,7 +570,17 @@ class Session:
                 if self.observer is not None:
                     self.observer.item_finished(item, solved=True)
                 return
-            failed += 1
+
+            if result.is_evidence:
+                attempts += 1
+            else:
+                unreadable += 1
+            # Counted whichever it was: the learner has still not got there, and
+            # that is what the scaffolding rule escalates on. An unreadable
+            # answer costs no attempt and still raises the support, which is the
+            # only reading under which repeating the previous reply would be
+            # the wrong thing to do.
+            unresolved += 1
 
             hint = self.tutor.respond(
                 item,
@@ -551,8 +588,9 @@ class Session:
                 self.board.view(),
                 self.domain,
                 response=response,
-                failed_attempts=failed,
+                unresolved_steps=unresolved,
                 moves_this_item=moves,
+                said_this_item=replies,
             )
 
             violation = check_move(hint.move, moves, misconception_confirmed=confirmed)
@@ -592,11 +630,30 @@ class Session:
                         self.observer.reflection_recorded(item, said)
 
             moves.append(hint.move)
+            replies.append(hint.text)
 
             # Only remediation teaches. A reflective prompt costs a turn and
             # changes nothing, which is what gives the error-first rule a price.
             if hint.move is TutorMove.REMEDIATE:
                 self.learner.receive_hint(hint.targets)
+
+            if unreadable >= self.config.cohort.max_unreadable_per_item:
+                # Checked after the reply, so the last thing that happens is the
+                # tutor saying something rather than the question vanishing. The
+                # item is over without a single attempt having been spent, which
+                # is the honest bookkeeping: nothing about this learner was
+                # measured here.
+                self.board.annotate(
+                    f"{unreadable} unreadable response(s) on {item.id}; moving on "
+                    f"without having measured anything",
+                    item_id=item.id,
+                    concept_id=item.concept_id,
+                    unreadable=unreadable,
+                    max_unreadable_per_item=(
+                        self.config.cohort.max_unreadable_per_item
+                    ),
+                )
+                break
 
         # The attempts ran out. Said explicitly, because it previously looked
         # exactly like nothing happening — the next question simply appeared,
