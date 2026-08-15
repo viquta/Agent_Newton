@@ -423,8 +423,18 @@ class Session:
 
         mastery = dict(self.board.state.mastery)
         prior = bkt.initial(self.config.bkt)
+        # The same goal the planner will aim at, request included. Asked without
+        # it, the banks measure the route to one goal while the training walks
+        # the route to another, and everything taught lands outside what was
+        # measured — the sitting would report a gain over concepts it never
+        # worked and no share of training aimed at a gap.
         goal = route.next_goal(
-            self.domain.concepts.goals(), mastery, self.config.zpd, prior
+            self.domain.concepts.goals(),
+            mastery,
+            self.config.zpd,
+            prior,
+            requested=self.board.requested,
+            graph=self.domain.concepts,
         )
         if goal is None:
             return None

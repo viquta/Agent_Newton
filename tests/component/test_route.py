@@ -362,6 +362,10 @@ def calculus():
     return registry.load_domain("calculus")
 
 
+@pytest.fixture(scope="module")
+def toy():
+    return registry.load_domain("toy_algebra")
+
 
 class TestAgainstTheRealDomain:
     def test_the_first_goal_narrows_the_graph(self, calculus) -> None:
@@ -427,3 +431,70 @@ class TestNoisedOracleRateIsRealised:
         assert [left.diagnose(item, "cos(x**2)", calculus).misconception_id for _ in range(10)] == [
             right.diagnose(item, "cos(x**2)", calculus).misconception_id for _ in range(10)
         ]
+
+
+class TestALearnerCanAskForSomething:
+    """Learner input, not learner model — and only one arm can act on it.
+
+    Asking to work on something is asking to be *routed* toward it, so the
+    request moves which goal comes next rather than which concept does.
+    Re-ranking inside the frontier could not honour it at all: a concept off the
+    way to the current goal is not a candidate in the first place, so the
+    request would look accepted and change nothing.
+    """
+
+    def test_no_request_takes_the_declared_order(self, toy) -> None:
+        # Every cohort. The default must be byte-identical to what it was.
+        assert route.next_goal(
+            toy.concepts.goals(), {}, BAND, PRIOR
+        ) == route.next_goal(
+            toy.concepts.goals(), {}, BAND, PRIOR, frozenset(), toy.concepts
+        )
+
+    def test_a_request_moves_the_goal_to_one_that_reaches_it(self, calculus) -> None:
+        goals = calculus.concepts.goals()
+        plain = route.next_goal(goals, {}, BAND, PRIOR)
+        asked = route.next_goal(
+            goals, {}, BAND, PRIOR, frozenset({"chain_rule"}), calculus.concepts
+        )
+        assert plain != asked
+        assert asked is not None
+        assert "chain_rule" in route.relevant(asked, calculus.concepts)
+
+    def test_the_prerequisites_still_come_first(self, calculus) -> None:
+        # The guard against reading this as a skip: the goal moves, the route to
+        # it does not, so everything on the way is still outstanding.
+        goal = route.next_goal(
+            calculus.concepts.goals(), {}, BAND, PRIOR,
+            frozenset({"chain_rule"}), calculus.concepts,
+        )
+        assert goal is not None
+        outstanding = route.remaining(goal, {}, calculus.concepts, BAND, PRIOR)
+        assert outstanding[0] != "chain_rule"
+        assert set(calculus.concepts.all_prerequisites("chain_rule")) <= set(outstanding)
+
+    def test_a_request_for_something_already_reached_is_ignored(self, calculus) -> None:
+        # A goal that is done is done. Honouring the request there would mean a
+        # request can waive the band, which would make mastery mean one thing
+        # for the model and another for the person who asked.
+        mastery = {c: 0.99 for c in calculus.concepts.ids()}
+        assert (
+            route.next_goal(
+                calculus.concepts.goals(), mastery, BAND, PRIOR,
+                frozenset({"chain_rule"}), calculus.concepts,
+            )
+            is None
+        )
+
+    def test_a_request_nothing_serves_falls_back_to_the_order(self, toy) -> None:
+        assert route.next_goal(
+            toy.concepts.goals(), {}, BAND, PRIOR,
+            frozenset({"not_a_concept"}), toy.concepts,
+        ) == route.next_goal(toy.concepts.goals(), {}, BAND, PRIOR)
+
+    def test_without_a_graph_it_cannot_be_resolved(self, toy) -> None:
+        # Inert rather than wrong: resolving a request needs the closure, and a
+        # caller that has no graph has not asked for the behaviour.
+        assert route.next_goal(
+            toy.concepts.goals(), {}, BAND, PRIOR, frozenset({"distribute"})
+        ) == route.next_goal(toy.concepts.goals(), {}, BAND, PRIOR)

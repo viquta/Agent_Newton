@@ -384,3 +384,43 @@ class TestAReturningLearnerRechecksTheRoute:
         }
         assert seeded <= outcome.pretest.covered
         assert "integer_arithmetic" not in seeded
+
+
+class TestTheBanksFollowTheGoalTheSittingWillWalk:
+    """A request moves the goal, so it has to move the re-check with it.
+
+    Otherwise the banks measure the route to one goal while the training walks
+    the route to another: the gain is computed over concepts the sitting never
+    touched, and every step it did teach falls outside `dose_on_gap`.
+    """
+
+    def _covered(self, toy, requested: list[str]) -> set[str]:
+        config = config_for(
+            cohort={
+                "administer_tests": True,
+                "max_items": 1,
+                "pretest_scope": "route",
+            }
+        )
+        first = build_session("L0007", 20260812, toy, config)
+        first.board.state.mastery.update({"integer_arithmetic": 0.97})
+        session = build_session(
+            "L0007", 20260812, toy, config,
+            state=first.board.state,
+            profile=first.learner.profile,  # type: ignore[attr-defined]
+        )
+        session.board.record_request(requested)
+        return set(session.run().pretest.covered)
+
+    def test_a_request_that_changes_nothing_leaves_the_bank_alone(self, toy) -> None:
+        # toy_algebra declares one goal, so nothing can move — which makes this
+        # the control rather than the claim.
+        assert self._covered(toy, ["distribute"]) == self._covered(toy, [])
+
+    def test_the_bank_covers_the_route_that_will_be_walked(self, toy) -> None:
+        from agent_newton.core.state import route
+
+        covered = self._covered(toy, ["distribute"])
+        goal = toy.concepts.goals()[0]
+        assert covered <= route.relevant(goal, toy.concepts)
+        assert covered, "the re-check measured nothing"

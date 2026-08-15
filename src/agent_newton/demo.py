@@ -462,6 +462,101 @@ class Quit(Exception):
     """The person asked to stop."""
 
 
+def _ask_what_to_practise(
+    console: Console, domain: Domain, board, config: Config, asked
+) -> frozenset[str]:  # noqa: ANN001
+    """Let the learner say what they came for, before anything is measured.
+
+    Asked first because it is the one thing the system cannot infer. Everything
+    else on the blackboard is an inference *about* the learner; this is the
+    learner talking.
+
+    What it does is stated plainly, including what it does not do. The request
+    moves which **goal** is aimed at, so the route runs through what was asked
+    for — it does not skip the prerequisites on the way, and it does not
+    reopen a concept the model already believes is mastered. Saying so here is
+    the difference between a preference and a promise.
+    """
+    graph = domain.concepts
+    prior = bkt.initial(config.bkt)
+    mastery = dict(board.state.mastery)
+
+    table = Table(show_header=False, box=None, padding=(0, 1))
+    ids = list(graph.topological_order())
+    for number, concept_id in enumerate(ids, start=1):
+        value = mastery.get(concept_id, prior)
+        table.add_row(
+            Text(f"{number:>2}", style="cyan"),
+            Text(graph.get(concept_id).name[:38]),
+            Text(f"{value:.2f}", style="dim"),
+        )
+    console.print()
+    console.print(
+        Panel(
+            Group(
+                Text(
+                    "What would you like to work on? The numbers beside each are "
+                    "what the system currently believes.\n",
+                    style="dim",
+                ),
+                table,
+            ),
+            title="what shall we practise",
+            border_style="magenta",
+        )
+    )
+    said = asked(
+        "  [magenta]numbers, comma separated[/magenta]  "
+        "[dim](enter for no preference)[/dim]",
+        optional=True,
+    )
+    chosen: list[str] = []
+    for part in said.replace(" ", "").split(","):
+        if part.isdigit() and 1 <= int(part) <= len(ids):
+            chosen.append(ids[int(part) - 1])
+
+    requested = board.record_request(chosen)
+    if not requested:
+        console.print(
+            "  [dim]no preference — the route to the next goal decides[/dim]"
+        )
+        return requested
+
+    body = Text()
+    for concept_id in sorted(requested, key=ids.index):
+        name = graph.get(concept_id).name
+        if route.reached(concept_id, mastery, config.zpd, prior):
+            # Honest rather than accommodating: the band is what decides what is
+            # offered, and a request cannot waive it without making mastery mean
+            # something different for the person who asked.
+            body.append(f"  {name}", style="bold")
+            body.append(
+                f" — the model has you at {mastery.get(concept_id, prior):.2f} "
+                f"here, so it will not come round unless that goes stale.\n",
+                style="dim",
+            )
+            continue
+        needed = [
+            c
+            for c in graph.all_prerequisites(concept_id)
+            if mastery.get(c, prior) < config.zpd.theta_lower
+        ]
+        body.append(f"  {name}", style="bold")
+        if needed:
+            body.append(
+                f" — {len(needed)} thing(s) come first: "
+                + ", ".join(graph.get(c).name for c in needed)
+                + ".\n",
+                style="dim",
+            )
+        else:
+            body.append(" — ready to work on now.\n", style="dim")
+    console.print(
+        Panel(body, title="what that means", border_style="magenta", padding=(0, 2))
+    )
+    return requested
+
+
 def _days_since(store: LearnerStore, learner_id: str, config: Config) -> float:
     """Real time since this learner's last sitting, in days.
 
@@ -978,6 +1073,14 @@ def run_demo(
             border_style="magenta",
         )
     )
+
+    # Before anything is measured, and before any question is asked. The one
+    # thing on the blackboard that is the learner talking rather than the system
+    # inferring, so it is taken first and recorded like everything else.
+    try:
+        _ask_what_to_practise(console, domain, session.board, config, _asked)
+    except Quit:
+        console.print("\n[dim]stopped before the pre-test[/dim]")
 
     outcome = None
     try:

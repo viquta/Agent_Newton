@@ -53,6 +53,11 @@ class Blackboard:
         #: decides whether a concept comes round again.
         self._visits: dict[str, int] = {}
         self._weak: set[str] = set()
+        #: What the learner asked to work on this sitting. Session-scoped like
+        #: the visit counts: what someone wanted to practise in March is not a
+        #: standing instruction, and a request that outlived the sitting it was
+        #: made in would steer routing nobody had asked for.
+        self._requested: frozenset[str] = frozenset()
 
     # -- reading ----------------------------------------------------------
 
@@ -107,6 +112,11 @@ class Blackboard:
     def visits(self, concept_id: str) -> int:
         return self._visits.get(concept_id, 0)
 
+    @property
+    def requested(self) -> frozenset[str]:
+        """Concepts the learner asked for. Empty unless a front end asked."""
+        return self._requested
+
     def view(self, arm: str | None = None) -> FullStateView | ItemCorrectnessView:
         """The view this arm's planner receives.
 
@@ -129,6 +139,7 @@ class Blackboard:
                 plan=self._state.plan,
                 reflections=tuple(self._state.reflections),
                 weaknesses=self.weaknesses,
+                requested=self._requested,
             )
         return ItemCorrectnessView(
             outcomes=tuple(self._state.outcomes),
@@ -376,6 +387,24 @@ class Blackboard:
             reflection=text,
             kind=kind,
         )
+
+    def record_request(self, concepts: Iterable[str]) -> frozenset[str]:
+        """What the learner said they want to work on. Returns what was taken.
+
+        Recorded through the same path as everything else, so a sitting that
+        routed somewhere unexpected can be read back against what the learner
+        asked for rather than against an assumption about it. It changes which
+        goal is aimed at, never which prerequisites may be skipped — see
+        ``route.next_goal``.
+        """
+        self._requested = frozenset(concepts)
+        self._bump(
+            "annotation",
+            "the learner asked to work on "
+            + (", ".join(sorted(self._requested)) or "nothing in particular"),
+            requested=sorted(self._requested),
+        )
+        return self._requested
 
     def note_visit(self, concept_id: str, cap: int | None) -> bool:
         """Count one working of this concept. Returns whether it just became a weakness.

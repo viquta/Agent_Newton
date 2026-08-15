@@ -63,6 +63,17 @@ class FullStateView:
     #: the two planners' memory is an argument the project makes, so it must not
     #: be quietly spent here.
     weaknesses: frozenset[str] = frozenset()
+    #: Concepts the learner asked to work on, said before the sitting started.
+    #:
+    #: Learner *input*, not learner *model*: it is a thing a person stated about
+    #: what they want, not an inference about what they know. Both arms could be
+    #: handed it fairly — and only one can act on it, because acting means
+    #: choosing a goal whose route reaches it, which needs the posteriors and
+    #: the graph. That is the same asymmetry ``Emphasis`` already has, arriving
+    #: through a different door.
+    #:
+    #: Empty for every cohort. Nothing but the demo sets it.
+    requested: frozenset[str] = frozenset()
 
     def consecutive_correct(self) -> int:
         count = 0

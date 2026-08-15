@@ -749,3 +749,53 @@ class TestOutcomesAreComparableBetweenArms:
         )
         if outcome.distance_to_goal == 0:
             assert remaining is None
+
+
+class TestALearnerRequestCannotMoveACohort:
+    """Nothing but a person sets one, and no cohort has a person in it.
+
+    The request reaches the planner through the view, like the dwelling set, so
+    the guard is the same shape: empty by default, and a run with it empty must
+    be byte-identical to one from before it existed.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_a_cohort_never_carries_one(self, domain_name: str, arm: str) -> None:
+        session, _ = run(domain_name, arm)
+        assert session.board.requested == frozenset()
+        assert not [
+            r for r in session.board.audit_log if "asked to work on" in r.summary
+        ]
+
+    def test_the_decoupled_arm_cannot_act_on_one(self) -> None:
+        # The same asymmetry `Emphasis` has: honouring a request means choosing
+        # a goal whose route reaches it, which needs the posteriors and the
+        # graph. A view carrying neither cannot do it — so the selections are
+        # identical with and without.
+        domain = registry.load_domain("calculus")
+        config = config_for("calculus", "decoupled")
+
+        def selections(requested):
+            session = build_session("L0000", config.seed, domain, config)
+            session.board.record_request(requested)
+            session.run()
+            return [
+                r.evidence["item_id"]
+                for r in session.board.audit_log
+                if r.cause == "observation"
+            ]
+
+        assert selections(["chain_rule"]) == selections([])
+
+    def test_the_coupled_arm_does_act_on_one(self) -> None:
+        # And the other half, or the test above passes for the wrong reason.
+        domain = registry.load_domain("calculus")
+        config = config_for("calculus", "coupled")
+
+        def goal_for(requested):
+            session = build_session("L0000", config.seed, domain, config)
+            session.board.record_request(requested)
+            return session.run().goal
+
+        assert goal_for(["chain_rule"]) != goal_for([])

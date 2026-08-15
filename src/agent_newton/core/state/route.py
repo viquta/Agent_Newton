@@ -88,16 +88,33 @@ def next_goal(
     mastery: Mapping[str, float],
     band: ZPDConfig,
     prior: float,
+    requested: frozenset[str] = frozenset(),
+    graph: ConceptGraph | None = None,
 ) -> str | None:
     """The first declared goal not yet reached, or None when all are.
 
     Order is the domain's curriculum decision, so this takes the goals as given
     rather than choosing among them.
+
+    ``requested`` is what the learner said they wanted to work on, and it moves
+    which goal comes next rather than which concept does. That is the honest
+    reading of the request: asking to work on something is asking to be routed
+    toward it, and the route is what a goal decides. Re-ranking within a
+    frontier could not honour it at all — a concept off the way to the current
+    goal is not a candidate in the first place, so the request would look
+    accepted and change nothing.
+
+    The order still decides between goals that would serve the request, so a
+    learner cannot skip a prerequisite by naming something further on: the goal
+    moves, the route to it does not, and everything on the way is still worked
+    first. Empty for every cohort, and inert without a graph to resolve it.
     """
-    for goal in goals:
-        if not reached(goal, mastery, band, prior):
-            return goal
-    return None
+    outstanding = [goal for goal in goals if not reached(goal, mastery, band, prior)]
+    if requested and graph is not None:
+        for goal in outstanding:
+            if relevant(goal, graph) & requested:
+                return goal
+    return outstanding[0] if outstanding else None
 
 
 def candidates(goal: str, frontier: Frontier, graph: ConceptGraph) -> tuple[str, ...]:

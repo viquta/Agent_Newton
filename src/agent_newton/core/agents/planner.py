@@ -75,17 +75,26 @@ class GoalDirectedPlanner:
     def plan(self, view: StateView, domain: Domain) -> Plan | None:
         full = self._require_full(view)
         goal = route.next_goal(
-            domain.concepts.goals(), full.mastery, self._band, self._prior
+            domain.concepts.goals(),
+            full.mastery,
+            self._band,
+            self._prior,
+            # Read from the view, like the dwelling set: a planner holding its
+            # own copy of what the learner asked for would be private state.
+            # Empty for every cohort.
+            requested=full.requested,
+            graph=domain.concepts,
         )
         if goal is None:
             return None
         outstanding = route.remaining(
             goal, full.mastery, domain.concepts, self._band, self._prior
         )
+        asked = " (asked for)" if full.requested & route.relevant(goal, domain.concepts) else ""
         return Plan(
             goal=goal,
             emphasis=self._emphasis,
-            reason=f"{len(outstanding)} concept(s) still needed for {goal}",
+            reason=f"{len(outstanding)} concept(s) still needed for {goal}{asked}",
         )
 
     def select(
