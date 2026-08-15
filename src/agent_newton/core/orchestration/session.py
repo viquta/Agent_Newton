@@ -782,9 +782,18 @@ class Session:
                 prior_failures=prior_failures,
                 moves_this_item=moves,
                 said_this_item=replies,
+                # They were asked how they got there and answered. The
+                # error-first rule wants their reasoning between the error and
+                # the correction, and it is already there.
+                explained=bool(shown),
             )
 
-            violation = check_move(hint.move, moves, misconception_confirmed=confirmed)
+            violation = check_move(
+                hint.move,
+                moves,
+                misconception_confirmed=confirmed,
+                already_explained=bool(shown),
+            )
             if violation is not None:
                 # The tutor is driven by the rules, so this should not fire.
                 # Recorded rather than raised: one bad turn should not abort a

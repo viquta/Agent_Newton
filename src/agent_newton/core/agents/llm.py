@@ -183,11 +183,16 @@ class LLMTutor:
         prior_failures: int,
         moves_this_item: Sequence[TutorMove],
         said_this_item: Sequence[str] = (),
+        explained: bool = False,
     ) -> Hint:
         # Both inputs come from the session. Read from the view here, they each
         # carried the failure being responded to — see the Tutor protocol.
         level = hint_level(mastery, prior_failures, self._band)
-        required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
+        required = next_required_move(
+            moves_this_item,
+            misconception_confirmed=diagnosis.named,
+            already_explained=explained,
+        )
         move = required or (TutorMove.REMEDIATE if diagnosis.named else TutorMove.HINT)
 
         # The length budget belongs to the level, not to the system prompt. It

@@ -89,6 +89,20 @@ def _bar(value: float, band) -> Text:
     return text
 
 
+def _readable(expression: str) -> str:
+    """An answer in the notation the learner was asked to use.
+
+    The bank stores what the verifier parses, which is Python's: ``x**6``,
+    ``2*x``. The intro tells the learner to write ``x^6`` and the tutor is told
+    the same, so the one place the system wrote sympy back at a person was the
+    line revealing the answer.
+
+    Deliberately only cosmetic — it never goes near the verifier, which keeps
+    reading the stored form.
+    """
+    return expression.replace("**", "^").replace("*", "")
+
+
 def question_title(
     domain: Domain, item: Item, attempt: int, *, testing: bool
 ) -> str:
@@ -223,7 +237,13 @@ class DemoObserver(Watching):
             return
         self._reminded.add(item.concept_id)
         body = Text()
-        body.append("Last time you worked on this, you wrote:\n\n", style="dim")
+        # Named, because it was not: the panel appeared with two quotes and no
+        # subject, and the learner asked *"are these notes from the quotient
+        # rule? or the product rule? Why are these relevant?"* Words carry no
+        # timestamp, so "before today" is as precise as this can honestly be.
+        body.append("Before today, on ", style="dim")
+        body.append(self._domain.concepts.get(item.concept_id).name, style="bold")
+        body.append(", you wrote:\n\n", style="dim")
         for text in said[-2:]:
             body.append(f"  “{text}”\n", style="italic")
         body.append(
@@ -272,12 +292,16 @@ class DemoObserver(Watching):
         # three unreadable answers nobody's attempts were spent and nothing
         # about them was measured, and "that is all the attempts for this one"
         # was simply false.
+        # Written the way the learner is asked to write, not the way sympy
+        # prints: `2*x*(x**6 + 2) + (x**2 + 1)*6*x**5` was shown to someone who
+        # had been told to type `x^6`.
+        answer = _readable(item.answer)
         said = (
             f"None of that could be read, so no attempts were used and nothing "
-            f"was recorded about you. The answer was [bold]{item.answer}[/bold]."
+            f"was recorded about you. The answer was [bold]{answer}[/bold]."
             if reason == "unreadable"
             else f"That is all the attempts for this one. The answer was "
-            f"[bold]{item.answer}[/bold]."
+            f"[bold]{answer}[/bold]."
         )
         self._console.print(
             Panel(
@@ -430,6 +454,18 @@ class DemoObserver(Watching):
                     if self._config.cohort.seed_from_pretest
                     else "\nThe training does not use this — it starts from "
                     "scratch.\n",
+                    style="dim",
+                )
+            elif result.total < len(self._domain.items.bank("pretest")):
+                # A clean *re-check* is not a blank slate. Saying "from the
+                # start" to someone who has just demonstrated the whole route
+                # describes a different sitting from the one about to happen —
+                # the training goes on past what was measured, which is why the
+                # post-test now asks about that too.
+                body.append(
+                    "\nNothing missed on the re-check, so the training moves "
+                    "past it — on to what comes next on the way to your goal. "
+                    "The post-test will ask about whatever you work on today.\n",
                     style="dim",
                 )
             else:
@@ -1022,6 +1058,42 @@ def run_demo(
             optional=True,
         )
 
+    def _asked_at_length(prompt: str) -> str:
+        """Several lines, ended by a blank one.
+
+        Working is written the way it is done — a line per step. Read one line
+        at a time, a paste out of a notes app arrives as a single run-on with
+        the newlines gone: *"Differentiate: y = ...f(x) is (x^2 + 1)g(x) is
+        (x^6 + 2)What was the product rule?"* was one field's worth. The
+        structure a person put in is most of what makes it readable, and it was
+        being thrown away at the door.
+        """
+        console.print(f"  {prompt}")
+        lines: list[str] = []
+        while True:
+            said = Prompt.ask("  ", default="", show_default=False).rstrip()
+            if said.strip() == QUIT:
+                raise Quit
+            if said.strip() == END_TRAINING:
+                if observer.testing:
+                    console.print(
+                        f"  [dim]{END_TRAINING} works during training, not inside "
+                        f"a test. {QUIT} stops the sitting.[/dim]"
+                    )
+                    continue
+                raise StopTraining
+            if said.strip() == DECLINE:
+                return ""
+            if not said:
+                if lines:
+                    return "\n".join(lines)
+                console.print(
+                    f"  [dim]a line or two about how you got there, or "
+                    f"{DECLINE} to skip it[/dim]"
+                )
+                continue
+            lines.append(said)
+
     def ask_working(item: Item, response: str, required: bool = False) -> str:
         """The reasoning behind the step, insisted on when it did not come out.
 
@@ -1041,10 +1113,10 @@ def run_demo(
                 "[dim](optional — enter to skip)[/dim]",
                 optional=True,
             )
-        return _asked(
-            "  [magenta]before I say — how did you get there?[/magenta]  "
-            f"[dim]({DECLINE} to skip)[/dim]",
-            insist=True,
+        return _asked_at_length(
+            "[magenta]before I say — how did you get there?[/magenta]  "
+            f"[dim](as many lines as you like; blank line when done, "
+            f"{DECLINE} to skip)[/dim]"
         )
 
     learner = HumanLearner(
@@ -1105,6 +1177,18 @@ def run_demo(
     # Before anything is measured, and before any question is asked. The one
     # thing on the blackboard that is the learner talking rather than the system
     # inferring, so it is taken first and recorded like everything else.
+    #
+    # Decay is applied first, though, or the estimates shown beside each concept
+    # are not the ones the sitting will use — a learner would be choosing from a
+    # picture of where they were before the gap.
+    #
+    # ⚠️ And the gap is then spent, so the session must not apply it again.
+    # `decay.relax` is exponential in the elapsed time: applying one day twice
+    # ages the model by two, which would be a gap nobody had.
+    decayed = session.board.apply_decay(session.elapsed_days)
+    if decayed:
+        observer.session_resumed(session.elapsed_days, decayed)
+    session.elapsed_days = 0.0
     try:
         _ask_what_to_practise(console, domain, session.board, config, _asked)
     except Quit:

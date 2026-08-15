@@ -201,3 +201,40 @@ class TestDecayIsNotTheLearnerForgetting:
         assert math.isclose(
             bkt.observe(0.5, True, BKTConfig()), bkt.observe(0.5, True, BKTConfig())
         )
+
+
+class TestTheGapIsSpentOnce:
+    """⚠️ Ageing is exponential in the elapsed time, so it must not run twice.
+
+    The demo applies decay before asking the learner what they want to practise,
+    because the estimates shown beside each concept have to be the ones the
+    sitting will use rather than a picture of where they were before the gap. It
+    then hands the session a zero gap. This is why.
+    """
+
+    def _board(self, graph):
+        config = Config.model_validate(
+            {"domain": "toy_algebra", "decay": {"half_life_days": 14.0}}
+        )
+        board = new_blackboard("L1", 1, graph, config)
+        board.state.mastery["distribute"] = 0.96
+        return board
+
+    def test_applying_it_twice_ages_the_model_twice(self, graph) -> None:
+        once = self._board(graph)
+        once.apply_decay(14.0)
+
+        twice = self._board(graph)
+        twice.apply_decay(14.0)
+        twice.apply_decay(14.0)
+
+        assert twice.probability("distribute") < once.probability("distribute")
+
+    def test_a_spent_gap_moves_nothing(self, graph) -> None:
+        # What the demo relies on: after the gap is applied and zeroed, the
+        # session's own call is a no-op rather than a second month.
+        board = self._board(graph)
+        board.apply_decay(14.0)
+        after = board.probability("distribute")
+        assert board.apply_decay(0.0) == 0
+        assert board.probability("distribute") == after

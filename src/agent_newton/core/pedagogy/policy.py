@@ -155,6 +155,7 @@ def check_move(
     move: TutorMove,
     moves_since_confirmation: Sequence[TutorMove],
     misconception_confirmed: bool,
+    already_explained: bool = False,
 ) -> Violation | None:
     """Whether this tutor move is permitted now.
 
@@ -166,10 +167,19 @@ def check_move(
 
     ``moves_since_confirmation`` is the tutor's turns on this item since the
     misconception was confirmed, oldest first.
+
+    ``already_explained`` says the learner has *just* set out their reasoning on
+    this step, unprompted by any reflective turn. The rule is satisfied: what it
+    requires is that the learner looks at their own thinking before being handed
+    the correction, not that a particular question was asked. Asking anyway is
+    how a sitting came to demand the same thing twice in a row — "how did you
+    get there?", answered, and then "which part are you least sure of?" — which
+    is a tax rather than a step, and was asked for the other way round: *"I like
+    the hint better first, and then a reflection."*
     """
     if move is not TutorMove.REMEDIATE or not misconception_confirmed:
         return None
-    if TutorMove.REFLECT in moves_since_confirmation:
+    if already_explained or TutorMove.REFLECT in moves_since_confirmation:
         return None
     return Violation(
         ERROR_FIRST,
@@ -181,13 +191,19 @@ def check_move(
 def next_required_move(
     moves_since_confirmation: Sequence[TutorMove],
     misconception_confirmed: bool,
+    already_explained: bool = False,
 ) -> TutorMove | None:
     """The move the rules require next, if any.
 
     Lets the tutor be driven by the constraint rather than checked against it
     afterwards.
+
+    Nothing is required of a learner who has already explained the step in their
+    own words — see :func:`check_move`. The reflective turn exists to put their
+    reasoning between the error and the correction, and their reasoning is
+    already there.
     """
-    if not misconception_confirmed:
+    if not misconception_confirmed or already_explained:
         return None
     if TutorMove.REFLECT not in moves_since_confirmation:
         return TutorMove.REFLECT

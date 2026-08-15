@@ -1475,6 +1475,45 @@ class TestTheReasoningBehindAWrongAnswer:
         learner = SimulatedLearner(profile, toy, SimulatorConfig())
         assert learner.show_working(toy.items.all()[0], "3*x", required=True) is None
 
+    def _moves(self, toy, working: str | None) -> list[str]:
+        """The tutor's moves when a misconception is confirmed on every step."""
+        from agent_newton.core.agents.base import Diagnosis
+
+        class AlwaysDiagnoses:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(toy.misconceptions.ids()[0], confidence=1.0)
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 1, "administer_tests": False}
+        )
+        session = build_session(
+            "human", config.seed, toy, config,
+            learner=HumanLearner(
+                lambda item, attempt: "999",
+                ask_working=lambda item, response, required=False: working or "",
+            ),
+        )
+        session.diagnostic = AlwaysDiagnoses()
+        session.run()
+        return [
+            r.evidence["move"] for r in session.board.audit_log if r.cause == "tutor"
+        ]
+
+    def test_explaining_the_step_is_not_asked_for_twice(self, toy) -> None:
+        """⚠️ The sitting asked the same question twice in a row.
+
+        *"before I say — how did you get there?"*, answered in full, and then
+        *"which specific part are you least confident about?"* — because the
+        error-first rule only knew whether a reflective **turn** had been taken.
+        What the rule wants is the learner's reasoning between the error and the
+        correction, and it was already there.
+        """
+        assert self._moves(toy, "I forgot the formula")[0] == "remediate"
+
+    def test_declining_still_earns_the_reflective_turn(self, toy) -> None:
+        # The guard can fail: the rule must still bite when nothing was said.
+        assert self._moves(toy, None)[0] == "reflect"
+
 
 class TestEndingTrainingEarly:
     """":e" stops the questions and keeps the measurement.

@@ -43,6 +43,7 @@ class TemplateTutor:
         prior_failures: int,
         moves_this_item: Sequence[TutorMove],
         said_this_item: Sequence[str] = (),
+        explained: bool = False,
     ) -> Hint:
         # ``response`` and ``said_this_item`` are deliberately unused. This
         # tutor's text comes from the catalogue at the level the scaffolding
@@ -61,7 +62,11 @@ class TemplateTutor:
         # Tutor protocol.
         level = hint_level(mastery, prior_failures, self._band)
 
-        required = next_required_move(moves_this_item, misconception_confirmed=diagnosis.named)
+        required = next_required_move(
+            moves_this_item,
+            misconception_confirmed=diagnosis.named,
+            already_explained=explained,
+        )
         if required is TutorMove.REFLECT:
             return Hint(
                 text=(

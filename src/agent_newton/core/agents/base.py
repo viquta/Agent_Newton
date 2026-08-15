@@ -80,6 +80,11 @@ class Tutor(Protocol):
     the decoupled arm still gets the 0.0 its view would have yielded. The
     ablation is unaffected: nothing here is a channel to state the arm
     withholds.
+
+    ``explained`` says the learner set out their reasoning on this step when
+    asked for it. The error-first rule is satisfied by that, so the tutor may
+    remediate straight away rather than asking a second time what they have just
+    said — see ``core/pedagogy``.
     """
 
     def respond(
@@ -94,6 +99,7 @@ class Tutor(Protocol):
         prior_failures: int,
         moves_this_item: Sequence[TutorMove],
         said_this_item: Sequence[str] = (),
+        explained: bool = False,
     ) -> Hint: ...
 
 
