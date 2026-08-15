@@ -196,6 +196,36 @@ class SimulatorConfig(BaseModel):
     #: Multiplicative decay applied to a misconception's firing probability when
     #: a hint correctly targets it.
     remediation_factor: float = 0.55
+    #: How much a correct hint depends on the learner's prerequisites being
+    #: sound, in [0, 1]. **Zero is today**, and zero must reproduce every
+    #: measured number exactly — there is a test on that and the paired cohort
+    #: is re-run to confirm it.
+    #:
+    #: The generator has no notion of sequencing: a step is a function of the
+    #: profile, the item's probes and a seeded roll, and a measurement found
+    #: prerequisite order to make no difference at all to what a simulated
+    #: learner learns (+0.0008, p = 1.0, matched on coverage). So the outcome
+    #: the architecture is judged on is one nothing in the generator can move,
+    #: and an architecture evaluated on sequencing was being credited for
+    #: something the simulator could not reward.
+    #:
+    #: This is that dependence, made explicit and given a dial. At ``k`` a
+    #: correct hint on a concept whose foundations are shaky takes less well:
+    #: ``1 - (1 - remediation_factor) * (1 - k * (1 - solidity))``. At k = 1 and
+    #: no solidity the hint does nothing at all; at solidity 1 it always lands
+    #: in full, whatever k is.
+    #:
+    #: **Swept, never chosen.** A strength tuned until the coupled arm wins
+    #: assumes the conclusion. Swept from zero it supports a far better claim —
+    #: "the advantage appears above this much prerequisite dependence" — and the
+    #: ordering probes are re-run at each point, because if arbitrary order
+    #: still ties prerequisite order then the dial is moving something else.
+    #:
+    #: Grounded in the same literature the catalogue is: prerequisite knowledge
+    #: is among the strongest predictors of what instruction achieves, which is
+    #: the claim the ZPD band operationalises on the planning side and nothing
+    #: represented on the learning side.
+    prerequisite_dependence: float = Field(default=0.0, ge=0.0, le=1.0)
 
 
 class BKTConfig(BaseModel):

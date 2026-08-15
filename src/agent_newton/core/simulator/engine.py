@@ -31,7 +31,7 @@ from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
 from agent_newton.config import SimulatorConfig
-from agent_newton.core.simulator.profile import MisconceptionProfile
+from agent_newton.core.simulator.profile import MisconceptionProfile, solidity
 from agent_newton.domains.base import Domain, Item
 
 
@@ -224,9 +224,49 @@ class SimulatedLearner:
         holds. Aiming at the wrong one — or at nothing — leaves the learner
         exactly as they were, which is the mechanism that gives diagnostic
         accuracy its consequences for learning outcomes.
+
+        Under ``simulator.prerequisite_dependence`` it also takes less well when
+        the learner's foundations under that concept are shaky. That is the one
+        thing this generator did not represent: order of instruction changed
+        nothing at all, so an architecture judged on sequencing was being
+        credited for something the simulator could not reward. Zero leaves the
+        old behaviour untouched, exactly.
         """
         if targeted_misconception is None:
             return False
         return self._profile.remediate(
-            targeted_misconception, self._config.remediation_factor
+            targeted_misconception, self._efficacy(targeted_misconception)
         )
+
+    def _efficacy(self, misconception_id: str) -> float:
+        """The multiplier a correct hint applies, given the foundations under it.
+
+        ``1 - (1 - factor) * (1 - k * (1 - solidity))``. At ``k = 0`` this is the
+        configured factor and nothing is computed, so the untouched path is
+        untouched — the byte-identical baseline is what the whole sweep is read
+        against.
+
+        At ``k = 1`` on a concept with nothing solid beneath it the multiplier is
+        1.0: the hint lands, is correctly aimed, and does nothing, because there
+        was nothing underneath to attach it to. At full solidity it is the
+        configured factor whatever ``k`` is, so a well-founded learner is never
+        penalised for the dial existing.
+
+        Deterministic and drawn from no random source, so a seeded cohort stays
+        exactly reproducible at every point on the sweep.
+        """
+        factor = self._config.remediation_factor
+        dependence = self._config.prerequisite_dependence
+        if dependence <= 0.0:
+            return factor
+        try:
+            concept_id = self._domain.misconceptions.get(misconception_id).concept_id
+        except Exception:
+            # A label outside the catalogue cannot be placed in the graph. It
+            # also cannot be one the learner holds, so `remediate` is about to
+            # decline it anyway.
+            return factor
+        sound = solidity(
+            concept_id, self._profile, self._domain.misconceptions, self._domain.concepts
+        )
+        return 1.0 - (1.0 - factor) * (1.0 - dependence * (1.0 - sound))

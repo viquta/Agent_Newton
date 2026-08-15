@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import Mapping
 
 from agent_newton.config import SimulatorConfig
-from agent_newton.domains.base import MisconceptionCatalogue
+from agent_newton.domains.base import ConceptGraph, MisconceptionCatalogue
 
 
 def _seed_for(seed: int, learner_id: str) -> int:
@@ -79,6 +79,52 @@ class MisconceptionProfile:
 
     def snapshot(self) -> dict[str, float]:
         return dict(self.firing)
+
+
+def solidity(
+    concept_id: str,
+    profile: MisconceptionProfile,
+    catalogue: MisconceptionCatalogue,
+    graph: ConceptGraph,
+) -> float:
+    """How sound this learner's foundations are under ``concept_id``, in [0, 1].
+
+    1.0 when nothing they hold sits anywhere in the concept's prerequisite
+    closure — there is nothing shaky underneath it. It falls toward 0.0 the more
+    of their *unremediated* misconception mass lies below, and rises again as
+    those are taught, which is what makes teaching a prerequisite first do
+    something for what depends on it.
+
+    ⚠️ **Read from the profile, never from the learner model.** The profile is
+    what is true; mastery is what the system believes. A mechanism keyed on the
+    belief would let the coupled arm's own estimate drive the learner's
+    behaviour, and it would win the comparison by construction rather than by
+    routing — the conclusion assumed rather than measured. Nothing here touches
+    a posterior, and nothing may.
+
+    Measured against the closure rather than the immediate parents: "the
+    foundations" of a concept is everything it rests on, and stopping one level
+    up would call a concept solid whose grandparent is not.
+
+    Most learners hold two misconceptions out of a catalogue of fifteen, so this
+    is 1.0 for most concepts and bites exactly where the learner is actually
+    weak.
+    """
+    beneath = graph.all_prerequisites(concept_id)
+    if not beneath:
+        return 1.0
+
+    held = [
+        misconception_id
+        for misconception_id in profile.firing
+        if catalogue.get(misconception_id).concept_id in beneath
+    ]
+    started = sum(profile.initial.get(m, 0.0) for m in held)
+    if started <= 0.0:
+        # Nothing of theirs lies underneath, so there is nothing to be shaky.
+        return 1.0
+    remaining = sum(profile.firing.get(m, 0.0) for m in held)
+    return max(0.0, 1.0 - remaining / started)
 
 
 def sample_profile(
