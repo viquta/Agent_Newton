@@ -424,3 +424,55 @@ class TestTheBanksFollowTheGoalTheSittingWillWalk:
         goal = toy.concepts.goals()[0]
         assert covered <= route.relevant(goal, toy.concepts)
         assert covered, "the re-check measured nothing"
+
+
+class TestAFinishedWalkIsNotAFinishedLearner:
+    """⚠️ A resumed decoupled learner was told it had reached every goal.
+
+    Its walk position is the only progress signal it has, so a session picking
+    up past the last goal gets no goal at all from its planner — whatever the
+    learner actually knows. The session read that as "every goal reached", so a
+    learner who attempted nothing was reported as having finished the syllabus
+    while having mastered none of it.
+
+    Only one of the two planners can tell the difference, which is why the claim
+    is checked against the state instead. ``goals_mastered`` is derived from
+    mastery and means the same in both arms; a planner's opinion of its own
+    position does not.
+    """
+
+    def _walk_past_the_end(self, toy, arm: str = "decoupled"):
+        """A learner who knows nothing, whose planner has nowhere left to go."""
+        config = config_for(arm, cohort={"max_items": 4, "administer_tests": False})
+        session = build_session(
+            "L0007", 20260812, toy, config, planner_state={"position": 99}
+        )
+        return session, session.run()
+
+    def test_it_is_not_reported_as_having_finished(self, toy) -> None:
+        session, outcome = self._walk_past_the_end(toy)
+        assert outcome.goals_mastered == 0, "this learner should know nothing"
+        assert outcome.stop_reason != "every_goal_reached"
+        del session
+
+    def test_the_log_says_what_actually_happened(self, toy) -> None:
+        session, _ = self._walk_past_the_end(toy)
+        assert any("run out of syllabus" in r.summary for r in session.board.audit_log)
+
+    def test_a_learner_who_really_has_finished_still_says_so(self, toy) -> None:
+        # The guard can fail: the claim must survive where it is true. Every
+        # goal above the band before the session starts, so the first thing the
+        # planner is asked returns nothing — for the right reason this time.
+        config = config_for(cohort={"max_items": 4, "administer_tests": False})
+        finished = build_session("L0007", 20260812, toy, config)
+        for goal in toy.concepts.goals():
+            finished.board.state.mastery[goal] = 0.99
+
+        session = build_session(
+            "L0007", 20260812, toy, config,
+            state=finished.board.state,
+            profile=finished.learner.profile,  # type: ignore[attr-defined]
+        )
+        outcome = session.run()
+        assert outcome.goals_mastered == len(toy.concepts.goals())
+        assert outcome.stop_reason == "every_goal_reached"

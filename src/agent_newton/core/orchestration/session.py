@@ -300,6 +300,29 @@ class Session:
                         goal_changes += 1
                     if self.board.plan is None and self._wants_a_goal():
                         exhausted = sum(given.values())
+                        # ⚠️ A planner with no goal left is not the same as a
+                        # learner who has reached them all, and only one of the
+                        # two planners can tell the difference. The decoupled
+                        # one returns no goal when its *walk* is past the last
+                        # one, whatever the learner knows — so a resumed learner
+                        # whose walk had finished attempted nothing and was told
+                        # every goal was reached having mastered none of them.
+                        #
+                        # The claim is checked against the state, which is what
+                        # `goals_mastered` is derived from and is comparable
+                        # between arms. The planner's own opinion is not.
+                        mastered = self._goals_mastered()
+                        outstanding = len(self.domain.concepts.goals()) - mastered
+                        if outstanding > 0:
+                            stop_reason = "nothing_left_to_select"
+                            self.board.annotate(
+                                f"the planner has no goal left, with {outstanding} "
+                                f"still unmastered; it has run out of syllabus "
+                                f"rather than finished",
+                                items_given=sum(given.values()),
+                                goals_mastered=mastered,
+                            )
+                            break
                         stop_reason = "every_goal_reached"
                         self.board.annotate(
                             "every goal reached", items_given=sum(given.values())
