@@ -1,0 +1,209 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260811,
+  "baseline_held": 2,
+  "recorded_baseline": {
+    "remediation": 0.0136,
+    "gain": 0.0017,
+    "goals_mastered": 3.9062,
+    "distance_to_goal": -5.8125
+  },
+  "outcomes": [
+    "remediation",
+    "gain",
+    "goals_mastered",
+    "distance_to_goal"
+  ],
+  "curve": [
+    {
+      "outcomes": {
+        "remediation": {
+          "mean_difference": 0.013605447898660408,
+          "sign_p": 0.03857421875,
+          "holm": 0.0771484375,
+          "discordant": [
+            10,
+            2
+          ],
+          "ties": 148
+        },
+        "gain": {
+          "mean_difference": 0.0016666666666666663,
+          "sign_p": 0.125,
+          "holm": 0.125,
+          "discordant": [
+            4,
+            0
+          ],
+          "ties": 156
+        },
+        "goals_mastered": {
+          "mean_difference": 3.90625,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            160,
+            0
+          ],
+          "ties": 0
+        },
+        "distance_to_goal": {
+          "mean_difference": -5.8125,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            0,
+            160
+          ],
+          "ties": 0
+        }
+      },
+      "population": {
+        "coupled": {
+          "mean_pretest": 0.9058333333333334,
+          "mean_gain": 0.047916666666666656,
+          "mean_normalised_gain": 0.506993006993007,
+          "learners_at_ceiling": 17,
+          "mean_remediation": 0.5373791674572794,
+          "mean_items": 44.68125
+        },
+        "decoupled": {
+          "mean_pretest": 0.9058333333333334,
+          "mean_gain": 0.04624999999999999,
+          "mean_normalised_gain": 0.4965034965034965,
+          "learners_at_ceiling": 17,
+          "mean_remediation": 0.523773719558619,
+          "mean_items": 32.3
+        }
+      },
+      "held": 2
+    },
+    {
+      "outcomes": {
+        "remediation": {
+          "mean_difference": 0.01427745507503663,
+          "sign_p": 0.002315700054168701,
+          "holm": 0.004631400108337402,
+          "discordant": [
+            23,
+            6
+          ],
+          "ties": 131
+        },
+        "gain": {
+          "mean_difference": 0.0045833333333333325,
+          "sign_p": 0.00634765625,
+          "holm": 0.00634765625,
+          "discordant": [
+            11,
+            1
+          ],
+          "ties": 148
+        },
+        "goals_mastered": {
+          "mean_difference": 3.05625,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            160,
+            0
+          ],
+          "ties": 0
+        },
+        "distance_to_goal": {
+          "mean_difference": -5.1625,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            0,
+            160
+          ],
+          "ties": 0
+        }
+      },
+      "population": {
+        "coupled": {
+          "mean_pretest": 0.8041666666666666,
+          "mean_gain": 0.10583333333333336,
+          "mean_normalised_gain": 0.45440251572327045,
+          "learners_at_ceiling": 1,
+          "mean_remediation": 0.5449376620426875,
+          "mean_items": 44.65
+        },
+        "decoupled": {
+          "mean_pretest": 0.8041666666666666,
+          "mean_gain": 0.10125000000000002,
+          "mean_normalised_gain": 0.4224318658280923,
+          "learners_at_ceiling": 1,
+          "mean_remediation": 0.5306602069676509,
+          "mean_items": 34.475
+        }
+      },
+      "held": 4
+    },
+    {
+      "outcomes": {
+        "remediation": {
+          "mean_difference": 0.009769432917443819,
+          "sign_p": 0.05946337525377034,
+          "holm": 0.05946337525377034,
+          "discordant": [
+            31,
+            17
+          ],
+          "ties": 112
+        },
+        "gain": {
+          "mean_difference": 0.007083333333333335,
+          "sign_p": 0.004077315330505371,
+          "holm": 0.008154630661010742,
+          "discordant": [
+            20,
+            5
+          ],
+          "ties": 135
+        },
+        "goals_mastered": {
+          "mean_difference": 2.46875,
+          "sign_p": 1.8339493651851043e-42,
+          "holm": 5.501848095555313e-42,
+          "discordant": [
+            156,
+            3
+          ],
+          "ties": 1
+        },
+        "distance_to_goal": {
+          "mean_difference": -4.18125,
+          "sign_p": 1.7627075702117157e-44,
+          "holm": 7.050830280846863e-44,
+          "discordant": [
+            2,
+            158
+          ],
+          "ties": 0
+        }
+      },
+      "population": {
+        "coupled": {
+          "mean_pretest": 0.6979166666666666,
+          "mean_gain": 0.1666666666666667,
+          "mean_normalised_gain": 0.5214583333333335,
+          "learners_at_ceiling": 0,
+          "mean_remediation": 0.5307639251953652,
+          "mean_items": 44.7
+        },
+        "decoupled": {
+          "mean_pretest": 0.6979166666666666,
+          "mean_gain": 0.15958333333333335,
+          "mean_normalised_gain": 0.4927083333333334,
+          "learners_at_ceiling": 0,
+          "mean_remediation": 0.5209944922779213,
+          "mean_items": 36.7875
+        }
+      },
+      "held": 6
+    }
+  ]
+}
