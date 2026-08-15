@@ -585,3 +585,55 @@ class TestYamlContentOnDisk:
         )
         with pytest.raises(DomainError, match="source"):
             YamlMisconceptionCatalogue.from_yaml(path)
+
+
+class TestACatalogueEntryNeverStatesAnItemsAnswer:
+    """⚠️ Found by a cohort, not by reading the content.
+
+    The tutor quotes a misconception's description verbatim, so a number in one
+    can happen to be the answer to the item being worked. *"Moves a term across
+    the equals sign without negating it: x + 5 = 12 gives x = 12 + 5"* was
+    quoted at a learner solving `x + 8 = 20`, whose answer is 12.
+
+    Neither piece of content is wrong on its own, which is why nothing caught
+    it: the collision exists only where the two meet. Checked over every
+    (description, item) pair on a concept, and over the variants too — a
+    template regenerates the numbers, so a draw nobody has seen yet can collide
+    where draw 0 does not.
+    """
+
+    @pytest.mark.parametrize("domain_name", ["toy_algebra", "calculus"])
+    def test_no_description_gives_an_answer_away(self, domain_name: str) -> None:
+        from agent_newton.core.evaluation.tutor import leaks_answer
+
+        domain = registry.load_domain(domain_name)
+        collisions = [
+            (misconception.id, variant.id, draw)
+            for misconception in domain.misconceptions.all()
+            for item in domain.items.all()
+            if item.concept_id == misconception.concept_id
+            for draw in range(4)
+            for variant in [domain.variant(item, draw)]
+            if leaks_answer(misconception.description, variant, domain)
+        ]
+        assert not collisions, f"a description states an item's answer: {collisions}"
+
+    def test_the_check_would_notice_one(self) -> None:
+        # A guard that cannot fail proves nothing. The description that started
+        # this, against the item it was quoted at.
+        from dataclasses import replace
+
+        from agent_newton.core.evaluation.tutor import leaks_answer
+
+        domain = registry.load_domain("toy_algebra")
+        item = domain.items.get("ta_solve_p3")
+        assert item.answer == "12"
+        offending = (
+            "Moves a term across the equals sign without negating it: "
+            "x + 5 = 12 gives x = 12 + 5."
+        )
+        assert leaks_answer(offending, item, domain)
+        assert not leaks_answer(
+            domain.misconceptions.get("sign_error_moving_term").description, item, domain
+        )
+        assert replace(item, answer="12").answer == "12"

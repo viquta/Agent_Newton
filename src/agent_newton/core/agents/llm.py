@@ -52,8 +52,8 @@ _DIAGNOSTIC_SYSTEM = (
 
 _TUTOR_SYSTEM = (
     "You are a mathematics tutor. Reply addressed to the student, within the "
-    "length the instruction gives you. Never state the final answer unless the "
-    "instruction says you may. "
+    "length the instruction gives you. Never state the final answer: the "
+    "student is here to reach it. "
     "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
     "Never use LaTeX or backslash commands. "
     "Describe only what the student's written step actually shows. Do not tell "
@@ -197,6 +197,18 @@ class LLMTutor:
         # the abstract instead. A learner put a chatbot's answer beside it and
         # said the difference plainly — the other one decomposed the problem and
         # substituted their own expression, and this one did not.
+        #
+        # ⚠️ No level states the answer, worked step included. It used to be
+        # permitted there — "you may state the result" — on the reasoning that
+        # working the step through is what the level is for. What that produced
+        # was the answer assembled in the reply: `(2x)(x^6 + 2) + (x^2 + 1)(6x^5)`
+        # for a question asking exactly that. The learner's verdict was that a
+        # worked step should stop short of it, and the mastery estimate agrees —
+        # an answer read off a hint and typed back is recorded as knowing it.
+        #
+        # The answer is still given, at the point where it costs nothing: when
+        # the item is over, and the next question on that concept carries
+        # different numbers. That reveal was asked for and is worth keeping.
         instruction = {
             HintLevel.NUDGE: (
                 "Point at the part of the step that is wrong, without naming it. "
@@ -207,9 +219,11 @@ class LLMTutor:
                 "At most two sentences."
             ),
             HintLevel.WORKED_STEP: (
-                "Work the step through. Name the rule, substitute this student's "
-                "own expression into it, and show the working one line at a "
-                "time. You may state the result. Up to six short lines."
+                "Work the step through on this student's own expression: name "
+                "the rule and prepare each piece it needs, one line at a time. "
+                "Then stop. Do not combine the pieces and do not write the "
+                "result — putting them together is the step the student has "
+                "left to take. Up to six short lines."
             ),
         }[level]
         if move is TutorMove.REFLECT:

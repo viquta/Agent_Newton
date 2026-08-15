@@ -283,6 +283,27 @@ _LATEX = re.compile(r"\\[A-Za-z]|[\x00-\x08\x0b-\x1f]")
 _SENTENCE_END = re.compile(r"[.!?](?:\s|$)")
 
 
+def _trim(fragment: str) -> str:
+    """Punctuation off the ends, without breaking an expression.
+
+    ⚠️ Parentheses are **balanced** rather than stripped. Stripping them was the
+    obvious version and it blinded the check to the exact shape a worked step
+    produces: ``(2x)(x^3 + 2) + (x^2 + 1)(3x^2)`` — which the domain verifier
+    reads as the answer — came out as ``2x)(x^3 + 2) + (x^2 + 1)(3x^2``, which
+    it cannot read at all. The reply was reported clean while stating the
+    answer in full.
+
+    Sentence punctuation still comes off, and an unmatched bracket at either end
+    is trimmed, so ``(x + 1).`` and ``x + 1)`` both survive as expressions.
+    """
+    fragment = fragment.strip(".,;:")
+    while fragment.startswith("(") and fragment.count("(") > fragment.count(")"):
+        fragment = fragment[1:]
+    while fragment.endswith(")") and fragment.count(")") > fragment.count("("):
+        fragment = fragment[:-1]
+    return fragment
+
+
 def _candidates(text: str, item: Item) -> list[str]:
     """Fragments of ``text`` that might be the answer.
 
@@ -291,10 +312,7 @@ def _candidates(text: str, item: Item) -> list[str]:
     quotes the exercise reads as a leak.
     """
     prompt = " ".join(item.prompt.split())
-    found = [
-        fragment.strip(".,;:()")
-        for fragment in _MATHS.findall(text)
-    ]
+    found = [_trim(fragment) for fragment in _MATHS.findall(text)]
     found = [f for f in found if f]
     # Answers may name several values ("0, 2"), so adjacent fragments are also
     # offered joined — otherwise a hint listing both roots looks like two wrong
@@ -337,14 +355,22 @@ def check_turn(turn: Turn, item: Item, domain: Domain) -> tuple[Violation, ...]:
             )
         )
 
-    # A worked step is *told* to show the working, so the answer appearing in it
-    # is the instruction being followed rather than broken.
-    if turn.level != HintLevel.WORKED_STEP.label and leaks_answer(text, item, domain):
+    # ⚠️ Checked at every level, worked step included.
+    #
+    # It was exempt, on the reasoning that a worked step is told to show the
+    # working and the answer appearing in it is the instruction being followed.
+    # That reasoning held right up until a person read one: the reply assembled
+    # the whole answer, and what was left to do was type it back — which the
+    # learner model records as knowing it. The instruction now says to stop one
+    # line short, and an exemption here would have left that instruction
+    # unenforced, which is the difference between a rule and a suggestion.
+    if leaks_answer(text, item, domain):
         found.append(
             Violation(
                 ANSWER_LEAKED,
-                f"a {turn.level} reply gives the answer away; the support level "
-                f"chosen for this learner does not permit it",
+                f"a {turn.level} reply gives the answer away; no support level "
+                f"permits it, and the item's own close is where the answer is "
+                f"given",
             )
         )
 

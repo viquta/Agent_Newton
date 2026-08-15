@@ -4,6 +4,14 @@
 # 'source' is required for every entry. These are real, documented algebra
 # errors rather than invented ones, so that the toy domain exercises the same
 # validation path the calculus catalogue must satisfy.
+#
+# ⚠️ The illustrative examples are written symbolically rather than with
+# numbers. The tutor quotes a description verbatim, so a number in one can
+# happen to be the answer to the item being worked — "x + 5 = 12 gives
+# x = 12 + 5" was quoted at a learner solving x + 8 = 20, whose answer is 12.
+# Nothing was wrong with the description and nothing was wrong with the item;
+# the collision only exists where the two meet, which is in the hint.
+# tests/component/test_domains.py checks every pair on both domains.
 misconceptions:
   - id: distribute_first_term_only
     concept_id: distribute
@@ -15,20 +23,20 @@ misconceptions:
   - id: combine_unlike_terms
     concept_id: combine_like_terms
     description: >-
-      Adds a variable term and a constant as though they were like terms:
-      2x + 3 becomes 5x.
+      Adds a variable term and a constant as though they were like terms, so
+      ax + b is reported as a single term in x.
     source: "Küchemann (1981), 'Algebra', in Hart (ed.) Children's Understanding of Mathematics"
 
   - id: sign_error_moving_term
     concept_id: solve_linear
     description: >-
-      Moves a term across the equals sign without negating it:
-      x + 5 = 12 gives x = 12 + 5.
+      Moves a term across the equals sign without negating it, so x + a = b
+      is solved as x = b + a.
     source: "Booth & Koedinger (2008)"
 
   - id: drop_coefficient_when_solving
     concept_id: solve_linear
     description: >-
       Reads off the constant as the solution without dividing by the
-      coefficient: 3x = 12 gives x = 12.
+      coefficient, so ax = b is solved as x = b.
     source: "Küchemann (1981)"

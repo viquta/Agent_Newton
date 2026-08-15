@@ -799,3 +799,85 @@ class TestALearnerRequestCannotMoveACohort:
             return session.run().goal
 
         assert goal_for(["chain_rule"]) != goal_for([])
+
+
+class TestNoTurnHandsOverTheAnswer:
+    """⚠️ The worked step used to, by permission, and a person read it as a leak.
+
+    Checked over the turns a cohort actually produced rather than on constructed
+    replies, because the exemption that allowed it lived in the checker — a test
+    built from the checker's own rule would have agreed with it.
+
+    Collected through the observer rather than from the audit log, which records
+    the item's *id*. A repeated item is asked as a variant with different
+    numbers, so looking the id up again yields draw 0 and checks the reply
+    against an answer nobody was asked for. That produced a false leak on the
+    first run of this test.
+    """
+
+    def _turns(self, domain_name: str, n: int = 4):
+        from agent_newton.core.orchestration.session import Watching
+
+        from agent_newton.domains.base import Item
+
+        class Watcher(Watching):
+            def __init__(self) -> None:
+                self.turns: list[tuple[Item, str, str]] = []
+                self.unsolved: list[str] = []
+
+            def tutor_replied(self, item, hint) -> None:  # noqa: ANN001
+                self.turns.append((item, hint.level.label, hint.text))
+
+            def item_finished(self, item, solved, reason="attempts_spent") -> None:  # noqa: ANN001
+                if not solved:
+                    self.unsolved.append(item.answer)
+
+        config = config_for(domain_name, "coupled")
+        domain = registry.load_domain(domain_name)
+        watcher = Watcher()
+        for i in range(n):
+            build_session(
+                f"L{i:04d}", config.seed, domain, config, observer=watcher
+            ).run()
+        return domain, watcher
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_not_at_any_level(self, domain_name: str) -> None:
+        from agent_newton.core.evaluation.tutor import leaks_answer
+
+        domain, watcher = self._turns(domain_name)
+        leaked = [
+            (level, text)
+            for item, level, text in watcher.turns
+            if leaks_answer(text, item, domain)
+        ]
+        assert not leaked, f"a tutor turn gave the answer away: {leaked[:2]}"
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_the_top_of_the_ladder_was_actually_reached(self, domain_name: str) -> None:
+        # Or the assertion above holds for the wrong reason: a cohort that never
+        # reaches the top proves nothing about what is said there.
+        _, watcher = self._turns(domain_name)
+        levels = {level for _, level, _ in watcher.turns}
+        assert "worked_step" in levels
+        assert len(levels) > 1, "the ladder collapsed to a single level"
+
+    def test_a_nudge_occurs_at_all(self) -> None:
+        # The level that was unreachable until the escalation stopped counting
+        # the failure it was responding to. Asserted on toy_algebra because it
+        # needs a learner holding a concept above `theta_lower` who still fails
+        # it — common in a five-concept graph, rare in fifteen, and this is a
+        # claim about the rule rather than about either domain.
+        _, watcher = self._turns("toy_algebra")
+        assert "nudge" in {level for _, level, _ in watcher.turns}
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_the_item_still_reveals_it_when_the_attempts_run_out(
+        self, domain_name: str
+    ) -> None:
+        # The reveal was asked for and is kept — moved to where it costs
+        # nothing, since the next question on the concept carries different
+        # numbers. It reaches the learner when the item closes, not from the
+        # tutor mid-item.
+        _, watcher = self._turns(domain_name)
+        assert watcher.unsolved, "no item ran out of attempts"

@@ -166,11 +166,36 @@ class TestLeakingTheAnswer:
             rules = [v.rule for v in evaluation.check_turn(turn, item, calculus)]
             assert ANSWER_LEAKED in rules
 
-    def test_a_worked_step_is_allowed_to_show_it(self, calculus) -> None:
-        # The level's own instruction is to work the step through, so the
-        # answer appearing in it is the rule being followed.
+    def test_a_worked_step_is_not_allowed_to_show_it_either(self, calculus) -> None:
+        """⚠️ This test asserted the exemption, and the exemption was wrong.
+
+        The reasoning was that the level's own instruction is to work the step
+        through, so the answer appearing in it is the rule being followed. Then
+        a person read one: the reply assembled the whole answer and the only
+        thing left to do was type it back, which the learner model records as
+        knowing it. *"The worked step should not actually show the final
+        answer."*
+
+        The instruction now says to stop one line short, and this is what makes
+        that a rule rather than a suggestion.
+        """
         turn = turn_for(
             calculus, "Bring the 5 down and reduce the power: 5*x**4.",
+            level=HintLevel.WORKED_STEP,
+        )
+        item = calculus.items.get(turn.case.item_id)
+        rules = [v.rule for v in evaluation.check_turn(turn, item, calculus)]
+        assert ANSWER_LEAKED in rules
+
+    def test_working_the_step_without_finishing_it_is_clean(self, calculus) -> None:
+        # The other half, or the check above would be satisfied by a tutor that
+        # says nothing useful. Everything a worked step is for — naming the
+        # rule, substituting the student's own expression, showing the line —
+        # is still permitted.
+        turn = turn_for(
+            calculus,
+            "The power rule brings the exponent down and reduces it by one. "
+            "Here that is 5 times x to the power 5 minus 1.",
             level=HintLevel.WORKED_STEP,
         )
         item = calculus.items.get(turn.case.item_id)

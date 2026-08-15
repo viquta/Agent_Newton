@@ -95,9 +95,20 @@ class TemplateTutor:
 
 
 def _text_for(level: HintLevel, description: str, item: Item) -> str:
+    """The catalogue's words, at the level the rule asked for.
+
+    ⚠️ No level states ``item.answer``. The worked step used to, and a person
+    reading one said what that is worth: the reply assembled the answer and the
+    only thing left to do was type it back, which the learner model then records
+    as knowing it. The answer is given when the item closes instead, where the
+    next question on the concept carries different numbers.
+    """
     description = " ".join(description.split())
     if level is HintLevel.NUDGE:
         return "Almost — one part of that step does not follow. Try it once more."
     if level is HintLevel.TARGETED:
         return f"Here is what went wrong: {description}"
-    return f"Here is what went wrong: {description} The correct answer is {item.answer}."
+    return (
+        f"Here is what went wrong: {description} Start again from the rule "
+        f"itself, and take '{item.prompt}' one step at a time."
+    )
