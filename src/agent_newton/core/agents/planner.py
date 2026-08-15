@@ -116,6 +116,11 @@ class GoalDirectedPlanner:
             # Read from the view rather than tracked here. Empty unless the
             # dwelling cap is configured, and it is off for every cohort.
             deprioritised=full.weaknesses,
+            # Likewise: what the learner asked for, empty unless a front end
+            # asked them. Choosing the goal is not enough on its own — a
+            # request can be on the route and still never be the one the
+            # emphasis picks.
+            preferred=full.requested,
         )
         if step is None:
             return None

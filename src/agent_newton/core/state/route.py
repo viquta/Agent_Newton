@@ -108,11 +108,19 @@ def next_goal(
     learner cannot skip a prerequisite by naming something further on: the goal
     moves, the route to it does not, and everything on the way is still worked
     first. Empty for every cohort, and inert without a graph to resolve it.
+
+    ⚠️ Only requests the learner **cannot yet do** are served. A person asked
+    for two concepts; the pre-test then put one of them at 0.98, and the goal
+    moved to serve that one — the thing he had just demonstrated — while the
+    other sat at 0.32 in the frontier and was never reached, because it was not
+    on the way to the goal his own request had chosen. Honouring a request for
+    something already mastered is honouring it in the only way that cannot help.
     """
     outstanding = [goal for goal in goals if not reached(goal, mastery, band, prior)]
     if requested and graph is not None:
+        live = {c for c in requested if not reached(c, mastery, band, prior)}
         for goal in outstanding:
-            if relevant(goal, graph) & requested:
+            if relevant(goal, graph) & live:
                 return goal
     return outstanding[0] if outstanding else None
 
@@ -141,11 +149,19 @@ def rank(
     graph: ConceptGraph,
     prior: float,
     deprioritised: frozenset[str] = frozenset(),
+    preferred: frozenset[str] = frozenset(),
 ) -> tuple[str, ...]:
     """Order candidates by what the learner is here for.
 
     Both orders break ties on depth then id, so neither depends on the order
     concepts happen to be declared in the domain's YAML.
+
+    ``preferred`` is what the learner asked to work on, and it sorts first among
+    the candidates. Choosing the goal is not enough on its own: a request can be
+    reachable *and* on the route and still never come up, because the emphasis
+    ranks by difficulty or depth and something else wins every time. A person
+    watched a concept he had asked for sit in the frontier for a whole sitting.
+    Empty for every cohort.
 
     ``deprioritised`` concepts sort last under either emphasis. They are not
     removed: a learner who has been stuck on something should be moved along,
@@ -160,6 +176,19 @@ def rank(
     rather than a gap: every concept is on the record as outstanding, and the
     remaining budget goes to the one the evidence says is hardest.
     """
+    if preferred:
+        # Applied outside the dwelling split, so a request outranks having been
+        # set aside: the learner asking for something is a better reason to
+        # offer it than the session's own bookkeeping is to hold it back.
+        asked = tuple(c for c in available if c in preferred)
+        others = tuple(c for c in available if c not in preferred)
+        if asked and others:
+            return rank(
+                asked, emphasis, mastery, error_trace, graph, prior, deprioritised
+            ) + rank(
+                others, emphasis, mastery, error_trace, graph, prior, deprioritised
+            )
+
     if deprioritised:
         held = tuple(c for c in available if c in deprioritised)
         rest = tuple(c for c in available if c not in deprioritised)
@@ -224,6 +253,7 @@ def next_step(
     band: ZPDConfig,
     prior: float,
     deprioritised: frozenset[str] = frozenset(),
+    preferred: frozenset[str] = frozenset(),
 ) -> Step | None:
     """The concept to work next on the way to ``goal``.
 
@@ -234,14 +264,22 @@ def next_step(
 
     if available:
         chosen = rank(
-            available, emphasis, mastery, error_trace, graph, prior, deprioritised
+            available,
+            emphasis,
+            mastery,
+            error_trace,
+            graph,
+            prior,
+            deprioritised,
+            preferred,
         )[0]
         held = " (worked enough for now)" if chosen in deprioritised else ""
+        asked = " (asked for)" if chosen in preferred else ""
         return Step(
             concept_id=chosen,
             reason=(
                 f"{emphasis.value} toward {goal}: chose {chosen} from "
-                f"{len(available)} candidate(s){held}"
+                f"{len(available)} candidate(s){held}{asked}"
             ),
         )
 

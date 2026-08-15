@@ -800,6 +800,53 @@ class TestALearnerRequestCannotMoveACohort:
 
         assert goal_for(["chain_rule"]) != goal_for([])
 
+    def test_the_request_reaches_the_training_and_not_only_the_goal(self) -> None:
+        """⚠️ Moving the goal is not enough, and a sitting proved it.
+
+        A concept can be requested, reachable, and on the route, and still never
+        come up: the emphasis ranks by difficulty or depth and something else
+        wins every time. A person watched one sit in the frontier for a whole
+        sitting and said so — *"even the things I chose to work on were not
+        entirely there in the session."*
+
+        Set up on a learner who has the prerequisites, because that is when the
+        question arises at all. A request for something unreachable moves the
+        goal and then walks the route to it, which is the design and is tested
+        above.
+        """
+        from agent_newton.core.evaluation.outcomes import dose_by_concept
+
+        domain = registry.load_domain("calculus")
+        config = config_for("calculus", "coupled", cohort={"max_items": 4})
+        # Everything early demonstrated, so several concepts sit in the frontier
+        # together and the emphasis has a real choice to make.
+        known = {
+            "limits_of_sequences": 0.95, "average_rate_of_change": 0.95,
+            "limit_concept": 0.95, "instantaneous_rate_of_change": 0.95,
+            "derivative_from_first_principles": 0.95, "power_rule": 0.95,
+        }
+
+        def worked(requested) -> list[str]:
+            """The concepts trained, in the order they were reached."""
+            session = build_session("L0000", config.seed, domain, config)
+            session.board.state.mastery.update(known)
+            session.board.record_request(requested)
+            session.run()
+            order: list[str] = []
+            for record in session.board.audit_log:
+                if record.cause == "observation":
+                    concept = record.evidence["concept_id"]
+                    if concept not in order:
+                        order.append(concept)
+            assert dose_by_concept(session.board.audit_log)
+            return order
+
+        unasked = worked([])
+        assert len(unasked) > 1, "nothing to choose between; the test proves nothing"
+        # Ask for one the emphasis did *not* reach for first.
+        second = unasked[1]
+        assert worked([second])[0] == second
+
 
 class TestNoTurnHandsOverTheAnswer:
     """⚠️ The worked step used to, by permission, and a person read it as a leak.

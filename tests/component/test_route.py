@@ -498,3 +498,78 @@ class TestALearnerCanAskForSomething:
         assert route.next_goal(
             toy.concepts.goals(), {}, BAND, PRIOR, frozenset({"distribute"})
         ) == route.next_goal(toy.concepts.goals(), {}, BAND, PRIOR)
+
+
+class TestARequestIsHonouredWhereItCanHelp:
+    """⚠️ A sitting honoured a request in the one way that could not help.
+
+    The learner asked for two concepts. The pre-test then put the first at 0.98,
+    the goal moved to serve *that* one — the thing he had just demonstrated —
+    and the second sat at 0.32 in the frontier for the whole sitting, never
+    selected, because it was not on the way to the goal his own request had
+    chosen. *"Even the things I chose to work on, were not entirely there in the
+    session."*
+
+    Two fixes, and both are needed: the goal is chosen to serve a request the
+    learner cannot yet do, and a requested concept among the candidates is
+    worked first.
+    """
+
+    def test_a_mastered_request_does_not_move_the_goal(self, calculus) -> None:
+        mastery = {"polynomial_differentiation": 0.98}
+        assert route.next_goal(
+            calculus.concepts.goals(), mastery, BAND, PRIOR,
+            frozenset({"polynomial_differentiation"}), calculus.concepts,
+        ) == route.next_goal(calculus.concepts.goals(), mastery, BAND, PRIOR)
+
+    def test_an_unmastered_one_still_does(self, calculus) -> None:
+        # The guard can fail: the same request, below the band, must move it.
+        goals = calculus.concepts.goals()
+        mastery = {"polynomial_differentiation": 0.30}
+        moved = route.next_goal(
+            goals, mastery, BAND, PRIOR,
+            frozenset({"polynomial_differentiation"}), calculus.concepts,
+        )
+        assert moved != route.next_goal(goals, mastery, BAND, PRIOR)
+        assert moved is not None
+        assert "polynomial_differentiation" in route.relevant(moved, calculus.concepts)
+
+    def test_the_live_half_of_a_mixed_request_wins(self, calculus) -> None:
+        # Exactly the sitting: one demonstrated, one not. The goal must serve
+        # the one still to be learned.
+        mastery = {"polynomial_differentiation": 0.98, "antiderivative": 0.32}
+        goal = route.next_goal(
+            calculus.concepts.goals(), mastery, BAND, PRIOR,
+            frozenset({"polynomial_differentiation", "antiderivative"}),
+            calculus.concepts,
+        )
+        assert goal is not None
+        assert "antiderivative" in route.relevant(goal, calculus.concepts)
+
+    def test_a_requested_candidate_is_worked_first(self, toy) -> None:
+        available = ["integer_arithmetic", "combine_like_terms"]
+        plain = route.rank(available, Emphasis.CONSOLIDATE, {}, (), toy.concepts, PRIOR)
+        asked = route.rank(
+            available, Emphasis.CONSOLIDATE, {}, (), toy.concepts, PRIOR,
+            preferred=frozenset({"combine_like_terms"}),
+        )
+        assert asked[0] == "combine_like_terms"
+        assert set(asked) == set(plain), "a request must reorder, never remove"
+
+    def test_an_empty_request_changes_no_order(self, toy) -> None:
+        available = ["integer_arithmetic", "combine_like_terms", "distribute"]
+        assert route.rank(
+            available, Emphasis.CONSOLIDATE, {}, (), toy.concepts, PRIOR,
+            preferred=frozenset(),
+        ) == route.rank(available, Emphasis.CONSOLIDATE, {}, (), toy.concepts, PRIOR)
+
+    def test_the_step_says_it_was_asked_for(self, toy) -> None:
+        # A planning decision that cannot be explained afterwards is not
+        # auditable, and "why this concept" is the question a learner asks.
+        frontier = compute({}, toy.concepts, BAND, PRIOR)
+        step = route.next_step(
+            goal="solve_linear", emphasis=Emphasis.CONSOLIDATE, mastery={},
+            error_trace=(), frontier=frontier, graph=toy.concepts, band=BAND,
+            prior=PRIOR, preferred=frozenset(frontier),
+        )
+        assert step is not None and "asked for" in step.reason
