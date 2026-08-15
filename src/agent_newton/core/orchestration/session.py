@@ -731,6 +731,7 @@ class Session:
                 misconception_label=diagnosis.misconception_id,
                 confidence=diagnosis.confidence,
                 attempt=step_index,
+                response=response,
             )
             step_index += 1
 
@@ -812,6 +813,10 @@ class Session:
                 level=hint.level.label,
                 targets=hint.targets,
                 text=hint.text,
+                # The level's own inputs, so a sitting can be read back against
+                # why it was pitched there rather than only that it was.
+                mastery=mastery,
+                prior_failures=prior_failures,
             )
 
             if self.observer is not None:

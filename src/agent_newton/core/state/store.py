@@ -169,6 +169,7 @@ class Blackboard:
         misconception_label: str | None = None,
         confidence: float = 0.0,
         attempt: int = 0,
+        response: str = "",
     ) -> bool:
         """Record one graded step. Returns whether it counted as evidence.
 
@@ -182,6 +183,12 @@ class Blackboard:
         rather than a separate one keeps the invariant at the top of this
         module: nothing changes state without bumping the version and writing an
         audit entry.
+
+        ``response`` is what the learner actually wrote. It was not kept here,
+        so the audit log recorded that an answer was wrong without recording
+        what it was — and a sitting could only be read back by joining the log
+        against a separate transcript file. The verdict is the evidence; the
+        answer is what makes the verdict readable.
         """
         self._state.t += 1
         if attempt == 0:
@@ -196,6 +203,7 @@ class Blackboard:
                 concept_id=concept_id,
                 verdict=result.verdict.value,
                 detail=result.detail,
+                response=response,
             )
             return False
 
@@ -234,6 +242,7 @@ class Blackboard:
             mastery_after=after,
             delta=after - before,
             misconception_label=misconception_label,
+            response=response,
         )
         return True
 
@@ -441,6 +450,8 @@ class Blackboard:
         level: str,
         targets: str | None,
         text: str,
+        mastery: float = 0.0,
+        prior_failures: int = 0,
     ) -> None:
         """Record what the tutor said, and under which rules it said it.
 
@@ -454,6 +465,13 @@ class Blackboard:
         so storing them beside the text is what makes a turn checkable after the
         fact: a reply can be read against the support level it was supposed to
         carry.
+
+        ``mastery`` and ``prior_failures`` are the two inputs the level was
+        chosen from, and they are here because the level alone could not be
+        argued with. Two sittings ran entirely at ``worked_step`` and the
+        transcripts could say only that; whether the cause was the belief, the
+        escalation or both took a wrapper around the tutor to find out. Stored,
+        the question is answerable from the record.
         """
         self._bump(
             "tutor",
@@ -463,6 +481,8 @@ class Blackboard:
             move=move,
             level=level,
             targets=targets,
+            mastery=mastery,
+            prior_failures=prior_failures,
             text=text,
         )
 

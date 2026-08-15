@@ -716,6 +716,84 @@ def evaluate_tutor(
         )
 
 
+@app.command("sitting")
+def sitting(
+    run: str = typer.Argument(
+        "latest", help="A run directory, or 'latest' for the most recent one."
+    ),
+    results_dir: Path = typer.Option(
+        Path("results"), "--results", help="Where run directories live."
+    ),
+    write: bool = typer.Option(
+        True, "--write/--no-write", help="Also write sitting.md beside the transcript."
+    ),
+) -> None:
+    """Read a stored sitting back as prose.
+
+    Every figure quoted about the human sittings so far came out of a script
+    written for the occasion, because the record is tens of kilobytes of JSON.
+    This renders the audit log in order — question, answer, verdict, what the
+    tutor said, and what the support level was chosen from.
+
+    Reads only.
+    """
+    import json
+
+    from agent_newton.core.evaluation.sitting import narrate, summarise
+    from agent_newton.domains import registry
+
+    if run == "latest":
+        found = sorted(
+            (d for d in results_dir.glob("*/") if (d / "transcript.json").exists()),
+            key=lambda d: d.name,
+        )
+        if not found:
+            console.print(f"[red]no sitting with a transcript under {results_dir}[/red]")
+            raise typer.Exit(code=1)
+        run_dir = found[-1]
+    else:
+        run_dir = Path(run) if Path(run).exists() else results_dir / run
+
+    transcript_path = run_dir / "transcript.json"
+    if not transcript_path.exists():
+        console.print(f"[red]no transcript at {transcript_path}[/red]")
+        raise typer.Exit(code=1)
+
+    record = json.loads(transcript_path.read_text())
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    domain = registry.load_domain(manifest["domain"])
+
+    counts = summarise(record["audit_log"])
+    header = [
+        f"run `{run_dir.name}`",
+        f"domain {manifest['domain']}, arm {manifest['arm']}",
+        f"tutor {manifest['models']['tutor']}",
+        f"diagnostic {manifest['models']['diagnostic']}",
+        f"completed: {record.get('completed')}"
+        + (f", stopped because {record['stop_reason']}" if "stop_reason" in record else ""),
+        f"support levels: {counts['levels'] or 'no tutor turns'}",
+        f"verdicts: {counts['verdicts'] or 'none'}",
+    ]
+    figures = {}
+    for key in ("items_attempted", "gain", "normalised_gain", "dose_on_gap"):
+        if key in record:
+            figures[key] = record[key]
+    if "dose_by_concept" in record:
+        figures["where the time went"] = record["dose_by_concept"]
+
+    text = narrate(
+        record["audit_log"],
+        domain,
+        learner_id=record.get("learner_id", ""),
+        header=header,
+        figures=figures,
+    )
+    console.print(text)
+    if write:
+        (run_dir / "sitting.md").write_text(text)
+        console.print(f"[dim]written to {run_dir / 'sitting.md'}[/dim]")
+
+
 @app.command("history")
 def history(
     learner: str = typer.Argument(..., help="Whose history to read."),
