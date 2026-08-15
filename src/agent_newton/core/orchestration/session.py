@@ -337,7 +337,6 @@ class Session:
                 item.concept_id, self.config.cohort.max_visits_per_concept
             )
             self._work_item(item, diagnoses, repetition=repetition)
-
         if stop_reason == "budget_spent":
             # The one exit that recorded nothing. To a person it looked like the
             # session breaking off after a failed item — the post-test simply
@@ -611,6 +610,47 @@ class Session:
             response = self.surface.render(item, step)
             result = self.domain.verifier.verify(item, response)
 
+            # A step that did not come out right is asked to account for itself,
+            # and asked *first* — before the verdict is shown and before the
+            # diagnostic looks at it. Both orderings matter.
+            #
+            # Before the verdict, because a learner told they were wrong writes
+            # a different thing: an account of an error they now know about
+            # rather than the reasoning they actually used. Asking first is the
+            # only way the channel carries what they thought.
+            #
+            # Before the diagnosis, because the answer alone cannot separate a
+            # method that was wrong from arithmetic that slipped, and an
+            # unreadable answer carries nothing whatever. The diagnostic is
+            # given the words in the same step it is asked to explain — whether
+            # it *reads* them is its own affair; see the Diagnostic protocol.
+            #
+            # The old ordering asked after the answer was recorded, which was
+            # about a different risk — that the working could become a hint the
+            # learner writes before committing to an answer. That still holds:
+            # the answer is already submitted and graded by this point.
+            shown = None
+            if result.verdict is not Verdict.CORRECT:
+                shown = self.learner.show_working(item, response, required=True)
+                if shown:
+                    self.board.record_reflection(
+                        shown, item.id, item.concept_id, kind="working"
+                    )
+                    if self.observer is not None:
+                        self.observer.working_recorded(item, shown)
+                else:
+                    # Asked and declined. Recorded because a refusal is a fact
+                    # about the sitting — a rising rate means the prompt has
+                    # become a tax — and because it must not be confused with a
+                    # step where nothing was asked for at all.
+                    self.board.annotate(
+                        f"asked for the reasoning behind {item.id} and none was "
+                        f"given",
+                        item_id=item.id,
+                        concept_id=item.concept_id,
+                        declined=True,
+                    )
+
             diagnosis = Diagnosis(None)
             if result.verdict is Verdict.INCORRECT:
                 # Only oracles are handed the injected label, and only through
@@ -634,18 +674,18 @@ class Session:
             if self.observer is not None:
                 self.observer.step_graded(item, response, result, diagnosis)
 
-            # Asked after the answer is recorded, so the working cannot become a
-            # hint the learner writes for themselves before committing. Prose,
-            # on the same terms as a reflection: no estimate moves.
-            shown = self.learner.show_working(item, response)
-            if shown:
-                self.board.record_reflection(
-                    shown, item.id, item.concept_id, kind="working"
-                )
-                if self.observer is not None:
-                    self.observer.working_recorded(item, shown)
-
             if result.verdict is Verdict.CORRECT:
+                # Optional here, and kept rather than dropped with the rest of
+                # the burden: working volunteered on a *correct* answer is the
+                # one place a lucky guess can announce itself, and a mastery
+                # estimate that cannot tell those apart is the open problem.
+                guessed = self.learner.show_working(item, response)
+                if guessed:
+                    self.board.record_reflection(
+                        guessed, item.id, item.concept_id, kind="working"
+                    )
+                    if self.observer is not None:
+                        self.observer.working_recorded(item, guessed)
                 if self.observer is not None:
                     self.observer.item_finished(item, solved=True, reason="solved")
                 return

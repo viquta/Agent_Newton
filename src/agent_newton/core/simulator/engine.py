@@ -83,7 +83,9 @@ class Learner(Protocol):
         """
         ...
 
-    def show_working(self, item: Item, response: str) -> str | None:
+    def show_working(
+        self, item: Item, response: str, required: bool = False
+    ) -> str | None:
         """The steps taken to reach ``response``, or ``None`` to show none.
 
         Volunteered rather than asked for, which is what separates it from
@@ -91,6 +93,14 @@ class Learner(Protocol):
         alone does not carry, and a tutor that never sees it can only guess at
         where the reasoning went wrong. Prose on the same terms as a
         reflection: never verified, never an attempt.
+
+        ``required`` is set when the step did not come out right, and it is the
+        session saying that this is the moment the reasoning is worth having:
+        the answer alone cannot distinguish a method that was wrong from
+        arithmetic that slipped, and an unreadable answer says nothing at all.
+        A front end may insist; whether it does is its business, and returning
+        ``None`` under it is a refusal rather than an error — the session
+        records that it was asked and declined.
 
         A simulated learner returns ``None``. It has no reasoning to show —
         its answer comes from a buggy rule, not from steps — and inventing
@@ -195,11 +205,15 @@ class SimulatedLearner:
         """
         return None
 
-    def show_working(self, item: Item, response: str) -> str | None:  # noqa: ARG002
+    def show_working(
+        self, item: Item, response: str, required: bool = False
+    ) -> str | None:  # noqa: ARG002
         """Nothing to show. Its answer comes from a rule, not from steps.
 
         Keeping this empty is what keeps the channel out of the cohorts: no
-        measured result can depend on prose that was never written.
+        measured result can depend on prose that was never written — including
+        under ``required``, which a rule has no more to say about than it had
+        before.
         """
         return None
 

@@ -156,12 +156,31 @@ class LearnerStore:
                 for r in audit_log
             ],
         )
+        # ⚠️ Read from the audit log, not from ``state.reflections``.
+        #
+        # The state carries every word the learner has ever said, because it is
+        # resumed whole — so projecting it wrote the entire history under each
+        # new session id. One learner's table held 81 rows and 27 distinct
+        # texts across three sittings, two of which had said nothing at all.
+        # Nothing read the table yet, which is the only reason it never
+        # produced a wrong number.
+        #
+        # The audit log is per sitting, which is exactly what a per-sitting
+        # projection needs, and it is the same source the event rows above are
+        # built from. Where the two disagreed, this one was the odd one out.
         self._db.executemany(
             "INSERT INTO utterance (session_id, kind, item_id, concept_id, text) "
             "VALUES (?, ?, ?, ?, ?)",
             [
-                (session_id, u.kind, u.item_id, u.concept_id, u.text)
-                for u in state.reflections
+                (
+                    session_id,
+                    r.evidence["kind"],
+                    r.evidence["item_id"],
+                    r.evidence["concept_id"],
+                    r.evidence["reflection"],
+                )
+                for r in audit_log
+                if r.cause == "annotation" and "reflection" in r.evidence
             ],
         )
         self._db.commit()

@@ -149,18 +149,71 @@ class TestProfilesArePersistedWithTheirStartingPoint:
 
 
 class TestTheQueryableProjections:
+    """⚠️ Each row must belong to the sitting it was said in.
+
+    The utterance rows were projected from ``state.reflections``, and a resumed
+    state carries every word the learner has ever said — so each new session
+    wrote the whole history again under its own id. One real learner's table
+    held 81 rows and 27 distinct texts across three sittings, two of which had
+    said nothing at all. Nothing read the table yet, which is the only reason it
+    never produced a wrong number.
+    """
+
+    def _sitting(self, store, toy, said: str | None) -> int:
+        """One sitting that may or may not produce a word of its own.
+
+        Built through the board, because that is how an utterance actually comes
+        to exist: recorded on the blackboard, which writes it to the audit log,
+        which is per sitting. The state is the resumed one either way.
+        """
+        config = Config.model_validate({"domain": "toy_algebra"})
+        board = new_blackboard("L1", 1, toy.concepts, config)
+        if said is not None:
+            board.record_reflection(said, "i1", "distribute", kind="working")
+        session = store.open_session(learner_id="L1", arm="coupled", config_hash="h")
+        store.close_session(
+            session, state=worked_state(toy), audit_log=board.audit_log
+        )
+        return session
+
     def test_utterances_are_queryable_across_sessions(self, store, toy) -> None:
         # The reason a database was chosen: planning is meant to read what the
         # learner said in *previous* sittings, not only this one.
         store.ensure_learner("L1", "simulated", "toy_algebra")
-        for _ in range(2):
-            session = store.open_session(learner_id="L1", arm="coupled", config_hash="h")
-            store.close_session(session, state=worked_state(toy))
+        self._sitting(store, toy, "I was unsure about the second step")
+        self._sitting(store, toy, "I think I have it now")
 
         said = store.utterances("L1", "coupled")
         assert len(said) == 2
         assert {row["concept_id"] for row in said} == {"distribute"}
+        assert [row["text"] for row in said] == [
+            "I was unsure about the second step",
+            "I think I have it now",
+        ]
         assert store.utterances("L1", "coupled", concept_id="nothing_here") == []
+
+    def test_a_sitting_that_said_nothing_contributes_nothing(self, store, toy) -> None:
+        # The resumed state still carries the earlier sitting's words, and they
+        # must not be written a second time under this session's id.
+        store.ensure_learner("L1", "simulated", "toy_algebra")
+        self._sitting(store, toy, "I was unsure about the second step")
+        second = self._sitting(store, toy, None)
+
+        said = store.utterances("L1", "coupled")
+        assert len(said) == 1
+        assert [row for row in said if row["session_id"] == second] == []
+
+    def test_the_same_words_are_not_counted_twice(self, store, toy) -> None:
+        # The shape the defect took: rows kept growing while distinct texts did
+        # not, so anything counting what a learner said would have multiplied it
+        # by the number of sittings since.
+        store.ensure_learner("L1", "simulated", "toy_algebra")
+        for _ in range(3):
+            self._sitting(store, toy, None)
+        self._sitting(store, toy, "the only thing I ever said")
+
+        said = store.utterances("L1", "coupled")
+        assert len(said) == len({row["text"] for row in said}) == 1
 
     def test_events_are_queryable_by_cause(self, store, toy) -> None:
         store.ensure_learner("L1", "simulated", "toy_algebra")

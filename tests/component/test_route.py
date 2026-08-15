@@ -362,6 +362,7 @@ def calculus():
     return registry.load_domain("calculus")
 
 
+
 class TestAgainstTheRealDomain:
     def test_the_first_goal_narrows_the_graph(self, calculus) -> None:
         goal = calculus.concepts.goals()[0]

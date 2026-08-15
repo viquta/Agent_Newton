@@ -606,7 +606,7 @@ class TestShowingYourWorking:
         config = human_config()
         learner = HumanLearner(
             lambda item, attempt: "999",
-            ask_working=(lambda item, response: working) if working else None,
+            ask_working=(lambda item, response, required=False: working) if working else None,
         )
         session = build_session("human", config.seed, toy, config, learner=learner)
         session.diagnostic = Nothing()
@@ -1045,7 +1045,7 @@ class TestASittingIsKeptHoweverItEnds:
         )
         learner = HumanLearner(
             lambda item, attempt: "999",
-            ask_working=lambda item, response: "I guessed",
+            ask_working=lambda item, response, required=False: "I guessed",
         )
         session = build_session("human", config.seed, toy, config, learner=learner)
         session.diagnostic = Nothing()
@@ -1387,3 +1387,90 @@ class TestCrossConceptDiagnosesAreCounted:
         worked = {e.concept_id for e in session.board.state.error_trace}
         if worked - {by_concept[stray]}:
             assert outcome.cross_concept_diagnoses > 0
+
+
+class TestTheReasoningBehindAWrongAnswer:
+    """Asked for, insisted on, and asked *first*.
+
+    A wrong answer alone cannot separate a method that is wrong from arithmetic
+    that slipped, and an unreadable one carries nothing at all — which is how a
+    sitting produced three identical replies to three blanks. The reasoning is
+    taken before the verdict is shown and before the diagnostic looks at the
+    step: after the verdict it would be an account of a known error rather than
+    the thinking that produced it, and after the diagnosis it could not affect
+    anything.
+    """
+
+    def _run(self, toy, answer: str, working: str | None = "I halved it"):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        asked: list[bool] = []
+
+        def ask_working(item, response, required=False):  # noqa: ANN001
+            asked.append(required)
+            return working or ""
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 1, "administer_tests": False}
+        )
+        session = build_session(
+            "human", config.seed, toy, config,
+            learner=HumanLearner(
+                lambda item, attempt: answer, ask_working=ask_working
+            ),
+        )
+        session.diagnostic = Nothing()
+        session.run()
+        return session, asked
+
+    def test_a_wrong_answer_is_asked_for_it(self, toy) -> None:
+        _, asked = self._run(toy, "999")
+        assert asked and all(asked), "the prompt did not insist on a failed step"
+
+    def test_an_unreadable_answer_is_too(self, toy) -> None:
+        # The case with the most to gain: nothing was measured, so the words are
+        # the only thing the step produced.
+        _, asked = self._run(toy, "no idea at all")
+        assert asked and all(asked)
+
+    def test_a_correct_answer_is_asked_but_not_pressed(self, toy) -> None:
+        # Kept rather than dropped with the rest of the burden: "I guessed"
+        # under a right answer is the one thing that can tell a lucky guess from
+        # knowing it, which is the open question about the mastery estimate.
+        _, asked = self._run(toy, toy.items.bank("practice")[0].answer)
+        assert asked == [False] or asked == []
+
+    def test_it_reaches_the_board_before_the_step_is_recorded(self, toy) -> None:
+        # Ordering is the whole point: recorded after, it could not have reached
+        # the diagnosis of the step it explains.
+        session, _ = self._run(toy, "999")
+        causes = [
+            r.cause
+            for r in session.board.audit_log
+            if r.cause in ("annotation", "observation")
+            and ("reflection" in r.evidence or "verdict" in r.evidence)
+        ]
+        assert causes[:2] == ["annotation", "observation"]
+
+    def test_declining_is_recorded_as_declining(self, toy) -> None:
+        # A refusal is a fact about the sitting — a rising rate means the prompt
+        # has become a tax — and it must not read as a step nobody was asked
+        # about.
+        session, _ = self._run(toy, "999", working=None)
+        declined = [r for r in session.board.audit_log if r.evidence.get("declined")]
+        assert declined
+        assert not [
+            u for u in session.board.state.reflections if u.kind == "working"
+        ], "a refusal was stored as if it were reasoning"
+
+    def test_a_simulated_learner_is_unaffected(self, toy) -> None:
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import SimulatedLearner, sample_profile
+
+        profile = sample_profile("L1", 1, toy.misconceptions, SimulatorConfig())
+        learner = SimulatedLearner(profile, toy, SimulatorConfig())
+        assert learner.show_working(toy.items.all()[0], "3*x", required=True) is None

@@ -51,6 +51,9 @@ from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
 _BAR = 18
 
 QUIT = ":q"
+#: Declines a prompt that would otherwise insist. A refusal that can be recorded
+#: is worth more than a field somebody filled with a full stop to get past it.
+DECLINE = ":s"
 
 
 def _bar(value: float, band) -> Text:
@@ -109,12 +112,28 @@ class DemoObserver(Watching):
     break a sitting the first time the loop reaches it.
     """
 
-    def __init__(self, console: Console, domain: Domain, config: Config) -> None:
+    def __init__(
+        self,
+        console: Console,
+        domain: Domain,
+        config: Config,
+        carried: tuple = (),
+    ) -> None:
         self._console = console
         self._domain = domain
         self._config = config
         self._prior = bkt.initial(config.bkt)
         self._seen_versions = 0
+        #: What this learner said in *earlier* sittings, by concept. Captured
+        #: before the session starts, because the state carries every word ever
+        #: said and there is otherwise no way to tell last month's from this
+        #: minute's — the utterances have no timestamp.
+        self._before: dict[str, list[str]] = {}
+        for utterance in carried:
+            self._before.setdefault(utterance.concept_id, []).append(utterance.text)
+        #: Concepts already reminded about this sitting. Once each: the point is
+        #: to be reminded, not nagged.
+        self._reminded: set[str] = set()
         #: True while a held-out bank is being administered. The front end reads
         #: it to withhold the concept name — see :func:`question_title`. Held
         #: here rather than passed around because the session already tells the
@@ -169,6 +188,7 @@ class DemoObserver(Watching):
     def item_started(self, item: Item, board: Blackboard) -> None:
         self._console.print()
         self._console.print(self.board_panel(board))
+        self._remind(item)
         for record in board.audit_log[self._seen_versions :]:
             if record.cause in ("replan", "plan"):
                 self._console.print(
@@ -176,6 +196,35 @@ class DemoObserver(Watching):
                     + Text(record.summary, style="dim magenta")
                 )
         self._seen_versions = len(board.audit_log)
+
+    def _remind(self, item: Item) -> None:
+        """What this learner said about this concept before today.
+
+        Shown once per concept per sitting, when it comes round again. A learner
+        who wrote down how they were thinking about something a month ago is the
+        only one who can say whether they still think it — the system cannot,
+        and should not pretend to by summarising it.
+
+        Quoted flat, without comment. It may well be a misconception stated in
+        their own words, and dressing it up as advice would be teaching it back
+        to them.
+        """
+        said = self._before.get(item.concept_id)
+        if not said or item.concept_id in self._reminded:
+            return
+        self._reminded.add(item.concept_id)
+        body = Text()
+        body.append("Last time you worked on this, you wrote:\n\n", style="dim")
+        for text in said[-2:]:
+            body.append(f"  “{text}”\n", style="italic")
+        body.append(
+            "\nWorth a look — do you still think that, or has it changed?",
+            style="dim",
+        )
+        self._console.print(
+            Panel(body, title="from an earlier sitting", border_style="magenta",
+                  padding=(0, 2))
+        )
 
     def step_graded(
         self,
@@ -761,25 +810,44 @@ def run_demo(
         )
         raise SystemExit(1)
 
-    observer = DemoObserver(console, domain, config)
+    store = LearnerStore(config.paths.store_path)
+    store.ensure_learner(learner_id, "human", config.domain)
+    previous = store.latest_state(learner_id, config.arm)
+    observer = DemoObserver(
+        console, domain, config,
+        carried=tuple(previous.reflections) if previous else (),
+    )
 
-    def _asked(prompt: str, *, optional: bool = False) -> str:
-        """Read one line, honouring :q wherever it is typed.
+    def _asked(prompt: str, *, optional: bool = False, insist: bool = False) -> str:
+        """Read one line, honouring the control words wherever they are typed.
 
         Every prompt goes through here. The intro says ":q stops at any point",
         and it only checked the answer prompt — so typing it at the working or
         reflection prompt was silently recorded as prose and the sitting carried
         on. A stated affordance that works in one place out of three is worse
         than not offering it.
+
+        ``insist`` re-asks on an empty line instead of taking it. It is not a
+        trap: :s declines, and the loop below says so every time it comes round,
+        because a person who is out of words needs a way past that does not
+        involve inventing some.
         """
-        said = (
-            Prompt.ask(prompt, default="", show_default=False)
-            if optional
-            else Prompt.ask(prompt)
-        ).strip()
-        if said == QUIT:
-            raise Quit
-        return said
+        while True:
+            said = (
+                Prompt.ask(prompt, default="", show_default=False)
+                if optional or insist
+                else Prompt.ask(prompt)
+            ).strip()
+            if said == QUIT:
+                raise Quit
+            if said == DECLINE:
+                return ""
+            if said or not insist:
+                return said
+            console.print(
+                f"  [dim]a line about how you got there, or {DECLINE} to skip "
+                f"it[/dim]"
+            )
 
     def ask(item: Item, attempt: int) -> str:
         console.print()
@@ -800,13 +868,29 @@ def run_demo(
             optional=True,
         )
 
-    def ask_working(item: Item, response: str) -> str:
-        # Asked after the answer has been graded and recorded, so it cannot
-        # become a hint the learner writes for themselves. Optional every time:
-        # a channel you have to fill in is a tax on answering.
+    def ask_working(item: Item, response: str, required: bool = False) -> str:
+        """The reasoning behind the step, insisted on when it did not come out.
+
+        Asked before the verdict is shown on a failed step, so what arrives is
+        the reasoning that was used rather than an account of an error the
+        learner has just been told about — and before the diagnostic sees the
+        step, which is the only moment the words can affect what happens next.
+
+        Optional after a correct answer, where it is volunteered rather than
+        asked for. Kept there rather than dropped with the rest of the burden:
+        "I guessed" written under a right answer is the one thing that can tell
+        a lucky guess from knowing it.
+        """
+        if not required:
+            return _asked(
+                "  [magenta]your working[/magenta]  "
+                "[dim](optional — enter to skip)[/dim]",
+                optional=True,
+            )
         return _asked(
-            "  [magenta]your working[/magenta]  [dim](optional — enter to skip)[/dim]",
-            optional=True,
+            "  [magenta]before I say — how did you get there?[/magenta]  "
+            f"[dim]({DECLINE} to skip)[/dim]",
+            insist=True,
         )
 
     learner = HumanLearner(
@@ -814,9 +898,6 @@ def run_demo(
         ask_reflection=ask_reflection, ask_working=ask_working,
     )
 
-    store = LearnerStore(config.paths.store_path)
-    store.ensure_learner(learner_id, "human", config.domain)
-    previous = store.latest_state(learner_id, config.arm)
     gap = elapsed_days if elapsed_days is not None else _days_since(store, learner_id, config)
     session_id = store.open_session(
         learner_id=learner_id,
@@ -845,9 +926,15 @@ def run_demo(
                 "several roots, separate them with commas: [dim]0, 2[/dim].\n"
                 "[bold]When the tutor asks you a question in words[/bold], answer in "
                 "words — that reply is kept and is not graded.\n"
-                "[bold]After every answer you may show your working[/bold], in words or "
-                "maths. It is never graded and never costs an attempt; the tutor reads "
-                "it, so a hint can address your actual steps. Press enter to skip.\n"
+                "[bold]After a correct answer you may still show your working[/bold], "
+                "in words or maths — including \"I guessed\", which is worth more "
+                "than it sounds. Never graded, never an attempt. Press enter to "
+                "skip.\n"
+                "[bold]When an answer does not come out right[/bold] you are "
+                "asked how you got there, before you are told what went wrong. "
+                "That reply is kept and never graded; it is what lets the system "
+                "tell a slip from a misunderstanding, and it is read back to you "
+                "next time this idea comes round. [dim]:s[/dim] skips it.\n"
                 "[bold]:q[/bold] stops at any point.\n\n"
                 "During training the panel shows what the system believes about you "
                 "and why it chooses what it chooses. Nothing here knows the right "
