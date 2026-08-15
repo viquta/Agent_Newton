@@ -1,0 +1,1099 @@
+{
+  "learner_id": "victor",
+  "completed": false,
+  "responses": [
+    {
+      "item_id": "ca_lim_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_avg_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_tan_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_inst_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_fp_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_pow_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_neg_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "response": "7"
+    },
+    {
+      "item_id": "ca_lim_p1",
+      "response": "4"
+    },
+    {
+      "item_id": "ca_lim_p2",
+      "response": "4"
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": "4"
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": "3"
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": "6"
+    }
+  ],
+  "turns": [
+    {
+      "item_id": "ca_avg_p1",
+      "concept_id": "average_rate_of_change",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "The average rate of change formula is (f(b) - f(a)) / (b - a).\nSubstitute the values: (3^2 - 1^2) / (3 - 1).\nSimplify the exponents: (9 - 1) / (3 - 1).\nSubtract the terms in the numerator and denominator: 8 / 2.\nDivide to find the result: 4.",
+      "version": 180
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "concept_id": "average_rate_of_change",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To calculate the average rate of change for f(x) = x^2, identify the values at the endpoints.\nf(3) = 3^2\nf(1) = 1^2\nSubstitute these into (f(b) - f(a)) / (b - a).\n(9 - 1) / (3 - 1)\n8 / 2\n4",
+      "version": 182
+    },
+    {
+      "item_id": "ca_avg_p1",
+      "concept_id": "average_rate_of_change",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To find the average rate of change, evaluate the function at each endpoint.\nf(3) = 3^2\nf(1) = 1^2\nSubstitute these values into (f(b) - f(a)) / (b - a).\n(9 - 1) / (3 - 1)\n8 / 2\n4",
+      "version": 184
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "The gradient of the secant is (f(x) - f(a)) / (x - a).\nSubstitute f(x) = x^2 and a = 2.\n(x^2 - 2^2) / (x - 2)\n(x^2 - 4) / (x - 2)\n(x - 2)(x + 2) / (x - 2)\nx + 2\nTake the limit as x approaches 2.\n4",
+      "version": 196
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "move": "hint",
+      "level": "targeted",
+      "targets": null,
+      "text": "The calculation of the limit of (f(x) - f(a)) / (x - a) as x approaches 3 was omitted. The step should have shown the evaluation of the derivative at x = 3.",
+      "version": 200
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please look over your work again and identify which specific part of the process you feel least confident about.",
+      "version": 202
+    }
+  ],
+  "said": [
+    {
+      "text": "I don't know how to do the algebra part.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "What do I do first? I get confused with the algebra part.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "I don't understand this.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I thought that f'g is (x^2 + 1)^2 and that fg' is (x^3)",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I learned from the \"moving on\" note from the last problem.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I don't know any of this.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I followed the quotient rule (i think) and i just don't know what (x^-1)^2 is",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I give up, the hint didn't help me.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I tried using the quotient rule",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I think, the part with the uv^2",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "I really don't know.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I don't know how the chain rule works.",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "what do I do with the inside of the parenthesese?",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "did not get anything",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "but I thought i did it right",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "which one is the fx and which is the gx",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "if outisde u is u^4, then the derivative is 4u^3 and the inside is 3x+1, then its derivative is 3, so this makes 4*27 which is 108",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "6x^2(x^3+1)^2",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "finally, i got it",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "i think i just forgot the power of 2",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "i dont understand implicit differentiation",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "everything",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "reflection"
+    },
+    {
+      "text": "I guess it doesn't matter if it is equal to 25 or36...",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "This is not learning, i just guessed from the other two problems",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "6x",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "idk",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "reflection"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    }
+  ],
+  "mastery": {
+    "limits_of_sequences": 0.9578947368421052,
+    "average_rate_of_change": 0.9578947368421052,
+    "limit_concept": 0.8379746835443038,
+    "instantaneous_rate_of_change": 0.4,
+    "derivative_from_first_principles": 0.4,
+    "power_rule": 0.4,
+    "negative_fractional_exponents": 0.4,
+    "polynomial_differentiation": 0.328059444874056,
+    "stationary_points": 0.328059444874056,
+    "product_rule": 0.3224756400336828,
+    "quotient_rule": 0.3225299690081277,
+    "chain_rule": 0.3301009572585659,
+    "implicit_differentiation": 0.3224756400336828,
+    "antiderivative": 0.3224756400336828,
+    "integration_by_substitution": 0.1612566209940906
+  },
+  "error_trace": [
+    {
+      "t": 8,
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "misconception_label": null,
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 9,
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "misconception_label": "quotient_rule_order_swapped",
+      "confidence": 0.8,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 10,
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "misconception_label": "quotient_rule_order_swapped",
+      "confidence": 0.85,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 13,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 14,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 0.8,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 15,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 16,
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 17,
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 19,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 20,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 21,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 23,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 26,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 27,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 28,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 31,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": "antiderivative_omits_constant",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 32,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": null,
+      "confidence": 0.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 33,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": "antiderivative_omits_constant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 36,
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "misconception_label": "usub_forgets_du",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 52,
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "misconception_label": "tangent_as_secant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    }
+  ],
+  "unmeasurable_steps": 5,
+  "audit_log": [
+    {
+      "version": 154,
+      "cause": "annotation",
+      "summary": "resumed learner 'victor'",
+      "evidence": {
+        "concepts": 15,
+        "arm": "coupled",
+        "known_concepts": 15,
+        "prior_steps": 41
+      }
+    },
+    {
+      "version": 155,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(limits_of_sequences) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 156,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(average_rate_of_change) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 157,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(limit_concept) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 158,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(instantaneous_rate_of_change) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 159,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(derivative_from_first_principles) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 160,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(power_rule) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "power_rule",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 161,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(negative_fractional_exponents) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 162,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(polynomial_differentiation) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "polynomial_differentiation",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 163,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(stationary_points) 0.329 -> 0.328",
+      "evidence": {
+        "concept_id": "stationary_points",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3292098840865697,
+        "mastery_after": 0.328059444874056
+      }
+    },
+    {
+      "version": 164,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(product_rule) 0.324 -> 0.322",
+      "evidence": {
+        "concept_id": "product_rule",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.32359000237283586,
+        "mastery_after": 0.3224756400336828
+      }
+    },
+    {
+      "version": 165,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(quotient_rule) 0.324 -> 0.323",
+      "evidence": {
+        "concept_id": "quotient_rule",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3236446823659117,
+        "mastery_after": 0.3225299690081277
+      }
+    },
+    {
+      "version": 166,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(chain_rule) 0.331 -> 0.330",
+      "evidence": {
+        "concept_id": "chain_rule",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.33126458664979563,
+        "mastery_after": 0.3301009572585659
+      }
+    },
+    {
+      "version": 167,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(implicit_differentiation) 0.324 -> 0.322",
+      "evidence": {
+        "concept_id": "implicit_differentiation",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.32359000237283586,
+        "mastery_after": 0.3224756400336828
+      }
+    },
+    {
+      "version": 168,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(antiderivative) 0.324 -> 0.322",
+      "evidence": {
+        "concept_id": "antiderivative",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.32359000237283586,
+        "mastery_after": 0.3224756400336828
+      }
+    },
+    {
+      "version": 169,
+      "cause": "decay",
+      "summary": "0.130077 day(s) elapsed; P(integration_by_substitution) 0.161 -> 0.161",
+      "evidence": {
+        "concept_id": "integration_by_substitution",
+        "elapsed_days": 0.13007744960648146,
+        "half_life_days": 14.0,
+        "mastery_before": 0.16132934984147732,
+        "mastery_after": 0.1612566209940906
+      }
+    },
+    {
+      "version": 170,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(limits_of_sequences) 0.328 -> 0.400",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.328059444874056,
+        "mastery_after": 0.4
+      }
+    },
+    {
+      "version": 171,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(average_rate_of_change) 0.328 -> 0.400",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.328059444874056,
+        "mastery_after": 0.4
+      }
+    },
+    {
+      "version": 172,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(limit_concept) 0.328 -> 0.400",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.328059444874056,
+        "mastery_after": 0.4
+      }
+    },
+    {
+      "version": 173,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(instantaneous_rate_of_change) 0.328 -> 0.400",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.328059444874056,
+        "mastery_after": 0.4
+      }
+    },
+    {
+      "version": 174,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(derivative_from_first_principles) 0.328 -> 0.400",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.328059444874056,
+        "mastery_after": 0.4
+      }
+    },
+    {
+      "version": 175,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(power_rule) 0.328 -> 0.400",
+      "evidence": {
+        "concept_id": "power_rule",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.328059444874056,
+        "mastery_after": 0.4
+      }
+    },
+    {
+      "version": 176,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(negative_fractional_exponents) 0.328 -> 0.400",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.328059444874056,
+        "mastery_after": 0.4
+      }
+    },
+    {
+      "version": 177,
+      "cause": "plan",
+      "summary": "goal set to 'negative_fractional_exponents' (consolidate)",
+      "evidence": {
+        "goal": "negative_fractional_exponents",
+        "emphasis": "consolidate",
+        "reason": "7 concept(s) still needed for negative_fractional_exponents"
+      }
+    },
+    {
+      "version": 178,
+      "cause": "replan",
+      "summary": "replan triggered by no_plan",
+      "evidence": {}
+    },
+    {
+      "version": 179,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_avg_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 180,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_avg_p1",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "The average rate of change formula is (f(b) - f(a)) / (b - a).\nSubstitute the values: (3^2 - 1^2) / (3 - 1).\nSimplify the exponents: (9 - 1) / (3 - 1).\nSubtract the terms in the numerator and denominator: 8 / 2.\nDivide to find the result: 4."
+      }
+    },
+    {
+      "version": 181,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_avg_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 182,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_avg_p1",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To calculate the average rate of change for f(x) = x^2, identify the values at the endpoints.\nf(3) = 3^2\nf(1) = 1^2\nSubstitute these into (f(b) - f(a)) / (b - a).\n(9 - 1) / (3 - 1)\n8 / 2\n4"
+      }
+    },
+    {
+      "version": 183,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_avg_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 184,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_avg_p1",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To find the average rate of change, evaluate the function at each endpoint.\nf(3) = 3^2\nf(1) = 1^2\nSubstitute these values into (f(b) - f(a)) / (b - a).\n(9 - 1) / (3 - 1)\n8 / 2\n4"
+      }
+    },
+    {
+      "version": 185,
+      "cause": "annotation",
+      "summary": "3 unreadable response(s) on ca_avg_p1; moving on without having measured anything",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "unreadable": 3,
+        "max_unreadable_per_item": 3
+      }
+    },
+    {
+      "version": 186,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "antiderivative_omits_constant",
+        "count": 2,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 187,
+      "cause": "observation",
+      "summary": "correct on ca_avg_p1; P(average_rate_of_change) 0.400 -> 0.800",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.4,
+        "mastery_after": 0.8,
+        "delta": 0.4,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 188,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "average_rate_of_change",
+        "before": 0.4,
+        "after": 0.8,
+        "delta": 0.4,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 189,
+      "cause": "observation",
+      "summary": "correct on ca_lim_p1; P(limits_of_sequences) 0.400 -> 0.800",
+      "evidence": {
+        "item_id": "ca_lim_p1",
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "mastery_before": 0.4,
+        "mastery_after": 0.8,
+        "delta": 0.4,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 190,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "limits_of_sequences",
+        "before": 0.4,
+        "after": 0.8,
+        "delta": 0.4,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 191,
+      "cause": "observation",
+      "summary": "correct on ca_lim_p2; P(limits_of_sequences) 0.800 -> 0.958",
+      "evidence": {
+        "item_id": "ca_lim_p2",
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "mastery_before": 0.8,
+        "mastery_after": 0.9578947368421052,
+        "delta": 0.1578947368421052,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 192,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "limits_of_sequences",
+        "mastery": 0.9578947368421052
+      }
+    },
+    {
+      "version": 193,
+      "cause": "observation",
+      "summary": "correct on ca_avg_p1; P(average_rate_of_change) 0.800 -> 0.958",
+      "evidence": {
+        "item_id": "ca_avg_p1",
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "mastery_before": 0.8,
+        "mastery_after": 0.9578947368421052,
+        "delta": 0.1578947368421052,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 194,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "average_rate_of_change",
+        "mastery": 0.9578947368421052
+      }
+    },
+    {
+      "version": 195,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_tan_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 196,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_tan_p1",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "The gradient of the secant is (f(x) - f(a)) / (x - a).\nSubstitute f(x) = x^2 and a = 2.\n(x^2 - 2^2) / (x - 2)\n(x^2 - 4) / (x - 2)\n(x - 2)(x + 2) / (x - 2)\nx + 2\nTake the limit as x approaches 2.\n4"
+      }
+    },
+    {
+      "version": 197,
+      "cause": "observation",
+      "summary": "correct on ca_tan_p1; P(limit_concept) 0.400 -> 0.800",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "mastery_before": 0.4,
+        "mastery_after": 0.8,
+        "delta": 0.4,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 198,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "limit_concept",
+        "before": 0.4,
+        "after": 0.8,
+        "delta": 0.4,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 199,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_tan_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 200,
+      "cause": "tutor",
+      "summary": "hint at targeted on ca_tan_p1",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "move": "hint",
+        "level": "targeted",
+        "targets": null,
+        "text": "The calculation of the limit of (f(x) - f(a)) / (x - a) as x approaches 3 was omitted. The step should have shown the evaluation of the derivative at x = 3."
+      }
+    },
+    {
+      "version": 201,
+      "cause": "observation",
+      "summary": "incorrect on ca_tan_p1; P(limit_concept) 0.800 -> 0.467",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "incorrect",
+        "mastery_before": 0.8,
+        "mastery_after": 0.46666666666666673,
+        "delta": -0.3333333333333333,
+        "misconception_label": "tangent_as_secant"
+      }
+    },
+    {
+      "version": 202,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_tan_p1",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please look over your work again and identify which specific part of the process you feel least confident about."
+      }
+    },
+    {
+      "version": 203,
+      "cause": "observation",
+      "summary": "correct on ca_tan_p1; P(limit_concept) 0.467 -> 0.838",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "mastery_before": 0.46666666666666673,
+        "mastery_after": 0.8379746835443038,
+        "delta": 0.3713080168776371,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 204,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "limit_concept",
+        "before": 0.4,
+        "after": 0.8379746835443038,
+        "delta": 0.4379746835443038,
+        "theta": 0.15
+      }
+    }
+  ]
+}

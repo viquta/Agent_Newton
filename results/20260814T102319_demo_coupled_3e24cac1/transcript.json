@@ -1,0 +1,2732 @@
+{
+  "learner_id": "victor",
+  "completed": true,
+  "responses": [
+    {
+      "item_id": "ca_lim_pre1",
+      "response": "6"
+    },
+    {
+      "item_id": "ca_avg_pre1",
+      "response": "7"
+    },
+    {
+      "item_id": "ca_tan_pre1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_inst_pre1",
+      "response": "8"
+    },
+    {
+      "item_id": "ca_fp_pre1",
+      "response": "t^2+2ht+h^2"
+    },
+    {
+      "item_id": "ca_pow_pre1",
+      "response": "7x^6"
+    },
+    {
+      "item_id": "ca_neg_pre1",
+      "response": "-6x^-3"
+    },
+    {
+      "item_id": "ca_poly_pre1",
+      "response": "6x^2+2x"
+    },
+    {
+      "item_id": "ca_stat_pre1",
+      "response": "0, 2"
+    },
+    {
+      "item_id": "ca_prod_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_quot_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_chain_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_anti_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_usub_pre1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "2x+1 * 3x^2"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "2x*3x^2"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "5x^2"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "2x*(x^4 + 2) + (x^2 + 1) * 4x^3"
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "response": "2x * (x^5 + 2) + (x^2 + 1) * 5x^4"
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "response": "2x"
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "response": "(2x * (x + 1) - x^2 * (x^-1)^2) / (x^-1)^2"
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "response": "(2x(x+2) - x^2 * (x + 2)^2) / (x + 2)^2"
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "response": "(-4x - x^3) / (x+2)^2"
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "response": "(2x(x+2)-x^2) / (x+2)^2"
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "response": "(2x(x+3) - x^2)/(x+3)^2"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "2x^3"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "3x"
+    },
+    {
+      "item_id": "ca_chain_p2",
+      "response": "12x(3x+1)^3"
+    },
+    {
+      "item_id": "ca_chain_p2",
+      "response": "108"
+    },
+    {
+      "item_id": "ca_chain_p2",
+      "response": "12(3x+1)^3"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "6x^2(x^3+1)"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "6x^2(x^3+1)^2"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "2(3x^2)(x^3+1)^2"
+    },
+    {
+      "item_id": "ca_chain_p2",
+      "response": "16(4x+1)^3"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "12x^3 * (x^4+1)"
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "response": "12x^3 * (x^4 + 1)^2"
+    },
+    {
+      "item_id": "ca_chain_p2",
+      "response": "20(5x+1)^3"
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "response": "-x/y"
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "response": "-x/y"
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "response": "6x"
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "response": "x^3"
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "response": "x^4 + c"
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "response": "x^5 + c"
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "response": "6x"
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "response": ""
+    },
+    {
+      "item_id": "ca_lim_post1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_avg_post1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_tan_post1",
+      "response": "12"
+    },
+    {
+      "item_id": "ca_inst_post1",
+      "response": "10"
+    },
+    {
+      "item_id": "ca_fp_post1",
+      "response": "a^2+2ah+h^2"
+    },
+    {
+      "item_id": "ca_pow_post1",
+      "response": "9x^8"
+    },
+    {
+      "item_id": "ca_neg_post1",
+      "response": "-10x^-3"
+    },
+    {
+      "item_id": "ca_poly_post1",
+      "response": "9x^2-4x"
+    },
+    {
+      "item_id": "ca_stat_post1",
+      "response": "0, 3"
+    },
+    {
+      "item_id": "ca_prod_post1",
+      "response": "2x(x^4+1) + 4x^3 * (x^2+3)"
+    },
+    {
+      "item_id": "ca_quot_post1",
+      "response": "(2x(x+3) - x^2)/(x+3)^2"
+    },
+    {
+      "item_id": "ca_chain_post1",
+      "response": "6x(x^4+1)"
+    },
+    {
+      "item_id": "ca_impl_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_anti_post1",
+      "response": "99"
+    },
+    {
+      "item_id": "ca_usub_post1",
+      "response": "99"
+    }
+  ],
+  "turns": [
+    {
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take another look at your expression and tell me which specific part of the calculation you feel least confident about.",
+      "version": 21
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "product_rule_as_product_of_derivatives",
+      "text": "Since your expression is a product of two functions, you should apply the product rule: (f*g)' = f'g + fg'. Instead of multiplying the derivatives together, try calculating the derivative of the first part multiplied by the second part, plus the first part multiplied by the derivative of the second.",
+      "version": 25
+    },
+    {
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "product_rule_as_product_of_derivatives",
+      "text": "Since you have a product of two functions, you should apply the product rule: (f*g)' = f'g + fg'. Instead of squaring the first term or only differentiating one part, try calculating the derivative of each factor and applying that formula.",
+      "version": 28
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To differentiate a fraction like x^2 / (x + 1), you should apply the quotient rule, which is (u'v - uv^2) / v^2. You need to identify u as x^2 and v as x + 1 to begin the calculation.",
+      "version": 37
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To apply the quotient rule, you should identify the numerator as u = x^2 and the denominator as v = x + 1. The formula requires finding the derivatives du/dx and dv/dx to substitute into (v * du/dx - u * dv/dx) / v^2.",
+      "version": 40
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To apply the quotient rule to y = x^2 / (x + 1), you need to calculate the derivative of the numerator and the denominator separately. The expression for the derivative should be [ (d/dx)(x^2) * (x + 1) - (x^2) * (d/dx)(x + 1) ] / (x + 1)^2.",
+      "version": 43
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take another look at your application of the quotient rule and identify which specific part of the formula you feel least confident about.",
+      "version": 47
+    },
+    {
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "quotient_rule_order_swapped",
+      "text": "To apply the quotient rule correctly, you should use the formula (f'(x) * g(x) - f(x) * g'(x)) / (g(x))^2. In this case, let f(x) = x^2 and g(x) = x + 2 to find the derivative of the numerator and denominator.",
+      "version": 51
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take a moment to review your work and identify which specific part of the process you feel least confident about.",
+      "version": 59
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "chain_rule_omits_inner",
+      "text": "Since you have a function nested inside another, you should apply the chain rule by multiplying the derivative of the outer power by the derivative of (x^2 + 1). To begin, try finding the derivative of the outer part while keeping the inner expression unchanged.",
+      "version": 63
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "chain_rule_omits_inner",
+      "text": "Since the expression is a composite function, you should apply the chain rule by multiplying the derivative of the outer power by the derivative of the inner term (x^2 + 1). Try applying the formula d/dx [f(g(x))] = f'(g(x)) * g'(x) to your original equation.",
+      "version": 66
+    },
+    {
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take another look at your expression for the derivative and tell me which specific part you feel most uncertain about.",
+      "version": 69
+    },
+    {
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "chain_rule_omits_inner",
+      "text": "The chain rule requires you to multiply the derivative of the outer function by the derivative of the inner function. Instead of multiplying 4 * 27, you should multiply 4 * (3x + 1)^3 * 3.",
+      "version": 73
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please review your calculation for the derivative of u^4 and identify which specific part of that process you feel least confident about.",
+      "version": 77
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "chain_rule_omits_inner",
+      "text": "When applying the chain rule to (x^3 + 1)^3, you must multiply the derivative of the outer function by the derivative of the inner expression. The derivative of x^3 + 1 is 3x^2, which should be multiplied by the power rule result.",
+      "version": 80
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "chain_rule_omits_inner",
+      "text": "To differentiate a composite function like (x^3 + 1)^3, you must multiply the derivative of the outer function by the derivative of the inner function. The power rule for the outer part should result in 3(x^3 + 1)^2, which must then be multiplied by the derivative of x^3 + 1.",
+      "version": 82
+    },
+    {
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take another look at your calculation for the derivative of (x^4 + 1)^3 and tell me which specific part you feel least confident about.",
+      "version": 88
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take a moment to review your work and identify which specific part of the process you find most confusing. Which step in the implicit differentiation method is causing the most difficulty?",
+      "version": 96
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "implicit_diff_omits_dydx",
+      "text": "To find dy/dx using implicit differentiation, you should treat y as a function of x, which means applying the chain rule to the term y^2. The next step involves differentiating both sides of the equation with respect to x.",
+      "version": 99
+    },
+    {
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "implicit_diff_omits_dydx",
+      "text": "To find dy/dx using implicit differentiation, you should treat y as a function of x, which means applying the chain rule to the term y^2. The next step involves differentiating both sides of the equation with respect to x.",
+      "version": 101
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take another look at your expression for the antiderivative and tell me which part you feel least confident about.",
+      "version": 112
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To find the antiderivative of 3x^2, you need to determine a function whose derivative is 3x^2. You should apply the power rule for integration, which states that the antiderivative of x^n is (x^(n+1))/(n+1).",
+      "version": 115
+    },
+    {
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "move": "remediate",
+      "level": "worked_step",
+      "targets": "antiderivative_omits_constant",
+      "text": "To find the general antiderivative of 3x^2, you should include an arbitrary constant to represent all possible functions whose derivative is 3x^2. Instead of 6x, the expression should be x^3 + C.",
+      "version": 117
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "move": "reflect",
+      "level": "worked_step",
+      "targets": null,
+      "text": "Please take another look at your expression for the integral and tell me which part of your calculation you feel least confident about.",
+      "version": 124
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To find the integral of (2x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term.",
+      "version": 127
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To find the integral of (2x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term.",
+      "version": 129
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To find the integral of (3x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term.",
+      "version": 132
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To find the integral of (3x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term.",
+      "version": 134
+    },
+    {
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "move": "hint",
+      "level": "worked_step",
+      "targets": null,
+      "text": "To find the integral of (3x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term.",
+      "version": 136
+    }
+  ],
+  "said": [
+    {
+      "text": "I don't know how to do the algebra part.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "What do I do first? I get confused with the algebra part.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "I don't understand this.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I thought that f'g is (x^2 + 1)^2 and that fg' is (x^3)",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I learned from the \"moving on\" note from the last problem.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I don't know any of this.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I followed the quotient rule (i think) and i just don't know what (x^-1)^2 is",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I give up, the hint didn't help me.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I tried using the quotient rule",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I think, the part with the uv^2",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "I really don't know.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I don't know how the chain rule works.",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "what do I do with the inside of the parenthesese?",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "did not get anything",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "but I thought i did it right",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "which one is the fx and which is the gx",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "if outisde u is u^4, then the derivative is 4u^3 and the inside is 3x+1, then its derivative is 3, so this makes 4*27 which is 108",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "6x^2(x^3+1)^2",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "finally, i got it",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "i think i just forgot the power of 2",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "i dont understand implicit differentiation",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "everything",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "reflection"
+    },
+    {
+      "text": "I guess it doesn't matter if it is equal to 25 or36...",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "This is not learning, i just guessed from the other two problems",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "6x",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "idk",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "reflection"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    }
+  ],
+  "mastery": {
+    "limits_of_sequences": 0.941455015066724,
+    "average_rate_of_change": 0.941455015066724,
+    "limit_concept": 0.941455015066724,
+    "instantaneous_rate_of_change": 0.941455015066724,
+    "derivative_from_first_principles": 0.941455015066724,
+    "power_rule": 0.941455015066724,
+    "negative_fractional_exponents": 0.941455015066724,
+    "polynomial_differentiation": 0.941455015066724,
+    "stationary_points": 0.941455015066724,
+    "product_rule": 0.9166356051938412,
+    "quotient_rule": 0.9168770916216922,
+    "chain_rule": 0.9505293172818301,
+    "implicit_differentiation": 0.9166356051938412,
+    "antiderivative": 0.9166356051938412,
+    "integration_by_substitution": 0.20003446542686867
+  },
+  "error_trace": [
+    {
+      "t": 7,
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "misconception_label": null,
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 8,
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "misconception_label": null,
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 9,
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "misconception_label": "quotient_rule_order_swapped",
+      "confidence": 0.8,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 10,
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "misconception_label": "quotient_rule_order_swapped",
+      "confidence": 0.85,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 13,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 14,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 0.8,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 15,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 16,
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 17,
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 19,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 20,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 21,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 23,
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "misconception_label": "chain_rule_omits_inner",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 26,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 27,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 28,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 31,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": "antiderivative_omits_constant",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 32,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": null,
+      "confidence": 0.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 33,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": "antiderivative_omits_constant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 36,
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "misconception_label": "usub_forgets_du",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    }
+  ],
+  "unmeasurable_steps": 5,
+  "audit_log": [
+    {
+      "version": 1,
+      "cause": "annotation",
+      "summary": "initialised learner 'victor'",
+      "evidence": {
+        "seed": 20260812,
+        "concepts": 15,
+        "arm": "coupled"
+      }
+    },
+    {
+      "version": 2,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(limits_of_sequences) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 3,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(average_rate_of_change) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 4,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(limit_concept) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 5,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(instantaneous_rate_of_change) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 6,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(derivative_from_first_principles) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 7,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(power_rule) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "power_rule",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 8,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(negative_fractional_exponents) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 9,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(polynomial_differentiation) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "polynomial_differentiation",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 10,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(stationary_points) 0.150 -> 0.941",
+      "evidence": {
+        "concept_id": "stationary_points",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.941455015066724
+      }
+    },
+    {
+      "version": 11,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(product_rule) 0.150 -> 0.000",
+      "evidence": {
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.0003445503617778799
+      }
+    },
+    {
+      "version": 12,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(quotient_rule) 0.150 -> 0.000",
+      "evidence": {
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.0003445503617778799
+      }
+    },
+    {
+      "version": 13,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(chain_rule) 0.150 -> 0.000",
+      "evidence": {
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.0003445503617778799
+      }
+    },
+    {
+      "version": 14,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(implicit_differentiation) 0.150 -> 0.000",
+      "evidence": {
+        "concept_id": "implicit_differentiation",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.0003445503617778799
+      }
+    },
+    {
+      "version": 15,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(antiderivative) 0.150 -> 0.000",
+      "evidence": {
+        "concept_id": "antiderivative",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.0003445503617778799
+      }
+    },
+    {
+      "version": 16,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(integration_by_substitution) 0.150 -> 0.000",
+      "evidence": {
+        "concept_id": "integration_by_substitution",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.15,
+        "mastery_after": 0.0003445503617778799
+      }
+    },
+    {
+      "version": 17,
+      "cause": "plan",
+      "summary": "goal set to 'quotient_rule' (consolidate)",
+      "evidence": {
+        "goal": "quotient_rule",
+        "emphasis": "consolidate",
+        "reason": "2 concept(s) still needed for quotient_rule"
+      }
+    },
+    {
+      "version": 18,
+      "cause": "replan",
+      "summary": "replan triggered by no_plan",
+      "evidence": {}
+    },
+    {
+      "version": 19,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.000 -> 0.200",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.20003446542686867,
+        "delta": 0.1996899150650908,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 20,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "I don't know how to do the algebra part.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 21,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take another look at your expression and tell me which specific part of the calculation you feel least confident about."
+      }
+    },
+    {
+      "version": 22,
+      "cause": "annotation",
+      "summary": "reflection on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "What do I do first? I get confused with the algebra part.",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 23,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.200 -> 0.224",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.20003446542686867,
+        "mastery_after": 0.2242474882184422,
+        "delta": 0.02421302279157353,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 24,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "I don't understand this.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 25,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "product_rule_as_product_of_derivatives",
+        "text": "Since your expression is a product of two functions, you should apply the product rule: (f*g)' = f'g + fg'. Instead of multiplying the derivatives together, try calculating the derivative of the first part multiplied by the second part, plus the first part multiplied by the derivative of the second."
+      }
+    },
+    {
+      "version": 26,
+      "cause": "observation",
+      "summary": "incorrect on ca_prod_p1; P(product_rule) 0.224 -> 0.228",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2242474882184422,
+        "mastery_after": 0.22789899304716307,
+        "delta": 0.0036515048287208696,
+        "misconception_label": "product_rule_as_product_of_derivatives"
+      }
+    },
+    {
+      "version": 27,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "I thought that f'g is (x^2 + 1)^2 and that fg' is (x^3)",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 28,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "product_rule_as_product_of_derivatives",
+        "text": "Since you have a product of two functions, you should apply the product rule: (f*g)' = f'g + fg'. Instead of squaring the first term or only differentiating one part, try calculating the derivative of each factor and applying that formula."
+      }
+    },
+    {
+      "version": 29,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "product_rule",
+        "before": 0.0003445503617778799,
+        "after": 0.22789899304716307,
+        "delta": 0.2275544426853852,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 30,
+      "cause": "observation",
+      "summary": "correct on ca_prod_p1; P(product_rule) 0.228 -> 0.656",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "correct",
+        "mastery_before": 0.22789899304716307,
+        "mastery_after": 0.6563947283718576,
+        "delta": 0.42849573532469454,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 31,
+      "cause": "annotation",
+      "summary": "working on ca_prod_p1",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "reflection": "I learned from the \"moving on\" note from the last problem.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 32,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "product_rule",
+        "before": 0.0003445503617778799,
+        "after": 0.6563947283718576,
+        "delta": 0.6560501780100798,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 33,
+      "cause": "observation",
+      "summary": "correct on ca_prod_p1; P(product_rule) 0.656 -> 0.917",
+      "evidence": {
+        "item_id": "ca_prod_p1",
+        "concept_id": "product_rule",
+        "verdict": "correct",
+        "mastery_before": 0.6563947283718576,
+        "mastery_after": 0.9166356051938412,
+        "delta": 0.2602408768219836,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 34,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "product_rule",
+        "mastery": 0.9166356051938412
+      }
+    },
+    {
+      "version": 35,
+      "cause": "observation",
+      "summary": "incorrect on ca_quot_p1; P(quotient_rule) 0.000 -> 0.200",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.20003446542686867,
+        "delta": 0.1996899150650908,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 36,
+      "cause": "annotation",
+      "summary": "working on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "reflection": "I don't know any of this.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 37,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To differentiate a fraction like x^2 / (x + 1), you should apply the quotient rule, which is (u'v - uv^2) / v^2. You need to identify u as x^2 and v as x + 1 to begin the calculation."
+      }
+    },
+    {
+      "version": 38,
+      "cause": "observation",
+      "summary": "incorrect on ca_quot_p1; P(quotient_rule) 0.200 -> 0.224",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.20003446542686867,
+        "mastery_after": 0.2242474882184422,
+        "delta": 0.02421302279157353,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 39,
+      "cause": "annotation",
+      "summary": "working on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "reflection": "I followed the quotient rule (i think) and i just don't know what (x^-1)^2 is",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 40,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To apply the quotient rule, you should identify the numerator as u = x^2 and the denominator as v = x + 1. The formula requires finding the derivatives du/dx and dv/dx to substitute into (v * du/dx - u * dv/dx) / v^2."
+      }
+    },
+    {
+      "version": 41,
+      "cause": "observation",
+      "summary": "incorrect on ca_quot_p1; P(quotient_rule) 0.224 -> 0.228",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2242474882184422,
+        "mastery_after": 0.22789899304716307,
+        "delta": 0.0036515048287208696,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 42,
+      "cause": "annotation",
+      "summary": "working on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "reflection": "I give up, the hint didn't help me.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 43,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To apply the quotient rule to y = x^2 / (x + 1), you need to calculate the derivative of the numerator and the denominator separately. The expression for the derivative should be [ (d/dx)(x^2) * (x + 1) - (x^2) * (d/dx)(x + 1) ] / (x + 1)^2."
+      }
+    },
+    {
+      "version": 44,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "quotient_rule",
+        "before": 0.0003445503617778799,
+        "after": 0.22789899304716307,
+        "delta": 0.2275544426853852,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 45,
+      "cause": "observation",
+      "summary": "incorrect on ca_quot_p1; P(quotient_rule) 0.228 -> 0.228",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22789899304716307,
+        "mastery_after": 0.22846643773903677,
+        "delta": 0.0005674446918736975,
+        "misconception_label": "quotient_rule_order_swapped"
+      }
+    },
+    {
+      "version": 46,
+      "cause": "annotation",
+      "summary": "working on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "reflection": "I tried using the quotient rule",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 47,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take another look at your application of the quotient rule and identify which specific part of the formula you feel least confident about."
+      }
+    },
+    {
+      "version": 48,
+      "cause": "annotation",
+      "summary": "reflection on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "reflection": "I think, the part with the uv^2",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 49,
+      "cause": "observation",
+      "summary": "incorrect on ca_quot_p1; P(quotient_rule) 0.228 -> 0.229",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22846643773903677,
+        "mastery_after": 0.22855502563747732,
+        "delta": 8.858789844054527e-05,
+        "misconception_label": "quotient_rule_order_swapped"
+      }
+    },
+    {
+      "version": 50,
+      "cause": "annotation",
+      "summary": "working on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "reflection": "I really don't know.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 51,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_quot_p1",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "quotient_rule_order_swapped",
+        "text": "To apply the quotient rule correctly, you should use the formula (f'(x) * g(x) - f(x) * g'(x)) / (g(x))^2. In this case, let f(x) = x^2 and g(x) = x + 2 to find the derivative of the numerator and denominator."
+      }
+    },
+    {
+      "version": 52,
+      "cause": "observation",
+      "summary": "correct on ca_quot_p1; P(quotient_rule) 0.229 -> 0.657",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "verdict": "correct",
+        "mastery_before": 0.22855502563747732,
+        "mastery_after": 0.6571246310793761,
+        "delta": 0.4285696054418988,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 53,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "quotient_rule",
+        "before": 0.0003445503617778799,
+        "after": 0.6571246310793761,
+        "delta": 0.6567800807175983,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 54,
+      "cause": "observation",
+      "summary": "correct on ca_quot_p1; P(quotient_rule) 0.657 -> 0.917",
+      "evidence": {
+        "item_id": "ca_quot_p1",
+        "concept_id": "quotient_rule",
+        "verdict": "correct",
+        "mastery_before": 0.6571246310793761,
+        "mastery_after": 0.9168770916216922,
+        "delta": 0.25975246054231604,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 55,
+      "cause": "plan",
+      "summary": "goal set to 'implicit_differentiation' (consolidate)",
+      "evidence": {
+        "goal": "implicit_differentiation",
+        "emphasis": "consolidate",
+        "reason": "2 concept(s) still needed for implicit_differentiation"
+      }
+    },
+    {
+      "version": 56,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "quotient_rule",
+        "mastery": 0.9168770916216922
+      }
+    },
+    {
+      "version": 57,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p1; P(chain_rule) 0.000 -> 0.200",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.20003446542686867,
+        "delta": 0.1996899150650908,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 58,
+      "cause": "annotation",
+      "summary": "working on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "reflection": "I don't know how the chain rule works.",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 59,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take a moment to review your work and identify which specific part of the process you feel least confident about."
+      }
+    },
+    {
+      "version": 60,
+      "cause": "annotation",
+      "summary": "reflection on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "reflection": "what do I do with the inside of the parenthesese?",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 61,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p1; P(chain_rule) 0.200 -> 0.224",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.20003446542686867,
+        "mastery_after": 0.2242474882184422,
+        "delta": 0.02421302279157353,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 62,
+      "cause": "annotation",
+      "summary": "working on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "reflection": "did not get anything",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 63,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "chain_rule_omits_inner",
+        "text": "Since you have a function nested inside another, you should apply the chain rule by multiplying the derivative of the outer power by the derivative of (x^2 + 1). To begin, try finding the derivative of the outer part while keeping the inner expression unchanged."
+      }
+    },
+    {
+      "version": 64,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p1; P(chain_rule) 0.224 -> 0.228",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.2242474882184422,
+        "mastery_after": 0.22789899304716307,
+        "delta": 0.0036515048287208696,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 65,
+      "cause": "annotation",
+      "summary": "working on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "reflection": "but I thought i did it right",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 66,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "chain_rule_omits_inner",
+        "text": "Since the expression is a composite function, you should apply the chain rule by multiplying the derivative of the outer power by the derivative of the inner term (x^2 + 1). Try applying the formula d/dx [f(g(x))] = f'(g(x)) * g'(x) to your original equation."
+      }
+    },
+    {
+      "version": 67,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "chain_rule",
+        "before": 0.0003445503617778799,
+        "after": 0.22789899304716307,
+        "delta": 0.2275544426853852,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 68,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p2; P(chain_rule) 0.228 -> 0.228",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22789899304716307,
+        "mastery_after": 0.22846643773903677,
+        "delta": 0.0005674446918736975,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 69,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_chain_p2",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take another look at your expression for the derivative and tell me which specific part you feel most uncertain about."
+      }
+    },
+    {
+      "version": 70,
+      "cause": "annotation",
+      "summary": "reflection on ca_chain_p2",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "reflection": "which one is the fx and which is the gx",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 71,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p2; P(chain_rule) 0.228 -> 0.229",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.22846643773903677,
+        "mastery_after": 0.22855502563747732,
+        "delta": 8.858789844054527e-05,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 72,
+      "cause": "annotation",
+      "summary": "working on ca_chain_p2",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "reflection": "if outisde u is u^4, then the derivative is 4u^3 and the inside is 3x+1, then its derivative is 3, so this makes 4*27 which is 108",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 73,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_chain_p2",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "chain_rule_omits_inner",
+        "text": "The chain rule requires you to multiply the derivative of the outer function by the derivative of the inner function. Instead of multiplying 4 * 27, you should multiply 4 * (3x + 1)^3 * 3."
+      }
+    },
+    {
+      "version": 74,
+      "cause": "observation",
+      "summary": "correct on ca_chain_p2; P(chain_rule) 0.229 -> 0.657",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "verdict": "correct",
+        "mastery_before": 0.22855502563747732,
+        "mastery_after": 0.6571246310793761,
+        "delta": 0.4285696054418988,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 75,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "chain_rule",
+        "before": 0.0003445503617778799,
+        "after": 0.6571246310793761,
+        "delta": 0.6567800807175983,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 76,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p1; P(chain_rule) 0.657 -> 0.355",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.6571246310793761,
+        "mastery_after": 0.3546117585639457,
+        "delta": -0.3025128725154304,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 77,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please review your calculation for the derivative of u^4 and identify which specific part of that process you feel least confident about."
+      }
+    },
+    {
+      "version": 78,
+      "cause": "annotation",
+      "summary": "reflection on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "reflection": "6x^2(x^3+1)^2",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 79,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p1; P(chain_rule) 0.355 -> 0.251",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.3546117585639457,
+        "mastery_after": 0.25141426633019054,
+        "delta": -0.10319749223375518,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 80,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "chain_rule_omits_inner",
+        "text": "When applying the chain rule to (x^3 + 1)^3, you must multiply the derivative of the outer function by the derivative of the inner expression. The derivative of x^3 + 1 is 3x^2, which should be multiplied by the power rule result."
+      }
+    },
+    {
+      "version": 81,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p1; P(chain_rule) 0.251 -> 0.232",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.25141426633019054,
+        "mastery_after": 0.2322320810068147,
+        "delta": -0.019182185323375844,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 82,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "chain_rule_omits_inner",
+        "text": "To differentiate a composite function like (x^3 + 1)^3, you must multiply the derivative of the outer function by the derivative of the inner function. The power rule for the outer part should result in 3(x^3 + 1)^2, which must then be multiplied by the derivative of x^3 + 1."
+      }
+    },
+    {
+      "version": 83,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "chain_rule",
+        "before": 0.6571246310793761,
+        "after": 0.2322320810068147,
+        "delta": 0.42489255007256144,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 84,
+      "cause": "observation",
+      "summary": "correct on ca_chain_p2; P(chain_rule) 0.232 -> 0.661",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "verdict": "correct",
+        "mastery_before": 0.2322320810068147,
+        "mastery_after": 0.6611815019255043,
+        "delta": 0.4289494209186896,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 85,
+      "cause": "annotation",
+      "summary": "working on ca_chain_p2",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "reflection": "finally, i got it",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 86,
+      "cause": "replan",
+      "summary": "replan triggered by misconception_repeat",
+      "evidence": {
+        "misconception": "chain_rule_omits_inner",
+        "count": 8,
+        "k_repeats": 2
+      }
+    },
+    {
+      "version": 87,
+      "cause": "observation",
+      "summary": "incorrect on ca_chain_p1; P(chain_rule) 0.661 -> 0.357",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "incorrect",
+        "mastery_before": 0.6611815019255043,
+        "mastery_after": 0.3568765239485755,
+        "delta": -0.3043049779769288,
+        "misconception_label": "chain_rule_omits_inner"
+      }
+    },
+    {
+      "version": 88,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take another look at your calculation for the derivative of (x^4 + 1)^3 and tell me which specific part you feel least confident about."
+      }
+    },
+    {
+      "version": 89,
+      "cause": "annotation",
+      "summary": "reflection on ca_chain_p1",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "reflection": "i think i just forgot the power of 2",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 90,
+      "cause": "observation",
+      "summary": "correct on ca_chain_p1; P(chain_rule) 0.357 -> 0.771",
+      "evidence": {
+        "item_id": "ca_chain_p1",
+        "concept_id": "chain_rule",
+        "verdict": "correct",
+        "mastery_before": 0.3568765239485755,
+        "mastery_after": 0.7712391004377712,
+        "delta": 0.4143625764891957,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 91,
+      "cause": "annotation",
+      "summary": "misconception_repeat suppressed by rate_limited",
+      "evidence": {
+        "misconception": "chain_rule_omits_inner",
+        "count": 9,
+        "k_repeats": 2,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 92,
+      "cause": "observation",
+      "summary": "correct on ca_chain_p2; P(chain_rule) 0.771 -> 0.951",
+      "evidence": {
+        "item_id": "ca_chain_p2",
+        "concept_id": "chain_rule",
+        "verdict": "correct",
+        "mastery_before": 0.7712391004377712,
+        "mastery_after": 0.9505293172818301,
+        "delta": 0.17929021684405888,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 93,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "chain_rule",
+        "mastery": 0.9505293172818301
+      }
+    },
+    {
+      "version": 94,
+      "cause": "observation",
+      "summary": "incorrect on ca_impl_p1; P(implicit_differentiation) 0.000 -> 0.200",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.20003446542686867,
+        "delta": 0.1996899150650908,
+        "misconception_label": "implicit_diff_omits_dydx"
+      }
+    },
+    {
+      "version": 95,
+      "cause": "annotation",
+      "summary": "working on ca_impl_p1",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "reflection": "i dont understand implicit differentiation",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 96,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_impl_p1",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take a moment to review your work and identify which specific part of the process you find most confusing. Which step in the implicit differentiation method is causing the most difficulty?"
+      }
+    },
+    {
+      "version": 97,
+      "cause": "annotation",
+      "summary": "reflection on ca_impl_p1",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "reflection": "everything",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 98,
+      "cause": "observation",
+      "summary": "incorrect on ca_impl_p1; P(implicit_differentiation) 0.200 -> 0.224",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.20003446542686867,
+        "mastery_after": 0.2242474882184422,
+        "delta": 0.02421302279157353,
+        "misconception_label": "implicit_diff_omits_dydx"
+      }
+    },
+    {
+      "version": 99,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_impl_p1",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "implicit_diff_omits_dydx",
+        "text": "To find dy/dx using implicit differentiation, you should treat y as a function of x, which means applying the chain rule to the term y^2. The next step involves differentiating both sides of the equation with respect to x."
+      }
+    },
+    {
+      "version": 100,
+      "cause": "observation",
+      "summary": "incorrect on ca_impl_p1; P(implicit_differentiation) 0.224 -> 0.228",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "verdict": "incorrect",
+        "mastery_before": 0.2242474882184422,
+        "mastery_after": 0.22789899304716307,
+        "delta": 0.0036515048287208696,
+        "misconception_label": "implicit_diff_omits_dydx"
+      }
+    },
+    {
+      "version": 101,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_impl_p1",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "implicit_diff_omits_dydx",
+        "text": "To find dy/dx using implicit differentiation, you should treat y as a function of x, which means applying the chain rule to the term y^2. The next step involves differentiating both sides of the equation with respect to x."
+      }
+    },
+    {
+      "version": 102,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "implicit_differentiation",
+        "before": 0.0003445503617778799,
+        "after": 0.22789899304716307,
+        "delta": 0.2275544426853852,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 103,
+      "cause": "observation",
+      "summary": "correct on ca_impl_p1; P(implicit_differentiation) 0.228 -> 0.656",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "verdict": "correct",
+        "mastery_before": 0.22789899304716307,
+        "mastery_after": 0.6563947283718576,
+        "delta": 0.42849573532469454,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 104,
+      "cause": "annotation",
+      "summary": "working on ca_impl_p1",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "reflection": "I guess it doesn't matter if it is equal to 25 or36...",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 105,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "implicit_differentiation",
+        "before": 0.0003445503617778799,
+        "after": 0.6563947283718576,
+        "delta": 0.6560501780100798,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 106,
+      "cause": "observation",
+      "summary": "correct on ca_impl_p1; P(implicit_differentiation) 0.656 -> 0.917",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "verdict": "correct",
+        "mastery_before": 0.6563947283718576,
+        "mastery_after": 0.9166356051938412,
+        "delta": 0.2602408768219836,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 107,
+      "cause": "annotation",
+      "summary": "working on ca_impl_p1",
+      "evidence": {
+        "item_id": "ca_impl_p1",
+        "concept_id": "implicit_differentiation",
+        "reflection": "This is not learning, i just guessed from the other two problems",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 108,
+      "cause": "plan",
+      "summary": "goal set to 'integration_by_substitution' (consolidate)",
+      "evidence": {
+        "goal": "integration_by_substitution",
+        "emphasis": "consolidate",
+        "reason": "2 concept(s) still needed for integration_by_substitution"
+      }
+    },
+    {
+      "version": 109,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "implicit_differentiation",
+        "mastery": 0.9166356051938412
+      }
+    },
+    {
+      "version": 110,
+      "cause": "observation",
+      "summary": "incorrect on ca_anti_p1; P(antiderivative) 0.000 -> 0.200",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "verdict": "incorrect",
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.20003446542686867,
+        "delta": 0.1996899150650908,
+        "misconception_label": "antiderivative_omits_constant"
+      }
+    },
+    {
+      "version": 111,
+      "cause": "annotation",
+      "summary": "working on ca_anti_p1",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "reflection": "6x",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 112,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_anti_p1",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take another look at your expression for the antiderivative and tell me which part you feel least confident about."
+      }
+    },
+    {
+      "version": 113,
+      "cause": "annotation",
+      "summary": "reflection on ca_anti_p1",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "reflection": "idk",
+        "kind": "reflection"
+      }
+    },
+    {
+      "version": 114,
+      "cause": "observation",
+      "summary": "incorrect on ca_anti_p1; P(antiderivative) 0.200 -> 0.224",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "verdict": "incorrect",
+        "mastery_before": 0.20003446542686867,
+        "mastery_after": 0.2242474882184422,
+        "delta": 0.02421302279157353,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 115,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_anti_p1",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To find the antiderivative of 3x^2, you need to determine a function whose derivative is 3x^2. You should apply the power rule for integration, which states that the antiderivative of x^n is (x^(n+1))/(n+1)."
+      }
+    },
+    {
+      "version": 116,
+      "cause": "observation",
+      "summary": "incorrect on ca_anti_p1; P(antiderivative) 0.224 -> 0.228",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "verdict": "incorrect",
+        "mastery_before": 0.2242474882184422,
+        "mastery_after": 0.22789899304716307,
+        "delta": 0.0036515048287208696,
+        "misconception_label": "antiderivative_omits_constant"
+      }
+    },
+    {
+      "version": 117,
+      "cause": "tutor",
+      "summary": "remediate at worked_step on ca_anti_p1",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "move": "remediate",
+        "level": "worked_step",
+        "targets": "antiderivative_omits_constant",
+        "text": "To find the general antiderivative of 3x^2, you should include an arbitrary constant to represent all possible functions whose derivative is 3x^2. Instead of 6x, the expression should be x^3 + C."
+      }
+    },
+    {
+      "version": 118,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "antiderivative",
+        "before": 0.0003445503617778799,
+        "after": 0.22789899304716307,
+        "delta": 0.2275544426853852,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 119,
+      "cause": "observation",
+      "summary": "correct on ca_anti_p1; P(antiderivative) 0.228 -> 0.656",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "verdict": "correct",
+        "mastery_before": 0.22789899304716307,
+        "mastery_after": 0.6563947283718576,
+        "delta": 0.42849573532469454,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 120,
+      "cause": "replan",
+      "summary": "replan triggered by mastery_delta",
+      "evidence": {
+        "concept": "antiderivative",
+        "before": 0.0003445503617778799,
+        "after": 0.6563947283718576,
+        "delta": 0.6560501780100798,
+        "theta": 0.15
+      }
+    },
+    {
+      "version": 121,
+      "cause": "observation",
+      "summary": "correct on ca_anti_p1; P(antiderivative) 0.656 -> 0.917",
+      "evidence": {
+        "item_id": "ca_anti_p1",
+        "concept_id": "antiderivative",
+        "verdict": "correct",
+        "mastery_before": 0.6563947283718576,
+        "mastery_after": 0.9166356051938412,
+        "delta": 0.2602408768219836,
+        "misconception_label": null
+      }
+    },
+    {
+      "version": 122,
+      "cause": "replan",
+      "summary": "replan triggered by frontier_crossed",
+      "evidence": {
+        "concept": "antiderivative",
+        "mastery": 0.9166356051938412
+      }
+    },
+    {
+      "version": 123,
+      "cause": "observation",
+      "summary": "incorrect on ca_usub_p1; P(integration_by_substitution) 0.000 -> 0.200",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "verdict": "incorrect",
+        "mastery_before": 0.0003445503617778799,
+        "mastery_after": 0.20003446542686867,
+        "delta": 0.1996899150650908,
+        "misconception_label": "usub_forgets_du"
+      }
+    },
+    {
+      "version": 124,
+      "cause": "tutor",
+      "summary": "reflect at worked_step on ca_usub_p1",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "move": "reflect",
+        "level": "worked_step",
+        "targets": null,
+        "text": "Please take another look at your expression for the integral and tell me which part of your calculation you feel least confident about."
+      }
+    },
+    {
+      "version": 125,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_usub_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 126,
+      "cause": "annotation",
+      "summary": "working on ca_usub_p1",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "reflection": "99",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 127,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_usub_p1",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To find the integral of (2x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term."
+      }
+    },
+    {
+      "version": 128,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_usub_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 129,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_usub_p1",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To find the integral of (2x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term."
+      }
+    },
+    {
+      "version": 130,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "integration_by_substitution",
+        "before": 0.0003445503617778799,
+        "after": 0.20003446542686867,
+        "delta": 0.1996899150650908,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 131,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_usub_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 132,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_usub_p1",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To find the integral of (3x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term."
+      }
+    },
+    {
+      "version": 133,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_usub_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 134,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_usub_p1",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To find the integral of (3x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term."
+      }
+    },
+    {
+      "version": 135,
+      "cause": "observation",
+      "summary": "unmeasurable response on ca_usub_p1; learner model unchanged",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "verdict": "unparseable",
+        "detail": "empty response"
+      }
+    },
+    {
+      "version": 136,
+      "cause": "tutor",
+      "summary": "hint at worked_step on ca_usub_p1",
+      "evidence": {
+        "item_id": "ca_usub_p1",
+        "concept_id": "integration_by_substitution",
+        "move": "hint",
+        "level": "worked_step",
+        "targets": null,
+        "text": "To find the integral of (3x + 1)^3, you should apply the power rule for integration to the expression inside the parentheses. You could also expand the binomial into a polynomial before integrating term by term."
+      }
+    },
+    {
+      "version": 137,
+      "cause": "annotation",
+      "summary": "item budget spent",
+      "evidence": {
+        "items_given": 20,
+        "max_items": 20
+      }
+    }
+  ],
+  "stop_reason": "budget_spent",
+  "goal": "integration_by_substitution",
+  "goals_mastered": 4,
+  "distance_to_goal": 1,
+  "items_attempted": 20,
+  "pretest": {
+    "correct": 9,
+    "total": 15,
+    "unmeasurable": 0,
+    "score": 0.6,
+    "measured_score": 0.6,
+    "administered": true,
+    "concepts_missed": [
+      "product_rule",
+      "quotient_rule",
+      "chain_rule",
+      "implicit_differentiation",
+      "antiderivative",
+      "integration_by_substitution"
+    ],
+    "seeded_the_learner_model": true
+  },
+  "posttest": {
+    "correct": 11,
+    "total": 15,
+    "unmeasurable": 0,
+    "score": 0.7333333333333333,
+    "measured_score": 0.7333333333333333,
+    "administered": true,
+    "concepts_missed": [
+      "chain_rule",
+      "implicit_differentiation",
+      "antiderivative",
+      "integration_by_substitution"
+    ]
+  },
+  "gain": 0.1333333333333333,
+  "normalised_gain": 0.33333333333333326,
+  "per_concept_change": [
+    {
+      "concept_id": "antiderivative",
+      "before": "incorrect",
+      "after": "incorrect",
+      "state": "still_wrong"
+    },
+    {
+      "concept_id": "average_rate_of_change",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "chain_rule",
+      "before": "incorrect",
+      "after": "incorrect",
+      "state": "still_wrong"
+    },
+    {
+      "concept_id": "derivative_from_first_principles",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "implicit_differentiation",
+      "before": "incorrect",
+      "after": "incorrect",
+      "state": "still_wrong"
+    },
+    {
+      "concept_id": "instantaneous_rate_of_change",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "integration_by_substitution",
+      "before": "incorrect",
+      "after": "incorrect",
+      "state": "still_wrong"
+    },
+    {
+      "concept_id": "limit_concept",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "limits_of_sequences",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "negative_fractional_exponents",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "polynomial_differentiation",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "power_rule",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    },
+    {
+      "concept_id": "product_rule",
+      "before": "incorrect",
+      "after": "correct",
+      "state": "fixed"
+    },
+    {
+      "concept_id": "quotient_rule",
+      "before": "incorrect",
+      "after": "correct",
+      "state": "fixed"
+    },
+    {
+      "concept_id": "stationary_points",
+      "before": "correct",
+      "after": "correct",
+      "state": "still_right"
+    }
+  ],
+  "dose_by_concept": {
+    "product_rule": 5,
+    "quotient_rule": 7,
+    "chain_rule": 13,
+    "implicit_differentiation": 5,
+    "antiderivative": 5,
+    "integration_by_substitution": 6
+  },
+  "dose_on_gap": 1.0,
+  "cross_concept_diagnoses": 0
+}
