@@ -120,6 +120,27 @@ class TestResult:
         """
         return frozenset(result.concept_id for result in self.per_item)
 
+    def on(self, concepts: frozenset[str]) -> "TestResult":
+        """This administration, restricted to some of the concepts it covered.
+
+        Needed because the two banks stopped being the same set: the post-test
+        covers what the sitting taught as well as what the pre-test asked about,
+        so a gain has to be taken over the concepts both ends measured. Every
+        count is recomputed from the items rather than scaled, so a restricted
+        result is a real administration of a smaller bank and not an estimate of
+        one.
+        """
+        kept = tuple(r for r in self.per_item if r.concept_id in concepts)
+        return TestResult(
+            correct=sum(1 for r in kept if r.verdict is Verdict.CORRECT),
+            total=len(kept),
+            unmeasurable=sum(
+                1 for r in kept if r.verdict not in (Verdict.CORRECT, Verdict.INCORRECT)
+            ),
+            exhibited=self.exhibited,
+            per_item=kept,
+        )
+
     @property
     def administered(self) -> bool:
         """Whether the bank was actually run.
@@ -212,8 +233,36 @@ class SessionOutcome:
         every stated answer to verify correct and every buggy rule's output to
         verify incorrect, so nothing unreadable can be produced — and there is a
         test on that, which is what makes this inert for every measured result.
+
+        **Taken over the concepts both banks asked about.** The post-test also
+        covers what the sitting taught, which the pre-test could not have known
+        to ask about; scoring those in would compare an end against no
+        beginning. They are reported by :attr:`taught_beyond_the_pretest`
+        instead. Identical to the plain difference whenever the two banks cover
+        the same concepts, which is every cohort.
         """
-        return self.posttest.measured_score - self.pretest.measured_score
+        return self.matched_posttest.measured_score - self.pretest.measured_score
+
+    @property
+    def matched_posttest(self) -> TestResult:
+        """The post-test, restricted to what the pre-test also asked about."""
+        return self.posttest.on(self.pretest.covered)
+
+    @property
+    def taught_beyond_the_pretest(self) -> TestResult:
+        """The post-test on concepts the pre-test never asked about.
+
+        Empty for every cohort and for any sitting whose training stayed inside
+        the re-check. When it is not empty it is the part of the sitting that
+        has no baseline: the learner was taught these and then tested on them,
+        and that is a statement about the teaching without being a gain.
+
+        It exists because a sitting spent every one of its steps on the product
+        rule, scored 6/6 at both ends on six *other* concepts, and reported a
+        gain of zero — a true statement about concepts nobody had worked, and
+        silence about the one that was.
+        """
+        return self.posttest.on(self.posttest.covered - self.pretest.covered)
 
     @property
     def normalised_gain(self) -> float | None:

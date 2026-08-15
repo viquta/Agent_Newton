@@ -682,7 +682,10 @@ def _did_this_teach(session, outcome, domain: Domain) -> Panel:  # noqa: ANN001
     if not (outcome.pretest.administered and outcome.posttest.administered):
         return Panel(body, title="did this teach you anything", border_style="green")
 
-    changed = outcomes.per_concept_change(outcome.pretest, outcome.posttest)
+    # Matched against the pre-test's own concepts. The post-test also covers
+    # what the sitting taught, and a concept with no "before" cannot be reported
+    # as having changed — it gets its own block below.
+    changed = outcomes.per_concept_change(outcome.pretest, outcome.matched_posttest)
     by_state: dict[str, list[str]] = {}
     for change in changed:
         by_state.setdefault(change.state, []).append(change.concept_id)
@@ -708,6 +711,24 @@ def _did_this_teach(session, outcome, domain: Domain) -> Panel:  # noqa: ANN001
         body.append(f"{len(found)}\n", style=f"bold {colour}")
         for concept_id in found:
             body.append(f"      {graph.get(concept_id).name}\n", style="dim")
+
+    # ⚠️ The part a sitting used to say nothing about. Every step of one went to
+    # the product rule, which neither bank asked about, and the figures reported
+    # a gain of zero over six other concepts. True, and silent about the only
+    # thing that was taught.
+    beyond = outcome.taught_beyond_the_pretest
+    if beyond.administered:
+        body.append("\nWhat you were taught today, tested afterwards:\n", style="bold")
+        for result in beyond.per_item:
+            mark = "✓" if result.verdict is Verdict.CORRECT else "·"
+            body.append(f"  {mark} {graph.get(result.concept_id).name}")
+            body.append(f"   {result.verdict.value}\n", style="dim")
+        body.append(
+            "  no before-and-after for these — the pre-test could not know they "
+            "were coming, so this is what you could do afterwards and not a "
+            "gain.\n",
+            style="dim",
+        )
 
     normalised = outcome.normalised_gain
     if normalised is None:
@@ -866,7 +887,14 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
                     "administered": outcome.posttest.administered,
                     "concepts_missed": list(outcome.posttest.concepts_missed),
                     "concepts_measured": sorted(outcome.posttest.covered),
+                    # The two halves kept apart, because only the first has a
+                    # baseline and a reader cannot tell them apart from a score.
+                    "concepts_matched_to_pretest": sorted(outcome.pretest.covered),
+                    "concepts_taught_beyond_pretest": sorted(
+                        outcome.taught_beyond_the_pretest.covered
+                    ),
                 },
+                # Over the concepts both banks asked about. See SessionOutcome.
                 "gain": outcome.gain,
                 "normalised_gain": outcome.normalised_gain,
                 # What the sitting moved and where its time went. Derived here

@@ -41,7 +41,12 @@ from agent_newton.core.agents.tutor import TemplateTutor
 from agent_newton.core.arbitration.policy import ArbitrationPolicy
 from agent_newton.core.state import bkt, route
 from agent_newton.llm.factory import build_provider
-from agent_newton.core.evaluation.outcomes import SessionOutcome, TestResult, administer
+from agent_newton.core.evaluation.outcomes import (
+    SessionOutcome,
+    TestResult,
+    administer,
+    dose_by_concept,
+)
 from agent_newton.core.pedagogy import TutorMove, check_move
 from agent_newton.core.simulator import (
     SimulatedLearner,
@@ -225,11 +230,12 @@ class Session:
         if decayed and self.observer is not None:
             self.observer.session_resumed(self.elapsed_days, decayed)
 
-        # Fixed once, before the pre-test, and used again for the post-test.
-        # Recomputing it after training would ask the two banks about different
-        # concepts and call the difference a gain. Computed after decay, so a
-        # concept that went stale over the gap is back on the route and is
-        # re-checked — which is the measurement a returning learner is here for.
+        # Fixed once, before the pre-test. The post-test starts from the same
+        # set — a gain between two different instruments is not a gain — and
+        # adds whatever the sitting actually taught; see below. Computed after
+        # decay, so a concept that went stale over the gap is back on the route
+        # and is re-checked, which is the measurement a returning learner is
+        # here for.
         measured = self._bank_scope()
         pretest = self._administer("pretest", measured)
         if self.config.cohort.seed_from_pretest:
@@ -379,7 +385,24 @@ class Session:
         if self.observer is not None:
             self.observer.training_finished(stop_reason, sum(given.values()))
 
-        posttest = self._administer("posttest", measured)
+        # ⚠️ The post-test covers what the sitting taught as well as what the
+        # pre-test asked about.
+        #
+        # Fixing one set for both banks kept the gain a matched comparison and
+        # left everything else unmeasured: the pre-test's own seeding can clear
+        # the route and move the goal, and then the training walks somewhere the
+        # banks never look. A sitting spent every step on the product rule,
+        # scored 6/6 at both ends on six other concepts, and reported a gain of
+        # zero. *"The post-test felt a bit meaningless, cause it didn't test me
+        # at all on the product rule."*
+        #
+        # `gain` and `normalised_gain` still use the pre-test's set alone — the
+        # taught concepts have no baseline, and folding them in would compare a
+        # score against nothing. They are reported beside it instead.
+        taught = frozenset(dose_by_concept(self.board.audit_log))
+        posttest = self._administer(
+            "posttest", (measured | taught) if measured is not None else None
+        )
 
         return SessionOutcome(
             learner_id=self.learner.learner_id,

@@ -288,3 +288,73 @@ class TestDoseWhenTheBankWasNarrowed:
         narrowed = bank(("a", Verdict.UNPARSEABLE))
         assert narrowed.covered == {"a"}
         assert narrowed.concepts_missed == ()
+
+
+class TestTheTwoBanksNoLongerCoverTheSameThing:
+    """⚠️ A sitting taught one concept and measured six others.
+
+    Fixing one set for both banks kept the gain matched and left everything else
+    unmeasured: the pre-test's own seeding can clear the route and move the
+    goal, and then the training walks somewhere the banks never look. Every step
+    of one sitting went to the product rule; both banks scored 6/6 on six other
+    concepts; the reported gain was zero. *"The post-test felt a bit
+    meaningless, cause it didn't test me at all on the product rule."*
+
+    So the post-test covers what was taught as well, and the figures have to
+    keep the two halves apart — one has a baseline and the other does not.
+    """
+
+    def _sitting(self) -> SessionOutcome:
+        # Six concepts right at both ends, and one taught that only the
+        # post-test asked about.
+        before = bank(*[(f"c{n}", Verdict.CORRECT) for n in range(6)])
+        after = bank(
+            *[(f"c{n}", Verdict.CORRECT) for n in range(6)],
+            ("product_rule", Verdict.INCORRECT),
+        )
+        return outcome(before, after)
+
+    def test_the_gain_is_taken_over_the_matched_concepts(self) -> None:
+        # Not 6/7 against 6/6, which would report the sitting as harmful for
+        # having taught something new and tested it.
+        assert self._sitting().gain == pytest.approx(0.0)
+
+    def test_what_was_taught_is_reported_separately(self) -> None:
+        beyond = self._sitting().taught_beyond_the_pretest
+        assert beyond.administered
+        assert beyond.covered == {"product_rule"}
+        assert beyond.measured_score == 0.0
+
+    def test_a_matched_sitting_reports_nothing_beyond(self) -> None:
+        # Every cohort, and any sitting whose training stayed inside the bank.
+        before = bank(("a", Verdict.INCORRECT), ("b", Verdict.CORRECT))
+        after = bank(("a", Verdict.CORRECT), ("b", Verdict.CORRECT))
+        matched = outcome(before, after)
+        assert not matched.taught_beyond_the_pretest.administered
+        assert matched.gain == pytest.approx(0.5)
+
+    def test_restricting_a_bank_recomputes_every_count(self) -> None:
+        # A restricted result is a real administration of a smaller bank, not a
+        # scaled estimate of the larger one.
+        full = bank(
+            ("a", Verdict.CORRECT),
+            ("b", Verdict.INCORRECT),
+            ("c", Verdict.UNPARSEABLE),
+        )
+        just_a = full.on(frozenset({"a"}))
+        assert (just_a.correct, just_a.total, just_a.unmeasurable) == (1, 1, 0)
+        assert just_a.measured_score == 1.0
+
+        without_a = full.on(frozenset({"b", "c"}))
+        assert (without_a.correct, without_a.total, without_a.unmeasurable) == (0, 2, 1)
+        assert without_a.measured_score == 0.0
+
+    def test_the_normalised_gain_uses_the_matched_half_too(self) -> None:
+        before = bank(("a", Verdict.INCORRECT), ("b", Verdict.CORRECT))
+        after = bank(
+            ("a", Verdict.CORRECT),
+            ("b", Verdict.CORRECT),
+            ("taught_today", Verdict.INCORRECT),
+        )
+        # Half the bank was wrong and became right: all of the available room.
+        assert outcome(before, after).normalised_gain == pytest.approx(1.0)
