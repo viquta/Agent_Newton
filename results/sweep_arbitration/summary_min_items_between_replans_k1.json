@@ -1,0 +1,235 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260811,
+  "prerequisite_dependence": 1.0,
+  "parameter": "min_items_between_replans",
+  "configured": 2.0,
+  "points": [
+    {
+      "min_items_between_replans": 0.0,
+      "replans_by_trigger": {
+        "frontier_crossed": 2194,
+        "mastery_delta": 4493,
+        "misconception_repeat": 316,
+        "no_plan": 160
+      },
+      "suppressed": 0,
+      "mean_items": 44.7875,
+      "against_default": {
+        "remediation": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "min_items_between_replans": 1.0,
+      "replans_by_trigger": {
+        "frontier_crossed": 2194,
+        "mastery_delta": 4493,
+        "misconception_repeat": 316,
+        "no_plan": 160
+      },
+      "suppressed": 0,
+      "mean_items": 44.7875,
+      "against_default": {
+        "remediation": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "min_items_between_replans": 2.0,
+      "replans_by_trigger": {
+        "frontier_crossed": 2194,
+        "mastery_delta": 2197,
+        "misconception_repeat": 100,
+        "no_plan": 160
+      },
+      "suppressed": 2512,
+      "mean_items": 44.7875,
+      "against_default": {
+        "remediation": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "min_items_between_replans": 4.0,
+      "replans_by_trigger": {
+        "frontier_crossed": 2194,
+        "mastery_delta": 52,
+        "misconception_repeat": 16,
+        "no_plan": 160
+      },
+      "suppressed": 4744,
+      "mean_items": 44.7875,
+      "against_default": {
+        "remediation": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "min_items_between_replans": 8.0,
+      "replans_by_trigger": {
+        "frontier_crossed": 2194,
+        "mastery_delta": 1,
+        "misconception_repeat": 3,
+        "no_plan": 160
+      },
+      "suppressed": 4808,
+      "mean_items": 44.7875,
+      "against_default": {
+        "remediation": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.0,
+          "holm": 1.0,
+          "discordant": [
+            0,
+            0
+          ]
+        }
+      }
+    }
+  ]
+}
