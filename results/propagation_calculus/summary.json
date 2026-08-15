@@ -5,233 +5,233 @@
   "max_items": 45,
   "seed": 20260807,
   "primary_outcome": "mean_remediation",
-  "noise_rate": 0.0263,
-  "noise_rate_source": "results/diagnostic_calculus_gemma4-12b_think-false/summary.json",
+  "noise_rate": 0.0,
+  "noise_rate_source": "results/diagnostic_calculus_gemma4-12b_think-false_labels-concept/summary.json",
   "conditions": {
     "oracle": {
       "run_ids": {
-        "coupled": "20260810T142456_calculus_prop_oracle_coupled_c77bb9f8",
-        "decoupled": "20260810T142457_calculus_prop_oracle_decoupled_a1adb411"
+        "coupled": "20260815T142822_calculus_prop_oracle_coupled_366113bf",
+        "decoupled": "20260815T142823_calculus_prop_oracle_decoupled_324124a7"
       },
       "diagnostic_accuracy": {
         "coupled": 1.0,
         "decoupled": 1.0
       },
       "mean_remediation": {
-        "coupled": 0.5686544673317269,
-        "decoupled": 0.5218452229746517
+        "coupled": 0.5787462193059508,
+        "decoupled": 0.5473351445862822
       },
       "mean_gain": {
-        "coupled": 0.05333333333333332,
-        "decoupled": 0.046666666666666655
+        "coupled": 0.06333333333333332,
+        "decoupled": 0.059999999999999984
       },
       "unmeasurable_steps": {
         "coupled": 0,
         "decoupled": 0
       },
       "paired_remediation": {
-        "mean": 0.04680924435707501,
-        "sd": 0.09926225493004161,
-        "favour_coupled": 4,
-        "ties": 16,
+        "mean": 0.03141107471966865,
+        "sd": 0.09669272011251889,
+        "favour_coupled": 2,
+        "ties": 18,
         "favour_decoupled": 0,
         "n": 20
       },
       "paired_gain": {
-        "mean": 0.006666666666666665,
-        "sd": 0.020519567041703077,
-        "favour_coupled": 2,
-        "ties": 18,
+        "mean": 0.0033333333333333327,
+        "sd": 0.014907119849998594,
+        "favour_coupled": 1,
+        "ties": 19,
         "favour_decoupled": 0,
         "n": 20
       }
     },
     "noised": {
       "run_ids": {
-        "coupled": "20260810T142457_calculus_prop_noised_coupled_fdc591b2",
-        "decoupled": "20260810T142458_calculus_prop_noised_decoupled_e811c94b"
+        "coupled": "20260815T142823_calculus_prop_noised_coupled_f481ae4d",
+        "decoupled": "20260815T142823_calculus_prop_noised_decoupled_d5c94e75"
       },
       "diagnostic_accuracy": {
         "coupled": 1.0,
         "decoupled": 1.0
       },
       "mean_remediation": {
-        "coupled": 0.5686544673317269,
-        "decoupled": 0.5218452229746517
+        "coupled": 0.5787462193059508,
+        "decoupled": 0.5473351445862822
       },
       "mean_gain": {
-        "coupled": 0.05333333333333332,
-        "decoupled": 0.046666666666666655
+        "coupled": 0.06333333333333332,
+        "decoupled": 0.059999999999999984
       },
       "unmeasurable_steps": {
         "coupled": 0,
         "decoupled": 0
       },
       "paired_remediation": {
-        "mean": 0.04680924435707501,
-        "sd": 0.09926225493004161,
-        "favour_coupled": 4,
-        "ties": 16,
+        "mean": 0.03141107471966865,
+        "sd": 0.09669272011251889,
+        "favour_coupled": 2,
+        "ties": 18,
         "favour_decoupled": 0,
         "n": 20
       },
       "paired_gain": {
-        "mean": 0.006666666666666665,
-        "sd": 0.020519567041703077,
-        "favour_coupled": 2,
-        "ties": 18,
+        "mean": 0.0033333333333333327,
+        "sd": 0.014907119849998594,
+        "favour_coupled": 1,
+        "ties": 19,
         "favour_decoupled": 0,
         "n": 20
       }
     },
     "noised@0.10": {
       "run_ids": {
-        "coupled": "20260810T142458_calculus_prop_noised-010_coupled_ada90702",
-        "decoupled": "20260810T142458_calculus_prop_noised-010_decoupled_73106e3a"
+        "coupled": "20260815T142824_calculus_prop_noised-010_coupled_d0875bc6",
+        "decoupled": "20260815T142824_calculus_prop_noised-010_decoupled_6389f5b0"
       },
       "diagnostic_accuracy": {
-        "coupled": 0.9064748201438849,
-        "decoupled": 0.9
+        "coupled": 0.8819444444444444,
+        "decoupled": 0.8768115942028986
       },
       "mean_remediation": {
-        "coupled": 0.5786032831065071,
-        "decoupled": 0.531794038749432
+        "coupled": 0.5528661072821315,
+        "decoupled": 0.5214550325624628
       },
       "mean_gain": {
-        "coupled": 0.05333333333333332,
-        "decoupled": 0.046666666666666655
+        "coupled": 0.059999999999999984,
+        "decoupled": 0.05666666666666666
       },
       "unmeasurable_steps": {
         "coupled": 0,
         "decoupled": 0
       },
       "paired_remediation": {
-        "mean": 0.046809244357075,
-        "sd": 0.0992622549300416,
-        "favour_coupled": 4,
-        "ties": 16,
+        "mean": 0.03141107471966865,
+        "sd": 0.09669272011251889,
+        "favour_coupled": 2,
+        "ties": 18,
         "favour_decoupled": 0,
         "n": 20
       },
       "paired_gain": {
-        "mean": 0.006666666666666665,
-        "sd": 0.020519567041703077,
-        "favour_coupled": 2,
-        "ties": 18,
+        "mean": 0.0033333333333333327,
+        "sd": 0.014907119849998594,
+        "favour_coupled": 1,
+        "ties": 19,
         "favour_decoupled": 0,
         "n": 20
       }
     },
     "noised@0.25": {
       "run_ids": {
-        "coupled": "20260810T142458_calculus_prop_noised-025_coupled_cfb4637f",
-        "decoupled": "20260810T142459_calculus_prop_noised-025_decoupled_e26f55cc"
+        "coupled": "20260815T142824_calculus_prop_noised-025_coupled_61e4f00f",
+        "decoupled": "20260815T142825_calculus_prop_noised-025_decoupled_9d547e83"
       },
       "diagnostic_accuracy": {
-        "coupled": 0.8561151079136691,
-        "decoupled": 0.8461538461538461
+        "coupled": 0.8082191780821918,
+        "decoupled": 0.8
       },
       "mean_remediation": {
-        "coupled": 0.5660352259426199,
-        "decoupled": 0.5192259815855449
+        "coupled": 0.537048438136424,
+        "decoupled": 0.5056373634167554
       },
       "mean_gain": {
-        "coupled": 0.04999999999999999,
-        "decoupled": 0.04333333333333332
+        "coupled": 0.059999999999999984,
+        "decoupled": 0.05666666666666666
       },
       "unmeasurable_steps": {
         "coupled": 0,
         "decoupled": 0
       },
       "paired_remediation": {
-        "mean": 0.046809244357075,
-        "sd": 0.0992622549300416,
-        "favour_coupled": 4,
-        "ties": 16,
+        "mean": 0.03141107471966865,
+        "sd": 0.09669272011251889,
+        "favour_coupled": 2,
+        "ties": 18,
         "favour_decoupled": 0,
         "n": 20
       },
       "paired_gain": {
-        "mean": 0.006666666666666665,
-        "sd": 0.020519567041703077,
-        "favour_coupled": 2,
-        "ties": 18,
+        "mean": 0.0033333333333333327,
+        "sd": 0.014907119849998594,
+        "favour_coupled": 1,
+        "ties": 19,
         "favour_decoupled": 0,
         "n": 20
       }
     },
     "noised@0.50": {
       "run_ids": {
-        "coupled": "20260810T142459_calculus_prop_noised-050_coupled_d6a8d9f8",
-        "decoupled": "20260810T142500_calculus_prop_noised-050_decoupled_9de29fcd"
+        "coupled": "20260815T142825_calculus_prop_noised-050_coupled_acc46039",
+        "decoupled": "20260815T142826_calculus_prop_noised-050_decoupled_6f80da28"
       },
       "diagnostic_accuracy": {
-        "coupled": 0.6,
-        "decoupled": 0.6037735849056604
+        "coupled": 0.4947916666666667,
+        "decoupled": 0.4972972972972973
       },
       "mean_remediation": {
-        "coupled": 0.5071730604536857,
-        "decoupled": 0.4696858458503022
+        "coupled": 0.416992077245611,
+        "decoupled": 0.39281129217196215
       },
       "mean_gain": {
-        "coupled": 0.046666666666666655,
-        "decoupled": 0.039999999999999994
+        "coupled": 0.04999999999999999,
+        "decoupled": 0.04999999999999999
       },
       "unmeasurable_steps": {
         "coupled": 0,
         "decoupled": 0
       },
       "paired_remediation": {
-        "mean": 0.03748721460338352,
-        "sd": 0.08732835904483663,
-        "favour_coupled": 4,
-        "ties": 15,
+        "mean": 0.02418078507364884,
+        "sd": 0.08269998496488432,
+        "favour_coupled": 3,
+        "ties": 16,
         "favour_decoupled": 1,
         "n": 20
       },
       "paired_gain": {
-        "mean": 0.006666666666666665,
-        "sd": 0.020519567041703077,
-        "favour_coupled": 2,
-        "ties": 18,
+        "mean": 0.0,
+        "sd": 0.0,
+        "favour_coupled": 0,
+        "ties": 20,
         "favour_decoupled": 0,
         "n": 20
       }
     },
     "llm": {
       "run_ids": {
-        "coupled": "20260810T142500_calculus_prop_llm_coupled_56953dcf",
-        "decoupled": "20260810T142500_calculus_prop_llm_decoupled_b43ee164"
+        "coupled": "20260815T142826_calculus_prop_llm_coupled_7b91861d",
+        "decoupled": "20260815T142918_calculus_prop_llm_decoupled_a4133647"
       },
       "diagnostic_accuracy": {
         "coupled": 1.0,
         "decoupled": 1.0
       },
       "mean_remediation": {
-        "coupled": 0.5686544673317269,
-        "decoupled": 0.5218452229746517
+        "coupled": 0.5787462193059508,
+        "decoupled": 0.5473351445862822
       },
       "mean_gain": {
-        "coupled": 0.05333333333333332,
-        "decoupled": 0.046666666666666655
+        "coupled": 0.06333333333333332,
+        "decoupled": 0.059999999999999984
       },
       "unmeasurable_steps": {
         "coupled": 0,
         "decoupled": 0
       },
       "paired_remediation": {
-        "mean": 0.04680924435707501,
-        "sd": 0.09926225493004161,
-        "favour_coupled": 4,
-        "ties": 16,
+        "mean": 0.03141107471966865,
+        "sd": 0.09669272011251889,
+        "favour_coupled": 2,
+        "ties": 18,
         "favour_decoupled": 0,
         "n": 20
       },
       "paired_gain": {
-        "mean": 0.006666666666666665,
-        "sd": 0.020519567041703077,
-        "favour_coupled": 2,
-        "ties": 18,
+        "mean": 0.0033333333333333327,
+        "sd": 0.014907119849998594,
+        "favour_coupled": 1,
+        "ties": 19,
         "favour_decoupled": 0,
         "n": 20
       }

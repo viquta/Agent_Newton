@@ -1,0 +1,24 @@
+{
+  "run_id": "20260815T142823_calculus_prop_noised_decoupled_d5c94e75",
+  "run_name": "calculus_prop_noised",
+  "created_at": "2026-08-15T14:28:23+00:00",
+  "git_sha": "a82ccf2235272a2682c7ac2f7245878d4cc34e53",
+  "git_dirty": true,
+  "config_hash": "d5c94e75d69a265e",
+  "arm": "decoupled",
+  "domain": "calculus",
+  "seed": 20260807,
+  "catalogue_hash": "38c3bd32f0796856",
+  "item_bank_hash": "b124ef0f3134b1d8",
+  "concept_graph_hash": "0d8b6ce2179205c4",
+  "models": {
+    "tutor": "<template>",
+    "diagnostic": "<noised_oracle>",
+    "planner": "<goal_directed>",
+    "simulator_surface": "<symbolic>"
+  },
+  "uses_llm": false,
+  "decay_half_life_days": null,
+  "python_version": "3.14.5",
+  "platform": "macOS-15.7.7-arm64-arm-64bit-Mach-O"
+}
