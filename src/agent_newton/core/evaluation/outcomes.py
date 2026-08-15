@@ -184,11 +184,17 @@ class SessionOutcome:
     #: the target would measure the two arms against different goals. Zero when
     #: every declared goal is mastered; None when the domain declares none.
     distance_to_goal: int | None = None
-    #: Why training stopped: ``budget_spent``, ``every_goal_reached`` or
-    #: ``nothing_left_to_select``. Distinct from ``items_to_exhaustion``, which
-    #: says *when* the material ran out and is None when it did not. A session
-    #: that spent its budget and one that taught everything it had both end, and
-    #: comparing arms without separating them would read a cap as a result.
+    #: Why training stopped: ``budget_spent``, ``every_goal_reached``,
+    #: ``nothing_left_to_select``, or ``learner_ended_it``. Distinct from
+    #: ``items_to_exhaustion``, which says *when* the material ran out and is
+    #: None when it did not. A session that spent its budget and one that taught
+    #: everything it had both end, and comparing arms without separating them
+    #: would read a cap as a result.
+    #:
+    #: ``learner_ended_it`` can only occur with a person answering — nothing a
+    #: simulated learner does raises it — and it must be excluded from any
+    #: comparison of how far the arms got, since what ended the session was not
+    #: the tutoring.
     stop_reason: str = "budget_spent"
 
     @property

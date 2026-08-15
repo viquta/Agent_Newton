@@ -1474,3 +1474,108 @@ class TestTheReasoningBehindAWrongAnswer:
         profile = sample_profile("L1", 1, toy.misconceptions, SimulatorConfig())
         learner = SimulatedLearner(profile, toy, SimulatorConfig())
         assert learner.show_working(toy.items.all()[0], "3*x", required=True) is None
+
+
+class TestEndingTrainingEarly:
+    """":e" stops the questions and keeps the measurement.
+
+    Distinct from ":q", which ends the sitting where it stands. Someone who has
+    had enough of the practice has still done the work, and the held-out bank is
+    what turns that into a measured result rather than a transcript.
+    """
+
+    def _run(self, toy, stop_after: int):
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.orchestration.session import StopTraining
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        seen = {"n": 0}
+
+        def answer(item, attempt):  # noqa: ANN001
+            if item.bank != "practice":
+                return "999"
+            seen["n"] += 1
+            if seen["n"] > stop_after:
+                raise StopTraining
+            return "999"
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 20, "administer_tests": True}
+        )
+        session = build_session(
+            "human", config.seed, toy, config, learner=HumanLearner(answer)
+        )
+        session.diagnostic = Nothing()
+        return session, session.run()
+
+    def test_training_stops_where_the_learner_said(self, toy) -> None:
+        _, outcome = self._run(toy, stop_after=2)
+        assert outcome.stop_reason == "learner_ended_it"
+        assert outcome.items_attempted <= 3
+
+    def test_the_post_test_still_runs(self, toy) -> None:
+        # The whole reason this is not `:q`.
+        _, outcome = self._run(toy, stop_after=2)
+        assert outcome.posttest.administered
+        assert outcome.pretest.administered
+
+    def test_it_is_not_an_exhaustion(self, toy) -> None:
+        # The material and the budget both had more to give. Reading this back
+        # as the system running out would blame the tutoring for the learner
+        # having had enough.
+        _, outcome = self._run(toy, stop_after=2)
+        assert outcome.items_to_exhaustion is None
+
+    def test_it_reaches_the_audit_log(self, toy) -> None:
+        session, _ = self._run(toy, stop_after=2)
+        assert any(
+            "the learner ended training" in r.summary for r in session.board.audit_log
+        )
+
+    def test_the_observer_is_told_before_the_post_test(self, toy) -> None:
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.orchestration.session import StopTraining
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        class Watcher(Watching):
+            def __init__(self) -> None:
+                self.order: list[str] = []
+
+            def training_finished(self, reason, items) -> None:  # noqa: ANN001
+                self.order.append(f"finished:{reason}")
+
+            def phase_started(self, phase, total) -> None:  # noqa: ANN001
+                self.order.append(f"phase:{phase}")
+
+        seen = {"n": 0}
+
+        def answer(item, attempt):  # noqa: ANN001
+            if item.bank != "practice":
+                return "999"
+            seen["n"] += 1
+            if seen["n"] > 1:
+                raise StopTraining
+            return "999"
+
+        watcher = Watcher()
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 20, "administer_tests": True}
+        )
+        session = build_session(
+            "human", config.seed, toy, config,
+            learner=HumanLearner(answer), observer=watcher,
+        )
+        session.diagnostic = Nothing()
+        session.run()
+
+        assert watcher.order == [
+            "phase:pretest",
+            "finished:learner_ended_it",
+            "phase:posttest",
+        ]

@@ -61,6 +61,21 @@ class NotImplementedForModels(NotImplementedError):
     """Raised when a config names a model-backed agent before one exists."""
 
 
+class StopTraining(Exception):
+    """The learner has had enough of the practice, and says so.
+
+    Raised by a front end from inside any prompt the learner is at, and caught
+    around the training loop only — the post-test still runs. That is the whole
+    point of it: someone who stops answering practice questions has still done
+    the work, and the held-out bank is what turns a sitting into a measured
+    result rather than a transcript. Ending the sitting outright is a different
+    request and a different exception, and it belongs to the front end.
+
+    Lives here rather than in the demo because the loop is what has to honour
+    it, and ``core/`` may not import a front end.
+    """
+
+
 @runtime_checkable
 class SessionObserver(Protocol):
     """Watches a session without taking part in it.
@@ -260,83 +275,98 @@ class Session:
         #: cohort.
         set_aside = False
 
-        for _ in range(self.config.cohort.max_items):
-            decision = self.arbitration.evaluate(
-                current_concept=working,
-                mastery=dict(self.board.state.mastery),
-                frontier=self.board.frontier,
-                error_trace=list(self.board.state.error_trace),
-                prior=bkt.initial(self.config.bkt),
-            )
+        try:
+            for _ in range(self.config.cohort.max_items):
+                decision = self.arbitration.evaluate(
+                    current_concept=working,
+                    mastery=dict(self.board.state.mastery),
+                    frontier=self.board.frontier,
+                    error_trace=list(self.board.state.error_trace),
+                    prior=bkt.initial(self.config.bkt),
+                )
 
-            if decision.replan or set_aside:
-                # Macro first: is the target still the right one? Then micro:
-                # what to work on the way to it. Both come from the planner, and
-                # the goal is written to the board before the item is chosen, so
-                # the selection is made against the plan that will be recorded.
-                if self._retarget():
-                    goal_changes += 1
-                if self.board.plan is None and self._wants_a_goal():
-                    exhausted = sum(given.values())
-                    stop_reason = "every_goal_reached"
-                    self.board.annotate(
-                        "every goal reached", items_given=sum(given.values())
-                    )
-                    break
+                if decision.replan or set_aside:
+                    # Macro first: is the target still the right one? Then micro:
+                    # what to work on the way to it. Both come from the planner, and
+                    # the goal is written to the board before the item is chosen, so
+                    # the selection is made against the plan that will be recorded.
+                    if self._retarget():
+                        goal_changes += 1
+                    if self.board.plan is None and self._wants_a_goal():
+                        exhausted = sum(given.values())
+                        stop_reason = "every_goal_reached"
+                        self.board.annotate(
+                            "every goal reached", items_given=sum(given.values())
+                        )
+                        break
 
-                item = self.planner.select(self.board.view(), self.domain, lifetime)
-                if item is None:
-                    # Nothing left to teach: the frontier emptied, or the
-                    # syllabus ran out. When that happened is an outcome.
-                    exhausted = sum(given.values())
-                    stop_reason = "nothing_left_to_select"
-                    self.board.annotate(
-                        "nothing left to select", items_given=sum(given.values())
-                    )
-                    break
-                working = item.concept_id
-                if decision.replan:
-                    self.board.record_replan(decision.summary, **decision.evidence)
+                    item = self.planner.select(self.board.view(), self.domain, lifetime)
+                    if item is None:
+                        # Nothing left to teach: the frontier emptied, or the
+                        # syllabus ran out. When that happened is an outcome.
+                        exhausted = sum(given.values())
+                        stop_reason = "nothing_left_to_select"
+                        self.board.annotate(
+                            "nothing left to select", items_given=sum(given.values())
+                        )
+                        break
+                    working = item.concept_id
+                    if decision.replan:
+                        self.board.record_replan(decision.summary, **decision.evidence)
+                    else:
+                        # Its own trigger name, so the threshold sweep reads it apart
+                        # from the ones the arbitration policy owns. It cannot fire
+                        # without a dwelling cap, and no experiment config sets one.
+                        self.board.record_replan(
+                            "replan triggered by concept_set_aside", set_aside=True
+                        )
+                    self.arbitration.accept(dict(self.board.state.mastery))
+                    set_aside = False
                 else:
-                    # Its own trigger name, so the threshold sweep reads it apart
-                    # from the ones the arbitration policy owns. It cannot fire
-                    # without a dwelling cap, and no experiment config sets one.
-                    self.board.record_replan(
-                        "replan triggered by concept_set_aside", set_aside=True
-                    )
-                self.arbitration.accept(dict(self.board.state.mastery))
-                set_aside = False
-            else:
-                if decision.suppressed_by:
-                    # A trigger that fired and was held back is worth recording:
-                    # it is the difference between the threshold deciding and
-                    # the rate limit deciding.
-                    self.board.annotate(decision.summary, **decision.evidence)
-                item = self._next_item_for(working, lifetime)
-                if item is None:
-                    exhausted = sum(given.values())
-                    stop_reason = "nothing_left_to_select"
-                    self.board.annotate(
-                        "no item left on the current concept",
-                        items_given=sum(given.values()),
-                        concept_id=working,
-                    )
-                    break
+                    if decision.suppressed_by:
+                        # A trigger that fired and was held back is worth recording:
+                        # it is the difference between the threshold deciding and
+                        # the rate limit deciding.
+                        self.board.annotate(decision.summary, **decision.evidence)
+                    item = self._next_item_for(working, lifetime)
+                    if item is None:
+                        exhausted = sum(given.values())
+                        stop_reason = "nothing_left_to_select"
+                        self.board.annotate(
+                            "no item left on the current concept",
+                            items_given=sum(given.values()),
+                            concept_id=working,
+                        )
+                        break
 
-            # Before the item is worked, so it is the count of previous
-            # givings; `record_observation` does the incrementing.
-            repetition = lifetime.get(item.id, 0)
-            given[item.id] += 1
-            self.arbitration.note_item()
-            # Counted always, acted on only when a cap is configured — which is
-            # no cohort. `consolidate` ranks by recent errors, so failing a
-            # concept attracts more of the same, and with the pre-test skipping
-            # what a learner has demonstrated there are fewer places left to be
-            # moved along to.
-            set_aside = self.board.note_visit(
-                item.concept_id, self.config.cohort.max_visits_per_concept
+                # Before the item is worked, so it is the count of previous
+                # givings; `record_observation` does the incrementing.
+                repetition = lifetime.get(item.id, 0)
+                given[item.id] += 1
+                self.arbitration.note_item()
+                # Counted always, acted on only when a cap is configured — which is
+                # no cohort. `consolidate` ranks by recent errors, so failing a
+                # concept attracts more of the same, and with the pre-test skipping
+                # what a learner has demonstrated there are fewer places left to be
+                # moved along to.
+                set_aside = self.board.note_visit(
+                    item.concept_id, self.config.cohort.max_visits_per_concept
+                )
+                self._work_item(item, diagnoses, repetition=repetition)
+        except StopTraining:
+            # The learner said they had had enough. Not an error and not an
+            # exhaustion: the material and the budget both had more to give, and
+            # the person did not. Recorded as its own reason so a short sitting
+            # is never read back as the system running out of things to teach —
+            # and the post-test below still runs, which is what separates this
+            # from ending the sitting outright.
+            stop_reason = "learner_ended_it"
+            self.board.annotate(
+                "the learner ended training",
+                items_given=sum(given.values()),
+                max_items=self.config.cohort.max_items,
             )
-            self._work_item(item, diagnoses, repetition=repetition)
+
         if stop_reason == "budget_spent":
             # The one exit that recorded nothing. To a person it looked like the
             # session breaking off after a failed item — the post-test simply

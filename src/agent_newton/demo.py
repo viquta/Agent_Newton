@@ -36,7 +36,11 @@ from rich.text import Text
 
 from agent_newton.config import Config
 from agent_newton.core.agents.base import Diagnosis, Hint, Resumable
-from agent_newton.core.orchestration.session import Watching, build_session
+from agent_newton.core.orchestration.session import (
+    StopTraining,
+    Watching,
+    build_session,
+)
 from agent_newton.core.simulator.human import HumanLearner
 from agent_newton.core.evaluation import outcomes
 from agent_newton.core.state import bkt, route
@@ -51,6 +55,11 @@ from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
 _BAR = 18
 
 QUIT = ":q"
+#: Ends training and goes straight to the post-test. Distinct from `:q`, which
+#: ends the sitting where it stands: someone who has had enough of the questions
+#: has still done the work, and the post-test is what turns it into a measured
+#: result rather than a transcript.
+END_TRAINING = ":e"
 #: Declines a prompt that would otherwise insist. A refusal that can be recorded
 #: is worth more than a field somebody filled with a full stop to get past it.
 DECLINE = ":s"
@@ -330,6 +339,11 @@ class DemoObserver(Watching):
             "nothing_left_to_select": (
                 f"Training ran out of material after {items} questions — nothing "
                 f"selectable was left on the way to the goal."
+            ),
+            "learner_ended_it": (
+                f"You ended training after {items} question(s). The post-test "
+                f"still runs — it is what turns the work you did into a measured "
+                f"result rather than a transcript."
             ),
         }.get(reason, f"Training finished after {items} questions.")
         self._console.print()
@@ -840,6 +854,17 @@ def run_demo(
             ).strip()
             if said == QUIT:
                 raise Quit
+            if said == END_TRAINING:
+                if observer.testing:
+                    # The banks are the measurement. Stopping inside one would
+                    # leave a score that looks like an answer to a question
+                    # nobody finished asking.
+                    console.print(
+                        f"  [dim]{END_TRAINING} works during training, not inside "
+                        f"a test. {QUIT} stops the sitting.[/dim]"
+                    )
+                    continue
+                raise StopTraining
             if said == DECLINE:
                 return ""
             if said or not insist:
@@ -858,7 +883,13 @@ def run_demo(
                 border_style="cyan",
             )
         )
-        return _asked(f"  your answer  [dim]({QUIT} to stop)[/dim]")
+        hint = (
+            f"[dim]({QUIT} to stop)[/dim]"
+            if observer.testing
+            else f"[dim]({QUIT} to stop, {END_TRAINING} to end training and go "
+            f"to the post-test)[/dim]"
+        )
+        return _asked(f"  your answer  {hint}")
 
     def ask_reflection(item: Item, prompt: str) -> str:
         # Prose, not an answer. It never reaches the verifier and costs no
@@ -935,7 +966,9 @@ def run_demo(
                 "That reply is kept and never graded; it is what lets the system "
                 "tell a slip from a misunderstanding, and it is read back to you "
                 "next time this idea comes round. [dim]:s[/dim] skips it.\n"
-                "[bold]:q[/bold] stops at any point.\n\n"
+                "[bold]:e[/bold] ends the training whenever you have had enough "
+                "and goes straight to the post-test. [bold]:q[/bold] stops the "
+                "sitting altogether, at any point.\n\n"
                 "During training the panel shows what the system believes about you "
                 "and why it chooses what it chooses. Nothing here knows the right "
                 "answer in advance: the verifier grades every step symbolically, and "
