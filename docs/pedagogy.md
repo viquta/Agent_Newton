@@ -24,6 +24,8 @@ discouraged.
 
 ## Scaffolding
 
+(note for idea: make more kinds of scaffolds, make sure that the code is modular enough to make this possible, and (for humans specifically) give the freedom to choose how much scaffold they want for specific sessions, like before a session's pre-test starts, "how much help do you want today, and in which areas? ...(choices 1, 2..).. enter for default") --> but i think that this can be done in the next phase of the research, once I get approved to search for people to test out my system.
+
 ```python
 hint_level(mastery, unresolved_steps, band) -> HintLevel
 ```
