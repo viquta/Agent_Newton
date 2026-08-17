@@ -357,6 +357,25 @@ def _check_guessable(report: ValidationReport, item_id: str, template, base) -> 
     # template generates. Requiring the map to cover it would let a family that
     # is answerable by one rule at all seven generated draws escape on the
     # strength of the one draw the template did not choose.
+    answers = [template.variant(base, d).answer for d in range(VARIANT_DRAWS)]
+
+    # ⚠️ The blind spot this check had, and the strongest signal there is.
+    #
+    # The positional-map test below reads the *numbers* in the answer, so a
+    # family whose answer contains none escapes it entirely. `ca_impl_p1` asked
+    # "given x^2 + y^2 = 25, find dy/dx" and then 36, then 49 — and the answer is
+    # `-x/y` every time, because the constant does not appear in the derivative.
+    # That is not guessable by a rule, it is answerable from memory after one
+    # exposure, and the check reported nothing.
+    if len(set(answers)) == 1:
+        report.warn(
+            GUESSABLE_FAMILY,
+            f"every draw of {item_id!r} has the same answer ({answers[0]!r}), so "
+            f"after one exposure the rest are recall rather than practice. Vary "
+            f"what the question is *about*, not the numbers it happens to carry",
+        )
+        return
+
     draws = []
     for draw in range(1, VARIANT_DRAWS):
         variant = template.variant(base, draw)

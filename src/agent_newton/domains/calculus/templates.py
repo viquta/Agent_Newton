@@ -225,32 +225,122 @@ class StationaryPoints(_Template):
 
 
 class ProductRule(_Template):
-    """y = (x^p + 1)(x^q + 2). Two polynomials, so nothing outside the graph."""
+    """Four shapes of product, so neither factor's derivative is predictable.
+
+    The first version moved only the second exponent — (x^2+1)(x^3+2),
+    (x^2+1)(x^4+2), (x^2+1)(x^5+2) — leaving the first factor and its derivative
+    fixed at every draw. Same defect as the quotient family, one factor along.
+    """
 
     item_id = "ca_prod_p1"
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        p, q = 2, 3 + draw
-        df, dg = _term(p, p - 1), _term(q, q - 1)
+        shape = draw % 4
+        step = draw // 4
+
+        if shape == 0:
+            # The item as written at draw 0.
+            p, q = 2, 3 + step
+            return (
+                f"Differentiate: y = (x^{p} + 1)(x^{q} + 2)",
+                f"{p}*x*(x**{q} + 2) + (x**{p} + 1)*{q}*x**{q - 1}",
+                {
+                    "f": f"x**{p} + 1", "g": f"x**{q} + 2",
+                    "df": f"{p}*x", "dg": f"{q}*x**{q - 1}",
+                },
+            )
+
+        if shape == 1:
+            # A linear second factor: dg is a constant.
+            p, c = 3 + step, 2 + step
+            return (
+                f"Differentiate: y = (x^{p} + 1)(x + {c})",
+                f"{p}*x**{p - 1}*(x + {c}) + (x**{p} + 1)",
+                {
+                    "f": f"x**{p} + 1", "g": f"x + {c}",
+                    "df": f"{p}*x**{p - 1}", "dg": "1",
+                },
+            )
+
+        if shape == 2:
+            # A bare monomial first factor: no constant term to carry.
+            p, q = 2 + step, 3 + step
+            return (
+                f"Differentiate: y = x^{p}(x^{q} + 1)",
+                f"{p}*x**{p - 1}*(x**{q} + 1) + x**{p}*{q}*x**{q - 1}",
+                {
+                    "f": f"x**{p}", "g": f"x**{q} + 1",
+                    "df": f"{p}*x**{p - 1}", "dg": f"{q}*x**{q - 1}",
+                },
+            )
+
+        # A subtraction, so the sign inside a factor is not always +.
+        p, c = 2 + step, 3 + step
         return (
-            f"Differentiate: y = (x^{p} + 1)(x^{q} + 2)",
-            f"{df}*(x**{q} + 2) + (x**{p} + 1)*{dg}",
-            {"f": f"x**{p} + 1", "g": f"x**{q} + 2", "df": df, "dg": dg},
+            f"Differentiate: y = (x^{p} - {c})(x + 1)",
+            f"{p}*x**{p - 1}*(x + 1) + (x**{p} - {c})",
+            {
+                "f": f"x**{p} - {c}", "g": "x + 1",
+                "df": f"{p}*x**{p - 1}", "dg": "1",
+            },
         )
 
 
+
 class QuotientRule(_Template):
-    """y = x^2/(x + c)."""
+    """x^2/(x + c) and three other shapes, so u' is not always 2x.
+
+    The first version varied only the denominator constant: x^2/(x+1),
+    x^2/(x+2), x^2/(x+3). Ten steps of that in one sitting, and a learner said
+    what it looks like from the chair — "every new question just kept sequencing
+    a +1 as you can see. This way, i never really learned the quotient rule very
+    well." The numerator, and therefore u', never moved.
+
+    Now the numerator's degree, the denominator's degree and their order all
+    rotate, so neither u' nor v' can be carried over from the last question.
+    """
 
     item_id = "ca_quot_p1"
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        c = 1 + draw
+        shape = draw % 4
+        step = draw // 4
+
+        if shape == 0:
+            # The item as written at draw 0.
+            c = 1 + step
+            return (
+                f"Differentiate: y = x^2/(x + {c})",
+                f"(2*x*(x + {c}) - x**2)/(x + {c})**2",
+                {"f": "x**2", "g": f"x + {c}", "df": "2*x", "dg": "1"},
+            )
+
+        if shape == 1:
+            # A cubic numerator, so u' is no longer 2x.
+            c = 1 + step
+            return (
+                f"Differentiate: y = x^3/(x + {c})",
+                f"(3*x**2*(x + {c}) - x**3)/(x + {c})**2",
+                {"f": "x**3", "g": f"x + {c}", "df": "3*x**2", "dg": "1"},
+            )
+
+        if shape == 2:
+            # A quadratic denominator, so v' is no longer 1.
+            c = 2 + step
+            return (
+                f"Differentiate: y = x^2/(x^2 + {c})",
+                f"(2*x*(x**2 + {c}) - x**2*2*x)/(x**2 + {c})**2",
+                {"f": "x**2", "g": f"x**2 + {c}", "df": "2*x", "dg": "2*x"},
+            )
+
+        # Inverted: the linear factor on top, the power underneath.
+        c = 1 + step
         return (
-            f"Differentiate: y = x^2/(x + {c})",
-            f"(2*x*(x + {c}) - x**2)/(x + {c})**2",
-            {"f": "x**2", "g": f"x + {c}", "df": "2*x", "dg": "1"},
+            f"Differentiate: y = (x + {c})/x^2",
+            f"(x**2 - (x + {c})*2*x)/x**4",
+            {"f": f"x + {c}", "g": "x**2", "df": "1", "dg": "2*x"},
         )
+
 
 
 class ChainRuleCubed(_Template):
