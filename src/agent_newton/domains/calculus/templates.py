@@ -123,49 +123,99 @@ class InstantaneousRate(_Template):
         )
 
 
-class BinomialExpansion(_Template):
-    """(base + step)^2. Only the names change; the structure is the point.
+class FirstPrinciplesStep(_Template):
+    """The algebra a first-principles derivative needs, at three depths.
 
-    The pairs are drawn from the verifier's own symbol vocabulary rather than
-    invented. That vocabulary is deliberately small — an unknown name is how
-    prose is told apart from an expression — so a variant using a symbol outside
-    it would produce a question whose correct answer the verifier cannot read.
+    The first version rotated nine *symbol pairs* at a fixed exponent of two, so
+    all nine draws were the same computation under different letters — renaming
+    ``x`` to ``t`` changes nothing a learner has to do.
+
+    Two problems, and the second is the larger. The exponent never moved, so the
+    cubic case was never asked. And the item stopped at a binomial expansion while
+    its concept is ``derivative_from_first_principles`` — the misconception's own
+    description says the consequence is that *the first principles quotient then
+    collapses*, so the catalogue knew the point was the quotient and the item did
+    not reach it. A learner could answer every draw and still not take a limit.
+
+    Three shapes now: the square, the cube, and the difference quotient itself.
+    Symbols rotate underneath as a second axis, so consecutive draws differ in
+    both what is asked and what it is asked about.
     """
 
     item_id = "ca_fp_p1"
-    _PAIRS: Sequence[tuple[str, str]] = (
-        ("x", "h"),
-        ("t", "h"),
-        ("u", "h"),
-        ("x", "a"),
-        ("t", "a"),
-        ("u", "a"),
-        ("x", "b"),
-        ("t", "b"),
-        ("u", "b"),
-    )
+    #: Drawn from the verifier's own symbol vocabulary rather than invented. That
+    #: vocabulary is deliberately small — an unknown name is how prose is told
+    #: apart from an expression — so a variant using a symbol outside it would ask
+    #: a question whose correct answer the verifier cannot read.
+    _PAIRS: Sequence[tuple[str, str]] = (("x", "h"), ("t", "h"), ("u", "h"))
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        base, step = self._PAIRS[draw % len(self._PAIRS)]
+        shape = draw % 3
+        base, step = self._PAIRS[(draw // 3) % len(self._PAIRS)]
+
+        if shape == 0:
+            # The item as written at draw 0.
+            return (
+                f"Expand ({base} + {step})^2.",
+                f"{base}**2 + 2*{base}*{step} + {step}**2",
+                {"base": base, "step": step, "exponent": 2},
+            )
+
+        if shape == 1:
+            # Four terms rather than three, and coefficients that are not 1 or 2.
+            return (
+                f"Expand ({base} + {step})^3.",
+                f"{base}**3 + 3*{base}**2*{step} + 3*{base}*{step}**2 + {step}**3",
+                {"base": base, "step": step, "exponent": 3},
+            )
+
+        # The quotient the concept is actually about. Losing the middle term here
+        # leaves step^2/step, so the error collapses to the step itself — stated
+        # in `collapses_to` because the general expansion form would be the wrong
+        # shape of wrong answer for this question.
         return (
-            f"Expand ({base} + {step})^2.",
-            f"{base}**2 + 2*{base}*{step} + {step}**2",
-            {"base": base, "step": step, "exponent": 2},
+            f"Simplify (({base} + {step})^2 - {base}^2)/{step}.",
+            f"2*{base} + {step}",
+            {
+                "base": base, "step": step, "exponent": 2,
+                "collapses_to": step,
+            },
         )
 
 
+
 class PowerRulePlain(_Template):
-    """y = x^n."""
+    """y = x^n, over exponents chosen so the answer's *shape* changes.
+
+    The first version was ``n = 5 + draw`` — x^5 through x^12, the same
+    computation with larger digits and no draw where the surface pattern breaks.
+    `guessable_family` flagged it because the answer's two numbers are always
+    (n, n-1), and for this family that map *is* the power rule, so the warning was
+    half a false positive.
+
+    The half that was not: **n = 1 and n = 2 are where a pattern-matcher fails.**
+    ``x^1`` differentiates to ``1`` and ``x^2`` to ``2*x`` — neither looks like
+    ``n*x**(n-1)``, so "copy the number, then one less" produces nothing usable and
+    someone who understands the rule is fine. Including them makes the item better
+    *and* satisfies the check, which beats annotating the warning away.
+
+    Safe to keep this the simple case because :class:`PowerRuleWithCoefficient`
+    covers the multiplication on the same concept.
+    """
 
     item_id = "ca_pow_p1"
+    #: Draw 0 is the item as written. 1 and 2 come early because they are the
+    #: instructive ones, not because they are easy.
+    _EXPONENTS: Sequence[int] = (5, 1, 2, 6, 3, 7, 4, 8)
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        n = 5 + draw
+        n = self._EXPONENTS[draw % len(self._EXPONENTS)]
         return (
             f"Differentiate: y = x^{n}",
             _term(n, n - 1),
             {"coefficient": 1, "exponent": n},
         )
+
 
 
 class PowerRuleWithCoefficient(_Template):
@@ -537,7 +587,7 @@ TEMPLATES: Sequence[ItemTemplate] = (
     AverageRate(),
     TangentAsLimit(),
     InstantaneousRate(),
-    BinomialExpansion(),
+    FirstPrinciplesStep(),
     PowerRulePlain(),
     PowerRuleWithCoefficient(),
     ReciprocalPower(),

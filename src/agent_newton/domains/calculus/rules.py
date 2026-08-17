@@ -28,6 +28,17 @@ class BinomialMiddleTermLost:
     misconception_id = "binomial_middle_term_lost"
 
     def apply(self, item: Item) -> str | None:
+        # A shape that knows what the error collapses *to* says so. The general
+        # form below is the expansion error: (a + b)^n written as a^n + b^n. On a
+        # difference quotient it is the wrong shape of wrong answer — losing 2ab
+        # from ((x+h)^2 - x^2)/h leaves h^2/h = h, and nobody would write
+        # "x^2 + h^2" as the answer to a quotient. Both verify as incorrect, so
+        # `domain validate` accepts either; only one is what a learner writes, and
+        # the diagnostic is scored against these.
+        collapsed = item.params.get("collapses_to")
+        if collapsed is not None:
+            return str(collapsed)
+
         got = _need(item, "base", "step", "exponent")
         if got is None:
             return None

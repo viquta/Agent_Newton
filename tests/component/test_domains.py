@@ -710,13 +710,22 @@ class TestAGuessableFamilyIsFlagged:
         }
         assert "ca_anti_p1" not in flagged
 
-    def test_but_the_check_still_finds_others(self) -> None:
-        # Guards that cannot fire prove nothing. Four calculus families are
-        # answerable by a fixed map and are reported; see AUDIT of the finding in
-        # research_private. Asserting a non-empty set keeps this honest if the
-        # others are ever rewritten too.
+    def test_no_calculus_family_is_guessable_any_more(self) -> None:
+        # ⚠️ This asserted the opposite until 2026-08-17, and the comment said so:
+        # four families were flagged, and a non-empty set kept the check honest
+        # "if the others are ever rewritten too". They have been — antiderivative,
+        # quotient, product and implicit all rotate their shape now, and power and
+        # binomial reach the cases where the pattern breaks.
+        #
+        # So the assertion inverts. The duty it was carrying — a guard that cannot
+        # fire proves nothing — is discharged by
+        # `test_a_constant_map_from_prompt_to_answer_is_caught`, which fires the
+        # check on a synthetic family rather than relying on a real defect
+        # surviving.
         calculus = registry.load_domain("calculus")
-        flagged = [
-            w for w in validate(calculus).warnings if w.check == GUESSABLE_FAMILY
-        ]
-        assert flagged, "the check found nothing at all, which is itself suspicious"
+        flagged = sorted(
+            w.message.split("'")[1]
+            for w in validate(calculus).warnings
+            if w.check == GUESSABLE_FAMILY
+        )
+        assert flagged == [], f"guessable families are back: {flagged}"
