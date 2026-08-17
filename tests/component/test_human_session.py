@@ -892,7 +892,24 @@ class TestAnUnreadableAnswerIsNotAnAttempt:
         tutor = self._recording()
         session = self._with_tutor(toy, tutor, ["999"], max_steps_per_item=3)
         assert len(set(tutor.mastery)) == 1, "the baseline moved within the item"
-        # And it is a belief the board actually held, rather than a constant.
+
+        # ⚠️ The 0.0 branch is not a fallback for "no belief yet" — it is the
+        # belief, and it is inconsistent with every other reader of mastery.
+        #
+        # `_work_item` passes `seen.probability(item.concept_id, 0.0)`, so a
+        # concept with no observations is valued at **0.0**. Everywhere else an
+        # unobserved concept sits at the BKT **prior**: `route.remaining`,
+        # `route.reached` and `zpd.compute` all use `mastery.get(c, prior)`.
+        #
+        # Inert at the configured band — 0.0 and the 0.15 prior both fall below
+        # `theta_lower / 2` (0.35), so both yield a worked step — which is why
+        # nothing has noticed. A narrower band separates them, and then the
+        # first hint on every fresh concept is pitched from a belief the model
+        # does not hold.
+        #
+        # Kept as a disjunction because both are reachable: 0.0 before the first
+        # observation, a real posterior after. Asserting only the second fails
+        # here today (0.0 against a board holding 0.228).
         assert tutor.mastery[0] == pytest.approx(0.0) or tutor.mastery[0] in set(
             session.board.state.mastery.values()
         )
@@ -1288,6 +1305,62 @@ class TestWhyTrainingStopped:
         assert outcome.stop_reason in ("every_goal_reached", "nothing_left_to_select")
         assert outcome.items_to_exhaustion is not None
 
+    # --- a learner who masters everything is told the syllabus ran out --------
+    #
+    # Found by `research_private/tools/session_probe.py`, which drives a real
+    # session and checks `stop_reason` against the state rather than against
+    # itself: 5 of 5 goals mastered, reported as `nothing_left_to_select`.
+    #
+    # The disjunction in the test above is why nothing caught it. It accepts
+    # either answer, so it passes whichever one the loop gives — which is the
+    # shape of test that cannot fail in the direction that matters.
+    #
+    # The cause is recorded in `11f8bf2`: `_retarget` leaves the last plan on the
+    # board when the planner proposes nothing, so `board.plan is None` is only
+    # ever true before the first plan is set. `every_goal_reached` is therefore
+    # reachable only by a learner who arrives having already mastered everything.
+
+    def _masters_everything(self, toy):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 400, "administer_tests": False}
+        )
+        learner = HumanLearner(lambda item, attempt: toy.items.get(item.id).answer)
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        outcome = session.run()
+        return session, outcome
+
+    def test_the_state_says_every_goal_was_mastered(self, toy) -> None:
+        # The half that is right, and the reason the label is the only defect:
+        # nothing about the measurement is wrong, only what the session calls it.
+        _, outcome = self._masters_everything(toy)
+        assert outcome.goals_mastered == len(list(toy.concepts.goals()))
+        assert outcome.distance_to_goal == 0
+
+    def test_but_it_is_reported_as_having_run_out_of_syllabus(self, toy) -> None:
+        # ⚠️ Pins the defect, and does not endorse it. Delete this test when the
+        # one below stops being xfail.
+        _, outcome = self._masters_everything(toy)
+        assert outcome.stop_reason == "nothing_left_to_select"
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "known: `_retarget` leaves the last plan on the board, so "
+            "`every_goal_reached` is unreachable once a plan has been set. "
+            "Remove the marker and the pinning test above when fixed."
+        ),
+    )
+    def test_mastering_every_goal_should_say_so(self, toy) -> None:
+        _, outcome = self._masters_everything(toy)
+        assert outcome.stop_reason == "every_goal_reached"
+
     def test_the_observer_is_told(self, toy) -> None:
         from agent_newton.core.agents.base import Diagnosis
 
@@ -1442,7 +1515,12 @@ class TestTheReasoningBehindAWrongAnswer:
         # under a right answer is the one thing that can tell a lucky guess from
         # knowing it, which is the open question about the mastery estimate.
         _, asked = self._run(toy, toy.items.bank("practice")[0].answer)
-        assert asked == [False] or asked == []
+        # ⚠️ Was `asked == [False] or asked == []`. The second branch is never
+        # taken — verified — and it admitted the one failure that matters here:
+        # removing the prompt from correct answers entirely would leave `asked`
+        # empty and the test would still pass, silently dropping the only
+        # mechanism that can tell a lucky guess from knowing it.
+        assert asked == [False]
 
     def test_it_reaches_the_board_before_the_step_is_recorded(self, toy) -> None:
         # Ordering is the whole point: recorded after, it could not have reached
