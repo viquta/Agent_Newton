@@ -23,6 +23,7 @@ from agent_newton.domains.validate import (
     CONCEPT_HAS_A_LABEL,
     GOALS_ARE_REACHABLE,
     RULES_PRODUCE_ERRORS,
+    GUESSABLE_FAMILY,
     TEMPLATES_ARE_SOUND,
     validate,
 )
@@ -637,3 +638,85 @@ class TestACatalogueEntryNeverStatesAnItemsAnswer:
             domain.misconceptions.get("sign_error_moving_term").description, item, domain
         )
         assert replace(item, answer="12").answer == "12"
+
+
+class TestAGuessableFamilyIsFlagged:
+    """A draw can be individually correct and still teach nothing.
+
+    Every template check before this one asked whether a draw was *right*. None
+    asked whether it was **earnable**. The antiderivative family generated only
+    `(n+1)x^n`, so `3x^2` gave `x^3 + C` and `4x^3` gave `x^4 + C` — read the
+    coefficient, write it as the exponent. Correct at every draw, answerable
+    without the concept at every draw, and a learner said so at the keyboard
+    while the mastery estimate believed them.
+
+    A warning rather than a problem: some concepts genuinely are one step, so a
+    constant map is evidence to look rather than proof of a defect.
+    """
+
+    def _domain_with(self, toy, template):  # noqa: ANN001
+        from dataclasses import replace
+
+        return replace(toy, templates={template.item_id: template})
+
+    def test_a_constant_map_from_prompt_to_answer_is_caught(self, toy) -> None:
+        from dataclasses import replace
+
+        item = toy.items.bank("practice")[0]
+
+        class Guessable:
+            """The answer is always the prompt's number, one lower."""
+
+            item_id = item.id
+
+            def variant(self, base, draw):  # noqa: ANN001
+                if draw == 0:
+                    return base
+                return replace(base, prompt=f"take {draw + 9}", answer=str(draw + 8))
+
+        warnings = validate(self._domain_with(toy, Guessable())).warnings
+        assert any(w.check == GUESSABLE_FAMILY for w in warnings)
+
+    def test_rotating_the_shape_is_not_caught(self, toy) -> None:
+        # The fix the check exists to reward: when the *number* of values in the
+        # answer changes across draws, no positional map can hold, and the family
+        # cannot be answered by one surface rule.
+        from dataclasses import replace
+
+        item = toy.items.bank("practice")[0]
+
+        class Rotating:
+            item_id = item.id
+
+            def variant(self, base, draw):  # noqa: ANN001
+                if draw == 0:
+                    return base
+                if draw % 2:
+                    return replace(base, prompt=f"take {draw}", answer=f"{draw}")
+                return replace(base, prompt=f"take {draw}", answer=f"{draw} {draw} {draw}")
+
+        warnings = validate(self._domain_with(toy, Rotating())).warnings
+        assert not any(w.check == GUESSABLE_FAMILY for w in warnings)
+
+    def test_the_real_antiderivative_family_is_no_longer_guessable(self) -> None:
+        # The family that prompted the check. Its draws now rotate over four
+        # shapes; before the rewrite this assertion failed.
+        calculus = registry.load_domain("calculus")
+        warnings = validate(calculus).warnings
+        flagged = {
+            w.message.split("'")[1]
+            for w in warnings
+            if w.check == GUESSABLE_FAMILY
+        }
+        assert "ca_anti_p1" not in flagged
+
+    def test_but_the_check_still_finds_others(self) -> None:
+        # Guards that cannot fire prove nothing. Four calculus families are
+        # answerable by a fixed map and are reported; see AUDIT of the finding in
+        # research_private. Asserting a non-empty set keeps this honest if the
+        # others are ever rewritten too.
+        calculus = registry.load_domain("calculus")
+        flagged = [
+            w for w in validate(calculus).warnings if w.check == GUESSABLE_FAMILY
+        ]
+        assert flagged, "the check found nothing at all, which is itself suspicious"

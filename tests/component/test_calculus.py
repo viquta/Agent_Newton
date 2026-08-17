@@ -275,7 +275,14 @@ class TestDomainContent:
         # error. They must stay visible without blocking work.
         report = validate(calculus)
         assert report.warnings
-        assert all(w.check == UNCONFIRMED_SOURCE for w in report.warnings)
+        # The unconfirmed sources are reported, and reported as warnings.
+        #
+        # This asserted `all(...)` until a second warning kind existed, which
+        # made it a test of how many kinds there are rather than of how this one
+        # is classified. `guessable_family` then arrived and broke it while
+        # nothing about sources had changed.
+        assert any(w.check == UNCONFIRMED_SOURCE for w in report.warnings)
+        assert not any(p.check == UNCONFIRMED_SOURCE for p in report.problems)
         assert report.ok
 
     def test_every_source_is_either_a_citation_or_flagged(self, calculus) -> None:

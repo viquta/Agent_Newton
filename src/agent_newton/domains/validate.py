@@ -15,6 +15,7 @@ verifier rather than against itself:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from agent_newton.domains.base import Domain, DomainError, Verdict
@@ -25,6 +26,7 @@ UNCONFIRMED_SOURCE = "unconfirmed_source"
 GOALS_ARE_REACHABLE = "goals_are_reachable"
 CONCEPT_HAS_A_LABEL = "concept_has_a_label"
 TEMPLATES_ARE_SOUND = "templates_are_sound"
+GUESSABLE_FAMILY = "guessable_family"
 
 #: Draws checked per template. A learner works a concept until it is mastered,
 #: which in a full session runs to a handful of repetitions on the hardest ones;
@@ -316,4 +318,81 @@ def validate(domain: Domain) -> ValidationReport:
                         f"the params and the question have drifted apart",
                     )
 
+        _check_guessable(report, item_id, template, base)
+
     return report
+
+
+def _numbers(text: str) -> list[int]:
+    return [int(n) for n in re.findall(r"\d+", text)]
+
+
+def _check_guessable(report: ValidationReport, item_id: str, template, base) -> None:  # noqa: ANN001
+    """Warn when the answer follows from the prompt by a rule simpler than the concept.
+
+    Every draw of a template is checked for being *correct*. None of them was
+    checked for being **earnable**, and the difference is the whole point of a
+    practice item.
+
+    The family that prompted this generated only ``(n+1)x^n``, so the answer to
+    ``3x^2`` was ``x^3 + C`` and the answer to ``4x^3`` was ``x^4 + C``. Read the
+    coefficient, write it as the exponent, add C. Every draw individually
+    correct, every draw answerable without knowing what an antiderivative is —
+    and a learner said so at the keyboard while the mastery estimate believed
+    them.
+
+    **The signature is structural constancy.** Take the integers in the prompt
+    and the integers in the answer. If every answer number sits at a fixed offset
+    from a fixed prompt position, *and the same map holds across every draw*,
+    then one surface rule answers the whole family. Rotating the answer's shape
+    breaks the map, which is why varying only the numbers does not help.
+
+    A **warning**, not a failure, and deliberately. Some concepts genuinely are
+    one step — the map existing is evidence to look, not proof of a defect. What
+    must not happen is that nobody notices.
+    """
+    # ⚠️ Draw 0 is excluded, and that makes the check *stronger*. Draw 0 is
+    # whatever the YAML says — it is the item as written and the template must
+    # reproduce it — so its numbers frequently do not fit the pattern the
+    # template generates. Requiring the map to cover it would let a family that
+    # is answerable by one rule at all seven generated draws escape on the
+    # strength of the one draw the template did not choose.
+    draws = []
+    for draw in range(1, VARIANT_DRAWS):
+        variant = template.variant(base, draw)
+        draws.append((_numbers(variant.prompt), _numbers(variant.answer)))
+
+    # Structure varies across draws: no single positional map can exist, and the
+    # family is not guessable in this sense.
+    if len({len(answer) for _, answer in draws}) != 1:
+        return
+    if not draws[0][1] or not draws[0][0]:
+        return
+    if len({len(prompt) for prompt, _ in draws}) != 1:
+        return
+
+    predicted = []
+    for position in range(len(draws[0][1])):
+        source = None
+        for candidate in range(len(draws[0][0])):
+            offset = draws[0][1][position] - draws[0][0][candidate]
+            if all(
+                answer[position] - prompt[candidate] == offset for prompt, answer in draws
+            ):
+                source = (candidate, offset)
+                break
+        if source is None:
+            return
+        predicted.append(source)
+
+    shown = ", ".join(
+        f"answer[{i}] = prompt[{c}]{f'{o:+d}' if o else ''}"
+        for i, (c, o) in enumerate(predicted)
+    )
+    report.warn(
+        GUESSABLE_FAMILY,
+        f"every draw of {item_id!r} is answerable by one fixed rule ({shown}), so "
+        f"the answer can be pattern-matched off the question without the concept. "
+        f"Varying the numbers will not help — the shape is what is being matched; "
+        f"rotate the shape across draws instead",
+    )

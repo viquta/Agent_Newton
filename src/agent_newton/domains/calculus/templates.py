@@ -297,16 +297,77 @@ class ImplicitCircle(_Template):
 
 
 class GeneralAntiderivative(_Template):
-    """(n+1)·x^n, chosen so the antiderivative's coefficient is 1 and +C is the point."""
+    """Antiderivatives whose *shape* rotates, so no surface rule answers them all.
+
+    The first version generated only ``(n+1)·x^n``, chosen so the antiderivative's
+    coefficient came out as 1 and ``+C`` was the salient thing. Optimising for
+    that one feature gave everything else away: the answer to ``3x^2`` is
+    ``x^3 + C`` and to ``4x^3`` is ``x^4 + C``, so **read the coefficient, that is
+    your exponent** — a rule that needs no idea what an antiderivative is. A
+    learner said as much at the keyboard, and the mastery estimate had believed
+    them.
+
+    More draws of that shape would not have helped; the *form* is what was being
+    matched. So the draws now rotate over four shapes, each making a different
+    thing the point:
+
+    ``0`` unit coefficient, so ``+C`` is what is being tested — and it is the
+          item as written, which draw 0 must always reproduce
+    ``1`` a coefficient that must actually be divided by ``n+1``
+    ``2`` a sum, which must be integrated term by term
+    ``3`` a constant term, which is a term rather than decoration
+
+    No single map from the prompt's numbers to the answer's numbers survives all
+    four, which is what ``guessable_families`` in ``domains/validate.py`` checks.
+    """
 
     item_id = "ca_anti_p1"
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        n = 2 + draw
+        shape = draw % 4
+        step = draw // 4
+
+        if shape == 0:
+            # Unit coefficient. Draw 0 is the item as written.
+            n = 2 + step
+            particular = f"x**{n + 1}"
+            return (
+                f"Find the general antiderivative of {n + 1}x^{n}.",
+                f"{particular} + C",
+                {"particular": particular},
+            )
+
+        if shape == 1:
+            # The coefficient does not divide out, so it has to be divided.
+            n = 3 + step
+            k = 5 + step
+            particular = f"{k}*x**{n + 1}/{n + 1}"
+            return (
+                f"Find the general antiderivative of {k}x^{n}.",
+                f"{particular} + C",
+                {"particular": particular},
+            )
+
+        if shape == 2:
+            # Two terms. Neither coefficient predicts the other's exponent.
+            n = 2 + step
+            a, b = 6 + step, 4 + step
+            particular = f"{a}*x**{n + 1}/{n + 1} + {b}*x**2/2"
+            return (
+                f"Find the general antiderivative of {a}x^{n} + {b}x.",
+                f"{particular} + C",
+                {"particular": particular},
+            )
+
+        # A constant term integrates to a linear one, which the surface rule
+        # has no way to produce.
+        n = 2 + step
+        c = 7 + step
+        particular = f"x**{n + 1} + {c}*x"
         return (
-            f"Find the general antiderivative of {n + 1}x^{n}.",
-            f"x**{n + 1} + C",
-            {"particular": f"x**{n + 1}"},
+            f"Find the general antiderivative of {n + 1}x^{n} + {c}.",
+            f"{particular} + C",
+            {"particular": particular},
         )
 
 
