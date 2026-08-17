@@ -66,15 +66,26 @@ class MisconceptionProfile:
         self.firing[misconception_id] *= factor
         return True
 
-    def remediation_ratio(self) -> float:
-        """How far the profile has been reduced, in [0, 1].
+    def remediation_ratio(self) -> float | None:
+        """How far the profile has been reduced, in [0, 1], or None.
 
         1.0 means every misconception has been driven to nothing; 0.0 means no
         progress. Reported per learner as a system-level outcome.
+
+        ``None`` when the learner held nothing to begin with — which is what
+        ``misconceptions_per_learner: 0`` produces. This returned **1.0**, so a
+        learner with nothing to remediate was reported as *fully remediated*, and
+        a cohort of them would have reported a perfect primary outcome.
+
+        None is the answer the rest of the codebase already gives for this
+        situation: ``normalised_gain`` is None when the pre-test was perfect and
+        there was no headroom, and this same method is None for a person, who has
+        no profile at all. Three ways of saying "there was nothing to measure"
+        should not have three different values.
         """
         start = sum(self.initial.values())
         if start <= 0.0:
-            return 1.0
+            return None
         return 1.0 - (sum(self.firing.values()) / start)
 
     def snapshot(self) -> dict[str, float]:

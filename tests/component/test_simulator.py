@@ -203,7 +203,9 @@ class TestRemediation:
         for target in list(subject.profile.firing):
             for _ in range(30):
                 subject.receive_hint(target)
-        assert subject.profile.remediation_ratio() > 0.99
+        remediated = subject.profile.remediation_ratio()
+        assert remediated is not None, "this learner holds misconceptions to reduce"
+        assert remediated > 0.99
 
 
 class TestSurface:
@@ -233,3 +235,79 @@ class TestProfilesStayHidden:
         for view in (board.view("coupled"), board.view("decoupled")):
             assert not hasattr(view, "profile")
             assert not hasattr(view, "firing")
+
+
+class TestNothingToRemediateIsNotFullyRemediated:
+    """A learner holding no misconceptions has nothing to measure, not a perfect score.
+
+    `misconceptions_per_learner: 0` is an accepted configuration, and
+    `remediation_ratio` returned **1.0** for it — so every learner in such a
+    cohort was reported as *fully remediated* and the declared primary outcome
+    would have read perfect. None is the answer the rest of the codebase already
+    gives here: `normalised_gain` is None when the pre-test left no headroom, and
+    this same method is None for a person, who has no profile at all.
+    """
+
+    def test_a_learner_with_no_misconceptions_reports_none(self, toy) -> None:
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import sample_profile
+
+        profile = sample_profile(
+            "L0", 1, toy.misconceptions, SimulatorConfig(misconceptions_per_learner=0)
+        )
+        assert profile.firing == {}
+        assert profile.remediation_ratio() is None
+
+    def test_a_learner_who_holds_something_still_reports_a_number(self, toy) -> None:
+        # The guard must not swallow the ordinary case.
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import sample_profile
+
+        profile = sample_profile(
+            "L0", 1, toy.misconceptions, SimulatorConfig(misconceptions_per_learner=2)
+        )
+        assert profile.firing
+        assert profile.remediation_ratio() == pytest.approx(0.0)
+
+    def test_the_cohort_metric_skips_it_rather_than_averaging_it(self) -> None:
+        # `run_cohort` already filters `is not None`, which is why returning None
+        # is safe — but assert it, because a mean over a None would raise and a
+        # mean *including* a 1.0 would quietly report a perfect primary outcome.
+        values = [None, 0.4, 0.6]
+        measured = [v for v in values if v is not None]
+        assert sum(measured) / len(measured) == pytest.approx(0.5)
+
+
+class TestABandTheEstimateCannotCross:
+    """`theta_upper` of 1.0 looks legitimate and guarantees a null.
+
+    Posteriors are clamped below 1.0, so nothing can ever cross an upper edge of
+    exactly 1.0: every concept stays in the frontier forever, nothing is mastered,
+    and `goals_mastered` is zero for every learner in the run.
+    """
+
+    def test_it_is_refused_at_load(self) -> None:
+        from pydantic import ValidationError
+
+        from agent_newton.config import ZPDConfig
+
+        with pytest.raises(ValidationError, match="must be below 1.0"):
+            ZPDConfig(theta_lower=0.7, theta_upper=1.0)
+
+    def test_the_ordinary_band_is_still_accepted(self) -> None:
+        from agent_newton.config import ZPDConfig
+
+        band = ZPDConfig(theta_lower=0.7, theta_upper=0.9)
+        assert band.theta_upper == 0.9
+
+    def test_the_clamp_is_what_makes_it_unreachable(self) -> None:
+        # The reason, asserted rather than described: the highest posterior BKT
+        # can produce is below 1.0, so `P(c) < theta_upper` stays true forever.
+        from agent_newton.config import BKTConfig
+        from agent_newton.core.state import bkt
+
+        params = BKTConfig()
+        highest = 1.0 - 1e-9
+        for _ in range(200):
+            highest = bkt.observe(highest, True, params)
+        assert highest < 1.0

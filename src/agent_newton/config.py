@@ -261,6 +261,17 @@ class ZPDConfig(BaseModel):
 
     @model_validator(mode="after")
     def _check_zpd_band(self) -> ZPDConfig:
+        # ⚠️ Posteriors are clamped away from 1.0 (`bkt._EPSILON`), so a
+        # `theta_upper` of exactly 1.0 is an edge no estimate can ever cross:
+        # every concept stays in the frontier forever, nothing is ever mastered,
+        # and `goals_mastered` is zero for every learner in the run. It looks
+        # like a legitimate setting and silently guarantees a null.
+        if self.theta_upper >= 1.0:
+            raise ValueError(
+                f"theta_upper ({self.theta_upper}) must be below 1.0: posteriors "
+                f"are clamped below 1.0, so mastery could never be reached and "
+                f"no goal could ever be recorded as mastered"
+            )
         if self.theta_lower >= self.theta_upper:
             raise ValueError(
                 f"ZPD band is empty: theta_lower ({self.theta_lower}) must be "
