@@ -372,18 +372,74 @@ class ChainRulePower(_Template):
         )
 
 
-class ImplicitCircle(_Template):
-    """x^2 + y^2 = r^2. The radius changes; dy/dx does not, which is the lesson."""
+class ImplicitRelation(_Template):
+    """Relations whose dy/dx actually differs, so it has to be recomputed.
+
+    The first version varied only the radius of ``x^2 + y^2 = r^2``, and its
+    docstring stated the intent: *the radius changes; dy/dx does not, which is the
+    lesson.* That is a real pedagogical point — the derivative is independent of
+    the constant — and it had a side effect nobody looked for: **the answer is
+    ``-x/y`` at every draw**, so after one exposure the rest are recall.
+
+    Worse, `guessable_family` could not see it. That check reads the *numbers* in
+    the answer, and ``-x/y`` has none, so it returned early and reported nothing.
+    An answer identical across every draw is now the first thing it tests, and
+    this family is what taught it to.
+
+    The lesson survives as shape 0, which is also the item as written. The other
+    three move the powers and a coefficient, so ``dy/dx`` genuinely changes and
+    the chain rule has to be applied rather than remembered.
+
+    Throughout, the misconception is the same one: ``y`` differentiated as a bare
+    variable, so the ``dy/dx`` factor never appears and the ``y`` it would have
+    put in the denominator is missing.
+    """
 
     item_id = "ca_impl_p1"
 
     def parts(self, draw: int) -> tuple[str, str, dict]:
-        r = 5 + draw
+        shape = draw % 4
+        step = draw // 4
+
+        if shape == 0:
+            # The item as written at draw 0, and the original lesson: dy/dx does
+            # not depend on the radius.
+            r = 5 + step
+            return (
+                f"Given x^2 + y^2 = {r * r}, find dy/dx.",
+                "-x/y",
+                {"without_dydx": "-x"},
+            )
+
+        if shape == 1:
+            # A coefficient on y^2, which survives into the denominator.
+            k, c = 2 + step, 12 + step
+            return (
+                f"Given x^2 + {k}y^2 = {c}, find dy/dx.",
+                f"-x/({k}*y)",
+                {"without_dydx": f"-x/{k}"},
+            )
+
+        if shape == 2:
+            # A higher power in x, so the numerator is no longer -x. The power
+            # moves with the step, or the answer would repeat every fourth draw:
+            # the constant does not reach dy/dx, which is the whole point of
+            # shape 0 and a defect everywhere else.
+            n, c = 3 + step, 9 + step
+            return (
+                f"Given x^{n} + y^2 = {c}, find dy/dx.",
+                f"-{n}*x**{n - 1}/(2*y)",
+                {"without_dydx": f"-{n}*x**{n - 1}/2"},
+            )
+
+        # A higher power in y, so the denominator is no longer linear.
+        m, c = 3 + step, 9 + step
         return (
-            f"Given x^2 + y^2 = {r * r}, find dy/dx.",
-            "-x/y",
-            {"without_dydx": "-x"},
+            f"Given x^2 + y^{m} = {c}, find dy/dx.",
+            f"-2*x/({m}*y**{m - 1})",
+            {"without_dydx": f"-2*x/{m}"},
         )
+
 
 
 class GeneralAntiderivative(_Template):
@@ -491,7 +547,7 @@ TEMPLATES: Sequence[ItemTemplate] = (
     QuotientRule(),
     ChainRuleCubed(),
     ChainRulePower(),
-    ImplicitCircle(),
+    ImplicitRelation(),
     GeneralAntiderivative(),
     SubstitutionIntegral(),
 )
