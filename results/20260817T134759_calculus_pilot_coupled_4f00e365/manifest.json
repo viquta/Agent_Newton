@@ -1,0 +1,24 @@
+{
+  "run_id": "20260817T134759_calculus_pilot_coupled_4f00e365",
+  "run_name": "calculus_pilot",
+  "created_at": "2026-08-17T13:47:59+00:00",
+  "git_sha": "5e8c072490fb4e8476f093d61b42d3cf50e7d7b1",
+  "git_dirty": true,
+  "config_hash": "4f00e3654c2b65aa",
+  "arm": "coupled",
+  "domain": "calculus",
+  "seed": 20260807,
+  "catalogue_hash": "ca5038117b556a2d",
+  "item_bank_hash": "587deac28ed7ca79",
+  "concept_graph_hash": "0d8b6ce2179205c4",
+  "models": {
+    "tutor": "<template>",
+    "diagnostic": "<oracle>",
+    "planner": "<goal_directed>",
+    "simulator_surface": "<symbolic>"
+  },
+  "uses_llm": false,
+  "decay_half_life_days": null,
+  "python_version": "3.14.5",
+  "platform": "macOS-15.7.7-arm64-arm-64bit-Mach-O"
+}

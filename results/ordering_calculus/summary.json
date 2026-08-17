@@ -6,29 +6,29 @@
   "alpha": 0.05,
   "conditions": {
     "goal_directed": {
-      "mean_items": 44.68125,
-      "opportunity_coverage": 0.99375,
-      "exhibition_coverage": 0.975,
-      "mean_remediation": 0.5373791674572794,
-      "mean_gain": 0.047916666666666656,
+      "mean_items": 44.63125,
+      "opportunity_coverage": 1.0,
+      "exhibition_coverage": 0.996875,
+      "mean_remediation": 0.5452633927533674,
+      "mean_gain": 0.05083333333333332,
       "mean_goals_mastered": 4.51875,
-      "mean_distance_to_goal": 0.525
+      "mean_distance_to_goal": 0.55
     },
     "reverse": {
-      "mean_items": 42.45,
-      "opportunity_coverage": 0.928125,
-      "exhibition_coverage": 0.909375,
-      "mean_remediation": 0.508326214031293,
-      "mean_gain": 0.04499999999999999,
+      "mean_items": 42.49375,
+      "opportunity_coverage": 0.953125,
+      "exhibition_coverage": 0.95,
+      "mean_remediation": 0.5210981533409609,
+      "mean_gain": 0.04749999999999999,
       "mean_goals_mastered": 5.0,
       "mean_distance_to_goal": 0.0
     },
     "shuffled": {
-      "mean_items": 44.68125,
-      "opportunity_coverage": 0.996875,
-      "exhibition_coverage": 0.975,
-      "mean_remediation": 0.5341366791852793,
-      "mean_gain": 0.047083333333333324,
+      "mean_items": 44.63125,
+      "opportunity_coverage": 1.0,
+      "exhibition_coverage": 0.996875,
+      "mean_remediation": 0.5441717689403341,
+      "mean_gain": 0.05124999999999998,
       "mean_goals_mastered": 5.0,
       "mean_distance_to_goal": 0.0
     }
@@ -37,93 +37,93 @@
     "reverse": [
       {
         "outcome": "remediation",
-        "mean_difference": 0.029052953425986405,
+        "mean_difference": 0.024165239412406593,
         "ci95": [
-          0.015859974231227373,
-          0.043831851007611056
+          0.012423352345404521,
+          0.03701352725728012
         ],
-        "ties": 140,
-        "favouring_baseline": 18,
-        "favouring_probe": 2,
-        "rank_biserial": 0.8,
-        "sign_p": 0.0004024505615234375,
-        "holm_p": 0.000804901123046875,
+        "ties": 144,
+        "favouring_baseline": 15,
+        "favouring_probe": 1,
+        "rank_biserial": 0.875,
+        "sign_p": 0.000518798828125,
+        "holm_p": 0.00103759765625,
         "significant": true
       },
       {
         "outcome": "gain",
-        "mean_difference": 0.002916666666666666,
+        "mean_difference": 0.0033333333333333327,
         "ci95": [
-          0.0008333333333333332,
-          0.004999999999999999
+          0.0012499999999999998,
+          0.005833333333333332
         ],
-        "ties": 153,
-        "favouring_baseline": 7,
-        "favouring_probe": 0,
-        "rank_biserial": 1.0,
-        "sign_p": 0.015625,
-        "holm_p": 0.015625,
+        "ties": 150,
+        "favouring_baseline": 9,
+        "favouring_probe": 1,
+        "rank_biserial": 0.8,
+        "sign_p": 0.021484375,
+        "holm_p": 0.021484375,
         "significant": true
       },
       {
         "outcome": "goals_mastered",
         "mean_difference": -0.48125,
         "ci95": [
-          -0.55625,
-          -0.39375
+          -0.55640625,
+          -0.40625
         ],
-        "ties": 84,
+        "ties": 83,
         "favouring_baseline": 0,
-        "favouring_probe": 76,
+        "favouring_probe": 77,
         "rank_biserial": -1.0,
-        "sign_p": 2.6469779601696886e-23,
-        "holm_p": 1.0587911840678754e-22,
+        "sign_p": 1.3234889800848443e-23,
+        "holm_p": 5.293955920339377e-23,
         "significant": true
       },
       {
         "outcome": "distance_to_goal",
-        "mean_difference": 0.525,
+        "mean_difference": 0.55,
         "ci95": [
-          0.4375,
-          0.6125
+          0.45625,
+          0.64375
         ],
-        "ties": 84,
-        "favouring_baseline": 76,
+        "ties": 83,
+        "favouring_baseline": 77,
         "favouring_probe": 0,
         "rank_biserial": 1.0,
-        "sign_p": 2.6469779601696886e-23,
-        "holm_p": 1.0587911840678754e-22,
+        "sign_p": 1.3234889800848443e-23,
+        "holm_p": 5.293955920339377e-23,
         "significant": true
       }
     ],
     "shuffled": [
       {
         "outcome": "remediation",
-        "mean_difference": 0.0032424882720001095,
+        "mean_difference": 0.0010916238130333343,
         "ci95": [
-          -0.004910871449147394,
-          0.011411493377508531
+          -0.0011685149605862976,
+          0.0044433863996863
         ],
-        "ties": 153,
-        "favouring_baseline": 4,
-        "favouring_probe": 3,
-        "rank_biserial": 0.1428571428571428,
+        "ties": 158,
+        "favouring_baseline": 1,
+        "favouring_probe": 1,
+        "rank_biserial": 0.0,
         "sign_p": 1.0,
         "holm_p": 1.0,
         "significant": false
       },
       {
         "outcome": "gain",
-        "mean_difference": 0.0008333333333333332,
+        "mean_difference": -0.0004166666666666666,
         "ci95": [
-          -0.0008333333333333332,
-          0.0024999999999999996
+          -0.0012499999999999998,
+          0.0
         ],
-        "ties": 156,
-        "favouring_baseline": 3,
+        "ties": 159,
+        "favouring_baseline": 0,
         "favouring_probe": 1,
-        "rank_biserial": 0.5,
-        "sign_p": 0.625,
+        "rank_biserial": -1.0,
+        "sign_p": 1.0,
         "holm_p": 1.0,
         "significant": false
       },
@@ -134,27 +134,27 @@
           -0.5625,
           -0.40625
         ],
-        "ties": 84,
+        "ties": 83,
         "favouring_baseline": 0,
-        "favouring_probe": 76,
+        "favouring_probe": 77,
         "rank_biserial": -1.0,
-        "sign_p": 2.6469779601696886e-23,
-        "holm_p": 1.0587911840678754e-22,
+        "sign_p": 1.3234889800848443e-23,
+        "holm_p": 5.293955920339377e-23,
         "significant": true
       },
       {
         "outcome": "distance_to_goal",
-        "mean_difference": 0.525,
+        "mean_difference": 0.55,
         "ci95": [
-          0.4375,
-          0.61875
+          0.45,
+          0.65
         ],
-        "ties": 84,
-        "favouring_baseline": 76,
+        "ties": 83,
+        "favouring_baseline": 77,
         "favouring_probe": 0,
         "rank_biserial": 1.0,
-        "sign_p": 2.6469779601696886e-23,
-        "holm_p": 1.0587911840678754e-22,
+        "sign_p": 1.3234889800848443e-23,
+        "holm_p": 5.293955920339377e-23,
         "significant": true
       }
     ]
