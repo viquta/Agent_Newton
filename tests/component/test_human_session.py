@@ -1288,6 +1288,62 @@ class TestWhyTrainingStopped:
         assert outcome.stop_reason in ("every_goal_reached", "nothing_left_to_select")
         assert outcome.items_to_exhaustion is not None
 
+    # --- a learner who masters everything is told the syllabus ran out --------
+    #
+    # Found by `research_private/tools/session_probe.py`, which drives a real
+    # session and checks `stop_reason` against the state rather than against
+    # itself: 5 of 5 goals mastered, reported as `nothing_left_to_select`.
+    #
+    # The disjunction in the test above is why nothing caught it. It accepts
+    # either answer, so it passes whichever one the loop gives — which is the
+    # shape of test that cannot fail in the direction that matters.
+    #
+    # The cause is recorded in `11f8bf2`: `_retarget` leaves the last plan on the
+    # board when the planner proposes nothing, so `board.plan is None` is only
+    # ever true before the first plan is set. `every_goal_reached` is therefore
+    # reachable only by a learner who arrives having already mastered everything.
+
+    def _masters_everything(self, toy):
+        from agent_newton.core.agents.base import Diagnosis
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = human_config(
+            cohort={"n_learners": 1, "max_items": 400, "administer_tests": False}
+        )
+        learner = HumanLearner(lambda item, attempt: toy.items.get(item.id).answer)
+        session = build_session("human", config.seed, toy, config, learner=learner)
+        session.diagnostic = Nothing()
+        outcome = session.run()
+        return session, outcome
+
+    def test_the_state_says_every_goal_was_mastered(self, toy) -> None:
+        # The half that is right, and the reason the label is the only defect:
+        # nothing about the measurement is wrong, only what the session calls it.
+        _, outcome = self._masters_everything(toy)
+        assert outcome.goals_mastered == len(list(toy.concepts.goals()))
+        assert outcome.distance_to_goal == 0
+
+    def test_but_it_is_reported_as_having_run_out_of_syllabus(self, toy) -> None:
+        # ⚠️ Pins the defect, and does not endorse it. Delete this test when the
+        # one below stops being xfail.
+        _, outcome = self._masters_everything(toy)
+        assert outcome.stop_reason == "nothing_left_to_select"
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "known: `_retarget` leaves the last plan on the board, so "
+            "`every_goal_reached` is unreachable once a plan has been set. "
+            "Remove the marker and the pinning test above when fixed."
+        ),
+    )
+    def test_mastering_every_goal_should_say_so(self, toy) -> None:
+        _, outcome = self._masters_everything(toy)
+        assert outcome.stop_reason == "every_goal_reached"
+
     def test_the_observer_is_told(self, toy) -> None:
         from agent_newton.core.agents.base import Diagnosis
 
