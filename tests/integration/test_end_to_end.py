@@ -928,3 +928,152 @@ class TestNoTurnHandsOverTheAnswer:
         # tutor mid-item.
         _, watcher = self._turns(domain_name)
         assert watcher.unsolved, "no item ran out of attempts"
+
+
+class TestTheLoopAgreesWithTheRulesItCalls:
+    """Invariants over a whole session, checked against the state.
+
+    Every defect this project has found in the loop has been a correct rule
+    called with the wrong arguments, or two correct things sequenced into a
+    wrong outcome — neither of which a unit test on the rule can see. These
+    read what a session actually recorded and compare it against the rules
+    independently, which is the only place the two can disagree.
+
+    Ported from `research_private/tools/session_probe.py`, which found the
+    stop-reason defect this way. The probe is private and exploratory; these
+    are the checks worth keeping, so they live where CI runs them.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_every_item_given_was_inside_the_frontier(self, domain_name: str) -> None:
+        # The coupled arm only: `FixedOrderPlanner` walks the goals' closure in
+        # topological order and consults no frontier — it cannot, its view has
+        # neither the posteriors nor the graph. Asserting this against it would
+        # report the manipulation as a defect.
+        from agent_newton.core.state import bkt, zpd
+
+        session, _ = run(domain_name, "coupled")
+        domain = session.domain
+        prior = bkt.initial(session.config.bkt)
+        band = session.config.zpd
+
+        # Replayed from the audit log: the frontier is derived, so the state at
+        # each observation is enough to recompute the zone that was open then.
+        mastery: dict[str, float] = {}
+        for record in session.board.audit_log:
+            if record.cause != "observation":
+                continue
+            concept = record.evidence["concept_id"]
+            frontier = zpd.compute(dict(mastery), domain.concepts, band, prior)
+            # A concept with no prior observation is legitimately absent from the
+            # replayed mastery; the frontier still admits it at the prior.
+            assert concept in frontier or not mastery, (
+                f"{record.evidence['item_id']} was given on {concept}, "
+                f"outside the frontier {sorted(frontier)}"
+            )
+            if record.evidence.get("mastery_after") is not None:
+                mastery[concept] = record.evidence["mastery_after"]
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_an_unreadable_step_moves_no_estimate(self, domain_name: str) -> None:
+        # `UNPARSEABLE` means the verifier could not measure. It must update no
+        # posterior and enter no error trace — the distinction the whole state
+        # layer is built around.
+        session, _ = run(domain_name, "coupled")
+        for record in session.board.audit_log:
+            if record.cause != "observation":
+                continue
+            if record.evidence.get("verdict") == "unparseable":
+                assert record.evidence.get("delta") in (None, 0, 0.0), (
+                    "an unreadable step moved the estimate"
+                )
+
+    @pytest.mark.parametrize("arm", ("coupled", "decoupled"))
+    def test_the_lifetime_count_moves_once_per_item_given(self, arm: str) -> None:
+        # However many steps an item took. It drives the repetition index, which
+        # decides both the simulated learner's answer and which template variant
+        # is drawn, so a count that moved per *step* would change what the
+        # learner faces and silently move every measured number.
+        session, outcome = run("calculus", arm)
+        assert sum(session.board.state.items_given.values()) == outcome.items_attempted
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_training_finishes_before_the_post_test_starts(self, domain_name: str) -> None:
+        # An explanation arriving after the thing it explains is not one: the
+        # learner must be told why training ended before the next bank appears.
+        from agent_newton.core.orchestration.session import Watching
+
+        class Order(Watching):
+            def __init__(self) -> None:
+                self.seen: list[str] = []
+
+            def training_finished(self, reason: str, items: int) -> None:
+                self.seen.append("training_finished")
+
+            def phase_started(self, phase: str, total: int) -> None:
+                self.seen.append(f"phase:{phase}")
+
+        config = config_for(domain_name, "coupled", cohort={"administer_tests": True})
+        domain = registry.load_domain(domain_name)
+        order = Order()
+        build_session("L0000", config.seed, domain, config, observer=order).run()
+        assert "training_finished" in order.seen and "phase:posttest" in order.seen
+        assert order.seen.index("training_finished") < order.seen.index("phase:posttest")
+
+
+class TestGoalChangesIsNotGoalsMastered:
+    """Why `goals_mastered` exists, asserted rather than left in a comment.
+
+    `goal_changes` counts planner retargets. The decoupled planner cannot see
+    mastery, so it retargets on its own position in the syllabus and reports
+    goals "reached" that the learner is nowhere near. `outcomes.py` states the
+    rule at the top of the module and nothing checked it.
+    """
+
+    def _perfect_learner(self, arm: str):
+        # Answers the *variant* it is shown, not the written item: the session
+        # draws a template variant per repetition, so replying with draw 0's
+        # answer would be wrong from the second repetition on.
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.simulator.human import HumanLearner
+
+        class Nothing:
+            def diagnose(self, item, response, domain):  # noqa: ANN001
+                return Diagnosis(None)
+
+        config = config_for(
+            "calculus", arm,
+            simulator={"learner": "human", "surface": "symbolic"},
+            agents={
+                "tutor": {"impl": "template"},
+                "diagnostic": {"impl": "llm"},
+                "planner": {"impl": "goal_directed"},
+            },
+            cohort={"n_learners": 1, "max_items": 400, "administer_tests": False},
+        )
+        domain = registry.load_domain("calculus")
+        session = build_session(
+            "human", config.seed, domain, config,
+            learner=HumanLearner(lambda item, attempt: item.answer),
+        )
+        session.diagnostic = Nothing()
+        return session, session.run()
+
+    def test_the_decoupled_arm_reports_goal_changes_it_did_not_earn(self) -> None:
+        _, outcome = self._perfect_learner("decoupled")
+        assert outcome.goals_mastered == 0
+        assert outcome.goal_changes > 0, "the walk did not advance; the test is vacuous"
+        # The number a reader would take for progress, against the one derived
+        # from the state. Four retargets, nothing learned.
+        assert outcome.goal_changes > outcome.goals_mastered
+
+    def test_the_coupled_arm_agrees_only_by_coincidence(self) -> None:
+        # ⚠️ 5 == 5 here, and it is not a property. Two off-by-ones cancel: the
+        # first plan is not counted (there was no previous goal to complete),
+        # and the final retarget *is* counted although the planner had simply
+        # run out — `_retarget` returns True whenever a plan existed and none is
+        # proposed. Pinned so that fixing either one alone is visible as a
+        # change rather than passing quietly.
+        _, outcome = self._perfect_learner("coupled")
+        assert outcome.goals_mastered == 5
+        assert outcome.goal_changes == 5
