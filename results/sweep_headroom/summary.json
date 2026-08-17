@@ -4,10 +4,10 @@
   "seed": 20260811,
   "baseline_held": 2,
   "recorded_baseline": {
-    "remediation": 0.0136,
-    "gain": 0.0017,
-    "goals_mastered": 3.9062,
-    "distance_to_goal": -5.8125
+    "remediation": 0.0259,
+    "gain": 0.0021,
+    "goals_mastered": 3.775,
+    "distance_to_goal": -5.9625
   },
   "outcomes": [
     "remediation",
@@ -19,27 +19,27 @@
     {
       "outcomes": {
         "remediation": {
-          "mean_difference": 0.013605447898660408,
-          "sign_p": 0.03857421875,
-          "holm": 0.0771484375,
+          "mean_difference": 0.02587019046482738,
+          "sign_p": 0.000274658203125,
+          "holm": 0.00054931640625,
           "discordant": [
-            10,
-            2
+            16,
+            1
           ],
-          "ties": 148
+          "ties": 143
         },
         "gain": {
-          "mean_difference": 0.0016666666666666663,
+          "mean_difference": 0.002083333333333333,
           "sign_p": 0.125,
           "holm": 0.125,
           "discordant": [
-            4,
-            0
+            6,
+            1
           ],
-          "ties": 156
+          "ties": 153
         },
         "goals_mastered": {
-          "mean_difference": 3.90625,
+          "mean_difference": 3.775,
           "sign_p": 1.3684555315672042e-48,
           "holm": 5.473822126268817e-48,
           "discordant": [
@@ -49,7 +49,7 @@
           "ties": 0
         },
         "distance_to_goal": {
-          "mean_difference": -5.8125,
+          "mean_difference": -5.9625,
           "sign_p": 1.3684555315672042e-48,
           "holm": 5.473822126268817e-48,
           "discordant": [
@@ -61,20 +61,20 @@
       },
       "population": {
         "coupled": {
-          "mean_pretest": 0.9058333333333334,
-          "mean_gain": 0.047916666666666656,
-          "mean_normalised_gain": 0.506993006993007,
-          "learners_at_ceiling": 17,
-          "mean_remediation": 0.5373791674572794,
-          "mean_items": 44.68125
+          "mean_pretest": 0.9033333333333333,
+          "mean_gain": 0.05083333333333332,
+          "mean_normalised_gain": 0.496551724137931,
+          "learners_at_ceiling": 15,
+          "mean_remediation": 0.5452633927533674,
+          "mean_items": 44.63125
         },
         "decoupled": {
-          "mean_pretest": 0.9058333333333334,
-          "mean_gain": 0.04624999999999999,
-          "mean_normalised_gain": 0.4965034965034965,
-          "learners_at_ceiling": 17,
-          "mean_remediation": 0.523773719558619,
-          "mean_items": 32.3
+          "mean_pretest": 0.9033333333333333,
+          "mean_gain": 0.04874999999999999,
+          "mean_normalised_gain": 0.4793103448275862,
+          "learners_at_ceiling": 15,
+          "mean_remediation": 0.51939320228854,
+          "mean_items": 32.25
         }
       },
       "held": 2
@@ -82,37 +82,37 @@
     {
       "outcomes": {
         "remediation": {
-          "mean_difference": 0.01427745507503663,
-          "sign_p": 0.002315700054168701,
-          "holm": 0.004631400108337402,
+          "mean_difference": 0.009598635248911271,
+          "sign_p": 0.20048842206597334,
+          "holm": 0.4009768441319467,
           "discordant": [
-            23,
-            6
+            19,
+            11
           ],
-          "ties": 131
+          "ties": 130
         },
         "gain": {
-          "mean_difference": 0.0045833333333333325,
-          "sign_p": 0.00634765625,
-          "holm": 0.00634765625,
+          "mean_difference": 0.002083333333333333,
+          "sign_p": 0.4239501953125,
+          "holm": 0.4239501953125,
           "discordant": [
-            11,
-            1
+            9,
+            5
           ],
-          "ties": 148
+          "ties": 146
         },
         "goals_mastered": {
-          "mean_difference": 3.05625,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
+          "mean_difference": 2.9625,
+          "sign_p": 2.7369110631344083e-48,
+          "holm": 8.210733189403225e-48,
           "discordant": [
-            160,
+            159,
             0
           ],
-          "ties": 0
+          "ties": 1
         },
         "distance_to_goal": {
-          "mean_difference": -5.1625,
+          "mean_difference": -5.225,
           "sign_p": 1.3684555315672042e-48,
           "holm": 5.473822126268817e-48,
           "discordant": [
@@ -124,20 +124,20 @@
       },
       "population": {
         "coupled": {
-          "mean_pretest": 0.8041666666666666,
-          "mean_gain": 0.10583333333333336,
-          "mean_normalised_gain": 0.45440251572327045,
-          "learners_at_ceiling": 1,
-          "mean_remediation": 0.5449376620426875,
-          "mean_items": 44.65
+          "mean_pretest": 0.80625,
+          "mean_gain": 0.10375000000000001,
+          "mean_normalised_gain": 0.49893842887473466,
+          "learners_at_ceiling": 3,
+          "mean_remediation": 0.5414250413368602,
+          "mean_items": 44.6375
         },
         "decoupled": {
-          "mean_pretest": 0.8041666666666666,
-          "mean_gain": 0.10125000000000002,
-          "mean_normalised_gain": 0.4224318658280923,
-          "learners_at_ceiling": 1,
-          "mean_remediation": 0.5306602069676509,
-          "mean_items": 34.475
+          "mean_pretest": 0.80625,
+          "mean_gain": 0.10166666666666668,
+          "mean_normalised_gain": 0.4835456475583864,
+          "learners_at_ceiling": 3,
+          "mean_remediation": 0.531826406087949,
+          "mean_items": 34.5375
         }
       },
       "held": 4
@@ -145,62 +145,62 @@
     {
       "outcomes": {
         "remediation": {
-          "mean_difference": 0.009769432917443819,
-          "sign_p": 0.05946337525377034,
-          "holm": 0.05946337525377034,
+          "mean_difference": 0.008469673955816812,
+          "sign_p": 0.2624375357110438,
+          "holm": 0.2624375357110438,
           "discordant": [
-            31,
-            17
+            30,
+            21
           ],
-          "ties": 112
+          "ties": 109
         },
         "gain": {
-          "mean_difference": 0.007083333333333335,
-          "sign_p": 0.004077315330505371,
-          "holm": 0.008154630661010742,
+          "mean_difference": 0.004999999999999999,
+          "sign_p": 0.043285250663757324,
+          "holm": 0.08657050132751465,
           "discordant": [
-            20,
-            5
+            18,
+            7
           ],
           "ties": 135
         },
         "goals_mastered": {
-          "mean_difference": 2.46875,
-          "sign_p": 1.8339493651851043e-42,
-          "holm": 5.501848095555313e-42,
+          "mean_difference": 2.31875,
+          "sign_p": 5.359966626042425e-44,
+          "holm": 1.6079899878127276e-43,
           "discordant": [
-            156,
-            3
+            151,
+            1
           ],
-          "ties": 1
+          "ties": 8
         },
         "distance_to_goal": {
-          "mean_difference": -4.18125,
-          "sign_p": 1.7627075702117157e-44,
-          "holm": 7.050830280846863e-44,
+          "mean_difference": -4.54375,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
           "discordant": [
-            2,
-            158
+            0,
+            160
           ],
           "ties": 0
         }
       },
       "population": {
         "coupled": {
-          "mean_pretest": 0.6979166666666666,
-          "mean_gain": 0.1666666666666667,
-          "mean_normalised_gain": 0.5214583333333335,
+          "mean_pretest": 0.7058333333333333,
+          "mean_gain": 0.15333333333333338,
+          "mean_normalised_gain": 0.4694791666666667,
           "learners_at_ceiling": 0,
-          "mean_remediation": 0.5307639251953652,
-          "mean_items": 44.7
+          "mean_remediation": 0.5322032839081807,
+          "mean_items": 44.65
         },
         "decoupled": {
-          "mean_pretest": 0.6979166666666666,
-          "mean_gain": 0.15958333333333335,
-          "mean_normalised_gain": 0.4927083333333334,
+          "mean_pretest": 0.7058333333333333,
+          "mean_gain": 0.14833333333333337,
+          "mean_normalised_gain": 0.44947916666666676,
           "learners_at_ceiling": 0,
-          "mean_remediation": 0.5209944922779213,
-          "mean_items": 36.7875
+          "mean_remediation": 0.523733609952364,
+          "mean_items": 36.5375
         }
       },
       "held": 6

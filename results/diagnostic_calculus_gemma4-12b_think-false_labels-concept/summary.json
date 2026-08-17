@@ -2,27 +2,27 @@
   "domain": "calculus",
   "model": "ollama/gemma4:12b (think=false)",
   "label_space": "concept",
-  "cases": 47,
-  "accuracy": 1.0,
-  "macro_f1": 1.0,
+  "cases": 50,
+  "accuracy": 0.96,
+  "macro_f1": 0.953125,
   "abstentions": 0,
   "failed_calls": 0,
-  "seconds": 127.34665560722351,
+  "seconds": 36.02638268470764,
   "accuracy_by_bank": {
     "posttest": {
-      "cases": 15,
+      "cases": 16,
       "correct": 15,
-      "accuracy": 1.0
+      "accuracy": 0.9375
     },
     "practice": {
-      "cases": 17,
-      "correct": 17,
+      "cases": 18,
+      "correct": 18,
       "accuracy": 1.0
     },
     "pretest": {
-      "cases": 15,
+      "cases": 16,
       "correct": 15,
-      "accuracy": 1.0
+      "accuracy": 0.9375
     }
   },
   "per_label": {
@@ -86,11 +86,17 @@
       "recall": 1.0,
       "f1": 1.0
     },
+    "quotient_rule_numerator_not_differentiated": {
+      "support": 3,
+      "precision": 0.6,
+      "recall": 1.0,
+      "f1": 0.7499999999999999
+    },
     "quotient_rule_order_swapped": {
       "support": 3,
       "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0
+      "recall": 0.3333333333333333,
+      "f1": 0.5
     },
     "rate_as_difference_not_ratio": {
       "support": 3,
@@ -129,7 +135,9 @@
     "constant_term_differentiated -> constant_term_differentiated": 3,
     "power_rule_forgets_decrement -> power_rule_forgets_decrement": 4,
     "product_rule_as_product_of_derivatives -> product_rule_as_product_of_derivatives": 3,
-    "quotient_rule_order_swapped -> quotient_rule_order_swapped": 3,
+    "quotient_rule_numerator_not_differentiated -> quotient_rule_numerator_not_differentiated": 3,
+    "quotient_rule_order_swapped -> quotient_rule_order_swapped": 1,
+    "quotient_rule_order_swapped -> quotient_rule_numerator_not_differentiated": 2,
     "cancel_x_loses_root -> cancel_x_loses_root": 3,
     "tangent_as_secant -> tangent_as_secant": 3,
     "usub_forgets_du -> usub_forgets_du": 3

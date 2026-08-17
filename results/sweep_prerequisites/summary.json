@@ -3,39 +3,235 @@
   "n_learners": 160,
   "seed": 20260811,
   "recorded_baseline": {
-    "remediation": 0.0136,
-    "gain": 0.0017,
-    "goals_mastered": 3.9062,
-    "distance_to_goal": -5.8125
+    "remediation": 0.0259,
+    "gain": 0.0021,
+    "goals_mastered": 3.775,
+    "distance_to_goal": -5.9625
   },
   "curve": [
     {
       "k": 0.0,
       "paired": {
         "remediation": {
-          "mean_difference": 0.013605447898660408,
-          "sign_p": 0.03857421875,
-          "holm": 0.0771484375,
+          "mean_difference": 0.02587019046482738,
+          "sign_p": 0.000274658203125,
+          "holm": 0.00054931640625,
           "discordant": [
-            10,
-            2
+            16,
+            1
           ]
         },
         "gain": {
-          "mean_difference": 0.0016666666666666663,
+          "mean_difference": 0.002083333333333333,
           "sign_p": 0.125,
           "holm": 0.125,
           "discordant": [
-            4,
-            0
+            6,
+            1
           ]
         },
         "goals_mastered": {
-          "mean_difference": 3.90625,
+          "mean_difference": 3.775,
           "sign_p": 1.3684555315672042e-48,
           "holm": 5.473822126268817e-48,
           "discordant": [
             160,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": -5.9625,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            0,
+            160
+          ]
+        }
+      },
+      "ordering": {
+        "mean_difference": 0.0010916238130333343,
+        "sign_p": 1.0,
+        "discordant": [
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "k": 0.25,
+      "paired": {
+        "remediation": {
+          "mean_difference": 0.025994687892882378,
+          "sign_p": 0.000274658203125,
+          "holm": 0.00054931640625,
+          "discordant": [
+            16,
+            1
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.002916666666666666,
+          "sign_p": 0.015625,
+          "holm": 0.015625,
+          "discordant": [
+            7,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 3.7625,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            160,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": -5.9375,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            0,
+            160
+          ]
+        }
+      },
+      "ordering": {
+        "mean_difference": 0.00838259362697617,
+        "sign_p": 0.0003249142318964005,
+        "discordant": [
+          25,
+          5
+        ]
+      }
+    },
+    {
+      "k": 0.5,
+      "paired": {
+        "remediation": {
+          "mean_difference": 0.028080996355117516,
+          "sign_p": 0.001312255859375,
+          "holm": 0.00262451171875,
+          "discordant": [
+            16,
+            2
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.0024999999999999996,
+          "sign_p": 0.03125,
+          "holm": 0.03125,
+          "discordant": [
+            6,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 3.74375,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            160,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": -5.91875,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            0,
+            160
+          ]
+        }
+      },
+      "ordering": {
+        "mean_difference": 0.01481545614824616,
+        "sign_p": 0.010673840530216694,
+        "discordant": [
+          23,
+          8
+        ]
+      }
+    },
+    {
+      "k": 0.75,
+      "paired": {
+        "remediation": {
+          "mean_difference": 0.029042582945898853,
+          "sign_p": 0.001312255859375,
+          "holm": 0.00262451171875,
+          "discordant": [
+            16,
+            2
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.002916666666666666,
+          "sign_p": 0.03125,
+          "holm": 0.03125,
+          "discordant": [
+            6,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 3.7125,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            160,
+            0
+          ]
+        },
+        "distance_to_goal": {
+          "mean_difference": -5.88125,
+          "sign_p": 1.3684555315672042e-48,
+          "holm": 5.473822126268817e-48,
+          "discordant": [
+            0,
+            160
+          ]
+        }
+      },
+      "ordering": {
+        "mean_difference": 0.02813437231271739,
+        "sign_p": 3.39532271027565e-05,
+        "discordant": [
+          27,
+          4
+        ]
+      }
+    },
+    {
+      "k": 1.0,
+      "paired": {
+        "remediation": {
+          "mean_difference": 0.03503210962357166,
+          "sign_p": 0.001312255859375,
+          "holm": 0.00262451171875,
+          "discordant": [
+            16,
+            2
+          ]
+        },
+        "gain": {
+          "mean_difference": 0.004166666666666666,
+          "sign_p": 0.00390625,
+          "holm": 0.00390625,
+          "discordant": [
+            9,
+            0
+          ]
+        },
+        "goals_mastered": {
+          "mean_difference": 3.6625,
+          "sign_p": 2.7369110631344083e-48,
+          "holm": 8.210733189403225e-48,
+          "discordant": [
+            159,
             0
           ]
         },
@@ -50,207 +246,11 @@
         }
       },
       "ordering": {
-        "mean_difference": 0.0032424882720001095,
-        "sign_p": 1.0,
-        "discordant": [
-          4,
-          3
-        ]
-      }
-    },
-    {
-      "k": 0.25,
-      "paired": {
-        "remediation": {
-          "mean_difference": 0.01339887849722379,
-          "sign_p": 0.03857421875,
-          "holm": 0.0771484375,
-          "discordant": [
-            10,
-            2
-          ]
-        },
-        "gain": {
-          "mean_difference": 0.0016666666666666663,
-          "sign_p": 0.125,
-          "holm": 0.125,
-          "discordant": [
-            4,
-            0
-          ]
-        },
-        "goals_mastered": {
-          "mean_difference": 3.88125,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
-          "discordant": [
-            160,
-            0
-          ]
-        },
-        "distance_to_goal": {
-          "mean_difference": -5.78125,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
-          "discordant": [
-            0,
-            160
-          ]
-        }
-      },
-      "ordering": {
-        "mean_difference": 0.00910170264862844,
-        "sign_p": 3.8558151572942734e-05,
+        "mean_difference": 0.06013063003774803,
+        "sign_p": 4.628673195838928e-07,
         "discordant": [
           29,
-          5
-        ]
-      }
-    },
-    {
-      "k": 0.5,
-      "paired": {
-        "remediation": {
-          "mean_difference": 0.011825516201909836,
-          "sign_p": 0.03857421875,
-          "holm": 0.0771484375,
-          "discordant": [
-            10,
-            2
-          ]
-        },
-        "gain": {
-          "mean_difference": 0.002083333333333333,
-          "sign_p": 0.0625,
-          "holm": 0.0771484375,
-          "discordant": [
-            5,
-            0
-          ]
-        },
-        "goals_mastered": {
-          "mean_difference": 3.88125,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
-          "discordant": [
-            160,
-            0
-          ]
-        },
-        "distance_to_goal": {
-          "mean_difference": -5.79375,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
-          "discordant": [
-            0,
-            160
-          ]
-        }
-      },
-      "ordering": {
-        "mean_difference": 0.0164504228232905,
-        "sign_p": 6.16488978266716e-06,
-        "discordant": [
-          30,
-          4
-        ]
-      }
-    },
-    {
-      "k": 0.75,
-      "paired": {
-        "remediation": {
-          "mean_difference": 0.011713485997332417,
-          "sign_p": 0.03857421875,
-          "holm": 0.0771484375,
-          "discordant": [
-            10,
-            2
-          ]
-        },
-        "gain": {
-          "mean_difference": 0.0016666666666666663,
-          "sign_p": 0.125,
-          "holm": 0.125,
-          "discordant": [
-            4,
-            0
-          ]
-        },
-        "goals_mastered": {
-          "mean_difference": 3.85625,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
-          "discordant": [
-            160,
-            0
-          ]
-        },
-        "distance_to_goal": {
-          "mean_difference": -5.75625,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
-          "discordant": [
-            0,
-            160
-          ]
-        }
-      },
-      "ordering": {
-        "mean_difference": 0.02781646798202032,
-        "sign_p": 7.660128176212311e-07,
-        "discordant": [
-          31,
-          3
-        ]
-      }
-    },
-    {
-      "k": 1.0,
-      "paired": {
-        "remediation": {
-          "mean_difference": 0.013108741606457919,
-          "sign_p": 0.03857421875,
-          "holm": 0.0771484375,
-          "discordant": [
-            10,
-            2
-          ]
-        },
-        "gain": {
-          "mean_difference": 0.0012499999999999998,
-          "sign_p": 0.25,
-          "holm": 0.25,
-          "discordant": [
-            3,
-            0
-          ]
-        },
-        "goals_mastered": {
-          "mean_difference": 3.76875,
-          "sign_p": 2.7369110631344083e-48,
-          "holm": 8.210733189403225e-48,
-          "discordant": [
-            159,
-            0
-          ]
-        },
-        "distance_to_goal": {
-          "mean_difference": -5.6625,
-          "sign_p": 1.3684555315672042e-48,
-          "holm": 5.473822126268817e-48,
-          "discordant": [
-            0,
-            160
-          ]
-        }
-      },
-      "ordering": {
-        "mean_difference": 0.0545652476514741,
-        "sign_p": 7.660128176212311e-07,
-        "discordant": [
-          31,
-          3
+          2
         ]
       }
     }

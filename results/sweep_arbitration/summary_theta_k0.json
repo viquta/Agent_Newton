@@ -3,18 +3,19 @@
   "n_learners": 160,
   "seed": 20260811,
   "prerequisite_dependence": 0.0,
-  "default_theta": 0.15,
+  "parameter": "theta",
+  "configured": 0.15,
   "points": [
     {
       "theta": 0.05,
       "replans_by_trigger": {
-        "frontier_crossed": 2221,
-        "mastery_delta": 2267,
-        "misconception_repeat": 9,
+        "frontier_crossed": 2223,
+        "mastery_delta": 2263,
+        "misconception_repeat": 7,
         "no_plan": 160
       },
-      "suppressed": 2489,
-      "mean_items": 44.68125,
+      "suppressed": 2485,
+      "mean_items": 44.63125,
       "against_default": {
         "remediation": {
           "mean_difference": 0.0,
@@ -53,13 +54,13 @@
     {
       "theta": 0.1,
       "replans_by_trigger": {
-        "frontier_crossed": 2221,
-        "mastery_delta": 2223,
+        "frontier_crossed": 2223,
+        "mastery_delta": 2217,
         "misconception_repeat": 53,
         "no_plan": 160
       },
-      "suppressed": 2489,
-      "mean_items": 44.68125,
+      "suppressed": 2485,
+      "mean_items": 44.63125,
       "against_default": {
         "remediation": {
           "mean_difference": 0.0,
@@ -98,13 +99,13 @@
     {
       "theta": 0.15,
       "replans_by_trigger": {
-        "frontier_crossed": 2221,
+        "frontier_crossed": 2223,
         "mastery_delta": 2212,
-        "misconception_repeat": 64,
+        "misconception_repeat": 58,
         "no_plan": 160
       },
-      "suppressed": 2489,
-      "mean_items": 44.68125,
+      "suppressed": 2485,
+      "mean_items": 44.63125,
       "against_default": {
         "remediation": {
           "mean_difference": 0.0,
@@ -143,13 +144,13 @@
     {
       "theta": 0.25,
       "replans_by_trigger": {
-        "frontier_crossed": 2221,
-        "mastery_delta": 2206,
-        "misconception_repeat": 70,
+        "frontier_crossed": 2223,
+        "mastery_delta": 2204,
+        "misconception_repeat": 66,
         "no_plan": 160
       },
-      "suppressed": 2489,
-      "mean_items": 44.68125,
+      "suppressed": 2485,
+      "mean_items": 44.63125,
       "against_default": {
         "remediation": {
           "mean_difference": 0.0,
@@ -188,13 +189,13 @@
     {
       "theta": 0.4,
       "replans_by_trigger": {
-        "frontier_crossed": 2221,
-        "mastery_delta": 2206,
-        "misconception_repeat": 70,
+        "frontier_crossed": 2223,
+        "mastery_delta": 2204,
+        "misconception_repeat": 66,
         "no_plan": 160
       },
-      "suppressed": 2489,
-      "mean_items": 44.68125,
+      "suppressed": 2485,
+      "mean_items": 44.63125,
       "against_default": {
         "remediation": {
           "mean_difference": 0.0,

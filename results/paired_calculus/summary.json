@@ -4,56 +4,56 @@
   "seed": 20260811,
   "power_sized_on_seed": 20260807,
   "arms": {
-    "coupled": "20260815T115713_calculus_paired_coupled_c7c5c38a",
-    "decoupled": "20260815T115716_calculus_paired_decoupled_3f5e6329"
+    "coupled": "20260817T132821_calculus_paired_coupled_ea10ea70",
+    "decoupled": "20260817T132824_calculus_paired_decoupled_b7cdfe42"
   },
   "mean_items": {
-    "coupled": 44.68125,
-    "decoupled": 32.3
+    "coupled": 44.63125,
+    "decoupled": 32.25
   },
   "primary_outcome": "remediation",
   "alpha": 0.05,
   "results": [
     {
       "outcome": "remediation",
-      "mean_difference": 0.013605447898660408,
+      "mean_difference": 0.02587019046482738,
       "ci95": [
-        0.004376806120592907,
-        0.02431739434732648
+        0.014341870280470185,
+        0.039627087275719064
       ],
       "n_pairs": 160,
-      "ties": 148,
-      "favouring_coupled": 10,
-      "favouring_decoupled": 2,
-      "rank_biserial": 0.6666666666666667,
-      "sign_p": 0.03857421875,
-      "wilcoxon_p": 0.015022338553107785,
-      "holm_p": 0.0771484375,
-      "significant": false
+      "ties": 143,
+      "favouring_coupled": 16,
+      "favouring_decoupled": 1,
+      "rank_biserial": 0.8823529411764706,
+      "sign_p": 0.000274658203125,
+      "wilcoxon_p": 0.00035153256850746316,
+      "holm_p": 0.00054931640625,
+      "significant": true
     },
     {
       "outcome": "gain",
-      "mean_difference": 0.0016666666666666663,
+      "mean_difference": 0.002083333333333333,
       "ci95": [
-        0.0004166666666666666,
-        0.0033333333333333327
+        0.0,
+        0.0045833333333333325
       ],
       "n_pairs": 160,
-      "ties": 156,
-      "favouring_coupled": 4,
-      "favouring_decoupled": 0,
-      "rank_biserial": 1.0,
+      "ties": 153,
+      "favouring_coupled": 6,
+      "favouring_decoupled": 1,
+      "rank_biserial": 0.7142857142857142,
       "sign_p": 0.125,
-      "wilcoxon_p": 0.045500263896358396,
+      "wilcoxon_p": 0.05878172135535887,
       "holm_p": 0.125,
       "significant": false
     },
     {
       "outcome": "goals_mastered",
-      "mean_difference": 3.90625,
+      "mean_difference": 3.775,
       "ci95": [
-        3.775,
-        4.04375
+        3.65,
+        3.9
       ],
       "n_pairs": 160,
       "ties": 0,
@@ -61,16 +61,16 @@
       "favouring_decoupled": 0,
       "rank_biserial": 1.0,
       "sign_p": 1.3684555315672042e-48,
-      "wilcoxon_p": 8.944752351574026e-29,
+      "wilcoxon_p": 7.726899342598888e-29,
       "holm_p": 5.473822126268817e-48,
       "significant": true
     },
     {
       "outcome": "distance_to_goal",
-      "mean_difference": -5.8125,
+      "mean_difference": -5.9625,
       "ci95": [
-        -5.975,
-        -5.65625
+        -6.13125,
+        -5.79375
       ],
       "n_pairs": 160,
       "ties": 0,
@@ -78,9 +78,44 @@
       "favouring_decoupled": 160,
       "rank_biserial": -1.0,
       "sign_p": 1.3684555315672042e-48,
-      "wilcoxon_p": 1.514707766225726e-28,
+      "wilcoxon_p": 1.4744075396637208e-28,
       "holm_p": 5.473822126268817e-48,
       "significant": true
     }
-  ]
+  ],
+  "dose_matched": {
+    "budget": 32,
+    "run_id": "20260817T132826_calculus_paired_dosematched_coupled_73474052",
+    "mean_items": 32.0,
+    "results": [
+      {
+        "outcome": "remediation",
+        "mean_difference": -0.11443240944436632,
+        "sign_p": 3.5550311609441887e-16,
+        "holm_p": 7.110062321888377e-16,
+        "significant": true
+      },
+      {
+        "outcome": "gain",
+        "mean_difference": -0.00958333333333333,
+        "sign_p": 5.647540092468262e-06,
+        "holm_p": 5.647540092468262e-06,
+        "significant": true
+      },
+      {
+        "outcome": "goals_mastered",
+        "mean_difference": 1.525,
+        "sign_p": 4.484155085839415e-44,
+        "holm_p": 1.3452465257518244e-43,
+        "significant": true
+      },
+      {
+        "outcome": "distance_to_goal",
+        "mean_difference": -5.1875,
+        "sign_p": 1.3684555315672042e-48,
+        "holm_p": 5.473822126268817e-48,
+        "significant": true
+      }
+    ]
+  }
 }
