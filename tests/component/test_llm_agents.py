@@ -521,3 +521,116 @@ class TestSessionAssembly:
         config = self._config(planner={"impl": "llm", "provider": "ollama", "model": "m"})
         config = config.model_copy(update={"arm": "decoupled"})
         assert isinstance(build_session("L0000", 1, toy, config).planner, FixedOrderPlanner)
+
+
+class TestAnUnreachableProviderDoesNotEndASitting:
+    """A backend that is *down* was not the same as one talking nonsense, and
+    should have been.
+
+    `ollama.py` wraps every transport failure as `ProviderError`. That is not a
+    `MalformedResponse`, so it escaped the repair loop, escaped both agents,
+    escaped `session.run()`, and finally escaped the demo's
+    `except (Quit, KeyboardInterrupt)` — so the sitting was never stored. Which is
+    precisely the defect `27c3324` fixed for interrupts, arriving through a
+    different door: the model dies forty minutes in and the record goes with it.
+
+    From the agents' point of view the two failures are one event — nothing was
+    inferred, nothing was said — so they are handled together and the *kind* goes
+    to the log.
+    """
+
+    class Dead:
+        """A provider that is not there."""
+
+        label = "dead"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def generate(self, prompt, schema, system=None):  # noqa: ANN001
+            from agent_newton.llm.base import ProviderError
+
+            self.calls += 1
+            raise ProviderError("connection refused")
+
+    def test_the_diagnostic_counts_it_and_infers_nothing(self, toy) -> None:
+        from agent_newton.core.agents.llm import LLMDiagnostic
+
+        provider = self.Dead()
+        agent = LLMDiagnostic(provider)
+        item = toy.items.bank("practice")[0]
+
+        diagnosis = agent.diagnose(item, "wrong", toy)
+
+        assert diagnosis.misconception_id is None, "nothing was inferred"
+        assert not diagnosis.named
+        assert agent.failures == 1, "the failure must be counted, not swallowed"
+        assert provider.calls > 0
+
+    def test_the_tutor_falls_back_rather_than_raising(self, toy) -> None:
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.agents.llm import FALLBACK_HINT, LLMTutor
+        from agent_newton.core.state.store import new_blackboard
+        from agent_newton.config import Config
+
+        config = Config.model_validate({"domain": "toy_algebra"})
+        board = new_blackboard("L1", 1, toy.concepts, config)
+        item = toy.items.bank("practice")[0]
+
+        hint = LLMTutor(self.Dead(), config.zpd).respond(
+            item, Diagnosis(None), board.view(), toy,
+            response="wrong", mastery=0.4, prior_failures=0,
+            moves_this_item=[], said_this_item=[],
+        )
+
+        assert hint.text == FALLBACK_HINT
+        assert hint.level is not None, "the level is chosen by the rules, not the model"
+
+    def test_a_malformed_reply_is_still_handled_the_same_way(self, toy) -> None:
+        # The narrower failure must not have been lost while widening the catch.
+        from agent_newton.core.agents.llm import LLMDiagnostic
+
+        class Babbling:
+            label = "babbling"
+
+            def generate(self, prompt, schema, system=None):  # noqa: ANN001
+                from agent_newton.llm.base import Completion
+
+                return Completion(text="not json at all", model="m", provider="p")
+
+        agent = LLMDiagnostic(Babbling())
+        diagnosis = agent.diagnose(toy.items.bank("practice")[0], "wrong", toy)
+        assert diagnosis.misconception_id is None
+        assert agent.failures == 1
+
+    def test_malformed_response_is_a_provider_error(self) -> None:
+        # The reason one `except` covers both, asserted so a refactor cannot
+        # silently split them apart again.
+        from agent_newton.llm.base import MalformedResponse, ProviderError
+
+        assert issubclass(MalformedResponse, ProviderError)
+
+    def test_a_transport_failure_still_escapes_complete(self) -> None:
+        # Deliberate: rewording a prompt cannot fix an unreachable backend, so the
+        # repair loop must not retry it. The tolerance belongs in the agents, which
+        # can count it and carry on, not in the loop that would spend three
+        # attempts on a dead socket.
+        import pytest as _pytest
+
+        from agent_newton.llm.base import ProviderError, complete
+        from pydantic import BaseModel
+
+        class Reply(BaseModel):
+            x: int
+
+        class Dead:
+            label = "dead"
+            attempts = 0
+
+            def generate(self, prompt, schema, system=None):  # noqa: ANN001
+                Dead.attempts += 1
+                raise ProviderError("connection refused")
+
+        with _pytest.raises(ProviderError):
+            complete(Dead(), "p", Reply)
+        assert Dead.attempts == 1, "a dead backend must not be retried by the repair loop"

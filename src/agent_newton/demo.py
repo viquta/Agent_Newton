@@ -1230,10 +1230,36 @@ def run_demo(
         console.print("\n[dim]stopped before the pre-test[/dim]")
 
     outcome = None
+    failed: BaseException | None = None
     try:
         outcome = session.run()
     except (Quit, KeyboardInterrupt):
         console.print("\n[dim]stopped — the state so far:[/dim]")
+    except Exception as exc:  # noqa: BLE001 - re-raised below, after storing
+        # ⚠️ Anything at all, and it is stored before it is re-raised.
+        #
+        # This caught only Quit and KeyboardInterrupt, so a failure from anywhere
+        # else propagated straight past `_store` and the sitting was lost — which
+        # is exactly the defect `27c3324` fixed for interrupts, arriving through a
+        # different door. The live case: the model backend goes down or times out
+        # mid-sitting, `ProviderError` comes up through the agents, and forty
+        # minutes of a person's work leaves no record.
+        #
+        # The agents now tolerate that particular failure, so this is the backstop
+        # rather than the fix. It exists because the next unhandled failure will be
+        # one nobody predicted, and the record must survive it.
+        failed = exc
+        console.print(
+            Panel(
+                Text(
+                    f"{type(exc).__name__}: {exc}\n\n"
+                    "The sitting is being saved before this is raised — the work "
+                    "so far is not lost.",
+                ),
+                title="the sitting stopped on an error",
+                border_style="red",
+            )
+        )
 
     console.print()
     console.print(observer.board_panel(session.board))
@@ -1258,7 +1284,11 @@ def run_demo(
             if isinstance(session.planner, Resumable)
             else None
         ),
-        stop_reason=outcome.stop_reason if outcome else "interrupted",
+        stop_reason=(
+            outcome.stop_reason
+            if outcome
+            else ("failed" if failed is not None else "interrupted")
+        ),
     )
     # Read *after* closing the session, so this sitting is part of the history
     # rather than the one thing missing from it.
@@ -1267,6 +1297,12 @@ def run_demo(
 
     if across is not None:
         console.print(across)
+
+    if failed is not None:
+        # Everything is written; now let the failure be seen. Swallowing it would
+        # leave a stored sitting that looks merely short, with no way to tell a
+        # person who stopped from a backend that fell over.
+        raise failed
 
     if outcome is None:
         console.print(

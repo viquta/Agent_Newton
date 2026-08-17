@@ -37,7 +37,12 @@ from agent_newton.core.pedagogy import (
     next_required_move,
 )
 from agent_newton.core.state.views import FullStateView
-from agent_newton.llm.base import LLMProvider, MalformedResponse, complete
+from agent_newton.llm.base import (
+    LLMProvider,
+    MalformedResponse,
+    ProviderError,
+    complete,
+)
 from agent_newton.domains.base import Domain, Item, Misconception
 
 log = logging.getLogger(__name__)
@@ -140,14 +145,28 @@ class LLMDiagnostic:
         )
         try:
             reply = complete(self._provider, prompt, schema, system=_DIAGNOSTIC_SYSTEM)
-        except MalformedResponse:
+        except ProviderError as exc:
             # Distinct from an incorrect label: nothing was inferred. Recorded
             # so the rate is visible, and returned as no-diagnosis so it cannot
             # be counted as a wrong prediction.
+            #
+            # ⚠️ `ProviderError` rather than `MalformedResponse`, which it
+            # subclasses. A provider that is *unreachable* was not caught here, so
+            # a dead or timed-out backend propagated out of the session — and the
+            # demo stored nothing, losing the sitting. From this loop's point of
+            # view "the model said nonsense" and "the model did not answer" are
+            # the same event: nothing was inferred. Which of the two it was goes
+            # to the log.
             self.failures += 1
             log.warning(
-                "diagnostic produced nothing usable for %s", item.id,
-                extra={"event": "diagnostic.failed", "item_id": item.id},
+                "diagnostic produced nothing usable for %s (%s)",
+                item.id,
+                type(exc).__name__,
+                extra={
+                    "event": "diagnostic.failed",
+                    "item_id": item.id,
+                    "reason": type(exc).__name__,
+                },
             )
             return Diagnosis(None)
 
@@ -301,10 +320,12 @@ class LLMTutor:
         try:
             reply = complete(self._provider, prompt, HintReply, system=_TUTOR_SYSTEM)
             text = reply.text
-        except MalformedResponse:
+        except ProviderError:
             # A hint is prose; failing to produce it should not end a session.
             # Falling back keeps the turn's *targeting* intact, which is the
-            # part that affects the learner.
+            # part that affects the learner. `ProviderError` covers an
+            # unreachable backend as well as a malformed reply — a sitting must
+            # survive ollama dying, and the fallback is what lets it.
             text = FALLBACK_HINT
 
         return Hint(
@@ -390,7 +411,7 @@ class LLMPlanner:
         try:
             reply = complete(self._provider, prompt, schema, system=_PLANNER_SYSTEM)
             proposed = getattr(reply, "concept_id")
-        except MalformedResponse:
+        except ProviderError:
             self.overrides += 1
             return guarded
 
