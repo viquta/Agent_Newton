@@ -263,3 +263,103 @@ class TestTheStoreIsAFile:
         store.ensure_learner("H1", "human", "toy_algebra")
         assert [r["learner_id"] for r in store.learners(kind="human")] == ["H1"]
         assert [r["learner_id"] for r in store.learners(kind="simulated")] == ["L1"]
+
+
+class TestResumingAcrossAContentChange:
+    """`assert_poolable` refuses to pool runs across a content change. Nothing
+    refused to *resume* a learner across one, and it is the same risk.
+
+    Mastery is keyed by concept id and the error trace by misconception label, so
+    renaming or removing either leaves stored state pointing at content that no
+    longer exists. The concrete failure: `Session._cross_concept` looks every
+    trace label up in the catalogue and a missing id raises — at outcome time,
+    after the sitting, when the work is already done.
+    """
+
+    def _store(self, tmp_path):  # noqa: ANN001
+        from agent_newton.store import LearnerStore
+
+        return LearnerStore(tmp_path / "learners.db")
+
+    def _sat(self, store, hashes):  # noqa: ANN001
+        from agent_newton.core.state.schema import LearnerState
+
+        store.ensure_learner("v", "human", "calculus")
+        session_id = store.open_session(
+            learner_id="v", arm="coupled", config_hash="c0", content_hashes=hashes
+        )
+        store.close_session(session_id, state=LearnerState(learner_id="v", seed=1))
+        return session_id
+
+    def test_a_changed_catalogue_is_reported(self, tmp_path) -> None:
+        store = self._store(tmp_path)
+        self._sat(store, {"catalogue_hash": "aaa", "item_bank_hash": "bbb",
+                          "concept_graph_hash": "ccc"})
+        drift = store.content_drift("v", "coupled", {
+            "catalogue_hash": "ZZZ", "item_bank_hash": "bbb",
+            "concept_graph_hash": "ccc",
+        })
+        assert "catalogue_hash" in drift
+        assert drift["catalogue_hash"] == ("aaa", "ZZZ")
+        store.close()
+
+    def test_unchanged_content_reports_nothing(self, tmp_path) -> None:
+        store = self._store(tmp_path)
+        hashes = {"catalogue_hash": "aaa", "item_bank_hash": "bbb",
+                  "concept_graph_hash": "ccc"}
+        self._sat(store, hashes)
+        assert store.content_drift("v", "coupled", hashes) == {}
+        store.close()
+
+    def test_a_session_written_before_the_columns_reports_nothing(self, tmp_path) -> None:
+        # Unverifiable and unchanged are different, and only one is worth warning
+        # about. A learner whose history predates these columns must not be told
+        # the subject matter moved when nobody recorded whether it did.
+        store = self._store(tmp_path)
+        self._sat(store, None)
+        assert store.content_drift("v", "coupled", {"catalogue_hash": "ZZZ"}) == {}
+        store.close()
+
+    def test_a_learner_who_never_sat_reports_nothing(self, tmp_path) -> None:
+        store = self._store(tmp_path)
+        assert store.content_drift("nobody", "coupled", {"catalogue_hash": "ZZZ"}) == {}
+        store.close()
+
+    def test_the_migration_adds_the_columns_to_an_existing_store(self, tmp_path) -> None:
+        # `CREATE TABLE IF NOT EXISTS` leaves an existing table alone, so without
+        # the migration a new column never reaches a store that already holds
+        # sittings — and those cannot be regenerated.
+        import sqlite3
+
+        path = tmp_path / "old.db"
+        db = sqlite3.connect(path)
+        db.executescript(
+            "CREATE TABLE learner (learner_id TEXT PRIMARY KEY, kind TEXT, "
+            "domain TEXT, created_at TEXT);"
+            "CREATE TABLE session (session_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "learner_id TEXT, arm TEXT, seq INTEGER, elapsed_days REAL, run_id TEXT, "
+            "config_hash TEXT, decay_half_life_days REAL, started_at TEXT, "
+            "ended_at TEXT, stop_reason TEXT);"
+        )
+        db.commit()
+        db.close()
+
+        store = self._store(tmp_path.joinpath())  # same dir, different file below
+        store.close()
+        from agent_newton.store import LearnerStore
+
+        migrated = LearnerStore(path)
+        columns = {r[1] for r in migrated._db.execute("PRAGMA table_info(session)")}
+        assert {"catalogue_hash", "item_bank_hash", "concept_graph_hash"} <= columns
+        migrated.close()
+
+    def test_the_real_failure_it_guards(self) -> None:
+        # Not a hypothetical: a label the catalogue no longer has raises, and
+        # `_cross_concept` calls exactly this on every error-trace entry — at
+        # outcome time, after the sitting.
+        from agent_newton.domains import registry
+        from agent_newton.domains.base import DomainError
+
+        calculus = registry.load_domain("calculus")
+        with pytest.raises(DomainError):
+            calculus.misconceptions.get("a_label_that_was_removed")

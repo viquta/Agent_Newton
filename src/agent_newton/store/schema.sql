@@ -35,6 +35,17 @@ CREATE TABLE IF NOT EXISTS session (
     -- Recorded per session because pooling across different decay is refused,
     -- and a sequence may not silently change it midway.
     decay_half_life_days REAL,
+    -- Domain content the state was written against. Denormalised on purpose,
+    -- for the same reason `decay_half_life_days` is: what matters at read time
+    -- is the value actually used, not a pointer to a config that may since have
+    -- changed on disk. `assert_poolable` already refuses to *pool* runs across a
+    -- content change; without these, nothing refuses to *resume* a learner
+    -- across one, and the identical risk went unguarded on the other path.
+    -- NULL means a session written before these existed: unverifiable rather
+    -- than mismatched, and treated as such.
+    catalogue_hash     TEXT,
+    item_bank_hash     TEXT,
+    concept_graph_hash TEXT,
     started_at    TEXT    NOT NULL,
     ended_at      TEXT,
     stop_reason   TEXT,

@@ -44,6 +44,22 @@ class LearnerStore:
         self._db = sqlite3.connect(self.path)
         self._db.row_factory = sqlite3.Row
         self._db.executescript(_SCHEMA.read_text())
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Add columns a database created by an earlier schema does not have.
+
+        ``CREATE TABLE IF NOT EXISTS`` leaves an existing table alone, so a new
+        column never reaches a store that already exists — and this one holds
+        sittings that cannot be regenerated. Each add is attempted and its
+        duplicate-column error swallowed, which is the whole migration.
+        """
+        for column in ("catalogue_hash", "item_bank_hash", "concept_graph_hash"):
+            try:
+                self._db.execute(f"ALTER TABLE session ADD COLUMN {column} TEXT")
+            except sqlite3.OperationalError:
+                pass
+        self._db.commit()
         self._db.commit()
 
     def close(self) -> None:
@@ -99,12 +115,14 @@ class LearnerStore:
         elapsed_days: float = 0.0,
         run_id: str | None = None,
         decay_half_life_days: float | None = None,
+        content_hashes: Mapping[str, str] | None = None,
     ) -> int:
         seq = self.next_index(learner_id, arm)
         cursor = self._db.execute(
             "INSERT INTO session (learner_id, arm, seq, elapsed_days, run_id, "
-            "config_hash, decay_half_life_days, started_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "config_hash, decay_half_life_days, started_at, "
+            "catalogue_hash, item_bank_hash, concept_graph_hash) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 learner_id,
                 arm,
@@ -114,6 +132,10 @@ class LearnerStore:
                 config_hash,
                 decay_half_life_days,
                 _now(),
+                *(
+                    (content_hashes or {}).get(field)
+                    for field in ("catalogue_hash", "item_bank_hash", "concept_graph_hash")
+                ),
             ),
         )
         self._db.commit()
@@ -210,6 +232,38 @@ class LearnerStore:
             (learner_id, arm),
         ).fetchone()
         return None if row is None else LearnerState.model_validate_json(row["learner_state"])
+
+    def content_drift(
+        self, learner_id: str, arm: str, current: Mapping[str, str]
+    ) -> dict[str, tuple[str, str]]:
+        """Domain content that has changed since this learner's last sitting.
+
+        ``{field: (stored, current)}`` for each hash that differs, empty when
+        nothing did. Read this before resuming: mastery is keyed by concept id
+        and an error trace by misconception label, so renaming or removing either
+        leaves stored state pointing at content that no longer exists.
+
+        The concrete failure it guards: ``_cross_concept`` looks up every
+        error-trace label in the catalogue, and a missing id raises. That happens
+        at *outcome* time, after the sitting, when the work is already done.
+
+        A session written before these columns existed reports nothing, because
+        unverifiable and unchanged are different and only one of them is a
+        warning worth giving.
+        """
+        row = self._db.execute(
+            "SELECT catalogue_hash, item_bank_hash, concept_graph_hash FROM session "
+            "WHERE learner_id = ? AND arm = ? ORDER BY seq DESC LIMIT 1",
+            (learner_id, arm),
+        ).fetchone()
+        if row is None:
+            return {}
+        drift: dict[str, tuple[str, str]] = {}
+        for field, now in current.items():
+            was = row[field] if field in row.keys() else None
+            if was is not None and now is not None and was != now:
+                drift[field] = (was, now)
+        return drift
 
     def latest_planner_state(self, learner_id: str, arm: str) -> dict[str, Any] | None:
         """The planner bookkeeping this learner last left behind in this arm.

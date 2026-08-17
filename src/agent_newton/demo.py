@@ -986,6 +986,40 @@ def run_demo(
     store = LearnerStore(config.paths.store_path)
     store.ensure_learner(learner_id, "human", config.domain)
     previous = store.latest_state(learner_id, config.arm)
+
+    # ⚠️ Say so when the subject matter has moved under a resumed learner.
+    #
+    # Mastery is keyed by concept id and the error trace by misconception label,
+    # so renaming or removing either leaves stored state pointing at content that
+    # no longer exists — and `_cross_concept` looks every trace label up in the
+    # catalogue, where a missing id raises *after* the sitting. `assert_poolable`
+    # already refuses to pool runs across a content change; resuming across one
+    # was unguarded on the same risk.
+    #
+    # A warning rather than a refusal: adding content is the common case and is
+    # harmless, and a person who has sat down to work should not be turned away
+    # by a hash. What must not happen is that nobody noticed.
+    if previous is not None:
+        drift = store.content_drift(learner_id, config.arm, domain.content_hashes())
+        if drift:
+            console.print(
+                Panel(
+                    Text(
+                        "The subject matter has changed since this learner's last "
+                        "sitting:\n"
+                        + "\n".join(
+                            f"  {field.removesuffix('_hash').replace('_', ' ')}: "
+                            f"{was[:8]} -> {now[:8]}"
+                            for field, (was, now) in sorted(drift.items())
+                        )
+                        + "\n\nStored progress is kept. Anything it refers to that no "
+                        "longer exists will not resolve, so read this sitting's "
+                        "figures with that in mind.",
+                    ),
+                    title="content changed",
+                    border_style="yellow",
+                )
+            )
     observer = DemoObserver(
         console, domain, config,
         carried=tuple(previous.reflections) if previous else (),
@@ -1131,6 +1165,7 @@ def run_demo(
         config_hash=config.content_hash(),
         elapsed_days=gap,
         decay_half_life_days=config.decay.half_life_days,
+        content_hashes=domain.content_hashes(),
     )
 
     session = build_session(
