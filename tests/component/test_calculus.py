@@ -16,7 +16,12 @@ from agent_newton.domains.calculus.verifier import (
     UnparseableResponse,
     parse,
 )
-from agent_newton.domains.validate import NEEDS_SOURCE, UNCONFIRMED_SOURCE, validate
+from agent_newton.domains.validate import (
+    NEEDS_SOURCE,
+    UNCONFIRMED_SOURCE,
+    VARIANT_DRAWS,
+    validate,
+)
 
 
 @pytest.fixture(scope="module")
@@ -347,3 +352,91 @@ class TestItemsStayInsideTheGraph:
 
         stray = replace(calculus.items.bank("practice")[0], answer="cos(x)")
         assert any(f"{name}(" in stray.answer for name in UNTAUGHT)
+
+
+class TestEveryVariantAcceptsEquivalentAnswers:
+    """The gold set covers the 17 *written* items. Variants had no such cover.
+
+    `domain validate` checks that each draw's stated answer verifies correct.
+    Nothing checked whether a learner who writes that same answer *differently*
+    is accepted — and a false negative on a variant is the worst kind, because
+    unlike `UNPARSEABLE` it reaches the learner model as evidence of an error the
+    learner did not make.
+
+    Hand-labelling 18 templates × 8 draws is not the way. Equivalent forms are
+    generated mechanically instead: sympy's own `expand`, `factor`, `simplify`,
+    `together` and `cancel` all preserve equivalence by construction, so anything
+    they produce *must* be accepted. That makes this a property test rather than a
+    fixture, and it grows with the templates.
+
+    ⚠️ `UNPARSEABLE` is tolerated and counted separately, on the same grounds the
+    gold set uses: the verifier failing to read an answer updates no estimate and
+    enters no error trace, so it is a measurement failure rather than a false
+    accusation.
+    """
+
+    _TRANSFORMS = ("expand", "factor", "simplify", "together", "cancel")
+
+    def _equivalent_forms(self, answer: str) -> list[tuple[str, str]]:
+        import sympy
+        from sympy.parsing.sympy_parser import (
+            convert_xor,
+            implicit_multiplication_application,
+            parse_expr,
+            standard_transformations,
+        )
+
+        rules = standard_transformations + (
+            convert_xor,
+            implicit_multiplication_application,
+        )
+        try:
+            expression = parse_expr(answer, transformations=rules)
+        except Exception:  # noqa: BLE001 - an unparseable answer has no forms to try
+            return []
+
+        forms = []
+        for name in self._TRANSFORMS:
+            try:
+                rewritten = str(getattr(sympy, name)(expression))
+            except Exception:  # noqa: BLE001 - sympy declines on some shapes
+                continue
+            if rewritten != answer:
+                forms.append((name, rewritten))
+        return forms
+
+    def test_no_variant_scores_an_equivalent_answer_as_wrong(self, calculus) -> None:
+        false_negatives = []
+        checked = 0
+        for item_id, template in sorted(calculus.templates.items()):
+            base = calculus.items.get(item_id)
+            for draw in range(VARIANT_DRAWS):
+                variant = template.variant(base, draw)
+                for name, form in self._equivalent_forms(variant.answer):
+                    checked += 1
+                    if calculus.verifier.verify(variant, form).verdict is Verdict.INCORRECT:
+                        false_negatives.append(
+                            f"{item_id} draw {draw} via {name}: "
+                            f"{variant.answer!r} rewritten as {form!r} scored INCORRECT"
+                        )
+
+        assert checked > 100, "the generator produced too few forms to be a real check"
+        assert not false_negatives, "\n".join(false_negatives)
+
+    def test_the_unreadable_ones_are_only_the_known_root_list(self, calculus) -> None:
+        # `ca_stat_p1`'s answer is a list of roots ("0, 2"), which sympy reads as a
+        # tuple rather than an expression — the same limitation the gold set
+        # already records for `x = 0 or x = 2`. Pinned to that one item so a new
+        # unreadable family shows up as a change here rather than as silence.
+        unreadable = set()
+        for item_id, template in sorted(calculus.templates.items()):
+            base = calculus.items.get(item_id)
+            for draw in range(VARIANT_DRAWS):
+                variant = template.variant(base, draw)
+                for _, form in self._equivalent_forms(variant.answer):
+                    if calculus.verifier.verify(variant, form).verdict is Verdict.UNPARSEABLE:
+                        unreadable.add(item_id)
+        assert unreadable == {"ca_stat_p1"}, (
+            f"unreadable equivalent forms outside the known root-list case: "
+            f"{sorted(unreadable - {'ca_stat_p1'})}"
+        )

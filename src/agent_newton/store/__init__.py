@@ -5,6 +5,7 @@ re-exported here: importing ground truth should be an explicit act naming the
 module it comes from, so that a grep for it finds every caller.
 """
 
-from agent_newton.store.learners import LearnerStore
+from agent_newton.store.learners import LearnerStore, check_learner_id
 
-__all__ = ["LearnerStore"]
+__all__ = ["LearnerStore",
+    "check_learner_id"]

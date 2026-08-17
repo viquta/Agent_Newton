@@ -17,6 +17,7 @@ connection.
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,6 +26,35 @@ from typing import Any, Iterator, Mapping, Sequence
 from agent_newton.core.state.schema import AuditRecord, LearnerState
 
 _SCHEMA = Path(__file__).parent / "schema.sql"
+
+
+#: A learner id is an identity, and it also ends up in a filesystem path —
+#: `agent-newton history <learner>` writes `results/history_<learner>_<arm>/`. So
+#: `history '../../../tmp/x'` wrote outside `results/`, and an id containing a
+#: slash silently created a directory tree instead of a directory.
+#:
+#: Parameterised queries already make any id safe for SQL — every hostile string
+#: tried round-tripped and left the tables intact. Safe for SQL is not the same as
+#: safe as a *name*, which is why this is enforced on the identity rather than
+#: patched at each place a path is built.
+_LEARNER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+
+
+def check_learner_id(learner_id: str) -> str:
+    """Return ``learner_id`` if it is usable as an identity, else raise.
+
+    Permits what the project actually uses — ``victor``, ``L0000``, ``probe`` —
+    and refuses anything with a path separator, a leading dot, whitespace, quotes,
+    or nothing at all.
+    """
+    if not _LEARNER_ID.match(learner_id):
+        raise ValueError(
+            f"learner id {learner_id!r} is not usable: it must start with a letter "
+            f"or digit and contain only letters, digits, hyphens and underscores. "
+            f"The id names a directory as well as a row, so a separator or a dot "
+            f"would write outside the results tree"
+        )
+    return learner_id
 
 
 def _now() -> str:
@@ -74,7 +104,12 @@ class LearnerStore:
     # -- learners ---------------------------------------------------------
 
     def ensure_learner(self, learner_id: str, kind: str, domain: str) -> None:
-        """Register a learner, or leave an existing one alone."""
+        """Register a learner, or leave an existing one alone.
+
+        The id is checked here because this is the only way a learner comes into
+        existence, so nothing downstream has to re-check it.
+        """
+        check_learner_id(learner_id)
         self._db.execute(
             "INSERT OR IGNORE INTO learner (learner_id, kind, domain, created_at) "
             "VALUES (?, ?, ?, ?)",

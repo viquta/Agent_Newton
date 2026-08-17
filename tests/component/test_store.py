@@ -363,3 +363,74 @@ class TestResumingAcrossAContentChange:
         calculus = registry.load_domain("calculus")
         with pytest.raises(DomainError):
             calculus.misconceptions.get("a_label_that_was_removed")
+
+
+class TestALearnerIdIsAlsoADirectoryName:
+    """Safe for SQL is not the same as safe as a name.
+
+    Parameterised queries make any id safe against injection — every hostile
+    string was tried and all of them round-tripped with the tables intact. But
+    `agent-newton history <learner>` writes `results/history_<learner>_<arm>/`, so
+    `history '../../../tmp/x'` wrote *outside* the results tree, and an id
+    containing a slash silently created a directory tree rather than a directory.
+
+    Enforced on the identity rather than patched where each path is built, so a
+    learner that cannot be named cannot be created.
+    """
+
+    @pytest.mark.parametrize("learner_id", ["victor", "L0000", "probe", "a-b_1", "X9"])
+    def test_the_ids_the_project_uses_are_accepted(self, learner_id: str) -> None:
+        from agent_newton.store import check_learner_id
+
+        assert check_learner_id(learner_id) == learner_id
+
+    @pytest.mark.parametrize(
+        "learner_id",
+        [
+            "../../../tmp/escaped",  # the traversal
+            "a/b",                   # a nested directory
+            ".hidden",               # a dotfile
+            "",                      # nothing at all
+            " x",                    # leading whitespace
+            "o'brien",               # a quote
+            "a b",                   # a space
+            "x\x00y",                # a nul byte
+        ],
+    )
+    def test_ids_that_are_not_usable_as_names_are_refused(self, learner_id: str) -> None:
+        from agent_newton.store import check_learner_id
+
+        with pytest.raises(ValueError, match="not usable"):
+            check_learner_id(learner_id)
+
+    def test_the_store_refuses_to_create_one(self, tmp_path) -> None:
+        from agent_newton.store import LearnerStore
+
+        store = LearnerStore(tmp_path / "t.db")
+        with pytest.raises(ValueError, match="not usable"):
+            store.ensure_learner("../../etc/passwd", "human", "calculus")
+        assert store.learners() == []
+        store.close()
+
+    def test_the_traversal_it_prevents(self) -> None:
+        # The concrete escape, asserted rather than described.
+        from pathlib import Path
+
+        base = Path("results").resolve()
+        escaped = (Path("results") / "history_../../../tmp/escaped_coupled").resolve()
+        assert base not in escaped.parents, "this path no longer escapes; test is stale"
+
+    def test_sql_was_never_the_problem(self, tmp_path) -> None:
+        # Recorded so nobody 'fixes' this by escaping quotes: the queries are
+        # parameterised and an injection attempt is stored as a literal string.
+        from agent_newton.store import LearnerStore
+
+        store = LearnerStore(tmp_path / "t.db")
+        store.ensure_learner("dropper", "human", "calculus")
+        rows = store._db.execute(
+            "SELECT learner_id FROM learner WHERE learner_id = ?",
+            ['"; DROP TABLE learner;--'],
+        ).fetchall()
+        assert rows == []
+        assert store.learners(), "the table survived the lookup"
+        store.close()

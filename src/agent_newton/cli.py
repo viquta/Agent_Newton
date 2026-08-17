@@ -817,7 +817,7 @@ def history(
     Reads only. Nothing here writes to the store.
     """
     from agent_newton.core.evaluation.teaching import records, repertoire, summarise
-    from agent_newton.store import LearnerStore
+    from agent_newton.store import LearnerStore, check_learner_id
 
     if not store_path.exists():
         console.print(f"[red]no learner store at {store_path}[/red]")
@@ -835,6 +835,10 @@ def history(
         )
         raise typer.Exit(code=1)
 
+    # Checked here too, not only in the store: `history` can be asked about a
+    # learner who does not exist, so it may never touch `ensure_learner` — and
+    # this is the line that turns an id into a path.
+    check_learner_id(learner)
     directory = out or Path("results") / f"history_{learner}_{arm}"
     directory.mkdir(parents=True, exist_ok=True)
 
