@@ -114,7 +114,7 @@ items:
     concept_id: quotient_rule
     prompt: "Differentiate: y = x^2/(x + 1)"
     answer: "(2*x*(x + 1) - x**2)/(x + 1)**2"
-    probes: [quotient_rule_order_swapped]
+    probes: [quotient_rule_order_swapped, quotient_rule_numerator_not_differentiated]
     params: { f: "x**2", g: "x + 1", df: "2*x", dg: "1" }
 
   # --- chain_rule ---------------------------------------------------------

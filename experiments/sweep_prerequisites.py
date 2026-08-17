@@ -56,17 +56,17 @@ from agent_newton.core.evaluation.statistics import ALPHA, compare  # noqa: E402
 #: that zero is today, and a sweep that could start elsewhere could not make it.
 BASELINE = 0.0
 
-#: What §7b recorded, under the natural framing, seed 20260811 — **at this N**.
+#: What §7b recorded (re-recorded 2026-08-17 after the 16th catalogue entry), under the natural framing, seed 20260811 — **at this N**.
 #: Checked rather than trusted: if the code no longer reproduces it, the sweep is
 #: measuring a different system and its curve means nothing. A run at another N
 #: says so and skips the check rather than failing it, since a mean over twenty
 #: learners is not the recorded figure and never was.
 RECORDED_N = 160
 RECORDED = {
-    "remediation": +0.0136,
-    "gain": +0.0017,
-    "goals_mastered": +3.9062,
-    "distance_to_goal": -5.8125,
+    "remediation": +0.0259,
+    "gain": +0.0021,
+    "goals_mastered": +3.7750,
+    "distance_to_goal": -5.9625,
 }
 TOLERANCE = 5e-4
 

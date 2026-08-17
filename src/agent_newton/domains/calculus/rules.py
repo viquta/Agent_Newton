@@ -124,6 +124,25 @@ class ProductRuleAsProductOfDerivatives:
         return f"({df})*({dg})"
 
 
+class QuotientRuleNumeratorNotDifferentiated:
+    """(f/g)' with u' replaced by u in the first numerator term.
+
+    Distinct from transposing the terms: the structure of the rule is right and
+    one factor was simply not differentiated. A person made exactly this error and
+    was told the terms were transposed, because that was the only label the
+    concept had — so the diagnosis was wrong while the verdict was right.
+    """
+
+    misconception_id = "quotient_rule_numerator_not_differentiated"
+
+    def apply(self, item: Item) -> str | None:
+        got = _need(item, "f", "g", "dg")
+        if got is None:
+            return None
+        f, g, dg = got
+        return f"(({f})*({g}) - ({f})*({dg}))/({g})**2"
+
+
 class QuotientRuleOrderSwapped:
     """(f/g)' with the numerator terms transposed."""
 
@@ -202,6 +221,7 @@ RULES: Sequence[BuggyRule] = (
     ImplicitDiffOmitsDydx(),
     PowerRuleForgetsDecrement(),
     ProductRuleAsProductOfDerivatives(),
+    QuotientRuleNumeratorNotDifferentiated(),
     QuotientRuleOrderSwapped(),
     UsubForgetsDu(),
     AntiderivativeOmitsConstant(),

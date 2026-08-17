@@ -4,7 +4,7 @@
         --config experiments/configs/calculus.yaml --n 160 --seed 20260811
 
 ``simulator.misconceptions_per_learner`` decides how much a learner has wrong at
-the start. At the configured 2 against a 15-entry catalogue the mean pre-test
+the start. At the configured 2 against a 16-entry catalogue the mean pre-test
 sits near 0.91, so the gain outcome has under a tenth of its range available and
 some learners begin with none at all — they are in the mean and can only lose.
 This sweeps that setting and reports what each population leaves for the
@@ -58,15 +58,15 @@ from agent_newton.core.evaluation.statistics import ALPHA  # noqa: E402
 #: Today's configured value, and the point every other is read against.
 BASELINE = 2
 
-#: What §7b recorded under the natural framing, seed 20260811, **at this N**.
+#: What §7b recorded (re-recorded 2026-08-17 after the 16th catalogue entry) under the natural framing, seed 20260811, **at this N**.
 #: Shared with ``sweep_prerequisites.py``; kept as a literal in both so a sweep
 #: cannot silently start agreeing with a moved baseline.
 RECORDED_N = 160
 RECORDED = {
-    "remediation": +0.0136,
-    "gain": +0.0017,
-    "goals_mastered": +3.9062,
-    "distance_to_goal": -5.8125,
+    "remediation": +0.0259,
+    "gain": +0.0021,
+    "goals_mastered": +3.7750,
+    "distance_to_goal": -5.9625,
 }
 TOLERANCE = 5e-4
 
@@ -173,7 +173,7 @@ def show(curve: list[dict]) -> None:
             f"{'{}/{}'.format(*remediation['discordant']):>9}{normalised:>17}{mark}"
         )
     print(
-        "\n  held        = misconceptions_per_learner, against a 15-entry catalogue.\n"
+        "\n  held        = misconceptions_per_learner, against a 16-entry catalogue.\n"
         "  headroom    = 1 - mean pre-test, averaged over the arms.\n"
         "  ceiling     = learners starting at 100%, summed over both arms.\n"
         "  remediation = coupled minus decoupled, the declared primary.\n"

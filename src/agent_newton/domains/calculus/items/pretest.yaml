@@ -88,7 +88,7 @@ items:
     bank: pretest
     prompt: "Differentiate: y = x^3/(x + 2)"
     answer: "(3*x**2*(x + 2) - x**3)/(x + 2)**2"
-    probes: [quotient_rule_order_swapped]
+    probes: [quotient_rule_order_swapped, quotient_rule_numerator_not_differentiated]
     params: { f: "x**3", g: "x + 2", df: "3*x**2", dg: "1" }
 
   - id: ca_chain_pre1

@@ -308,8 +308,17 @@ class TestTheTutorsTurnsAreKept:
 
     @pytest.mark.parametrize("domain_name", DOMAINS)
     def test_every_turn_reaches_the_audit_log(self, domain_name: str) -> None:
-        session, _ = run(domain_name, "coupled")
-        turns = [r for r in session.board.audit_log if r.cause == "tutor"]
+        # A cohort rather than one learner. L0000's misconceptions may sit deep
+        # enough in the syllabus never to be reached inside the item budget, so
+        # the tutor is never called and the assertion becomes vacuous — which is
+        # what `run_cohort` exists for, and what happened when a sixteenth
+        # catalogue entry redrew every profile.
+        turns = [
+            r
+            for session, _ in run_cohort(domain_name, "coupled")
+            for r in session.board.audit_log
+            if r.cause == "tutor"
+        ]
         assert turns, "the tutor spoke and none of it was recorded"
         for record in turns:
             assert record.evidence["text"]
@@ -442,9 +451,12 @@ class TestTheSupportLevelCannotMoveACohort:
         # The other half: it must not be inert *everywhere*, or a sitting could
         # not be read back against the support it was given — which is how both
         # collapses were found.
-        session, _ = run("calculus", "coupled", cohort={"max_items": 4})
+        # Cohort, for the same reason as above: one learner may never err.
         levels = {
-            r.evidence["level"] for r in session.board.audit_log if r.cause == "tutor"
+            r.evidence["level"]
+            for session, _ in run_cohort("calculus", "coupled", cohort={"max_items": 4})
+            for r in session.board.audit_log
+            if r.cause == "tutor"
         }
         assert levels, "no tutor turn was recorded"
         assert levels <= {"nudge", "targeted", "worked_step"}

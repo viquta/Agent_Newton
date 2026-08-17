@@ -86,7 +86,7 @@ items:
     bank: posttest
     prompt: "Differentiate: y = x^2/(x + 3)"
     answer: "(2*x*(x + 3) - x**2)/(x + 3)**2"
-    probes: [quotient_rule_order_swapped]
+    probes: [quotient_rule_order_swapped, quotient_rule_numerator_not_differentiated]
     params: { f: "x**2", g: "x + 3", df: "2*x", dg: "1" }
 
   - id: ca_chain_post1

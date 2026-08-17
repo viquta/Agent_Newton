@@ -96,6 +96,18 @@ misconceptions:
       (fg)' = f'g'.
     source: "NEEDS-SOURCE: Chu (2019) reports rule difficulties generally; the specific error is not itemised."
 
+  - id: quotient_rule_numerator_not_differentiated
+    concept_id: quotient_rule
+    description: >-
+      Applying the quotient rule with the numerator's first factor left
+      undifferentiated, giving (fg - fg')/g^2 instead of (f'g - fg')/g^2. The
+      structure of the rule is right and u' has been replaced by u.
+    source: "NEEDS-SOURCE: made by a person working this system on 2026-08-17, who
+      wrote (x^2*(x+4) - x^2*1)/(x+4)^2 for y = x^2/(x + 4) and was told only that
+      the terms were transposed, which was not the error. Real provenance rather
+      than literature; see quotient_rule_order_swapped, which was the only label
+      the concept had."
+
   - id: quotient_rule_order_swapped
     concept_id: quotient_rule
     description: >-
