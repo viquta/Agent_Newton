@@ -18,8 +18,9 @@ Three figures, and each one is the encoding the *shape of its data* asks for:
 
 ``prerequisite_sweep``
     Two quantities against the strength of the mechanism, in the same units and
-    on one axis. The point is the contrast — one moves, one does not — so both
-    are drawn, both direct-labelled.
+    on one axis. The point is the contrast in *slope*: both rise, and one rises
+    about six times more steeply. Same units and one axis is what makes that
+    readable, so both are drawn and both direct-labelled.
 
 ``arbitration_substitution``
     A stacked bar whose total height barely changes while its composition does.
@@ -115,7 +116,27 @@ def _bare(ax) -> None:  # noqa: ANN001
 
 
 def prerequisite_sweep(results: Path, out: Path) -> Path:
-    """What the mechanism moved, and what it did not."""
+    """How much the mechanism moved each quantity.
+
+    ⚠️ Rewritten 2026-08-17. It previously read "what the mechanism moved, and
+    what it did not", and was titled *"Making sequencing matter does not separate
+    the architectures"* — because the paired difference was flat at +0.0136
+    across the whole sweep while the ordering probe climbed. After a sixteenth
+    catalogue entry redrew every learner's profile, the paired difference rises
+    too: +0.0259 at k = 0 to +0.0350 at k = 1. **The figure was correct and the
+    argument written on it was not**, which is the failure mode a figure is most
+    prone to, since it travels without its caption.
+
+    What the data now says, and it is still a contrast: the ordering probe rises
+    by 0.0590 over the sweep and the paired difference by 0.0091 — about six
+    times less. Making sequencing matter moves *sequencing sensitivity* sharply
+    and the *architectural* difference only slightly.
+
+    ⚠️ The paired series carries a caveat the figure states on its face rather
+    than in a caption: the pilot gives N = 160 only 0.26 power for that effect,
+    so every point on the blue line is a significant result obtained under low
+    power. Drawn without that, the line reads as firmer than it is.
+    """
     data = json.loads((results / "sweep_prerequisites" / "summary.json").read_text())
     ks = [point["k"] for point in data["curve"]]
     ordering = [point["ordering"]["mean_difference"] for point in data["curve"]]
@@ -146,9 +167,20 @@ def prerequisite_sweep(results: Path, out: Path) -> Path:
     ax.set_xlim(-0.04, 1.42)
     ax.set_xlabel("strength of prerequisite dependence (k)")
     ax.set_ylabel("difference in remediation")
-    ax.set_title("Making sequencing matter does not separate the architectures",
-                 loc="left")
+    ax.set_title(
+        "Prerequisite dependence moves sequencing sharply, the architectures little",
+        loc="left",
+    )
     ax.set_xticks(ks)
+    # On the figure rather than in a caption. The direction convention learned
+    # from `paired_discordance` applies to strength too: a figure has no
+    # footnote, so a qualifier it needs has to be inside it.
+    ax.annotate(
+        "coupled–decoupled significant at every k, but at 0.26 power (N = 160)",
+        xy=(0, 0), xytext=(0, -38), textcoords="offset points",
+        xycoords="axes fraction", ha="left", va="top",
+        color=INK_SOFT, fontsize=7.5,
+    )
     figure.savefig(out / f"prerequisite_sweep.{SUFFIX}")
     plt.close(figure)
     return out / f"prerequisite_sweep.{SUFFIX}"
