@@ -269,6 +269,9 @@ class Blackboard:
             if excess > 0:
                 del self._state.error_trace[:excess]
 
+        if not correct:
+            self._doubt_prerequisites(concept_id)
+
         self._bump(
             "observation",
             f"{result.verdict.value} on {item_id}; "
@@ -400,6 +403,77 @@ class Blackboard:
                 mastery_after=after,
             )
         return seeded
+
+    def _doubt_prerequisites(self, concept_id: str) -> None:
+        """Charge part of a repeated failure to prerequisites believed mastered.
+
+        The prerequisite graph decides what may be *selected* and has never
+        informed what is *believed*. That asymmetry costs something specific: a
+        concept above ``theta_upper`` cannot be offered again, so the belief
+        that closed it can never be tested — and failing what is built on it is
+        the only evidence that will ever arrive.
+
+        Three conditions, and each rules out a different wrong reading:
+
+        * **Repeated**, and **once per episode**: it fires on the failure that
+          *reaches* ``arbitration.k_repeats`` in the rolling window, not on
+          every failure past it. One wrong answer says almost nothing about a
+          prerequisite; the same wall twice is the signal.
+
+          ⚠️ Once per episode is what makes ``alpha`` sweepable. Firing on every
+          subsequent failure made the effect **non-monotonic in alpha**: a
+          larger fraction pushed the estimate under ``theta_upper`` sooner, the
+          guard below then skipped it, and it fired fewer times — so 0.25 left a
+          prerequisite *higher* than 0.15 did. A sweep over a parameter that
+          does not order its own outcomes measures nothing.
+        * **Immediate prerequisites only.** Attenuating through the closure
+          needs a decay factor nobody has measured, and would let one failure
+          reach the whole graph.
+        * **Only those above ``theta_upper``.** A prerequisite still in the
+          frontier needs no help — it will come round on its own, and nudging it
+          would double-count.
+
+        A fraction ``alpha`` of one negative observation, interpolated toward
+        what a full wrong answer would give. ``alpha`` of 0 leaves the estimate
+        exactly where it was, which is what every measured result was produced
+        under.
+
+        ⚠️ Writes no error event and no outcome. This is an inference, not
+        something the learner did: the trace is what the arbitration policy
+        counts repeats in, and an entry here would let one failure trigger
+        replans on evidence nobody produced.
+        """
+        alpha = self._config.bkt.prerequisite_doubt
+        if alpha <= 0.0:
+            return
+        failures = sum(
+            1 for event in self._state.error_trace if event.concept_id == concept_id
+        )
+        if failures != self._config.arbitration.k_repeats:
+            return
+
+        upper = self._config.zpd.theta_upper
+        for prerequisite in sorted(self._graph.prerequisites(concept_id)):
+            before = self.probability(prerequisite)
+            if before < upper:
+                continue
+            full = bkt.revise(before, False, self._config.bkt)
+            after = before + alpha * (full - before)
+            self._state.mastery[prerequisite] = after
+            # A doubted concept has not been demonstrated *since* being doubted,
+            # so a review of it may legitimately reopen again.
+            self._demonstrated.discard(prerequisite)
+            self._bump(
+                "doubt",
+                f"{failures} failures on {concept_id} with {prerequisite} believed "
+                f"mastered; P({prerequisite}) {before:.3f} -> {after:.3f}",
+                concept_id=prerequisite,
+                because_of=concept_id,
+                failures=failures,
+                alpha=alpha,
+                mastery_before=before,
+                mastery_after=after,
+            )
 
     def apply_decay(self, elapsed_days: float) -> int:
         """Let the model go stale over a gap between sessions. Returns the count.

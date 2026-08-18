@@ -117,3 +117,30 @@ the target rather than inability to route toward it. But routing toward that
 goal needs the posteriors, and honouring the emphasis needs the posteriors or
 the error trace, so a planner on the second view produces identical selections
 whichever emphasis was configured.
+
+
+## Doubt from the graph
+
+```python
+bkt.prerequisite_doubt   # 0.0 by default
+```
+
+The prerequisite graph constrains what may be *selected*. With this set above
+zero it also informs what is *believed*: the failure that reaches
+`arbitration.k_repeats` on a concept charges that fraction of one wrong answer
+to each **immediate** prerequisite the estimate currently puts above
+`theta_upper`.
+
+Only those above the band, because a prerequisite still in the frontier will
+come round on its own. Immediate only, because attenuating through the closure
+needs a decay factor nobody has measured. Once per episode rather than on every
+subsequent failure — otherwise the effect is not monotone in the parameter,
+since a larger fraction drops the estimate under the guard sooner and fires
+fewer times.
+
+Recorded under its own audit cause, `doubt`. It writes no error event and no
+outcome: it is an inference from the graph, not something the learner did.
+
+⚠️ Computing it needs the posteriors **and** the graph, so only the coupled
+configuration can do it. It is 0.0 in every experiment config, with a scan, and
+its strength is a swept parameter including zero.

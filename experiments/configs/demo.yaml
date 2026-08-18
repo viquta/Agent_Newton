@@ -100,6 +100,22 @@ bkt:
   p_transit: 0.20
   p_guess: 0.20
   p_slip: 0.10
+  # On here and nowhere else. Failing a concept twice charges a quarter of one
+  # wrong answer back to each immediate prerequisite the model calls mastered.
+  #
+  # A sitting is what asked for it: three failures on integration by
+  # substitution while chain rule sat at 0.952 and antiderivatives at 0.911 —
+  # both past theta_upper, so neither could be offered again, and neither moved.
+  # At 0.25 they land at 0.892 and 0.824 and both come back into the frontier,
+  # so the route passes through the basics again.
+  #
+  # A starting point, not a measured value. Lower and only the weaker of the two
+  # reopens; higher and one bad patch undoes a lot of standing belief. Judge it
+  # from a sitting.
+  #
+  # It must stay 0.0 for every cohort: only the coupled arm could do this, so a
+  # cohort running it would separate the arms by construction.
+  prerequisite_doubt: 0.25
 
 zpd:
   theta_lower: 0.70

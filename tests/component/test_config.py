@@ -350,3 +350,41 @@ class TestReviewOnRequestStaysOutOfExperiments:
         stray = tmp_path / "stray.yaml"
         stray.write_text("domain: toy_algebra\ncohort:\n  review_on_request: true\n")
         assert Config.from_yaml(stray).cohort.review_on_request
+
+
+class TestPrerequisiteDoubtStaysOutOfExperiments:
+    """⚠️ The most consequential of these scans, and the reason is the claim.
+
+    Charging a repeated failure back to a prerequisite needs the posteriors
+    *and* the graph, so the decoupled arm structurally cannot do it. A mechanism
+    aimed squarely at what the other arm lacks would separate the arms **by
+    construction** — which the prerequisite-dependence sweep names explicitly as
+    the follow-up not to go looking for.
+
+    So it is off here, and if it is ever run in a cohort its strength must be
+    swept across a range **including zero**, with the whole sweep reported. A
+    single favourable point would be assuming the conclusion.
+    """
+
+    def _experiment_configs(self) -> list[Path]:
+        return sorted(
+            path
+            for path in CONFIG_DIR.glob("*.yaml")
+            if path.name not in HUMAN_CONFIGS
+        )
+
+    def test_no_experiment_config_doubts_prerequisites(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert config.bkt.prerequisite_doubt == 0.0, (
+                f"{path.name} charges failures back to prerequisites; only one "
+                f"arm can do that, so it would separate them by construction"
+            )
+
+    def test_the_default_is_off(self) -> None:
+        assert Config().bkt.prerequisite_doubt == 0.0
+
+    def test_the_check_can_fail(self, tmp_path: Path) -> None:
+        stray = tmp_path / "stray.yaml"
+        stray.write_text("domain: toy_algebra\nbkt:\n  prerequisite_doubt: 0.25\n")
+        assert Config.from_yaml(stray).bkt.prerequisite_doubt == 0.25

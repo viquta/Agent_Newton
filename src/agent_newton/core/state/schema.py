@@ -38,7 +38,19 @@ from pydantic import BaseModel, Field
 #: nothing, and because a transcript without it cannot show what the learner was
 #: actually taught.
 Cause = Literal[
-    "observation", "seed", "decay", "plan", "replan", "reset", "annotation", "tutor"
+    "observation",
+    "seed",
+    "decay",
+    "plan",
+    "replan",
+    "reset",
+    "annotation",
+    "tutor",
+    # An inference *about* the learner drawn from the graph rather than from
+    # something they did. Its own cause so anything counting what the learner
+    # did can leave it out — it is not an observation, and reporting it as one
+    # would credit them with an attempt nobody made.
+    "doubt",
 ]
 
 

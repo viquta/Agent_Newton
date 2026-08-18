@@ -693,3 +693,128 @@ class TestTheFloorStillPlacesAFreshConcept:
 
         band = Config().zpd
         assert hint_level(self._fresh(0.40), 0, band) is HintLevel.TARGETED
+
+
+class TestFailingWhatIsBuiltOnAConceptCastsDoubtOnIt:
+    """The prerequisite graph informs belief, not only selection.
+
+    From a sitting: three failures on integration by substitution while the
+    model held chain rule at 0.952 and antiderivatives at 0.911 — both above
+    ``theta_upper``, so neither could ever be offered again, and neither moved.
+
+    ⚠️ Off by default and off for every cohort. Computing it needs the
+    posteriors *and* the graph, so the decoupled arm cannot do it, and a
+    mechanism aimed at what the other arm lacks separates the arms by
+    construction. Its strength is a swept parameter including zero.
+    """
+
+    #: The sitting's own figures.
+    BEFORE = {"chain_rule": 0.952, "antiderivative": 0.911}
+
+    def _after(self, alpha: float, failures: int = 3):
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        config = Config(domain="calculus")
+        config.bkt.prerequisite_doubt = alpha
+        board = new_blackboard("victor", 1, domain.concepts, config)
+        for concept_id in domain.concepts.ids():
+            board.state.mastery[concept_id] = 0.95
+        board.state.mastery.update(self.BEFORE)
+        board.state.mastery["integration_by_substitution"] = 0.40
+        for _ in range(failures):
+            board.record_observation(
+                item_id="ca_usub_p1",
+                concept_id="integration_by_substitution",
+                result=VerificationResult(Verdict.INCORRECT, "x"),
+                misconception_label="usub_forgets_du",
+                attempt=0,
+                response="x",
+            )
+        return board
+
+    def test_off_by_default_nothing_moves(self) -> None:
+        board = self._after(alpha=0.0)
+        for concept_id, before in self.BEFORE.items():
+            assert board.probability(concept_id) == pytest.approx(before)
+
+    def test_the_prerequisites_come_back_into_reach(self) -> None:
+        board = self._after(alpha=0.25)
+        assert "chain_rule" in board.frontier
+        assert "antiderivative" in board.frontier
+
+    def test_a_single_failure_is_not_enough(self) -> None:
+        board = self._after(alpha=0.5, failures=1)
+        for concept_id, before in self.BEFORE.items():
+            assert board.probability(concept_id) == pytest.approx(before)
+
+    @pytest.mark.parametrize("alpha", [0.05, 0.1, 0.15, 0.25, 0.5, 1.0])
+    def test_the_effect_orders_with_the_parameter(self, alpha: float) -> None:
+        """⚠️ Monotone in ``alpha``, which the first implementation was not.
+
+        Firing on every failure past the threshold let a larger fraction push
+        the estimate under ``theta_upper`` sooner, where the guard skipped it —
+        so 0.25 left a prerequisite *higher* than 0.15 did. A sweep over a
+        parameter that does not order its own outcomes measures nothing.
+        """
+        stronger = self._after(alpha).probability("chain_rule")
+        weaker = self._after(alpha / 2).probability("chain_rule")
+        assert stronger <= weaker
+
+    def test_it_fires_once_however_long_the_failing_goes_on(self) -> None:
+        three = self._after(alpha=0.5, failures=3).probability("chain_rule")
+        eight = self._after(alpha=0.5, failures=8).probability("chain_rule")
+        assert three == pytest.approx(eight)
+
+    def test_a_prerequisite_still_in_the_frontier_is_left_alone(self) -> None:
+        """It needs no help — it will come round on its own, and nudging it
+        would count the same failure twice."""
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        config = Config(domain="calculus")
+        config.bkt.prerequisite_doubt = 0.5
+        board = new_blackboard("victor", 1, domain.concepts, config)
+        for concept_id in domain.concepts.ids():
+            board.state.mastery[concept_id] = 0.95
+        board.state.mastery["chain_rule"] = 0.50
+        board.state.mastery["integration_by_substitution"] = 0.40
+        for _ in range(3):
+            board.record_observation(
+                item_id="ca_usub_p1",
+                concept_id="integration_by_substitution",
+                result=VerificationResult(Verdict.INCORRECT, "x"),
+                attempt=0,
+                response="x",
+            )
+        assert board.probability("chain_rule") == pytest.approx(0.50)
+
+    def test_it_reaches_immediate_prerequisites_only(self) -> None:
+        # Attenuating through the closure needs a decay factor nobody has
+        # measured, and would let one failure reach the whole graph.
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        immediate = domain.concepts.prerequisites("integration_by_substitution")
+        distant = domain.concepts.all_prerequisites("integration_by_substitution") - immediate
+        assert distant, "no distant prerequisite to check against"
+        board = self._after(alpha=0.5)
+        for concept_id in distant:
+            assert board.probability(concept_id) == pytest.approx(0.95)
+
+    def test_it_writes_no_error_event_and_no_outcome(self) -> None:
+        """An inference is not something the learner did.
+
+        The trace is what the arbitration policy counts repeats in, and the
+        outcome stream is what the decoupled view is built from.
+        """
+        plain = self._after(alpha=0.0)
+        doubted = self._after(alpha=0.5)
+        assert len(doubted.state.error_trace) == len(plain.state.error_trace)
+        assert doubted.state.outcomes == plain.state.outcomes
+
+    def test_it_is_recorded_under_its_own_cause(self) -> None:
+        board = self._after(alpha=0.5)
+        doubts = [r for r in board.audit_log if r.cause == "doubt"]
+        assert {r.evidence["concept_id"] for r in doubts} == set(self.BEFORE)
+        assert all(r.evidence["because_of"] == "integration_by_substitution" for r in doubts)

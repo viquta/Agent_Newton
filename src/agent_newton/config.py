@@ -249,6 +249,42 @@ class BKTConfig(BaseModel):
                 f"(got {self.p_guess} + {self.p_slip}); evidence would update backwards"
             )
         return self
+    #: How much of a *repeated* failure on a concept is charged to the
+    #: prerequisites the model already believes are mastered. 0.0 is off, and
+    #: off is what every measured result was produced under.
+    #:
+    #: The gap it closes: the prerequisite graph constrains what may be
+    #: *selected* and never informs what is *believed*. A learner failed
+    #: integration by substitution three times while the model held chain rule
+    #: at 0.95 and antiderivatives at 0.91 — both above ``theta_upper``, so
+    #: neither could ever be offered again, and neither moved. Their own words:
+    #: "if they have mastered the basics, but then fail in the more advanced
+    #: stuff, the system should see that maybe their basics are not so well
+    #: mastered after all."
+    #:
+    #: Doubt rather than blame, and the distinction is the whole design. The
+    #: direct evidence usually belongs to the advanced concept itself — that
+    #: sitting's errors were all labelled ``usub_forgets_du``, a u-substitution
+    #: misconception. What justifies touching a prerequisite is weaker: a belief
+    #: above ``theta_upper`` has been measured unreliable (a sitting ended with
+    #: three such concepts the held-out post-test showed the learner could not
+    #: do) and is *unfalsifiable*, because the band will never offer it again.
+    #: Failing something built on it is the only evidence that can still arrive.
+    #: So a fraction of one observation, after the failure has repeated.
+    #:
+    #: ⚠️ **Its strength is a swept parameter including zero, and that is not
+    #: optional.** Computing it needs the posteriors *and* the graph, so the
+    #: decoupled arm structurally cannot do it — a mechanism aimed at what the
+    #: other arm lacks would separate the arms by construction, which is the
+    #: follow-up the prerequisite-dependence sweep names as a trap. Off for
+    #: every cohort, with a scan; if it is ever swept, report the whole sweep
+    #: and never quote a favourable point as the coupled arm winning.
+    prerequisite_doubt: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+#: How much of a repeated failure is charged to the prerequisites the model
+#: already calls mastered. See :class:`BKTConfig.prerequisite_doubt`.
+PrerequisiteDoubt = float
 
 
 class ZPDConfig(BaseModel):
