@@ -1,14 +1,14 @@
 {
   "domain": "calculus",
   "gold_set": "tests/fixtures/gold/calculus_verifier_cases.yaml",
-  "item_bank_hash": "b124ef0f3134b1d8",
-  "cases": 88,
-  "accuracy": 0.9659090909090909,
+  "item_bank_hash": "587deac28ed7ca79",
+  "cases": 91,
+  "accuracy": 0.967032967032967,
   "by_kind": {
     "canonical": 12,
     "equivalent": 41,
-    "wrong": 28,
-    "unreadable": 7
+    "wrong": 30,
+    "unreadable": 8
   },
   "false_negative_rate": 0.04878048780487805,
   "false_negatives_scored_incorrect": [],
@@ -16,7 +16,7 @@
     "gv_stat_written_as_equations",
     "gv_impl_written_as_equation"
   ],
-  "false_accept_rate": 0.03571428571428571,
+  "false_accept_rate": 0.03333333333333333,
   "false_accepts": [
     "gv_fp_restates_the_question"
   ],
@@ -25,8 +25,8 @@
   "resolved": [],
   "confusion": {
     "correct -> correct": 51,
-    "incorrect -> incorrect": 27,
-    "unparseable -> unparseable": 7,
+    "incorrect -> incorrect": 29,
+    "unparseable -> unparseable": 8,
     "incorrect -> correct": 1,
     "correct -> unparseable": 2
   }

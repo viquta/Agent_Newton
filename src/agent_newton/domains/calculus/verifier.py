@@ -153,6 +153,110 @@ def parse(text: str) -> sympy.Expr:
     return expr
 
 
+def _atom_end(text: str, start: int) -> int | None:
+    """End of one atom beginning at ``start``, or None if none begins there.
+
+    An atom is a name, a number or a bracketed group, with an optional
+    exponent. Enough to recognise the shape of a denominator; this is not a
+    parser and does not need to be one.
+    """
+    index = start
+    if index >= len(text):
+        return None
+    if text[index] == "(":
+        depth = 0
+        while index < len(text):
+            if text[index] == "(":
+                depth += 1
+            elif text[index] == ")":
+                depth -= 1
+                if depth == 0:
+                    index += 1
+                    break
+            index += 1
+        else:
+            return None
+    elif text[index].isalpha() or text[index] == "_":
+        while index < len(text) and (text[index].isalnum() or text[index] == "_"):
+            index += 1
+    elif text[index].isdigit():
+        while index < len(text) and (text[index].isdigit() or text[index] == "."):
+            index += 1
+    else:
+        return None
+
+    # An exponent belongs to the atom: "y^2" is one factor, not two.
+    probe = index
+    while probe < len(text) and text[probe].isspace():
+        probe += 1
+    if text.startswith("**", probe):
+        probe += 2
+    elif probe < len(text) and text[probe] == "^":
+        probe += 1
+    else:
+        return index
+    while probe < len(text) and text[probe].isspace():
+        probe += 1
+    if text[probe : probe + 1] == "-":
+        probe += 1
+    end = _atom_end(text, probe)
+    return index if end is None else end
+
+
+def _tighter_denominator(text: str) -> str | None:
+    """The reading where implicit multiplication after ``/`` binds tighter.
+
+    ``-x/3y`` returns ``-x/(3y)``. None when there is nothing to reinterpret.
+
+    Why this exists: ``a/bc`` has two standard readings. Formal precedence is
+    left to right, so sympy — and Python, and every CAS — reads ``(a/b)*c``.
+    Handwritten mathematics and most textbooks read ``a/(bc)``. Neither is
+    wrong, which is the problem: the verifier cannot decide what the learner
+    meant, and it must not pretend it can. See :meth:`SymbolicVerifier.verify`
+    for what is done about it.
+
+    Only a run of **two or more** juxtaposed atoms counts. ``a/(bc)`` and
+    ``a/b*c`` are already unambiguous and are left alone.
+    """
+    out: list[str] = []
+    index = 0
+    changed = False
+    while index < len(text):
+        char = text[index]
+        out.append(char)
+        index += 1
+        if char != "/":
+            continue
+
+        gap = index
+        while index < len(text) and text[index].isspace():
+            index += 1
+        run_start = index
+        atoms = 0
+        while index < len(text):
+            end = _atom_end(text, index)
+            if end is None:
+                break
+            atoms += 1
+            index = end
+            probe = index
+            while probe < len(text) and text[probe].isspace():
+                probe += 1
+            # Another atom with no operator between: implicit multiplication.
+            if probe < len(text) and _atom_end(text, probe) is not None:
+                index = probe
+                continue
+            break
+
+        if atoms >= 2:
+            out.append(f"({text[run_start:index]})")
+            changed = True
+        else:
+            out.append(text[gap:index])
+
+    return "".join(out) if changed else None
+
+
 def parse_answer(text: str) -> tuple[sympy.Expr, ...]:
     """Parse an answer that may name several values, e.g. ``"0, 2"``.
 
@@ -295,9 +399,46 @@ class SymbolicVerifier:
         # points — a verdict must not vary between runs.
         self._seed = seed
 
+    @staticmethod
+    def ambiguous_notation(text: str) -> str | None:
+        """The other reading of ``text``, if it has one. None when it does not.
+
+        Exposed so ``domain validate`` can refuse an *item* written the way a
+        learner is asked to correct. A domain whose notation carries no such
+        ambiguity simply does not offer this method.
+        """
+        return _tighter_denominator(text)
+
+    def _read(self, item: Item, text: str) -> tuple[sympy.Expr, ...]:
+        """Parse ``text`` into the values this item is compared on.
+
+        The ``up_to_constant`` normalisation lives here rather than in
+        :meth:`verify` because the alternative reading of an ambiguous response
+        has to receive exactly the same treatment. Applied to one and not the
+        other, the two readings would be compared on different terms and the
+        ambiguity check would report whichever mismatch that produced.
+        """
+        values = parse_answer(text)
+        if not item.params.get("up_to_constant"):
+            return values
+        # An antiderivative is determined only up to a constant, so two of them
+        # agree exactly when their derivatives do. Comparing the expressions
+        # instead charges an error to a learner who multiplied out and dropped a
+        # constant the question told them to omit — a correct answer scored as a
+        # mistake, which then writes an error event and aims a hint at a
+        # misconception nobody held.
+        #
+        # Opt-in per item, and deliberately **not** set on the antiderivative
+        # items: there the constant is the whole point, and ignoring it would
+        # make the misconception being probed invisible.
+        try:
+            return tuple(sympy.diff(value, _SYMBOLS["x"]) for value in values)
+        except Exception as exc:  # pragma: no cover - sympy internals
+            raise UnparseableResponse(f"could not differentiate {text!r}: {exc}") from exc
+
     def verify(self, item: Item, response: str) -> VerificationResult:
         try:
-            expected = parse_answer(item.answer)
+            expected = self._read(item, item.answer)
         except UnparseableResponse as exc:
             # The item is malformed, not the learner. `domain validate` exists
             # to catch this before a run starts.
@@ -306,29 +447,65 @@ class SymbolicVerifier:
             )
 
         try:
-            given = parse_answer(response)
+            given = self._read(item, response)
         except UnparseableResponse as exc:
             return VerificationResult(Verdict.UNPARSEABLE, item.answer, str(exc))
 
-        if item.params.get("up_to_constant"):
-            # An antiderivative is determined only up to a constant, so two of
-            # them agree exactly when their derivatives do. Comparing the
-            # expressions instead charges an error to a learner who multiplied
-            # out and dropped a constant the question told them to omit — a
-            # correct answer scored as a mistake, which then writes an error
-            # event and aims a hint at a misconception nobody held.
-            #
-            # Opt-in per item, and deliberately **not** set on the
-            # antiderivative items: there the constant is the whole point, and
-            # ignoring it would make the misconception being probed invisible.
-            try:
-                expected = tuple(sympy.diff(e, _SYMBOLS["x"]) for e in expected)
-                given = tuple(sympy.diff(g, _SYMBOLS["x"]) for g in given)
-            except Exception as exc:  # pragma: no cover - sympy internals
-                return VerificationResult(
-                    Verdict.UNPARSEABLE, item.answer, f"could not differentiate: {exc}"
-                )
+        result = self._compare(item, expected, given, response)
+        if result.verdict is not Verdict.INCORRECT:
+            return result
 
+        # ``a/bc`` has two standard readings and they disagree here. Formal
+        # precedence gives ``(a/b)*c``, which is what was just scored; ordinary
+        # mathematical writing gives ``a/(bc)``, and under that reading the
+        # answer is right. The verifier cannot tell which was meant, so it must
+        # not decide — a learner who wrote the right thing in the ordinary
+        # notation was told three times they were wrong, and each time it
+        # lowered their estimate, entered the error trace and produced a
+        # misconception label naming an error they had not made.
+        #
+        # Reported as UNPARSEABLE for the reason prose is: the verifier failed
+        # to measure. It costs no attempt, updates no estimate and writes no
+        # error event, and the learner is told to bracket it.
+        #
+        # ⚠️ The message names both readings and says nothing about which is
+        # right, and that restraint is the point. This verdict costs nothing, so
+        # "the second reading is the right one" would be the answer handed over
+        # for free — the same free answer a worked step was once giving away.
+        # Bracketed either way, the next attempt is graded on its merits.
+        #
+        # ⚠️ Only reachable from INCORRECT, and only when the other reading is
+        # *correct*. An answer wrong under both readings stays wrong — the
+        # notation is not the reason — and a correct answer can never be turned
+        # into anything else by this.
+        bracketed = _tighter_denominator(response)
+        if bracketed is None:
+            return result
+        try:
+            alternative = self._read(item, bracketed)
+        except UnparseableResponse:
+            return result
+        if len(alternative) != len(expected):
+            return result
+        if self._compare(item, expected, alternative, bracketed).verdict is Verdict.CORRECT:
+            return VerificationResult(
+                Verdict.UNPARSEABLE,
+                item.answer,
+                f"{response!r} can be read two ways, and they are different "
+                f"expressions: as written, only the first factor after the "
+                f"division is the denominator; written {bracketed!r}, the whole "
+                f"product is. Add brackets so it says which you meant.",
+            )
+        return result
+
+    def _compare(
+        self,
+        item: Item,
+        expected: tuple[sympy.Expr, ...],
+        given: tuple[sympy.Expr, ...],
+        source: str,
+    ) -> VerificationResult:
+        """Match each value the learner gave against one the item expects."""
         if len(given) != len(expected):
             return VerificationResult(
                 Verdict.INCORRECT,
@@ -336,7 +513,7 @@ class SymbolicVerifier:
                 f"expected {len(expected)} value(s), got {len(given)}",
             )
 
-        rng = random.Random(f"{self._seed}:{item.id}:{response}")
+        rng = random.Random(f"{self._seed}:{item.id}:{source}")
         remaining = list(expected)
         notes: list[str] = []
 

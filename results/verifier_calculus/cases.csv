@@ -70,6 +70,9 @@ gv_impl_unreduced,ca_impl_p1,equivalent,-2*x/(2*y),correct,correct,True,,
 gv_impl_sign_on_denominator,ca_impl_p1,equivalent,x/(-y),correct,correct,True,,
 gv_impl_omits_dydx,ca_impl_p1,wrong,-x,incorrect,incorrect,True,,
 gv_impl_sign_error,ca_impl_p1,wrong,x/y,incorrect,incorrect,True,,
+gv_impl_ambiguous_denominator,ca_impl_p1,unreadable,-x/1y,unparseable,unparseable,True,,"'-x/1y' can be read two ways, and they are different expressions: as written, only the first factor after the division is the denominator; written '-x/(1y)', the whole product is. Add brackets so it says which you meant."
+gv_impl_ambiguity_that_does_not_matter,ca_impl_p1,wrong,-x/1y**2,incorrect,incorrect,True,,
+gv_impl_explicit_multiplication_is_not_ambiguous,ca_impl_p1,wrong,-x/1*y,incorrect,incorrect,True,,
 gv_impl_written_as_equation,ca_impl_p1,equivalent,dy/dx = -x/y,correct,unparseable,False,"Same cause as gv_stat_written_as_equations: the parser reads one expression, and an equals sign is a syntax error. Unparseable rather than wrong, so nothing false enters the learner model.","could not parse 'dy/dx = -x/y': invalid syntax (<string>, line 1)"
 gv_impl_posttest_omits_dydx,ca_impl_post1,wrong,-x,incorrect,incorrect,True,,
 gv_anti_canonical,ca_anti_p1,canonical,x**3 + C,correct,correct,True,,

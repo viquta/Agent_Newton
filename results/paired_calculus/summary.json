@@ -4,8 +4,8 @@
   "seed": 20260811,
   "power_sized_on_seed": 20260807,
   "arms": {
-    "coupled": "20260818T082912_calculus_paired_coupled_145c39a1",
-    "decoupled": "20260818T082915_calculus_paired_decoupled_e4e20e6b"
+    "coupled": "20260818T095613_calculus_paired_coupled_145c39a1",
+    "decoupled": "20260818T095615_calculus_paired_decoupled_e4e20e6b"
   },
   "mean_items": {
     "coupled": 44.63125,
@@ -85,7 +85,7 @@
   ],
   "dose_matched": {
     "budget": 32,
-    "run_id": "20260818T082918_calculus_paired_dosematched_coupled_532631fc",
+    "run_id": "20260818T095618_calculus_paired_dosematched_coupled_532631fc",
     "mean_items": 32.0,
     "results": [
       {

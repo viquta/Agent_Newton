@@ -418,6 +418,37 @@ cases:
     response: "x/y"
     kind: wrong
 
+  - id: gv_impl_ambiguous_denominator
+    item_id: ca_impl_p1
+    response: "-x/1y"
+    kind: unreadable
+    note: >-
+      The ambiguity a person hit at the keyboard, on the variant whose answer is
+      -x/(3y): they wrote -x/3y, meant the whole product as the denominator, and
+      were told they were wrong three times. Formal precedence reads a/bc as
+      (a/b)*c and ordinary mathematical writing reads a/(bc); neither is wrong,
+      so the verifier cannot say what was demonstrated and must not guess. The
+      denominator here is 1y rather than 3y because this case is written against
+      the item as the bank states it.
+
+  - id: gv_impl_ambiguity_that_does_not_matter
+    item_id: ca_impl_p1
+    response: "-x/1y**2"
+    kind: wrong
+    note: >-
+      Wrong under both readings, so the notation is not the reason and the
+      verdict stands. This is the boundary of the case above: ambiguity is only
+      reported when it decides the verdict.
+
+  - id: gv_impl_explicit_multiplication_is_not_ambiguous
+    item_id: ca_impl_p1
+    response: "-x/1*y"
+    kind: wrong
+    note: >-
+      An explicit product after the division has one reading, and it is
+      (-x/1)*y. Nothing is rescued here — a learner who wrote this wrote
+      something else.
+
   - id: gv_impl_written_as_equation
     item_id: ca_impl_p1
     response: "dy/dx = -x/y"

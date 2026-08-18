@@ -14,10 +14,13 @@ from agent_newton.domains.base import Item, Verdict
 from agent_newton.domains.calculus.verifier import (
     SymbolicVerifier,
     UnparseableResponse,
+    _tighter_denominator,
     parse,
 )
 from agent_newton.domains.validate import (
+    ANSWERS_ARE_UNAMBIGUOUS,
     NEEDS_SOURCE,
+    RESOURCE_DRAWS,
     UNCONFIRMED_SOURCE,
     VARIANT_DRAWS,
     validate,
@@ -440,3 +443,174 @@ class TestEveryVariantAcceptsEquivalentAnswers:
             f"unreadable equivalent forms outside the known root-list case: "
             f"{sorted(unreadable - {'ca_stat_p1'})}"
         )
+
+
+class TestNotationWithTwoReadings:
+    """``a/bc`` means ``(a/b)*c`` formally and ``a/(bc)`` in ordinary writing.
+
+    Found in a sitting. The learner wrote ``-x/3y`` for an item whose answer is
+    ``-x/(3*y)``, was told they were wrong, wrote ``-2x/6y``, and was told again
+    — and each verdict lowered the estimate, entered the error trace and
+    produced ``implicit_diff_omits_dydx``, naming an error they had not made.
+    The tutor then aimed a hint at it.
+
+    Neither reading is wrong, which is exactly why the verifier must not choose
+    one. It reports that it could not measure, for the reason prose does.
+    """
+
+    def _impl(self, calculus):
+        # The variant the sitting met: answer -x/(3*y).
+        base = calculus.items.get("ca_impl_p1")
+        return calculus.templates["ca_impl_p1"].variant(base, 5)
+
+    def test_the_response_from_the_sitting(self, calculus) -> None:
+        found = SymbolicVerifier().verify(self._impl(calculus), "-x/3y")
+        assert found.verdict is Verdict.UNPARSEABLE
+        assert "brackets" in found.detail
+
+    def test_and_the_unsimplified_one_that_followed(self, calculus) -> None:
+        found = SymbolicVerifier().verify(self._impl(calculus), "-2x/6y")
+        assert found.verdict is Verdict.UNPARSEABLE
+
+    def test_it_costs_nothing_and_says_nothing_about_the_learner(
+        self, calculus
+    ) -> None:
+        # The property that makes this the right verdict rather than a lenient
+        # one: UNPARSEABLE is not evidence, so no estimate moves, no error event
+        # is written and no diagnosis is asked for.
+        found = SymbolicVerifier().verify(self._impl(calculus), "-x/3y")
+        assert not found.is_evidence
+
+    def test_brackets_settle_it_either_way(self, calculus) -> None:
+        item = self._impl(calculus)
+        assert SymbolicVerifier().verify(item, "-x/(3y)").verdict is Verdict.CORRECT
+        assert SymbolicVerifier().verify(item, "-x/(3*y)").verdict is Verdict.CORRECT
+
+    def test_an_explicit_product_has_one_reading_and_keeps_its_verdict(
+        self, calculus
+    ) -> None:
+        # `-x/3*y` is unambiguous and means (-x/3)*y. A learner who wrote that
+        # wrote something else, and nothing here rescues them.
+        found = SymbolicVerifier().verify(self._impl(calculus), "-x/3*y")
+        assert found.verdict is Verdict.INCORRECT
+
+    def test_wrong_under_both_readings_stays_wrong(self, calculus) -> None:
+        # The boundary. Ambiguity is reported only when it decides the verdict;
+        # where both readings are wrong the notation is not the reason, and
+        # converting this to unreadable would lose a real error.
+        found = SymbolicVerifier().verify(self._impl(calculus), "-2x/3y^2")
+        assert found.verdict is Verdict.INCORRECT
+
+    def test_the_message_does_not_say_which_reading_is_right(
+        self, calculus
+    ) -> None:
+        """This verdict costs no attempt, so saying would be a free answer.
+
+        The same failure a worked step once had: the reply assembled the answer
+        and all that was left was to type it back.
+        """
+        found = SymbolicVerifier().verify(self._impl(calculus), "-x/3y")
+        assert "-x/(3y)" in found.detail  # the bracketing is shown
+        for tell in ("right", "correct", "is the answer"):
+            assert tell not in found.detail.lower()
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "-x/(3*y)",  # already bracketed
+            "-x/3*y",  # explicit product
+            "x/y**2",  # one atom, exponent included
+            "(2*x*(x + 1) - x**2)/(x + 1)**2",  # a real item answer
+            "x**3 + C",
+            "5*x**4",
+        ],
+    )
+    def test_unambiguous_forms_are_left_alone(self, text: str) -> None:
+        assert _tighter_denominator(text) is None
+
+    @pytest.mark.parametrize(
+        "text,expected",
+        [
+            ("-x/3y", "-x/(3y)"),
+            ("-2x/6y", "-2x/(6y)"),
+            ("x/2y + 3", "x/(2y) + 3"),
+            ("sin(x)/2x", "sin(x)/(2x)"),
+        ],
+    )
+    def test_the_other_reading_is_what_a_reader_would_take(
+        self, text: str, expected: str
+    ) -> None:
+        assert _tighter_denominator(text) == expected
+
+    def test_dy_dx_is_notation_and_not_a_division(self) -> None:
+        # It would otherwise read as d*y divided by d*x and be "ambiguous" on
+        # every implicit-differentiation answer in the bank.
+        assert _tighter_denominator("dy/dx") is None
+
+
+class TestNoSimulatedLearnerCanWriteAnAmbiguousAnswer:
+    """Which is what makes the rule above inert for every measured result.
+
+    An INCORRECT becoming UNPARSEABLE would stop being evidence: BKT would not
+    update and no error event would be written. If a buggy rule could produce
+    one, every cohort number would move. None can — the rules all emit explicit
+    products — and this asserts it rather than trusting it.
+    """
+
+    def test_no_item_answer_or_rule_output_has_two_readings(self, calculus) -> None:
+        checked = 0
+        for item in calculus.items.all():
+            forms = [item]
+            template = calculus.templates.get(item.id)
+            if template is not None:
+                # Deeper than `domain validate` goes, because this costs nothing
+                # — no verifier calls, only the scanner — and a family is
+                # unbounded, so more draws is strictly more evidence.
+                forms += [
+                    template.variant(item, draw) for draw in range(1, RESOURCE_DRAWS)
+                ]
+            for form in forms:
+                texts = [form.answer]
+                for label in form.probes:
+                    rule = calculus.buggy_rule(label)
+                    if rule is not None:
+                        texts.append(rule.apply(form))
+                for text in texts:
+                    if not text:
+                        continue
+                    checked += 1
+                    assert _tighter_denominator(text) is None, (
+                        f"{form.id} can produce {text!r}, which has two readings "
+                        f"— a simulated learner would now go unmeasured on it"
+                    )
+        assert checked > 2000, "the sweep covered too little to mean anything"
+
+
+class TestAnItemMayNotShipAnAmbiguousAnswer:
+    """A learner is asked to bracket. An item has no such excuse.
+
+    It is the thing being compared against, so an ambiguous one would be
+    compared under whichever reading the parser happened to take.
+    """
+
+    def test_the_bank_is_clean(self, calculus) -> None:
+        assert not [
+            p for p in validate(calculus).problems if p.check == ANSWERS_ARE_UNAMBIGUOUS
+        ]
+
+    def test_the_check_can_fail(self, calculus) -> None:
+        from dataclasses import replace
+
+        from agent_newton.domains.content import YamlItemBank
+
+        stray = replace(calculus.items.get("ca_impl_p1"), answer="-x/3y")
+        broken = replace(
+            calculus,
+            items=YamlItemBank(
+                [stray]
+                + [i for i in calculus.items.all() if i.id != "ca_impl_p1"]
+            ),
+        )
+        report = validate(broken)
+        assert not report.ok
+        assert [p for p in report.problems if p.check == ANSWERS_ARE_UNAMBIGUOUS]

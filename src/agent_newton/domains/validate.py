@@ -35,6 +35,7 @@ GUESSABLE_FAMILY = "guessable_family"
 CONCEPT_HAS_A_RESOURCE = "concept_has_a_resource"
 RESOURCE_KEEPS_ITS_DISTANCE = "resource_keeps_its_distance"
 RESOURCE_IS_PLAIN_TEXT = "resource_is_plain_text"
+ANSWERS_ARE_UNAMBIGUOUS = "answers_are_unambiguous"
 
 #: Draws checked per template. A learner works a concept until it is mastered,
 #: which in a full session runs to a handful of repetitions on the hardest ones;
@@ -343,8 +344,54 @@ def validate(domain: Domain) -> ValidationReport:
         _check_guessable(report, item_id, template, base)
 
     _check_resources(domain, report)
+    _check_unambiguous_answers(domain, report)
 
     return report
+
+
+def _check_unambiguous_answers(domain: Domain, report: ValidationReport) -> None:
+    """No stated answer may be written so that it has two readings.
+
+    ``a/bc`` means ``(a/b)*c`` by formal precedence and ``a/(bc)`` in ordinary
+    mathematical writing. A learner writing one is told so and asked to bracket
+    it — the verifier cannot know which was meant. An *item* has no such excuse:
+    it is the thing being compared against, and an ambiguous one would be
+    compared under whichever reading the parser happened to take.
+
+    Reaches the domain through an optional hook, so a domain whose notation has
+    no such ambiguity simply declines to look.
+
+    ⚠️ **Answers only, never prose.** The first version also read the resources'
+    formula and worked-example text, and flagged a sentence containing
+    ``dx = du/5.`` — the scanner is looking for expression structure and prose
+    supplies it by accident, in every sentence with a slash in it. A check that
+    reports its own noise gets ignored, and then it is not a check.
+    """
+    ambiguous = getattr(domain.verifier, "ambiguous_notation", None)
+    if ambiguous is None:
+        return
+
+    def _check(what: str, where: str, text: str) -> None:
+        other = ambiguous(text)
+        if other is not None:
+            report.add(
+                ANSWERS_ARE_UNAMBIGUOUS,
+                f"{what} {where!r} is written {text!r}, which also reads as "
+                f"{other!r}. Bracket it: the comparison would otherwise depend "
+                f"on which reading the parser takes.",
+            )
+
+    for item in domain.items.all():
+        _check("the answer to", item.id, item.answer)
+        template = domain.templates.get(item.id)
+        if template is None:
+            continue
+        for draw in range(1, VARIANT_DRAWS):
+            _check(f"draw {draw} of", item.id, template.variant(item, draw).answer)
+
+    if domain.resources is not None:
+        for resource in domain.resources.all():
+            _check("the example answer for", resource.concept_id, resource.example_answer)
 
 
 def _numbers(text: str) -> list[int]:
