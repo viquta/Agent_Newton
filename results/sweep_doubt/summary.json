@@ -1,0 +1,203 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260819,
+  "recorded_baseline": {
+    "remediation": 0.0259,
+    "gain": 0.0021,
+    "goals_mastered": 3.775,
+    "distance_to_goal": -5.9625
+  },
+  "baseline_paired": {
+    "remediation": 0.041931927622617785,
+    "gain": 0.002916666666666666,
+    "goals_mastered": 3.84375,
+    "distance_to_goal": -5.99375
+  },
+  "curve": [
+    {
+      "alpha": 0.0,
+      "k": 0.0,
+      "within_arm": {
+        "mean_difference": 0.0,
+        "sign_p": 1.0,
+        "discordant": [
+          0,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.041931927622617785
+      }
+    },
+    {
+      "alpha": 0.25,
+      "k": 0.0,
+      "within_arm": {
+        "mean_difference": 0.003266867509819979,
+        "sign_p": 0.25,
+        "discordant": [
+          3,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.04519879513243776
+      }
+    },
+    {
+      "alpha": 0.5,
+      "k": 0.0,
+      "within_arm": {
+        "mean_difference": 0.003266867509819979,
+        "sign_p": 0.25,
+        "discordant": [
+          3,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.04519879513243776
+      }
+    },
+    {
+      "alpha": 1.0,
+      "k": 0.0,
+      "within_arm": {
+        "mean_difference": -0.005481844210704686,
+        "sign_p": 0.75390625,
+        "discordant": [
+          4,
+          6
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.036450083411913095
+      }
+    },
+    {
+      "alpha": 0.0,
+      "k": 0.5,
+      "within_arm": {
+        "mean_difference": 0.0,
+        "sign_p": 1.0,
+        "discordant": [
+          0,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.04480838170535857
+      }
+    },
+    {
+      "alpha": 0.25,
+      "k": 0.5,
+      "within_arm": {
+        "mean_difference": 0.0033855549944457218,
+        "sign_p": 0.25,
+        "discordant": [
+          3,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.048193936699804284
+      }
+    },
+    {
+      "alpha": 0.5,
+      "k": 0.5,
+      "within_arm": {
+        "mean_difference": 0.0033855549944457218,
+        "sign_p": 0.25,
+        "discordant": [
+          3,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.048193936699804284
+      }
+    },
+    {
+      "alpha": 1.0,
+      "k": 0.5,
+      "within_arm": {
+        "mean_difference": -0.003917592937473673,
+        "sign_p": 0.75390625,
+        "discordant": [
+          4,
+          6
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.04089078876788489
+      }
+    },
+    {
+      "alpha": 0.0,
+      "k": 1.0,
+      "within_arm": {
+        "mean_difference": 0.0,
+        "sign_p": 1.0,
+        "discordant": [
+          0,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.05346836876565242
+      }
+    },
+    {
+      "alpha": 0.25,
+      "k": 1.0,
+      "within_arm": {
+        "mean_difference": 0.0017646240805318596,
+        "sign_p": 0.5,
+        "discordant": [
+          2,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.055232992846184284
+      }
+    },
+    {
+      "alpha": 0.5,
+      "k": 1.0,
+      "within_arm": {
+        "mean_difference": 0.0017646240805318596,
+        "sign_p": 0.5,
+        "discordant": [
+          2,
+          0
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.055232992846184284
+      }
+    },
+    {
+      "alpha": 1.0,
+      "k": 1.0,
+      "within_arm": {
+        "mean_difference": -0.0023744463832026954,
+        "sign_p": 0.75390625,
+        "discordant": [
+          4,
+          6
+        ]
+      },
+      "across_arms": {
+        "mean_difference": 0.05109392238244973
+      }
+    }
+  ],
+  "suspicious_at_zero": [
+    "alpha=0.25: +0.0033 at k = 0",
+    "alpha=0.5: +0.0033 at k = 0"
+  ]
+}
