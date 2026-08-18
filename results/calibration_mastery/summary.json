@@ -1,0 +1,137 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260811,
+  "bkt": {
+    "p_init": 0.15,
+    "p_transit": 0.2,
+    "p_guess": 0.2,
+    "p_slip": 0.1,
+    "prerequisite_doubt": 0.0
+  },
+  "theta_upper": 0.9,
+  "arms": [
+    {
+      "arm": "coupled",
+      "pairs": 2383,
+      "bins": [
+        {
+          "low": 0.2,
+          "high": 0.4,
+          "n": 2,
+          "mean_posterior": 0.23254223463713997,
+          "observed": 0.5,
+          "predicted": 0.362779564245998
+        },
+        {
+          "low": 0.4,
+          "high": 0.6,
+          "n": 26,
+          "mean_posterior": 0.5540983606557377,
+          "observed": 1.0,
+          "predicted": 0.5878688524590164
+        },
+        {
+          "low": 0.6,
+          "high": 0.7,
+          "n": 8,
+          "mean_posterior": 0.6621844355031256,
+          "observed": 0.625,
+          "predicted": 0.6635291048521879
+        },
+        {
+          "low": 0.7,
+          "high": 0.8,
+          "n": 4,
+          "mean_posterior": 0.7604621527142182,
+          "observed": 0.5,
+          "predicted": 0.7323235068999527
+        },
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "n": 31,
+          "mean_posterior": 0.8786391522587842,
+          "observed": 1.0,
+          "predicted": 0.8150474065811489
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "n": 2312,
+          "mean_posterior": 0.9696785900343878,
+          "observed": 0.9550173010380623,
+          "predicted": 0.8787750130240716
+        }
+      ],
+      "above_theta_upper": {
+        "pairs": 2312,
+        "wrong": 104,
+        "share_wrong": 0.04498269896193772,
+        "expected_wrong": 0.09999999999999998,
+        "concepts": [
+          "antiderivative",
+          "average_rate_of_change",
+          "chain_rule",
+          "derivative_from_first_principles",
+          "implicit_differentiation",
+          "instantaneous_rate_of_change",
+          "integration_by_substitution",
+          "limit_concept",
+          "limits_of_sequences",
+          "negative_fractional_exponents",
+          "polynomial_differentiation",
+          "power_rule",
+          "product_rule",
+          "quotient_rule",
+          "stationary_points"
+        ]
+      }
+    },
+    {
+      "arm": "decoupled",
+      "pairs": 2400,
+      "bins": [
+        {
+          "low": 0.8,
+          "high": 0.9,
+          "n": 2098,
+          "mean_posterior": 0.8786391522587842,
+          "observed": 0.9938036224976168,
+          "predicted": 0.8150474065811489
+        },
+        {
+          "low": 0.9,
+          "high": 1.0,
+          "n": 302,
+          "mean_posterior": 0.9261294125581785,
+          "observed": 0.6622516556291391,
+          "predicted": 0.8482905887907249
+        }
+      ],
+      "above_theta_upper": {
+        "pairs": 302,
+        "wrong": 102,
+        "share_wrong": 0.33774834437086093,
+        "expected_wrong": 0.09999999999999998,
+        "concepts": [
+          "antiderivative",
+          "average_rate_of_change",
+          "chain_rule",
+          "derivative_from_first_principles",
+          "implicit_differentiation",
+          "instantaneous_rate_of_change",
+          "integration_by_substitution",
+          "limit_concept",
+          "limits_of_sequences",
+          "negative_fractional_exponents",
+          "polynomial_differentiation",
+          "power_rule",
+          "product_rule",
+          "quotient_rule",
+          "stationary_points"
+        ]
+      }
+    }
+  ]
+}
