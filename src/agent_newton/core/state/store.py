@@ -60,6 +60,12 @@ class Blackboard:
         #: standing instruction, and a request that outlived the sitting it was
         #: made in would steer routing nobody had asked for.
         self._requested: frozenset[str] = frozenset()
+        #: Concepts answered correctly at least once in *this* sitting. Used to
+        #: end a review: reopening a concept is a check on the estimate that
+        #: closed it, and one demonstration is the check. Without this a
+        #: requested concept stayed selectable however well it went — a learner
+        #: reached 1.00 on one and was still being given it.
+        self._demonstrated: set[str] = set()
 
     # -- reading ----------------------------------------------------------
 
@@ -136,7 +142,9 @@ class Blackboard:
             return frozenset()
         upper = self._config.zpd.theta_upper
         return frozenset(
-            c for c in self._requested if self.probability(c) >= upper
+            c
+            for c in self._requested
+            if self.probability(c) >= upper and c not in self._demonstrated
         )
 
     def view(self, arm: str | None = None) -> FullStateView | ItemCorrectnessView:
@@ -236,6 +244,13 @@ class Blackboard:
 
         self._state.mastery[concept_id] = after
         self._state.outcomes.append(correct)
+        if correct:
+            # Ends a review of this concept, if one was open. Recorded here
+            # rather than inferred from the posterior because the posterior does
+            # not say *when*: a concept reopened at 0.96 is above the band from
+            # the first moment, and something has to mark that the learner has
+            # since shown it rather than merely been believed to know it.
+            self._demonstrated.add(concept_id)
 
         if not correct:
             self._state.error_trace.append(
@@ -338,11 +353,38 @@ class Blackboard:
         for concept_id, verdict in results:
             if verdict not in (Verdict.CORRECT, Verdict.INCORRECT):
                 continue
+            # Read before the seed writes, so "has this concept ever been
+            # measured" is still answerable. `probability` returns the prior for
+            # an unobserved concept, which is exactly the value that must not be
+            # mistaken for a demonstrated weakness.
+            observed = concept_id in self._state.mastery
             before = self.probability(concept_id)
             after = before
             for _ in range(weight):
                 after = bkt.revise(after, verdict is Verdict.CORRECT, self._config.bkt)
-            after = max(after, floor)
+            # ⚠️ The floor does two different jobs, and conflating them let a
+            # wrong answer *raise* the estimate.
+            #
+            # On a concept **never observed**, it is a placement: the learner
+            # sits at the prior, which is below `theta_lower / 2`, so without it
+            # every concept the pre-test flagged would open at `worked_step` and
+            # stay there. A sitting spent 41 steps that way. Nothing is
+            # discarded by moving it, because the prior is the absence of
+            # evidence rather than evidence of absence.
+            #
+            # On a concept **already observed**, it is a limit on the fall — and
+            # applied as a flat minimum it stopped being one. A learner who had
+            # got something wrong three times sat at 0.199, answered the
+            # pre-test item wrong, and the belief went *up* to 0.40: their
+            # demonstrated failure replaced by a standard placement above it.
+            # Reported from a sitting as the number jumping.
+            #
+            # So: place freely where nothing is known, and never raise past what
+            # the learner has already shown. Negative evidence must not be able
+            # to manufacture confidence — the sign inversion `bkt.revise` exists
+            # to prevent, arriving through a different door.
+            limit = min(floor, before) if observed else floor
+            after = max(after, limit)
             if ceiling is not None:
                 after = min(after, math.nextafter(ceiling, 0.0))
             self._state.mastery[concept_id] = after

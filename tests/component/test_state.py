@@ -557,3 +557,139 @@ class TestOneHeldOutItemMayNotDeclareMastery:
         capped, _ = self._seed(correct=False, ceiling=Config().zpd.theta_upper)
         uncapped, _ = self._seed(correct=False, ceiling=None)
         assert capped == uncapped
+
+
+class TestAWrongAnswerMayNotRaiseTheEstimate:
+    """``seed_floor`` was applied as a flat minimum, and that inverted its sign.
+
+    Reported from a sitting as the number jumping: three wrong answers left a
+    concept at 0.248, a fortnight's decay took it to 0.199, the learner answered
+    the pre-test item **wrong**, and the belief went **up** to 0.40.
+
+    The floor exists to stop a wrong answer crushing a concept to 0.0003, where
+    the scaffolding rule gives a worked step on every first attempt. That is a
+    limit on the fall. It must never manufacture confidence.
+    """
+
+    def _seeded(self, before: float, floor: float, correct: bool = False) -> float:
+        """Seed a concept that has **already been observed** at ``before``.
+
+        Setting it explicitly is what makes these cases the observed ones: an
+        untouched concept sits at the prior, and the floor is entitled to place
+        that anywhere — see ``TestTheFloorStillPlacesAFreshConcept``.
+        """
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        config = Config(domain="calculus")
+        board = new_blackboard("L1", 1, domain.concepts, config)
+        board.state.mastery["chain_rule"] = before
+        board.seed_from_test(
+            [("chain_rule", Verdict.CORRECT if correct else Verdict.INCORRECT)],
+            weight=3,
+            floor=floor,
+        )
+        return board.probability("chain_rule")
+
+    def test_the_sittings_own_numbers(self) -> None:
+        assert self._seeded(before=0.199, floor=0.40) <= 0.199
+
+    @pytest.mark.parametrize("before", [0.0005, 0.05, 0.199, 0.39])
+    def test_a_wrong_answer_never_raises_it(self, before: float) -> None:
+        assert self._seeded(before=before, floor=0.40) <= before
+
+    def test_the_floor_still_catches_a_fall_from_above_it(self) -> None:
+        # What it was built for: a concept believed known, missed on the test,
+        # must not land where the ladder collapses.
+        assert self._seeded(before=0.90, floor=0.40) == pytest.approx(0.40)
+
+    def test_without_a_floor_it_collapses(self) -> None:
+        # The failure the floor prevents, so the test above is not vacuous:
+        # below `theta_lower / 2` the scaffolding rule gives a worked step on
+        # every first attempt, and the ladder has no rungs left.
+        assert self._seeded(before=0.90, floor=0.0) < Config().zpd.theta_lower / 2
+
+    def test_a_correct_answer_is_untouched(self) -> None:
+        assert self._seeded(before=0.199, floor=0.40, correct=True) > 0.9
+
+
+class TestAReviewEndsWhenTheLearnerShowsTheConcept:
+    """Reopening is a check on the estimate, and one demonstration is the check.
+
+    Without this a requested concept stayed selectable however well it went. A
+    learner reached 1.00 on one and was still being given it, and left for the
+    post-test out of boredom.
+    """
+
+    def _board(self):
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        config = Config(domain="calculus")
+        config.cohort.review_on_request = True
+        board = new_blackboard("victor", 1, domain.concepts, config)
+        for concept_id in domain.concepts.all_prerequisites("implicit_differentiation"):
+            board.state.mastery[concept_id] = 0.85
+        board.state.mastery["implicit_differentiation"] = 0.965
+        board.record_request(["implicit_differentiation"])
+        return board
+
+    def _answer(self, board, correct: bool) -> None:
+        board.record_observation(
+            item_id="ca_impl_p1",
+            concept_id="implicit_differentiation",
+            result=VerificationResult(
+                Verdict.CORRECT if correct else Verdict.INCORRECT, "-x/y"
+            ),
+            attempt=0,
+            response="-x/y",
+        )
+
+    def test_it_is_open_until_something_is_shown(self) -> None:
+        board = self._board()
+        assert "implicit_differentiation" in board.frontier
+
+    def test_one_correct_answer_closes_it(self) -> None:
+        board = self._board()
+        self._answer(board, correct=True)
+        assert board.reviewing == frozenset()
+        assert "implicit_differentiation" not in board.frontier
+
+    def test_a_wrong_answer_does_not(self) -> None:
+        """It stays, and then it does not need to: the estimate has fallen and
+        the concept is in the frontier on its own terms, which is the whole
+        point of reopening it."""
+        board = self._board()
+        self._answer(board, correct=False)
+        assert "implicit_differentiation" in board.frontier
+        assert board.probability("implicit_differentiation") < 0.90
+
+
+class TestTheFloorStillPlacesAFreshConcept:
+    """The floor's other job, which the fix above must not take away.
+
+    On a concept never observed the learner sits at the prior — below
+    ``theta_lower / 2``, where every hint is a worked step. Placing it at the
+    floor discards nothing, because the prior is the absence of evidence rather
+    than evidence of absence. A sitting spent 41 steps at the top of the ladder
+    before this existed.
+    """
+
+    def _fresh(self, floor: float) -> float:
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        config = Config(domain="calculus")
+        board = new_blackboard("L1", 1, domain.concepts, config)
+        assert "chain_rule" not in board.state.mastery
+        board.seed_from_test([("chain_rule", Verdict.INCORRECT)], weight=3, floor=floor)
+        return board.probability("chain_rule")
+
+    def test_a_missed_concept_lands_on_the_floor(self) -> None:
+        assert self._fresh(0.40) == pytest.approx(0.40)
+
+    def test_which_leaves_the_ladder_room(self) -> None:
+        from agent_newton.core.pedagogy import HintLevel, hint_level
+
+        band = Config().zpd
+        assert hint_level(self._fresh(0.40), 0, band) is HintLevel.TARGETED
