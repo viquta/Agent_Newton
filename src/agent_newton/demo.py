@@ -49,7 +49,14 @@ from agent_newton.domains import registry
 from agent_newton.manifest import RunManifest
 from agent_newton.runs import new_run_dir
 from agent_newton.store import LearnerStore
-from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
+from agent_newton.core.pedagogy import Support
+from agent_newton.domains.base import (
+    ConceptResource,
+    Domain,
+    Item,
+    VerificationResult,
+    Verdict,
+)
 
 #: Where a mastery bar sits between "no idea" and "done".
 _BAR = 18
@@ -101,6 +108,27 @@ def _readable(expression: str) -> str:
     reading the stored form.
     """
     return expression.replace("**", "^").replace("*", "")
+
+
+def _question_body(item: Item, support: str | None) -> Text:
+    """The question, with whatever the rules decided to show beside it.
+
+    Above the question rather than below it, because it is meant to be read
+    first: the learner is far enough below the concept that the estimate says
+    the question alone is not a fair thing to be handed. Below it, it reads as a
+    hint about an attempt not yet made.
+
+    Shown on every attempt at the item, not only the first. It is not a reward
+    for failing and it is not escalation — the same material was already on the
+    screen when the question was posed, and taking it away on attempt two would
+    withdraw support at exactly the point the learner has shown they need it.
+    """
+    body = Text()
+    if support is not None:
+        body.append("Before you start\n", style="bold dim")
+        body.append(f"{support}\n\n", style="dim")
+    body.append(" ".join(item.prompt.split()), style="bold")
+    return body
 
 
 def question_title(
@@ -163,6 +191,17 @@ class DemoObserver(Watching):
         #: observer when a phase starts and ends, and adding a second channel
         #: for the same fact would let the two disagree.
         self.testing = False
+        #: Support offered with the current question, if any. Held rather than
+        #: printed on the spot because it belongs *inside* the question panel —
+        #: printed here it would appear above the board panel and a line of
+        #: replanning notes, which is not beside the question in any sense a
+        #: reader would recognise.
+        #:
+        #: Keyed on the item id so a stale offer cannot outlive the question it
+        #: was made for: the session offers at most once per item, and an
+        #: unkeyed field would keep showing the last concept's rule on every
+        #: question after it that got no offer of its own.
+        self._offered: tuple[str, str] | None = None
 
     def board_panel(self, board: Blackboard) -> Panel:
         graph = self._domain.concepts
@@ -219,6 +258,25 @@ class DemoObserver(Watching):
                     + Text(record.summary, style="dim magenta")
                 )
         self._seen_versions = len(board.audit_log)
+
+    def support_offered(
+        self, item: Item, support: Support, resource: ConceptResource
+    ) -> None:
+        """Hold the rule, and the example if the level carries one.
+
+        The session has already decided *whether* and *how much*; this only
+        decides where on the screen it goes. Kept that way deliberately — a
+        front end that could choose how much support to show would be a second
+        scaffolding policy, and only one of them would be the one the tests
+        check.
+        """
+        self._offered = (item.id, resource.shown(support.shows_example))
+
+    def support_for(self, item: Item) -> str | None:
+        """What was offered with this question, if anything was."""
+        if self._offered is None or self._offered[0] != item.id:
+            return None
+        return self._offered[1]
 
     def _remind(self, item: Item) -> None:
         """What this learner said about this concept before today.
@@ -1071,7 +1129,7 @@ def run_demo(
         console.print()
         console.print(
             Panel(
-                Text(" ".join(item.prompt.split()), style="bold"),
+                _question_body(item, observer.support_for(item)),
                 title=question_title(domain, item, attempt, testing=observer.testing),
                 border_style="cyan",
             )

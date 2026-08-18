@@ -19,17 +19,20 @@ from agent_newton.core.pedagogy import (
     HintLevel,
     TutorMove,
     hint_level,
-    next_required_move,
+    move_for,
 )
-from agent_newton.config import ZPDConfig
+from agent_newton.config import ScaffoldingPolicy, ZPDConfig
 from agent_newton.domains.base import Domain, Item
 
 
 class TemplateTutor:
     """Model-free tutor. Support level from the rules, target from the diagnosis."""
 
-    def __init__(self, band: ZPDConfig) -> None:
+    def __init__(
+        self, band: ZPDConfig, policy: ScaffoldingPolicy = "banded"
+    ) -> None:
         self._band = band
+        self._policy: ScaffoldingPolicy = policy
 
     def respond(
         self,
@@ -60,14 +63,15 @@ class TemplateTutor:
         # The session supplies the scaffolding rule's inputs. Reading them here
         # is what put the failure being responded to into both of them — see the
         # Tutor protocol.
-        level = hint_level(mastery, prior_failures, self._band)
+        level = hint_level(mastery, prior_failures, self._band, policy=self._policy)
 
-        required = next_required_move(
+        move = move_for(
+            level,
             moves_this_item,
             misconception_confirmed=diagnosis.named,
             already_explained=explained,
         )
-        if required is TutorMove.REFLECT:
+        if move is TutorMove.REFLECT:
             return Hint(
                 text=(
                     f"Before we fix it — look again at your step for "
@@ -78,6 +82,11 @@ class TemplateTutor:
                 # A reflective prompt deliberately targets nothing: it costs a
                 # turn and remediates nothing, which is what makes the
                 # error-first rule a real constraint rather than a free one.
+                #
+                # That also carries the whole of `HintLevel.NONE`: a learner the
+                # model believes has the concept gets this turn and no other, so
+                # the only move that teaches is withheld exactly where the
+                # evidence says teaching is not what is missing.
                 targets=None,
             )
 

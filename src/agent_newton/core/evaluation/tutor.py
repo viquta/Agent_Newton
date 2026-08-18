@@ -41,15 +41,21 @@ from typing import Callable, Iterator, Literal, Sequence
 import yaml
 from pydantic import BaseModel, Field
 
-from agent_newton.config import ZPDConfig
+from agent_newton.config import ScaffoldingPolicy, ZPDConfig
 from agent_newton.core.agents.base import Diagnosis, Tutor
 from agent_newton.core.agents.llm import FALLBACK_HINT
 from agent_newton.core.evaluation.diagnostic import cases as wrong_answers
-from agent_newton.core.pedagogy import HintLevel, TutorMove, Violation
+from agent_newton.core.pedagogy import HintLevel, TutorMove, Violation, hint_level
 from agent_newton.core.state.schema import Utterance
 from agent_newton.core.state.views import FullStateView
 from agent_newton.core.state.zpd import Frontier
-from agent_newton.domains.base import Domain, DomainError, Item, Verdict
+from agent_newton.domains.base import (
+    PLAIN_TEXT_ONLY,
+    Domain,
+    DomainError,
+    Item,
+    Verdict,
+)
 from agent_newton.llm.base import LLMProvider, MalformedResponse, complete
 
 ANSWER_LEAKED = "answer_leaked"
@@ -66,6 +72,7 @@ OVER_LENGTH = "over_length"
 #: have marked a proper worked step as a violation — penalising the tutor for
 #: obeying the instruction it was given.
 MAX_SENTENCES: dict[str, int] = {
+    HintLevel.NONE.label: 2,
     HintLevel.NUDGE.label: 2,
     HintLevel.TARGETED.label: 2,
     HintLevel.WORKED_STEP.label: 6,
@@ -107,6 +114,12 @@ def _mastery_for(level: HintLevel, band: ZPDConfig) -> float:
     it is responding to is not counted twice. Until that was fixed these cases
     described a regime the running system never entered.
     """
+    if level is HintLevel.NONE:
+        # Above the band entirely. Not reachable through selection — the
+        # frontier stops at `theta_upper` — so this describes the boundary the
+        # rule states rather than a situation a session produces. `cases` drops
+        # it under any policy that cannot assign it.
+        return min(1.0, (band.theta_upper + 1.0) / 2)
     if level is HintLevel.NUDGE:
         return min(1.0, (band.theta_lower + 1.0) / 2)
     if level is HintLevel.TARGETED:
@@ -114,19 +127,41 @@ def _mastery_for(level: HintLevel, band: ZPDConfig) -> float:
     return band.theta_lower / 4
 
 
-def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
+def _assignable(band: ZPDConfig, policy: ScaffoldingPolicy) -> list[HintLevel]:
+    """The levels this policy can actually assign.
+
+    Derived by asking the rule rather than written down, so a policy that gains
+    or loses a level moves the case set with it. ``banded`` never returns
+    ``none`` — nothing above ``theta_lower`` is disclosed less than a nudge —
+    and generating cases for a level the tutor will never be given would report
+    coverage of a regime that does not exist.
+    """
+    return [
+        level
+        for level in HintLevel
+        if hint_level(_mastery_for(level, band), 0, band, policy=policy) is level
+    ]
+
+
+def cases(
+    domain: Domain, band: ZPDConfig, policy: ScaffoldingPolicy = "banded"
+) -> list[TurnCase]:
     """Every situation worth asking the tutor about, from the bank.
 
-    Seven per ``(item, misconception)`` pair: a plain hint at each support
-    level, the reflective prompt the error-first rule requires once a
-    misconception is confirmed, and the remediation that may follow it, again at
-    each level. The two moves that carry a correction are covered at every level
-    because that is where giving the answer away is either permitted or not.
+    Seven per ``(item, misconception)`` pair under ``banded``: a plain hint at
+    each support level, the reflective prompt the error-first rule requires once
+    a misconception is confirmed, and the remediation that may follow it, again
+    at each level. The two moves that carry a correction are covered at every
+    level because that is where giving the answer away is either permitted or
+    not.
+
+    ``banded_plus`` adds the ``none`` level, so nine.
     """
+    levels = _assignable(band, policy)
     built: list[TurnCase] = []
     for item_id, misconception_id, wrong in wrong_answers(domain):
         item = domain.items.get(item_id)
-        for level in HintLevel:
+        for level in levels:
             built.append(
                 TurnCase(
                     id=f"{item_id}|{misconception_id}|hint|{level.label}",
@@ -151,7 +186,7 @@ def cases(domain: Domain, band: ZPDConfig) -> list[TurnCase]:
                 diagnosed=True,
             )
         )
-        for level in HintLevel:
+        for level in levels:
             built.append(
                 TurnCase(
                     id=f"{item_id}|{misconception_id}|remediate|{level.label}",
@@ -278,7 +313,9 @@ _MATHS = re.compile(rf"{_TERM}(?:\s*[-+*/^]\s*{_TERM})*")
 #: has been unescaped. The second form is the one a learner actually saw:
 #: ``\frac`` arrives as a form feed followed by ``rac``, and the division the
 #: hint was explaining disappears.
-_LATEX = re.compile(r"\\[A-Za-z]|[\x00-\x08\x0b-\x1f]")
+#: The same pattern the content validator holds authored resources to, so a
+#: rule the tutor may not break is not one an item may ship with.
+_LATEX = PLAIN_TEXT_ONLY
 
 _SENTENCE_END = re.compile(r"[.!?](?:\s|$)")
 

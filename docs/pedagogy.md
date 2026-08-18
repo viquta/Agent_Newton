@@ -25,33 +25,92 @@ discouraged.
 ## Scaffolding
 
 ```python
-hint_level(mastery, unresolved_steps, band) -> HintLevel
+hint_level(mastery, unresolved_steps, band, *, policy) -> HintLevel
 ```
 
 `HintLevel` is ordered by how much support it carries:
 
 | Level | Gives |
 |---|---|
+| `NONE` | Nothing. The learner is asked to look again |
 | `NUDGE` | Points at the region of the error without naming it |
 | `TARGETED` | Names the misconception |
 | `WORKED_STEP` | Shows the step |
 
-Two inputs. The mastery estimate sets the baseline — above `theta_lower` a
-nudge suffices, below half of it the step is worked. Steps on the *current*
-item that did not resolve it escalate from there, bounded at `WORKED_STEP`, so
-a learner who is stuck is not nudged repeatedly.
+Two inputs. The mastery estimate sets the baseline; steps on the *current* item
+that did not resolve it escalate from there, up to a ceiling, so a learner who
+is stuck is not nudged repeatedly.
 
 Steps, not attempts, and the two differ: a response the verifier could not read
 costs no attempt — `cohort.max_steps_per_item` counts only measured ones — but
 it still leaves the learner not having got there, so support escalates on it.
 
+`policy` selects where the baseline and the ceiling come from.
+`scaffolding.policy` sets it; the default is `banded`.
+
+| region | `banded` base | `banded_plus` base | `banded_plus` ceiling |
+|---|---|---|---|
+| `P >= theta_upper` | `NUDGE` | `NONE` | `NONE` |
+| `theta_lower < P < theta_upper` | `NUDGE` | `NUDGE` | `TARGETED` |
+| `theta_lower / 2 < P <= theta_lower` | `TARGETED` | `TARGETED` | `WORKED_STEP` |
+| `P <= theta_lower / 2` | `WORKED_STEP` | `WORKED_STEP` | `WORKED_STEP` |
+
+`banded` uses a ceiling of `WORKED_STEP` everywhere. The two policies are
+identical below `theta_lower`.
+
+`NONE` forces a reflective turn — see `move_for` — so the only move that teaches
+is withheld where the estimate says teaching is not what is missing. The region
+is not reachable through selection: an item may be given only from the frontier,
+and the frontier stops at `theta_upper`. There is a test asserting a session
+never enters it, read off the turns a session recorded rather than off the
+function.
+
+## Support at presentation
+
+```python
+support_at_presentation(mastery, band) -> Support
+```
+
+What is shown *beside* the question, before any attempt. The rule above answers
+a step the learner took; this answers where the estimate puts them before they
+take one.
+
+| region | `Support` | Shows |
+|---|---|---|
+| `P > theta_lower` | `NONE` | The question alone |
+| `theta_lower / 2 < P <= theta_lower` | `FORMULA` | The rule, stated |
+| `P <= theta_lower / 2` | `FORMULA_AND_EXAMPLE` | And a solved instance |
+
+The boundaries are `hint_level`'s, so a learner does not sit in one tier for the
+question and another for the reply. There is a test asserting they coincide
+across the whole range.
+
+Acted on only when `scaffolding.offer_at_presentation` is set, and only when the
+domain supplies a `ConceptResources` — an optional sixth member, like
+`ItemTemplate`. A domain that supplies none shows nothing beside any question.
+
+The material is authored per *concept*, never per item, and its worked example
+carries its own numbers. `domain validate` refuses a resource whose
+`example_answer` verifies — through the domain's own verifier — as the answer to
+any item on that concept, in any bank, at any template draw; and refuses a
+backslash command in either text field. Both checks have a test proving they
+fire.
+
+An offer is recorded through `Blackboard.record_turn` under the move `present`,
+so it reaches the audit log, the transcript and the teaching record by the route
+every other instructional move takes. It targets nothing: no misconception has
+been observed when it is made, and `remediation_ratio` counts what a hint aimed
+at.
+
 ## Fading
 
 ```python
-check_fading(band, unresolved_steps=0) -> Violation | None
+check_fading(band, unresolved_steps=0, *, policy) -> Violation | None
+check_support_fading(band) -> Violation | None
 ```
 
-Support is non-increasing in mastery, **all else equal**. Escalation on repeated
+Support is non-increasing in mastery, **all else equal**. Checked over both
+axes and both policies. Escalation on repeated
 failure varies support at fixed mastery, which is why the qualifier is
 load-bearing rather than decorative — without it, escalation would read as a
 violation.
@@ -75,6 +134,14 @@ Once a misconception is confirmed, remediation must be preceded by a reflective
 prompt: the learner is asked to look at their own reasoning before being handed
 the correction. Without the ordering constraint a tutor can go straight to the
 answer, which is the behaviour the rule exists to prevent.
+
+```python
+move_for(level, moves_since_confirmation, misconception_confirmed) -> TutorMove
+```
+
+`move_for` is what both tutors call: it applies the ordering above and returns
+`REFLECT` outright at `HintLevel.NONE`. One rule in one place, rather than a
+copy in each tutor.
 
 `next_required_move` lets the tutor be *driven* by the constraint rather than
 checked against it afterwards. A tutor that asks what is required and does it

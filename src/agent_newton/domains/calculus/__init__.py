@@ -19,6 +19,7 @@ from agent_newton.domains.calculus.templates import TEMPLATES
 from agent_newton.domains.calculus.verifier import SymbolicVerifier
 from agent_newton.domains.content import (
     YamlConceptGraph,
+    YamlConceptResources,
     YamlItemBank,
     YamlMisconceptionCatalogue,
 )
@@ -35,4 +36,5 @@ def build() -> Domain:
         verifier=SymbolicVerifier(),
         buggy_rules={rule.misconception_id: rule for rule in RULES},
         templates={template.item_id: template for template in TEMPLATES},
+        resources=YamlConceptResources.from_yaml(_HERE / "resources.yaml"),
     )

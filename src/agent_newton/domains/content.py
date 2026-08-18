@@ -22,6 +22,7 @@ from agent_newton.domains.base import (
     Bank,
     Concept,
     ConceptGraph,
+    ConceptResource,
     DomainError,
     Item,
     Misconception,
@@ -213,6 +214,77 @@ class YamlMisconceptionCatalogue:
             *(
                 f"{m.id}|{m.concept_id}|{m.description}"
                 for m in sorted(self._by_id.values(), key=lambda m: m.id)
+            )
+        )
+
+
+class YamlConceptResources:
+    """What may be shown beside a question, loaded from ``resources.yaml``.
+
+    One entry per concept at most. A concept with no entry simply has nothing
+    shown beside its questions; ``domain validate`` warns rather than refusing,
+    for the same reason it warns about a concept with no catalogue entry — the
+    gap may be deliberate, but it must not go unnoticed.
+    """
+
+    def __init__(self, resources: Sequence[ConceptResource]) -> None:
+        self._by_concept: dict[str, ConceptResource] = {}
+        for entry in resources:
+            if entry.concept_id in self._by_concept:
+                raise DomainError(
+                    f"duplicate resource for concept: {entry.concept_id!r}. One "
+                    f"concept has one statement of its rule; two would mean the "
+                    f"learner's support depended on which was loaded first."
+                )
+            self._by_concept[entry.concept_id] = entry
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> YamlConceptResources:
+        entries = []
+        for entry in _load_yaml(path, "resources"):
+            missing = {
+                "concept_id",
+                "formula",
+                "worked_example",
+                "example_answer",
+            } - set(entry)
+            if missing:
+                raise DomainError(
+                    f"resource for {entry.get('concept_id', '<unnamed>')!r} is "
+                    f"missing {sorted(missing)}. 'example_answer' is required "
+                    f"even though it is never shown: it is what lets the "
+                    f"validator check the example does not solve an item."
+                )
+            entries.append(
+                ConceptResource(
+                    concept_id=entry["concept_id"],
+                    formula=entry["formula"],
+                    worked_example=entry["worked_example"],
+                    example_answer=entry["example_answer"],
+                    source=entry.get("source", ""),
+                )
+            )
+        return cls(entries)
+
+    def all(self) -> Sequence[ConceptResource]:
+        return tuple(self._by_concept.values())
+
+    def get(self, concept_id: str) -> ConceptResource:
+        try:
+            return self._by_concept[concept_id]
+        except KeyError:
+            raise unknown_id_error("resource", concept_id, self._by_concept) from None
+
+    def for_concept(self, concept_id: str) -> ConceptResource | None:
+        return self._by_concept.get(concept_id)
+
+    def content_hash(self) -> str:
+        # Sorted, so reordering the file does not change the hash — but changing
+        # what a learner would be shown does.
+        return hash_content(
+            *(
+                f"{r.concept_id}|{r.formula}|{r.worked_example}|{r.example_answer}"
+                for r in sorted(self._by_concept.values(), key=lambda r: r.concept_id)
             )
         )
 

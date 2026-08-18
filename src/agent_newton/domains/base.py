@@ -17,6 +17,11 @@ Member                       Supplied as
 Three of the five are pure content, so extending a domain with new items or
 concepts needs no Python at all. Only the two behavioural members are code.
 
+Two further members are optional and a domain may omit both: ``ItemTemplate``
+generates numeric variants of a repeated item, and ``ConceptResources`` supplies
+what may be shown beside a question. A domain offering neither behaves exactly
+as domains did before either existed.
+
 Student responses cross this boundary as ``str``. Domains parse their own
 notation internally. That keeps responses directly serialisable into the audit
 log, which a generic response type would not.
@@ -24,11 +29,26 @@ log, which a generic response type would not.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Iterable, Literal, Protocol, Sequence, runtime_checkable
 
 Bank = Literal["practice", "pretest", "posttest"]
+
+#: Text that will not survive the trip to a learner.
+#:
+#: A backslash command, or the control character one becomes once a JSON reply
+#: is unescaped. Both are the same defect seen at two stages: a tutor wrote
+#: ``\frac{f(b) - f(a)}{b - a}``, ``\f`` parsed as a form feed, and the person
+#: reading it saw ``rac{f(b) - f(a)}{b - a}`` and could not tell it meant a
+#: division. They said so, which is the only reason it was found.
+#:
+#: Defined here rather than beside either check because two things need it and
+#: they sit on opposite sides of the boundary: authored content, checked by
+#: ``domain validate``, and generated replies, checked by the tutor evaluation.
+#: One pattern, so a fix to it is a fix to both.
+PLAIN_TEXT_ONLY = re.compile(r"\\[A-Za-z]|[\x00-\x08\x0b-\x1f]")
 
 
 class Verdict(str, Enum):
@@ -67,6 +87,81 @@ class Misconception:
     concept_id: str
     description: str
     source: str
+
+
+@dataclass(frozen=True, slots=True)
+class ConceptResource:
+    """The material shown *with* a question, for a learner well below the band.
+
+    Separate from :class:`Misconception`, which describes what goes wrong. This
+    describes what is right, and it exists because those are answers to
+    different questions: a catalogue entry is only reachable once a learner has
+    already erred, and a learner far from mastery may need the rule before they
+    can err informatively at all.
+
+    Keyed on the concept rather than the item, deliberately. An item's own
+    worked solution is its answer, and showing it is the failure a sitting
+    described as the system doing the question for them. A concept-level example
+    carries its own numbers, so it can be shown beside any item on that concept
+    without disclosing one.
+
+    ``example_answer`` is the example's own result, and it is here so the
+    validator can check it: ``domain validate`` refuses a resource whose answer
+    verifies as any item's on that concept, through the domain's own verifier
+    rather than by comparing strings.
+
+    ``source`` follows the catalogue's convention — say where the statement of
+    the rule comes from, so content stays traceable.
+    """
+
+    concept_id: str
+    #: The rule itself, stated plainly. Shown from ``theta_lower`` down.
+    formula: str
+    #: A solved instance, on numbers no item on this concept uses. Shown from
+    #: ``theta_lower / 2`` down, together with the formula.
+    worked_example: str
+    #: What ``worked_example`` comes out at. Checked, never shown on its own.
+    example_answer: str
+    source: str = ""
+
+    def shown(self, with_example: bool) -> str:
+        """The text a learner reads, at one of the two depths.
+
+        Here rather than at the call sites because there are two of them — the
+        session, which records what was offered, and the front end, which
+        displays it — and a learner reading one thing while the audit log
+        records another would be unnoticeable and would make the record worth
+        nothing.
+
+        The example is labelled, and the label is load-bearing rather than
+        decorative: an unlabelled solved problem sitting directly above a
+        question is an invitation to copy its answer into the box. It says the
+        numbers are different because that is the one thing the reader has to
+        know before reading it.
+        """
+        if not with_example:
+            return self.formula
+        return (
+            f"{self.formula}\n\n"
+            f"An example — not your question, and the numbers are different:\n"
+            f"{self.worked_example}"
+        )
+
+
+@runtime_checkable
+class ConceptResources(Protocol):
+    """The resources a domain offers, if it offers any.
+
+    Optional, like :class:`BuggyRule` and :class:`ItemTemplate`. A domain with
+    no resources simply never shows anything beside a question, which is what
+    every domain did before this existed — so this is an improvement to content
+    rather than a requirement on it.
+    """
+
+    def all(self) -> Sequence[ConceptResource]: ...
+    def get(self, concept_id: str) -> ConceptResource: ...
+    def for_concept(self, concept_id: str) -> ConceptResource | None: ...
+    def content_hash(self) -> str: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,6 +328,9 @@ class Domain:
     verifier: Verifier
     buggy_rules: dict[str, BuggyRule] = field(default_factory=dict)
     templates: dict[str, ItemTemplate] = field(default_factory=dict)
+    #: What may be shown beside a question. None for a domain that offers
+    #: nothing, which is every domain before this existed.
+    resources: ConceptResources | None = None
 
     def buggy_rule(self, misconception_id: str) -> BuggyRule | None:
         return self.buggy_rules.get(misconception_id)
@@ -249,17 +347,38 @@ class Domain:
             return item
         return template.variant(item, draw)
 
+    def resource_for(self, concept_id: str) -> ConceptResource | None:
+        """What may be shown with a question on this concept, if anything.
+
+        None is an ordinary answer, not a failure: a domain need not offer
+        resources, and a concept within one that does need not have an entry.
+        ``domain validate`` warns about the second case rather than refusing it,
+        because what must not happen is that nobody noticed.
+        """
+        if self.resources is None:
+            return None
+        return self.resources.for_concept(concept_id)
+
     def content_hashes(self) -> dict[str, str]:
         """Hashes for the run manifest.
 
         Recorded per run so analysis can refuse to pool results produced against
         different ground truth.
         """
-        return {
+        hashes = {
             "concept_graph_hash": self.concepts.content_hash(),
             "catalogue_hash": self.misconceptions.content_hash(),
             "item_bank_hash": self.items.content_hash(),
         }
+        # Emitted only when there are resources, so every manifest written
+        # before they existed stays byte-identical and comparable. The key is
+        # here at all because of what its absence cost the templates: a template
+        # change alters what a learner is asked, and nothing refuses to pool
+        # across one, so provenance survives only through the run's git SHA.
+        # Resources are the same kind of content and do not repeat that.
+        if self.resources is not None:
+            hashes["resources_hash"] = self.resources.content_hash()
+        return hashes
 
 
 class DomainError(Exception):

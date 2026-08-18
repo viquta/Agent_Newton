@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 from typing import Mapping, Sequence
 
-from agent_newton.config import LabelSpace, ZPDConfig
+from agent_newton.config import LabelSpace, ScaffoldingPolicy, ZPDConfig
 from agent_newton.core.agents.base import Diagnosis, Hint, StateView
 from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
 from agent_newton.core.state import route
@@ -34,7 +34,7 @@ from agent_newton.core.pedagogy import (
     TutorMove,
     hint_level,
     may_select,
-    next_required_move,
+    move_for,
 )
 from agent_newton.core.state.views import FullStateView
 from agent_newton.llm.base import (
@@ -186,9 +186,15 @@ class LLMTutor:
     out of is not one.
     """
 
-    def __init__(self, provider: LLMProvider, band: ZPDConfig) -> None:
+    def __init__(
+        self,
+        provider: LLMProvider,
+        band: ZPDConfig,
+        policy: ScaffoldingPolicy = "banded",
+    ) -> None:
         self._provider = provider
         self._band = band
+        self._policy: ScaffoldingPolicy = policy
 
     def respond(
         self,
@@ -206,13 +212,13 @@ class LLMTutor:
     ) -> Hint:
         # Both inputs come from the session. Read from the view here, they each
         # carried the failure being responded to — see the Tutor protocol.
-        level = hint_level(mastery, prior_failures, self._band)
-        required = next_required_move(
+        level = hint_level(mastery, prior_failures, self._band, policy=self._policy)
+        move = move_for(
+            level,
             moves_this_item,
             misconception_confirmed=diagnosis.named,
             already_explained=explained,
         )
-        move = required or (TutorMove.REMEDIATE if diagnosis.named else TutorMove.HINT)
 
         # The length budget belongs to the level, not to the system prompt. It
         # used to say "at most two sentences" globally, which made a worked step
@@ -234,6 +240,15 @@ class LLMTutor:
         # the item is over, and the next question on that concept carries
         # different numbers. That reveal was asked for and is worth keeping.
         instruction = {
+            # Reached only above `theta_upper`, where the move is always
+            # `REFLECT` and this is overwritten below. Present so the mapping is
+            # total: a level with no entry would raise at the keyboard, and a
+            # `.get` with a default would quietly pitch an unknown level at
+            # whatever the default happened to be.
+            HintLevel.NONE: (
+                "Ask the student to look again at their own step. Do not tell "
+                "them anything about it. At most two sentences."
+            ),
             HintLevel.NUDGE: (
                 "Point at the part of the step that is wrong, without naming it. "
                 "At most two sentences."

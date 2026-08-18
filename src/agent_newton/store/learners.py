@@ -84,7 +84,12 @@ class LearnerStore:
         sittings that cannot be regenerated. Each add is attempted and its
         duplicate-column error swallowed, which is the whole migration.
         """
-        for column in ("catalogue_hash", "item_bank_hash", "concept_graph_hash"):
+        for column in (
+            "catalogue_hash",
+            "item_bank_hash",
+            "concept_graph_hash",
+            "resources_hash",
+        ):
             try:
                 self._db.execute(f"ALTER TABLE session ADD COLUMN {column} TEXT")
             except sqlite3.OperationalError:
@@ -156,8 +161,8 @@ class LearnerStore:
         cursor = self._db.execute(
             "INSERT INTO session (learner_id, arm, seq, elapsed_days, run_id, "
             "config_hash, decay_half_life_days, started_at, "
-            "catalogue_hash, item_bank_hash, concept_graph_hash) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "catalogue_hash, item_bank_hash, concept_graph_hash, resources_hash) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 learner_id,
                 arm,
@@ -169,7 +174,12 @@ class LearnerStore:
                 _now(),
                 *(
                     (content_hashes or {}).get(field)
-                    for field in ("catalogue_hash", "item_bank_hash", "concept_graph_hash")
+                    for field in (
+                        "catalogue_hash",
+                        "item_bank_hash",
+                        "concept_graph_hash",
+                        "resources_hash",
+                    )
                 ),
             ),
         )
@@ -284,10 +294,13 @@ class LearnerStore:
 
         A session written before these columns existed reports nothing, because
         unverifiable and unchanged are different and only one of them is a
-        warning worth giving.
+        warning worth giving. That is what covers ``resources_hash`` for every
+        sitting recorded before resources existed, and it is why adding the
+        column does not turn an old learner's history into false mismatches.
         """
         row = self._db.execute(
-            "SELECT catalogue_hash, item_bank_hash, concept_graph_hash FROM session "
+            "SELECT catalogue_hash, item_bank_hash, concept_graph_hash, "
+            "resources_hash FROM session "
             "WHERE learner_id = ? AND arm = ? ORDER BY seq DESC LIMIT 1",
             (learner_id, arm),
         ).fetchone()

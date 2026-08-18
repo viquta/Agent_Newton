@@ -1,0 +1,229 @@
+# What may be shown *beside* a calculus question, for a learner well below the
+# band. One entry per concept.
+#
+# Two properties every entry has to hold, both checked by `domain validate`:
+#
+#   * `example_answer` must not verify as the answer to any item on this
+#     concept, in any bank, at any template draw. An example that solves the
+#     question is the answer with extra steps, and a person using this system
+#     described what that is worth: "the system's hint cheated for me here".
+#   * No backslash commands anywhere. Replies arrive as JSON, `\f` is a form
+#     feed, and a learner once read `$rac{f(b) - f(a)}{b - a}$` and could not
+#     tell it meant a division. Plain text only.
+#
+# `formula` is shown from theta_lower down; `worked_example` joins it below
+# theta_lower / 2. Write the formula so it stands alone — most of the time it is
+# the only thing shown.
+#
+# `source` follows the catalogue's convention. These are statements of standard
+# rules rather than documented errors, so the marker records who wrote the
+# wording rather than who first reported it.
+resources:
+  - concept_id: limits_of_sequences
+    formula: >-
+      A limit like (x^2 - a^2)/(x - a) as x approaches a is 0/0 if you just
+      substitute, which says nothing. Factor the top first: x^2 - a^2 is
+      (x - a)(x + a). Cancel the (x - a) that appears top and bottom, then
+      substitute into what is left.
+    worked_example: |-
+      lim(x -> 1) of (x^2 - 1)/(x - 1).
+      Factor the top: (x - 1)(x + 1)/(x - 1).
+      Cancel (x - 1): x + 1.
+      Substitute x = 1: 1 + 1 = 2.
+    example_answer: "2"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: average_rate_of_change
+    formula: >-
+      The average rate of change of y over the interval from x = a to x = b is
+      (f(b) - f(a)) / (b - a). It is a ratio, not a difference: the change in y
+      divided by the change in x. Dividing is what turns an amount into a rate.
+    worked_example: |-
+      For y = x^2, from x = 2 to x = 4.
+      f(4) = 16 and f(2) = 4, so the change in y is 16 - 4 = 12.
+      The change in x is 4 - 2 = 2.
+      The rate is 12 / 2 = 6.
+    example_answer: "6"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: limit_concept
+    formula: >-
+      The gradient of the tangent at a point is what the gradients of the
+      secants approach as the second point slides in towards the first. A secant
+      taken at any finite separation is still a secant: its gradient is close to
+      the tangent's, not equal to it. For y = x^2 the limit works out to 2x.
+    worked_example: |-
+      The tangent to y = x^3 at x = 1.
+      Secants from x = 1 to x = 1 + h have gradient ((1 + h)^3 - 1)/h,
+      which multiplies out to 3 + 3h + h^2.
+      As h shrinks towards 0 that approaches 3.
+      The tangent's gradient is 3.
+    example_answer: "3"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: instantaneous_rate_of_change
+    formula: >-
+      The instantaneous rate of change at a point is the value of the derivative
+      there. Differentiate first, then substitute the point. Substituting before
+      differentiating gives a number, and the derivative of a number is zero.
+    worked_example: |-
+      For y = x^2, at x = 1.
+      Differentiate: dy/dx = 2x.
+      Substitute x = 1: 2 times 1 = 2.
+    example_answer: "2"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: derivative_from_first_principles
+    formula: >-
+      From first principles the derivative is the limit of ((f(x + h) - f(x))/h)
+      as h approaches 0. Expand f(x + h) in full before subtracting: the f(x)
+      terms cancel, every remaining term still carries an h, and dividing by h
+      leaves something you can take the limit of.
+    worked_example: |-
+      Simplify ((x + h)^3 - x^3)/h.
+      Expand: (x + h)^3 = x^3 + 3x^2 h + 3x h^2 + h^3.
+      Subtract x^3: 3x^2 h + 3x h^2 + h^3.
+      Divide by h: 3x^2 + 3x h + h^2.
+    example_answer: "3*x**2 + 3*x*h + h**2"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: power_rule
+    formula: >-
+      To differentiate x^n, bring the exponent down as a multiplier and reduce
+      the exponent by one: the derivative is n x^(n-1). A constant multiplier
+      out front is carried along unchanged.
+    worked_example: |-
+      Differentiate y = x^10.
+      Bring the 10 down as a multiplier.
+      Reduce the exponent by one: 10 - 1 = 9.
+      The derivative is 10 x^9.
+    example_answer: "10*x**9"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: negative_fractional_exponents
+    formula: >-
+      Rewrite the quotient as a power before differentiating: k / x^n is the
+      same as k x^(-n). Then the power rule applies unchanged, and reducing the
+      exponent by one makes it more negative, not less. Move it back under the
+      line at the end if you prefer to read it that way.
+    worked_example: |-
+      Differentiate y = 1/x.
+      Rewrite: y = x^(-1).
+      Bring the -1 down and reduce the exponent by one: -1 x^(-2).
+      Back under the line: -1/x^2.
+    example_answer: "-1/x**2"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: polynomial_differentiation
+    formula: >-
+      Differentiate a polynomial one term at a time and add the results. A term
+      in x^1 differentiates to its coefficient, and a constant term
+      differentiates to zero — it disappears from the answer rather than being
+      carried into it.
+    worked_example: |-
+      Differentiate y = 2x^4 + x - 7.
+      The 2x^4 term gives 8x^3.
+      The x term gives 1.
+      The -7 is a constant, so it gives 0 and drops out.
+      Adding: 8x^3 + 1.
+    example_answer: "8*x**3 + 1"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: antiderivative
+    formula: >-
+      Antidifferentiating reverses the power rule: raise the exponent by one,
+      then divide by the new exponent. Because any constant differentiates to
+      zero, a general antiderivative must end with + C — without it you have
+      named one antiderivative out of infinitely many.
+    worked_example: |-
+      Find the general antiderivative of 2x.
+      Raise the exponent by one: x^2.
+      Divide by the new exponent, 2: 2 x^2 / 2 = x^2.
+      Add the constant: x^2 + C.
+    example_answer: "x**2 + C"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: stationary_points
+    formula: >-
+      Stationary points are where the derivative is zero, so set the derivative
+      equal to 0 and solve. Factor rather than divide through by x: dividing by
+      x throws away the solution x = 0, which is usually one of the answers.
+    worked_example: |-
+      Solve 2x^2 + 10x = 0.
+      Factor out the common 2x: 2x(x + 5) = 0.
+      A product is zero when a factor is, so 2x = 0 or x + 5 = 0.
+      The solutions are x = 0 and x = -5.
+    example_answer: "0, -5"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: product_rule
+    formula: >-
+      The derivative of a product is not the product of the derivatives. For
+      y = u v it is u' v + u v': differentiate the first factor and leave the
+      second alone, then leave the first alone and differentiate the second, and
+      add the two.
+    worked_example: |-
+      Differentiate y = (x + 5)(x^2 + 1).
+      Take u = x + 5 and v = x^2 + 1, so u' = 1 and v' = 2x.
+      First piece, u' v: 1 times (x^2 + 1).
+      Second piece, u v': (x + 5) times 2x.
+      Add them: (x^2 + 1) + (x + 5) 2x.
+    example_answer: "(x**2 + 1) + (x + 5)*2*x"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: chain_rule
+    formula: >-
+      For a function inside another, differentiate the outer function leaving
+      the inside alone, then multiply by the derivative of the inside. The
+      second factor is the one that gets forgotten, and without it the answer is
+      wrong by exactly that factor.
+    worked_example: |-
+      Differentiate y = (x^2 + 3)^5.
+      Outer function first, inside untouched: 5 (x^2 + 3)^4.
+      Derivative of the inside, x^2 + 3: that is 2x.
+      Multiply the two: 5 (x^2 + 3)^4 times 2x = 10x (x^2 + 3)^4.
+    example_answer: "10*x*(x**2 + 3)**4"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: quotient_rule
+    formula: >-
+      For y = u/v the derivative is (u' v - u v') / v^2. Two things decide
+      whether it comes out right: the order — the term with the differentiated
+      numerator comes first, and swapping them flips the sign of the whole
+      answer — and that u' really is the derivative of the numerator, not the
+      numerator copied down.
+    worked_example: |-
+      Differentiate y = x/(x^2 + 1).
+      Take u = x and v = x^2 + 1, so u' = 1 and v' = 2x.
+      First term, u' v: 1 times (x^2 + 1).
+      Second term, u v': x times 2x, and it is subtracted.
+      Over v^2: ((x^2 + 1) - x times 2x) / (x^2 + 1)^2.
+    example_answer: "((x**2 + 1) - x*2*x)/(x**2 + 1)**2"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: implicit_differentiation
+    formula: >-
+      Differentiate both sides with respect to x. A term in y differentiates to
+      its derivative in y times dy/dx, by the chain rule — that extra dy/dx is
+      the whole point. Then collect the dy/dx terms on one side and divide.
+    worked_example: |-
+      Given 2x^2 + y^2 = 9, find dy/dx.
+      Differentiate both sides: 4x + 2y dy/dx = 0.
+      Move the x term across: 2y dy/dx = -4x.
+      Divide by 2y: dy/dx = -4x/(2y), which simplifies to -2x/y.
+    example_answer: "-2*x/y"
+    source: "Standard rule; wording written for this system."
+
+  - concept_id: integration_by_substitution
+    formula: >-
+      Substituting u for the inside function also changes the variable you are
+      integrating with respect to. From u = ax + b you get du = a dx, so dx is
+      du/a — and that division by a is the step most often left out. Integrate
+      in u, then put the original expression back.
+    worked_example: |-
+      Integrate (5x + 2)^2 with respect to x.
+      Let u = 5x + 2, so du = 5 dx and dx = du/5.
+      The integral becomes (1/5) times the integral of u^2 du = u^3/15.
+      Substitute back: (5x + 2)^3/15.
+    example_answer: "(5*x + 2)**3/15"
+    source: "Standard rule; wording written for this system."

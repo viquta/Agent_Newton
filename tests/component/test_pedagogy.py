@@ -17,12 +17,16 @@ from agent_newton.core.pedagogy import (
     BAND_MEMBERSHIP,
     ERROR_FIRST,
     HintLevel,
+    Support,
     TutorMove,
     check_fading,
     check_move,
+    check_support_fading,
     hint_level,
     may_select,
+    move_for,
     next_required_move,
+    support_at_presentation,
 )
 from agent_newton.core.state.store import new_blackboard
 from agent_newton.core.state.zpd import Frontier
@@ -114,7 +118,7 @@ class TestFading:
         original = policy.hint_level
         try:
             # Support rising with mastery — exactly what fading forbids.
-            policy.hint_level = lambda mastery, prior_failures, band: (  # type: ignore[assignment]
+            policy.hint_level = lambda mastery, prior_failures, band, **_: (  # type: ignore[assignment]
                 HintLevel.WORKED_STEP if mastery > 0.5 else HintLevel.NUDGE
             )
             violation = policy.check_fading(BAND)
@@ -211,3 +215,216 @@ class TestTemplateTutorIgnoresTheStep:
         # The stronger form: not merely stable, but not present at all.
         hint = self._hint(toy, "ZZQQ-marker")
         assert "ZZQQ-marker" not in hint.text
+
+
+class TestTheBandedPlusLadder:
+    """Every cut point read off the band, and one region the band excludes.
+
+    The original ladder used ``theta_lower / 2`` as its lower boundary — half of
+    a band edge, which is not a quantity the zone is defined in terms of. This
+    one is: above the band nothing is disclosed, inside it a nudge, below it the
+    two levels that name and show. ``theta_lower / 2`` survives only as the
+    boundary between naming and showing, which is the one thing it was deciding.
+    """
+
+    @pytest.mark.parametrize(
+        "mastery,expected",
+        [
+            (0.95, HintLevel.NONE),  # above the band: nothing is disclosed
+            (0.90, HintLevel.NONE),  # theta_upper itself is above it
+            (0.85, HintLevel.NUDGE),  # inside the band
+            (0.50, HintLevel.TARGETED),  # below it: name the error
+            (0.05, HintLevel.WORKED_STEP),  # far below: show the step
+        ],
+    )
+    def test_the_regions(self, mastery: float, expected: HintLevel) -> None:
+        assert hint_level(mastery, 0, BAND, policy="banded_plus") is expected
+
+    def test_inside_the_band_escalation_stops_short_of_the_step(self) -> None:
+        """The substantive change, and the one a sitting will judge.
+
+        Failing repeatedly on a concept the model believes is nearly mastered
+        used to hand over the worked step. The belief and the failures disagree
+        there, and this resolves it by trusting the belief — the learner is told
+        what went wrong and left to finish it.
+        """
+        levels = [hint_level(0.85, n, BAND, policy="banded_plus") for n in range(5)]
+        assert levels == [
+            HintLevel.NUDGE,
+            HintLevel.TARGETED,
+            HintLevel.TARGETED,
+            HintLevel.TARGETED,
+            HintLevel.TARGETED,
+        ]
+
+    def test_below_the_band_escalation_still_reaches_the_step(self) -> None:
+        # The cap is about the top of the band, not about escalation in general.
+        # A learner the model does not think is close still gets everything.
+        levels = [hint_level(0.50, n, BAND, policy="banded_plus") for n in range(3)]
+        assert levels == [
+            HintLevel.TARGETED,
+            HintLevel.WORKED_STEP,
+            HintLevel.WORKED_STEP,
+        ]
+
+    def test_nothing_escalates_out_of_the_silent_region(self) -> None:
+        # Above `theta_upper` no number of failures buys a hint. Failing is what
+        # should move the *estimate*; when it has moved, the concept comes back
+        # round lower down and the ladder gives something.
+        assert all(
+            hint_level(0.95, n, BAND, policy="banded_plus") is HintLevel.NONE
+            for n in range(10)
+        )
+
+    @pytest.mark.parametrize("mastery", [0.0, 0.05, 0.34, 0.36, 0.5, 0.71, 0.85, 0.89])
+    @pytest.mark.parametrize("failures", [0, 1, 2, 3])
+    def test_the_original_ladder_is_untouched(
+        self, mastery: float, failures: int
+    ) -> None:
+        """``banded`` must be exactly what it was, everywhere below the band.
+
+        Every measured result was produced under it, and the renumbering of
+        ``HintLevel`` to make room for ``NONE`` shifted both the base and the
+        ceiling — so this is not a formality. It pins the arithmetic.
+        """
+        level = hint_level(mastery, failures, BAND)
+        if mastery > BAND.theta_lower:
+            base = HintLevel.NUDGE
+        elif mastery > BAND.theta_lower / 2:
+            base = HintLevel.TARGETED
+        else:
+            base = HintLevel.WORKED_STEP
+        assert level is HintLevel(min(int(base) + failures, int(HintLevel.WORKED_STEP)))
+
+    def test_the_original_ladder_never_falls_silent(self) -> None:
+        # `NONE` is the new level and it must not leak into the old policy: a
+        # cohort under `banded` that suddenly stopped hinting near mastery would
+        # be a different run from the one every number came from.
+        assert all(
+            hint_level(m / 100, n, BAND) is not HintLevel.NONE
+            for m in range(101)
+            for n in range(4)
+        )
+
+    @pytest.mark.parametrize("failures", [0, 1, 2, 5])
+    @pytest.mark.parametrize(
+        "band",
+        [
+            ZPDConfig(theta_lower=0.70, theta_upper=0.90),
+            ZPDConfig(theta_lower=0.30, theta_upper=0.95),
+            ZPDConfig(theta_lower=0.80, theta_upper=0.85),
+        ],
+    )
+    def test_fading_holds_under_the_new_ladder_too(
+        self, band: ZPDConfig, failures: int
+    ) -> None:
+        assert check_fading(band, failures, policy="banded_plus") is None
+
+
+class TestSupportAtPresentation:
+    """The second axis: what is shown before the learner has done anything."""
+
+    @pytest.mark.parametrize(
+        "mastery,expected",
+        [
+            (0.95, Support.NONE),
+            (0.85, Support.NONE),  # inside the band, the question stands alone
+            (0.70, Support.FORMULA),  # theta_lower itself is below the line
+            (0.50, Support.FORMULA),
+            (0.35, Support.FORMULA_AND_EXAMPLE),
+            (0.0, Support.FORMULA_AND_EXAMPLE),
+        ],
+    )
+    def test_the_regions(self, mastery: float, expected: Support) -> None:
+        assert support_at_presentation(mastery, BAND) is expected
+
+    def test_its_boundaries_are_the_hint_ladder_s(self) -> None:
+        """A learner must not sit in one tier for the question and another for
+        the reply. Checked across the range rather than at the two edges, since
+        the claim is that the boundaries coincide everywhere."""
+        for index in range(201):
+            mastery = index / 200
+            shows_example = support_at_presentation(mastery, BAND).shows_example
+            worked = (
+                hint_level(mastery, 0, BAND, policy="banded_plus")
+                is HintLevel.WORKED_STEP
+            )
+            assert shows_example is worked
+
+    @pytest.mark.parametrize(
+        "band",
+        [
+            ZPDConfig(theta_lower=0.70, theta_upper=0.90),
+            ZPDConfig(theta_lower=0.30, theta_upper=0.95),
+            ZPDConfig(theta_lower=0.05, theta_upper=0.99),
+        ],
+    )
+    def test_support_never_rises_with_mastery(self, band: ZPDConfig) -> None:
+        assert check_support_fading(band) is None
+
+    def test_the_check_would_catch_an_inversion(self) -> None:
+        """A property test that cannot fail proves nothing."""
+        from agent_newton.core.pedagogy import policy
+
+        original = policy.support_at_presentation
+        try:
+            policy.support_at_presentation = lambda mastery, band: (  # type: ignore[assignment]
+                Support.FORMULA_AND_EXAMPLE if mastery > 0.5 else Support.NONE
+            )
+            violation = policy.check_support_fading(BAND)
+            assert violation is not None
+            assert violation.rule == "support_fading"
+        finally:
+            policy.support_at_presentation = original  # type: ignore[assignment]
+
+
+class TestTheMoveFollowsTheLevel:
+    """``move_for`` is one rule where the two tutors had a copy each."""
+
+    def test_silence_forces_a_reflective_turn(self) -> None:
+        # The whole of `HintLevel.NONE`: remediation is the only move that
+        # teaches, and it is withheld where the model already believes the
+        # learner has the concept.
+        assert move_for(HintLevel.NONE, (), True) is TutorMove.REFLECT
+        assert move_for(HintLevel.NONE, (TutorMove.REFLECT,), True) is TutorMove.REFLECT
+        assert move_for(HintLevel.NONE, (), True, True) is TutorMove.REFLECT
+
+    def test_below_it_the_error_first_ordering_is_unchanged(self) -> None:
+        assert move_for(HintLevel.TARGETED, (), True) is TutorMove.REFLECT
+        assert (
+            move_for(HintLevel.TARGETED, (TutorMove.REFLECT,), True)
+            is TutorMove.REMEDIATE
+        )
+        assert move_for(HintLevel.TARGETED, (), False) is TutorMove.HINT
+
+    def test_an_explained_step_still_satisfies_the_rule(self) -> None:
+        assert move_for(HintLevel.NUDGE, (), True, True) is TutorMove.REMEDIATE
+
+    def test_a_silent_turn_targets_nothing(self, toy) -> None:
+        """Nothing to copy, and nothing credited as remediation.
+
+        Read off the tutor rather than off ``move_for``, because ``targets`` is
+        the tutor's to set and it is the field the learner model reads.
+        """
+        tutor = TemplateTutor(BAND, "banded_plus")
+        # An item on a concept the catalogue covers: two of toy_algebra's
+        # concepts carry no misconception, and `domain validate` warns about
+        # exactly that.
+        labelled = {m.concept_id for m in toy.misconceptions.all()}
+        item = next(
+            i for i in toy.items.bank("practice") if i.concept_id in labelled
+        )
+        board = new_blackboard("L1", 1, toy.concepts, Config(domain="toy_algebra"))
+        hint = tutor.respond(
+            item,
+            Diagnosis(toy.misconceptions.for_concept(item.concept_id)[0].id),
+            board.view(),
+            toy,
+            response="whatever",
+            mastery=0.95,
+            prior_failures=2,
+            moves_this_item=(TutorMove.REFLECT,),
+        )
+        assert hint.level is HintLevel.NONE
+        assert hint.move is TutorMove.REFLECT
+        assert hint.targets is None

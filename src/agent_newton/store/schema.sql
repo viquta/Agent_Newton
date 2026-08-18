@@ -46,6 +46,11 @@ CREATE TABLE IF NOT EXISTS session (
     catalogue_hash     TEXT,
     item_bank_hash     TEXT,
     concept_graph_hash TEXT,
+    -- What may be shown beside a question. NULL for a session written before
+    -- resources existed, and NULL for a domain that offers none -- the two are
+    -- indistinguishable here and neither is a mismatch, so `content_drift`
+    -- treats both as unverifiable rather than as changed.
+    resources_hash     TEXT,
     started_at    TEXT    NOT NULL,
     ended_at      TEXT,
     stop_reason   TEXT,

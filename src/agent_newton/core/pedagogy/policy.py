@@ -13,6 +13,10 @@ Four rules:
 * **Scaffolding** — how much support a hint gives is chosen from the mastery
   estimate as it stood when the question was posed, and how many readable
   attempts at this item have already failed.
+* **Support at presentation** — what is shown *beside* the question, before any
+  attempt, chosen from the same estimate. The reactive rule above answers a
+  failure; this one answers the position in the band that made the failure
+  likely.
 * **Fading** — support is non-increasing in mastery, all else equal. This is a
   monotonicity property, so it can be checked across a grid rather than
   spot-checked.
@@ -26,7 +30,7 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Sequence
 
-from agent_newton.config import ZPDConfig
+from agent_newton.config import ScaffoldingPolicy, ZPDConfig
 from agent_newton.core.state.zpd import Frontier
 
 
@@ -37,13 +41,43 @@ class HintLevel(IntEnum):
     on the value, which is what makes the fading property checkable.
     """
 
-    NUDGE = 0  # points at the region of the error without naming it
-    TARGETED = 1  # names the misconception
-    WORKED_STEP = 2  # shows the step
+    #: Nothing is disclosed. The learner is asked to look again, and told
+    #: nothing they could copy. Reachable only where the model already believes
+    #: they can do it — see :func:`hint_level`.
+    NONE = 0
+    NUDGE = 1  # points at the region of the error without naming it
+    TARGETED = 2  # names the misconception
+    WORKED_STEP = 3  # shows the step
 
     @property
     def label(self) -> str:
         return self.name.lower()
+
+
+class Support(IntEnum):
+    """What is shown *beside* the question, before any attempt has been made.
+
+    A second axis, and deliberately not more levels on the first one. The
+    existing ladder answers a failure: it is chosen after a step, it escalates
+    with further steps, and every level of it is a reply. This one answers a
+    position — the learner has not done anything yet, and the estimate already
+    says the question is a long way past what they can do unaided.
+
+    Ordered like :class:`HintLevel` so "support falls as mastery rises" stays an
+    ordinary comparison, and so the same property check applies to both.
+    """
+
+    NONE = 0  # the question, as it is written
+    FORMULA = 1  # the rule the question is about, stated
+    FORMULA_AND_EXAMPLE = 2  # and a solved instance, on other numbers
+
+    @property
+    def label(self) -> str:
+        return self.name.lower()
+
+    @property
+    def shows_example(self) -> bool:
+        return self is Support.FORMULA_AND_EXAMPLE
 
 
 class TutorMove(str, Enum):
@@ -52,6 +86,12 @@ class TutorMove(str, Enum):
     HINT = "hint"
     REFLECT = "reflect"
     REMEDIATE = "remediate"
+    #: Support given with the question, before any attempt. The only move that
+    #: is not a reply to something the learner did — which is why it is a move
+    #: at all rather than a property of the item: it is an instructional
+    #: decision, it is chosen by a rule, and it has to appear in the record of
+    #: what a learner was taught.
+    PRESENT = "present"
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +129,8 @@ def hint_level(
     mastery: float,
     prior_failures: int,
     band: ZPDConfig,
+    *,
+    policy: ScaffoldingPolicy = "banded",
 ) -> HintLevel:
     """How much support to give.
 
@@ -116,31 +158,74 @@ def hint_level(
 
     Escalation is why fading is stated "all else equal" — it varies support at
     fixed mastery, and would otherwise look like a violation.
+
+    ``policy`` selects the ladder. ``banded`` is the original one and is what
+    every measured result was produced under.
+
+    ``banded_plus`` reads every cut point off the band instead of off a constant
+    beside it, and differs in two places:
+
+    * **Above ``theta_upper`` nothing is disclosed.** A concept the model
+      believes is mastered is not one to be taught, so the reply says to look
+      again and gives nothing that could be copied. Note this region is not
+      reachable through selection — an item may be given only from the frontier,
+      and the frontier stops at ``theta_upper`` — so it is a boundary the rule
+      states rather than a case a learner meets. There is a test asserting a
+      session never enters it.
+    * **Inside the band, escalation stops at ``targeted``.** Failing twice on a
+      concept the model believes is nearly mastered used to hand over the worked
+      step. The belief and the failures then disagree, and the ladder resolved it
+      by trusting the failures; this resolves it by trusting the belief, which
+      is what the band is for. Naming the error is still permitted — the learner
+      is told what went wrong, not shown how to finish.
+
+    Below ``theta_lower`` the two policies are identical. ``theta_lower / 2``
+    survives there as the boundary between naming the error and working the
+    step, which is the one place it was ever deciding anything.
     """
-    if mastery > band.theta_lower:
-        base = HintLevel.NUDGE
-    elif mastery > band.theta_lower / 2:
-        base = HintLevel.TARGETED
+    if policy == "banded_plus":
+        if mastery >= band.theta_upper:
+            return HintLevel.NONE
+        if mastery > band.theta_lower:
+            base, ceiling = HintLevel.NUDGE, HintLevel.TARGETED
+        elif mastery > band.theta_lower / 2:
+            base, ceiling = HintLevel.TARGETED, HintLevel.WORKED_STEP
+        else:
+            base, ceiling = HintLevel.WORKED_STEP, HintLevel.WORKED_STEP
     else:
-        base = HintLevel.WORKED_STEP
+        ceiling = HintLevel.WORKED_STEP
+        if mastery > band.theta_lower:
+            base = HintLevel.NUDGE
+        elif mastery > band.theta_lower / 2:
+            base = HintLevel.TARGETED
+        else:
+            base = HintLevel.WORKED_STEP
 
     escalated = int(base) + max(0, prior_failures)
-    return HintLevel(min(escalated, int(HintLevel.WORKED_STEP)))
+    return HintLevel(min(escalated, int(ceiling)))
 
 
 def check_fading(
-    band: ZPDConfig, prior_failures: int = 0, steps: int = 50
+    band: ZPDConfig,
+    prior_failures: int = 0,
+    steps: int = 50,
+    *,
+    policy: ScaffoldingPolicy = "banded",
 ) -> Violation | None:
     """Verify support is non-increasing in mastery across the whole range.
 
     Checked as a property rather than at sample points, because the rule is a
     claim about the shape of the function and a spot check would not catch a
     single inverted step.
+
+    Holds under both ladders, and more strongly under ``banded_plus``: the top
+    of the range returns ``none`` where the original returned ``nudge``, so
+    support reaches zero rather than bottoming out at a token hint.
     """
     previous = HintLevel.WORKED_STEP
     for index in range(steps + 1):
         mastery = index / steps
-        level = hint_level(mastery, prior_failures, band)
+        level = hint_level(mastery, prior_failures, band, policy=policy)
         if level > previous:
             return Violation(
                 "fading",
@@ -149,6 +234,96 @@ def check_fading(
             )
         previous = level
     return None
+
+
+def support_at_presentation(mastery: float, band: ZPDConfig) -> Support:
+    """What to show with the question, from where the learner sits in the band.
+
+    A pure function of the estimate and the band — whether it is *acted on* is a
+    configuration decision (``scaffolding.offer_at_presentation``), kept out of
+    here so this stays a statement about the pedagogy rather than about a run.
+
+    Nothing above ``theta_lower``. A learner in the upper part of the band is
+    close enough to unaided that handing them the rule pre-empts the recall the
+    question is asking for; if they turn out to need it, the reactive ladder is
+    still there and costs them one attempt.
+
+    The rule below ``theta_lower``, and a solved instance as well below
+    ``theta_lower / 2``. Both boundaries are the ones :func:`hint_level` already
+    uses, so a learner does not sit in one tier for the question and another for
+    the reply.
+
+    ⚠️ The example must be on **other numbers than the question's**. An example
+    that solves the item is the answer with extra steps, which is the failure a
+    sitting described exactly — "the system's hint cheated for me" — arriving
+    through a new door. The content side enforces it: ``domain validate``
+    refuses a resource whose worked answer verifies as any item's on that
+    concept.
+    """
+    if mastery > band.theta_lower:
+        return Support.NONE
+    if mastery > band.theta_lower / 2:
+        return Support.FORMULA
+    return Support.FORMULA_AND_EXAMPLE
+
+
+def check_support_fading(band: ZPDConfig, steps: int = 50) -> Violation | None:
+    """Verify presentation support is non-increasing in mastery.
+
+    The same property as :func:`check_fading`, over the other axis, and checked
+    the same way and for the same reason: it is a claim about the shape of the
+    function, so a spot check would pass over a single inverted step.
+
+    There is no "all else equal" qualifier here, because there is nothing else.
+    This support is chosen before the learner has done anything, so no
+    escalation varies it at fixed mastery — which makes the monotonicity plain
+    rather than conditional.
+    """
+    previous = Support.FORMULA_AND_EXAMPLE
+    for index in range(steps + 1):
+        mastery = index / steps
+        support = support_at_presentation(mastery, band)
+        if support > previous:
+            return Violation(
+                "support_fading",
+                f"support at presentation rose from {previous.label} to "
+                f"{support.label} as mastery reached {mastery:.2f}; it must "
+                f"never increase with mastery",
+            )
+        previous = support
+    return None
+
+
+def move_for(
+    level: HintLevel,
+    moves_since_confirmation: Sequence[TutorMove],
+    misconception_confirmed: bool,
+    already_explained: bool = False,
+) -> TutorMove:
+    """The move to make, once the support level is known.
+
+    Both tutors decided this for themselves and decided it the same way, which
+    is two copies of a rule that has to stay one. It is here so a tutor is
+    *driven* by the instructional layer rather than agreeing with it.
+
+    ``HintLevel.NONE`` forces a reflective turn, and that is the substantive
+    part. Remediation is the only move that teaches, so offering it to a learner
+    the model already believes has the concept spends instruction where the
+    evidence says none is needed — and hands over a correction to someone whose
+    own next attempt was the better source of it. They are asked to look again
+    instead. If they keep failing, the estimate falls, and the concept comes
+    back round at a level that gives them something.
+    """
+    if level is HintLevel.NONE:
+        return TutorMove.REFLECT
+    required = next_required_move(
+        moves_since_confirmation,
+        misconception_confirmed=misconception_confirmed,
+        already_explained=already_explained,
+    )
+    if required is not None:
+        return required
+    return TutorMove.REMEDIATE if misconception_confirmed else TutorMove.HINT
 
 
 def check_move(

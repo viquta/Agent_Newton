@@ -70,6 +70,17 @@ class RunManifest(BaseModel):
     catalogue_hash: str | None = None
     item_bank_hash: str | None = None
     concept_graph_hash: str | None = None
+    #: What may be shown beside a question. None for a domain offering none, and
+    #: for every run recorded before resources existed — the two are the same
+    #: here and neither is a mismatch.
+    #:
+    #: ⚠️ Recorded but deliberately **not** in ``assert_poolable``'s list. Every
+    #: cohort runs with support off, so a resource change alters nothing any
+    #: simulated learner was shown, and refusing to pool across one would be a
+    #: false alarm on every run after the first. It is here so provenance exists
+    #: at all — which is more than the templates have, and their absence is a
+    #: recorded gap. Add it to that list the day a cohort runs with support on.
+    resources_hash: str | None = None
 
     #: role -> "provider/model", or "<impl>" for model-free implementations.
     models: dict[str, str] = Field(default_factory=dict)

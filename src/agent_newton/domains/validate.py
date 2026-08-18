@@ -18,7 +18,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from agent_newton.domains.base import Domain, DomainError, Verdict
+from agent_newton.domains.base import (
+    PLAIN_TEXT_ONLY,
+    Domain,
+    DomainError,
+    Verdict,
+)
 
 ANSWERS_VERIFY = "answers_verify"
 RULES_PRODUCE_ERRORS = "rules_produce_errors"
@@ -27,11 +32,28 @@ GOALS_ARE_REACHABLE = "goals_are_reachable"
 CONCEPT_HAS_A_LABEL = "concept_has_a_label"
 TEMPLATES_ARE_SOUND = "templates_are_sound"
 GUESSABLE_FAMILY = "guessable_family"
+CONCEPT_HAS_A_RESOURCE = "concept_has_a_resource"
+RESOURCE_KEEPS_ITS_DISTANCE = "resource_keeps_its_distance"
+RESOURCE_IS_PLAIN_TEXT = "resource_is_plain_text"
 
 #: Draws checked per template. A learner works a concept until it is mastered,
 #: which in a full session runs to a handful of repetitions on the hardest ones;
 #: this covers that with room over.
 VARIANT_DRAWS = 8
+
+#: Draws checked when asking whether a resource's example solves an item.
+#:
+#: Far deeper than ``VARIANT_DRAWS``, and it has to be. A template family is
+#: unbounded — the implicit-differentiation family generates ``-x/(k*y)`` for
+#: every k — so a worked example can sit clear of the first eight draws and
+#: collide at the ninth. One did, while this branch was being written, and eight
+#: draws would have shipped it.
+#:
+#: ⚠️ **This is a bound, not a proof.** No finite depth can rule out a collision
+#: against an unbounded family. It is set well above the repetitions a session
+#: reaches — a stuck learner was measured at 30 items on one concept — so a
+#: collision inside a real sitting is what it actually excludes.
+RESOURCE_DRAWS = 64
 
 #: Marker for a catalogue entry whose literature source is not yet confirmed.
 #: Reported as a warning, not a failure: the entry works and the domain loads,
@@ -320,6 +342,8 @@ def validate(domain: Domain) -> ValidationReport:
 
         _check_guessable(report, item_id, template, base)
 
+    _check_resources(domain, report)
+
     return report
 
 
@@ -415,3 +439,90 @@ def _check_guessable(report: ValidationReport, item_id: str, template, base) -> 
         f"Varying the numbers will not help — the shape is what is being matched; "
         f"rotate the shape across draws instead",
     )
+
+
+def _check_resources(domain: Domain, report: ValidationReport) -> None:
+    """The material shown beside a question, if the domain offers any.
+
+    Three checks, and only the first is a warning. A domain need not offer
+    resources and a concept within one need not have an entry — but a resource
+    that gives away an item, or that arrives as mangled notation, is content
+    that would teach the wrong thing, and content is where those are cheapest to
+    catch.
+    """
+    resources = domain.resources
+    if resources is None:
+        return
+
+    known = set(domain.concepts.ids())
+    for resource in resources.all():
+        if resource.concept_id not in known:
+            report.add(
+                CONCEPT_HAS_A_RESOURCE,
+                f"resource names unknown concept {resource.concept_id!r}",
+            )
+
+    # A concept a learner can be given practice on, with nothing to show them
+    # when the estimate says they are a long way below it. A warning: a concept
+    # may genuinely need no statement beyond its questions. What must not happen
+    # is that nobody noticed — the same reasoning as the catalogue gap above,
+    # which is exactly the hole that let three concepts go undiagnosable.
+    covered = {resource.concept_id for resource in resources.all()}
+    for concept_id in domain.concepts.ids():
+        if concept_id in covered:
+            continue
+        practice = domain.items.for_concept(concept_id, "practice")
+        if practice:
+            report.warn(
+                CONCEPT_HAS_A_RESOURCE,
+                f"concept {concept_id!r} has {len(practice)} practice item(s) but "
+                f"no resource, so a learner well below the band is shown the "
+                f"question and nothing else",
+            )
+
+    for resource in resources.all():
+        for field_name in ("formula", "worked_example"):
+            text = getattr(resource, field_name)
+            if PLAIN_TEXT_ONLY.search(text):
+                report.add(
+                    RESOURCE_IS_PLAIN_TEXT,
+                    f"resource for {resource.concept_id!r} has a backslash "
+                    f"command or a control character in {field_name!r}; a learner "
+                    f"read one of these as 'rac{{f(b) - f(a)}}{{b - a}}' and could "
+                    f"not tell it meant a division",
+                )
+
+        # ⚠️ The one that matters. An example whose answer *is* an item's answer
+        # is the answer with extra steps, and it would be shown before the
+        # learner had attempted anything — strictly worse than the worked step a
+        # person already described as the system cheating for them.
+        #
+        # Asked of the domain's own verifier rather than by comparing strings,
+        # for the reason `answer_leaked` gives: `5x^4` and `5*x**4` are the same
+        # disclosure, and a string comparison sees two different texts.
+        for item in _every_form_of(domain, resource.concept_id):
+            if domain.verifier.verify(item, resource.example_answer).verdict is Verdict.CORRECT:
+                report.add(
+                    RESOURCE_KEEPS_ITS_DISTANCE,
+                    f"the worked example for {resource.concept_id!r} answers "
+                    f"{item.id!r}: showing it would hand over that item before "
+                    f"the learner had attempted it. Change the example's numbers.",
+                )
+                break
+
+
+def _every_form_of(domain: Domain, concept_id: str):
+    """Every question a learner could be asked on this concept, banks and draws.
+
+    Templated items are expanded, because the variant is what a learner actually
+    sees on a repetition — checking the item as written would clear an example
+    that solves the fourth time it is asked.
+    """
+    for bank in ("practice", "pretest", "posttest"):
+        for item in domain.items.for_concept(concept_id, bank):
+            yield item
+            template = domain.templates.get(item.id)
+            if template is None:
+                continue
+            for draw in range(1, RESOURCE_DRAWS):
+                yield template.variant(item, draw)

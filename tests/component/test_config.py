@@ -254,3 +254,63 @@ class TestTheDwellingCapStaysOutOfExperiments:
             "domain: toy_algebra\ncohort:\n  max_visits_per_concept: 3\n"
         )
         assert Config.from_yaml(stray).cohort.max_visits_per_concept == 3
+
+
+class TestTheScaffoldingLadderStaysOutOfExperiments:
+    """A cohort must run the ladder its numbers were produced under.
+
+    Nothing here can move a cohort number today — the simulated learner improves
+    only through ``receive_hint``, so the support level reaches nothing it
+    responds to, and there is an integration test proving it. That inertness is
+    a property of *this* simulator, though, not of the design. The moment a
+    mechanism is added that responds to how much help was given, a cohort
+    quietly running the richer ladder stops being the run every measured figure
+    came from — and it would look like the numbers moved rather than like the
+    policy changed.
+    """
+
+    def _experiment_configs(self) -> list[Path]:
+        return sorted(
+            path
+            for path in CONFIG_DIR.glob("*.yaml")
+            if path.name not in HUMAN_CONFIGS
+        )
+
+    def test_no_experiment_config_changes_the_ladder(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert config.scaffolding.policy == "banded", (
+                f"{path.name} runs the {config.scaffolding.policy!r} scaffolding "
+                f"ladder; every measured result was produced under 'banded'"
+            )
+
+    def test_no_experiment_config_offers_support_at_presentation(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert not config.scaffolding.offer_at_presentation, (
+                f"{path.name} shows the rule beside the question; that is "
+                f"support no cohort run has ever been given"
+            )
+
+    def test_the_defaults_are_todays_behaviour(self) -> None:
+        assert Config().scaffolding.policy == "banded"
+        assert not Config().scaffolding.offer_at_presentation
+
+    def test_the_human_config_turns_both_on(self) -> None:
+        # Otherwise the scan above passes because nothing anywhere uses them,
+        # and it would keep passing after the feature was removed.
+        demo = Config.from_yaml(CONFIG_DIR / "demo.yaml")
+        assert demo.scaffolding.policy == "banded_plus"
+        assert demo.scaffolding.offer_at_presentation
+
+    def test_the_check_can_fail(self, tmp_path: Path) -> None:
+        # A guard that cannot fail proves nothing. Both shapes the scans look
+        # for, and both must be rejected.
+        stray = tmp_path / "stray.yaml"
+        stray.write_text(
+            "domain: toy_algebra\nscaffolding:\n  policy: banded_plus\n"
+            "  offer_at_presentation: true\n"
+        )
+        loaded = Config.from_yaml(stray)
+        assert loaded.scaffolding.policy == "banded_plus"
+        assert loaded.scaffolding.offer_at_presentation

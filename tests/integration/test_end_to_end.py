@@ -7,9 +7,12 @@ here must hold without inference, and fast enough to run in CI.
 
 from __future__ import annotations
 
+from collections import Counter
+
 import pytest
 
 from agent_newton.config import Config
+from agent_newton.core.state import bkt
 from agent_newton.core.orchestration.session import (
     NotImplementedForModels,
     build_session,
@@ -432,7 +435,7 @@ class TestTheSupportLevelCannotMoveACohort:
 
         def run_at(level: HintLevel):
             monkeypatch.setattr(
-                tutor_module, "hint_level", lambda mastery, prior, band: level
+                tutor_module, "hint_level", lambda mastery, prior, band, **_: level
             )
             return [
                 run(domain_name, arm, f"L{i:04d}")[1] for i in range(4)
@@ -1089,3 +1092,227 @@ class TestGoalChangesIsNotGoalsMastered:
         _, outcome = self._perfect_learner("coupled")
         assert outcome.goals_mastered == 5
         assert outcome.goal_changes == 5
+
+
+def turns_of(session):
+    """Every tutor turn a session recorded, as its evidence dicts."""
+    return [r.evidence for r in session.board.audit_log if r.cause == "tutor"]
+
+
+#: Passed as `scaffolding=` rather than unpacked, so neither can bind to the
+#: positional `learner_id` or `n` that follow the arm.
+BANDED_PLUS: dict[str, object] = {"policy": "banded_plus"}
+WITH_SUPPORT: dict[str, object] = {
+    "policy": "banded_plus",
+    "offer_at_presentation": True,
+}
+
+
+class TestTheSilentRegionIsNeverEntered:
+    """``hint_level`` defines a region above ``theta_upper``. Selection excludes it.
+
+    Read off the turns a session recorded, never off ``hint_level``. That is
+    sitting 7's lesson stated as a test: ``test_the_floor_leaves_the_ladder_intact``
+    asserted ``hint_level(0.40, 0) is TARGETED``, passed throughout, and the
+    running system meanwhile had one reachable support level — because the
+    session was calling the rule with inputs the test never used.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_no_turn_is_ever_pitched_above_the_band(
+        self, domain_name: str, arm: str
+    ) -> None:
+        band = config_for(domain_name, arm, scaffolding=BANDED_PLUS).zpd
+        for session, _ in run_cohort(domain_name, arm, scaffolding=BANDED_PLUS):
+            for turn in turns_of(session):
+                assert turn["mastery"] < band.theta_upper, (
+                    f"an item was given on a concept at {turn['mastery']}, at or "
+                    f"above theta_upper — the frontier is supposed to exclude it"
+                )
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    def test_so_the_silent_level_never_reaches_anyone(self, domain_name: str) -> None:
+        # The consequence, stated separately: the region is a boundary the rule
+        # draws rather than a case a learner meets. It is built because a rule
+        # with a hole in it is not a rule, not because anyone will see it.
+        for session, _ in run_cohort(domain_name, "coupled", scaffolding=BANDED_PLUS):
+            assert all(turn["level"] != "none" for turn in turns_of(session))
+
+
+class TestTheLadderHasMoreThanOneRung:
+    """Sitting 7's collapse, pinned so it cannot come back quietly.
+
+    Every sitting before ``a31ebee`` ran at ``worked_step`` on every turn, and
+    the scaffolding figures from all seven describe a system with one support
+    level. Nothing measured that, because the only assertions were about the
+    function rather than about the turns.
+    """
+
+    @pytest.mark.parametrize("policy", ["banded", "banded_plus"])
+    def test_a_cohort_reaches_more_than_one_level(self, policy: str) -> None:
+        levels = set()
+        for session, _ in run_cohort(
+            "calculus", "coupled", n=12, scaffolding={"policy": policy}
+        ):
+            levels |= {turn["level"] for turn in turns_of(session)}
+        assert len(levels) > 1, (
+            f"every turn in a 12-learner cohort came out at {levels}; the ladder "
+            f"has collapsed to one rung again"
+        )
+
+
+class TestSupportAtPresentationReachesTheRecord:
+    """An offer has to be in the log, or a sitting cannot be read back."""
+
+    def test_it_is_offered_and_recorded(self) -> None:
+        session, _ = run("calculus", "coupled", scaffolding=WITH_SUPPORT)
+        offers = [t for t in turns_of(session) if t["move"] == "present"]
+        assert offers
+        assert {t["level"] for t in offers} <= {"formula", "formula_and_example"}
+
+    def test_it_targets_nothing(self) -> None:
+        # `remediation_ratio` counts what a hint aimed at. A resource states the
+        # rule and addresses no misconception — none has been observed yet — so
+        # a target here would credit it with remediation it did not do.
+        session, _ = run("calculus", "coupled", scaffolding=WITH_SUPPORT)
+        assert all(
+            t["targets"] is None
+            for t in turns_of(session)
+            if t["move"] == "present"
+        )
+
+    def test_nothing_is_offered_when_the_run_does_not_permit_it(self) -> None:
+        session, _ = run("calculus", "coupled", scaffolding=BANDED_PLUS)
+        assert not [t for t in turns_of(session) if t["move"] == "present"]
+
+    def test_a_domain_with_no_resources_offers_nothing(self) -> None:
+        # toy_algebra carries none. The session must run, not raise — optional
+        # content has to be genuinely optional.
+        session, outcome = run("toy_algebra", "coupled", scaffolding=WITH_SUPPORT)
+        assert outcome.items_attempted > 0
+        assert not [t for t in turns_of(session) if t["move"] == "present"]
+
+    def test_it_is_offered_once_per_posing_of_the_question(self) -> None:
+        """Presentation support, not escalation.
+
+        An item may be posed several times — a concept is worked until its
+        posterior clears the band — and each posing gets one offer. Asserted as
+        an ordering over the log rather than by counting: two offers on one item
+        are correct when a graded step separates them and wrong when nothing
+        does, and a count cannot tell those apart.
+        """
+        session, _ = run("calculus", "coupled", scaffolding=WITH_SUPPORT)
+        awaiting: set[str] = set()
+        offers = 0
+        for record in session.board.audit_log:
+            item_id = record.evidence.get("item_id")
+            if record.cause == "observation":
+                awaiting.discard(item_id)
+            elif record.cause == "tutor" and record.evidence["move"] == "present":
+                assert item_id not in awaiting, (
+                    f"{item_id} was offered support twice with no graded step "
+                    f"in between, so the same question carried two offers"
+                )
+                awaiting.add(item_id)
+                offers += 1
+        assert offers
+
+    def test_the_offer_fades_as_the_estimate_rises(self) -> None:
+        """Fading, read off a real session rather than off the function.
+
+        ``check_support_fading`` proves the rule is monotone. This proves the
+        session asks it the right question — which is the distinction sitting 7
+        turned on, where the rule was correct throughout and every turn still
+        came out at the top of the ladder.
+        """
+        session, _ = run("calculus", "coupled", scaffolding=WITH_SUPPORT)
+        by_item: dict[str, list[tuple[float, str]]] = {}
+        for turn in turns_of(session):
+            if turn["move"] == "present":
+                by_item.setdefault(turn["item_id"], []).append(
+                    (turn["mastery"], turn["level"])
+                )
+        repeated = {k: v for k, v in by_item.items() if len(v) > 1}
+        assert repeated, "no item was offered twice, so nothing was faded"
+        rank = {"none": 0, "formula": 1, "formula_and_example": 2}
+        for offers in repeated.values():
+            for (before, low), (after, high) in zip(offers, offers[1:]):
+                assert after >= before
+                assert rank[high] <= rank[low]
+
+
+class TestNoneOfThisCanMoveACohort:
+    """The property that keeps every measured result valid.
+
+    A simulated learner improves only through ``receive_hint``, which is handed
+    the misconception a hint *targets*. A presentation offer targets nothing and
+    the ladder changes only how much a reply gives away, so neither can reach
+    the one channel that changes an outcome.
+
+    ⚠️ This is a fact about today's simulator, not a guarantee about the design.
+    If a mechanism is ever added that responds to how much support was given,
+    this test is where it will announce itself — and the config scans are what
+    keep a cohort on the original ladder in the meantime.
+    """
+
+    @pytest.mark.parametrize("domain_name", DOMAINS)
+    @pytest.mark.parametrize("arm", ["coupled", "decoupled"])
+    def test_the_richer_ladder_changes_no_outcome(
+        self, domain_name: str, arm: str
+    ) -> None:
+        plain = [o for _, o in run_cohort(domain_name, arm)]
+        richer = [o for _, o in run_cohort(domain_name, arm, scaffolding=WITH_SUPPORT)]
+        for before, after in zip(plain, richer):
+            assert before.items_attempted == after.items_attempted
+            assert before.diagnoses == after.diagnoses
+            assert before.remediation_ratio == after.remediation_ratio
+            assert before.goals_mastered == after.goals_mastered
+            assert before.distance_to_goal == after.distance_to_goal
+            assert before.gain == after.gain
+
+    def test_and_the_turns_really_did_change(self) -> None:
+        # Otherwise the test above passes because nothing happened at all, which
+        # is the shape of a guard that cannot fail.
+        plain, _ = run("calculus", "coupled")
+        richer, _ = run("calculus", "coupled", scaffolding=WITH_SUPPORT)
+        assert len(turns_of(richer)) > len(turns_of(plain))
+
+
+class TestWhatTheTutorIsToldAboutAnUnseenConcept:
+    """``_work_item`` values an unobserved concept at 0.0; everything else uses
+    the prior.
+
+    A known inconsistency, recorded as open and deliberately not fixed here —
+    it is a decision about what "no evidence yet" should mean, and changing it
+    would move support levels in any run with a narrower band. What this pins is
+    that the two conventions still *collapse*, so the new tiers did not quietly
+    make it live.
+    """
+
+    def test_zero_and_the_prior_land_on_the_same_tier(self) -> None:
+        from agent_newton.core.pedagogy import hint_level, support_at_presentation
+
+        config = config_for("calculus", "coupled", scaffolding=WITH_SUPPORT)
+        prior = bkt.initial(config.bkt)
+        for policy in ("banded", "banded_plus"):
+            assert hint_level(0.0, 0, config.zpd, policy=policy) is hint_level(
+                prior, 0, config.zpd, policy=policy
+            )
+        assert support_at_presentation(0.0, config.zpd) is support_at_presentation(
+            prior, config.zpd
+        )
+
+    def test_the_decoupled_arm_is_given_the_most_support_on_every_item(self) -> None:
+        """Its view carries no posteriors, so its tutor is handed 0.0 always.
+
+        Worth stating rather than leaving implicit: the arms do not differ in
+        *whether* support is offered but in whether it is aimed. The coupled arm
+        gives more as the estimate falls; the decoupled arm gives the maximum
+        to everyone, forever, because it cannot tell anyone apart.
+        """
+        session, _ = run("calculus", "decoupled", scaffolding=WITH_SUPPORT)
+        offers = [t for t in turns_of(session) if t["move"] == "present"]
+        assert offers
+        assert {t["level"] for t in offers} == {"formula_and_example"}
+        assert {t["mastery"] for t in offers} == {0.0}

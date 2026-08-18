@@ -47,7 +47,12 @@ from agent_newton.core.evaluation.outcomes import (
     administer,
     dose_by_concept,
 )
-from agent_newton.core.pedagogy import TutorMove, check_move
+from agent_newton.core.pedagogy import (
+    Support,
+    TutorMove,
+    check_move,
+    support_at_presentation,
+)
 from agent_newton.core.simulator import (
     SimulatedLearner,
     SurfaceRenderer,
@@ -59,7 +64,13 @@ from agent_newton.core.simulator.profile import MisconceptionProfile
 from agent_newton.core.state.schema import LearnerState
 from agent_newton.core.state.store import Blackboard, new_blackboard, resumed_blackboard
 from agent_newton.core.state.views import FullStateView
-from agent_newton.domains.base import Domain, Item, VerificationResult, Verdict
+from agent_newton.domains.base import (
+    ConceptResource,
+    Domain,
+    Item,
+    VerificationResult,
+    Verdict,
+)
 
 
 class NotImplementedForModels(NotImplementedError):
@@ -121,6 +132,23 @@ class SessionObserver(Protocol):
         """
         ...
 
+    def support_offered(
+        self, item: Item, support: Support, resource: ConceptResource
+    ) -> None:
+        """Material shown *with* the question, before the learner has answered.
+
+        Fires only when there is something to show: the estimate has to put the
+        learner below the band, the run has to have
+        ``scaffolding.offer_at_presentation`` on, and the domain has to carry a
+        resource for the concept. Silence therefore means "nothing offered",
+        never "offered and empty".
+
+        Distinct from :meth:`tutor_replied`, which answers something the learner
+        did. This one answers where they are, and it is the only instructional
+        turn in the session that is not a reply.
+        """
+        ...
+
     def tutor_replied(self, item: Item, hint: Hint) -> None: ...
 
     def reflection_recorded(self, item: Item, text: str) -> None: ...
@@ -171,6 +199,11 @@ class Watching:
 
     def item_finished(
         self, item: Item, solved: bool, reason: str = "attempts_spent"
+    ) -> None:
+        return None
+
+    def support_offered(
+        self, item: Item, support: Support, resource: ConceptResource
     ) -> None:
         return None
 
@@ -628,6 +661,60 @@ class Session:
             return None
         return min(items, key=lambda item: (given.get(item.id, 0), item.id))
 
+    def _offer_support(self, item: Item, mastery: float) -> None:
+        """Show the rule, and further down a solved example, with the question.
+
+        The only support in the system that is not a reply. Everything else the
+        tutor does answers a step the learner took; this answers where the
+        estimate says they are standing before they take one, which is the case
+        the reactive ladder cannot reach — it is not called until something has
+        already gone wrong.
+
+        ``mastery`` is the same value the scaffolding rule is given: this arm's
+        view, as it stood when the question was posed. Passed in rather than
+        re-read, so the two axes cannot disagree about where the learner is.
+
+        Three things have to hold or nothing is shown, and each of them is a
+        different kind of "no":
+
+        * the run has to permit it (``scaffolding.offer_at_presentation``),
+          which is off for every cohort;
+        * the estimate has to put the learner at or below ``theta_lower``;
+        * the domain has to carry a resource for this concept, which is optional
+          content and legitimately absent.
+
+        Recorded through ``record_turn`` like any other instructional move, so it
+        reaches the audit log, the transcript and the teaching record by the
+        route those already take. Nothing new stores anything.
+        """
+        if not self.config.scaffolding.offer_at_presentation:
+            return
+        support = support_at_presentation(mastery, self.config.zpd)
+        if support is Support.NONE:
+            return
+        resource = self.domain.resource_for(item.concept_id)
+        if resource is None:
+            return
+
+        self.board.record_turn(
+            item_id=item.id,
+            concept_id=item.concept_id,
+            move=TutorMove.PRESENT.value,
+            level=support.label,
+            # Targets nothing. A resource states the rule; it does not address a
+            # misconception, because none has been observed yet — and
+            # `remediation_ratio` counts what a hint aimed at, so a target here
+            # would credit this with remediation it did not do.
+            targets=None,
+            # The resource composes it, so what is recorded here and what
+            # the front end displays cannot drift apart.
+            text=resource.shown(support.shows_example),
+            mastery=mastery,
+            prior_failures=0,
+        )
+        if self.observer is not None:
+            self.observer.support_offered(item, support, resource)
+
     def _work_item(
         self,
         item,
@@ -687,6 +774,8 @@ class Session:
 
         if self.observer is not None:
             self.observer.item_started(item, self.board)
+
+        self._offer_support(item, mastery)
 
         while attempts < self.config.cohort.max_steps_per_item:
             # The learner is told which attempt this is, not which step: an
@@ -928,9 +1017,13 @@ def build_session(
     cache_dir = config.paths.cache_dir
 
     if agents.tutor.impl == "template":
-        tutor: Tutor = TemplateTutor(config.zpd)
+        tutor: Tutor = TemplateTutor(config.zpd, config.scaffolding.policy)
     else:
-        tutor = LLMTutor(build_provider(agents.tutor, cache_dir), config.zpd)
+        tutor = LLMTutor(
+            build_provider(agents.tutor, cache_dir),
+            config.zpd,
+            config.scaffolding.policy,
+        )
 
     if agents.diagnostic.impl == "oracle":
         diagnostic: Diagnostic = OracleDiagnostic()

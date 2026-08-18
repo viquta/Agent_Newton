@@ -361,12 +361,29 @@ class TestTheCasesComeFromTheRules:
             c.mastery for c in evaluation.cases(calculus, narrow)
         }
 
+    @pytest.mark.parametrize("policy", ["banded", "banded_plus"])
     @pytest.mark.parametrize("level", list(HintLevel))
-    def test_each_intended_level_is_what_the_rules_assign(self, level) -> None:
+    def test_each_intended_level_is_what_the_rules_assign(self, level, policy) -> None:
+        """A case's mastery must land on the level it was generated for.
+
+        Only for levels the policy can assign. ``banded`` never returns ``none``
+        — above ``theta_lower`` it gives a nudge and stops — so requiring it
+        here would be asserting a level into existence rather than measuring
+        one. ``_assignable`` decides, by asking the rule, and the next test
+        pins that the two policies really do differ.
+        """
         from agent_newton.core.pedagogy import hint_level
 
+        if level not in evaluation._assignable(BAND, policy):
+            pytest.skip(f"{policy} cannot assign {level.label}")
         mastery = evaluation._mastery_for(level, BAND)
-        assert hint_level(mastery, prior_failures=0, band=BAND) is level
+        assert hint_level(mastery, prior_failures=0, band=BAND, policy=policy) is level
+
+    def test_only_the_richer_ladder_offers_a_case_at_none(self) -> None:
+        # Without this the skip above could hide a policy that assigns nothing:
+        # every case would skip and the test would pass having checked nothing.
+        assert HintLevel.NONE not in evaluation._assignable(BAND, "banded")
+        assert HintLevel.NONE in evaluation._assignable(BAND, "banded_plus")
 
     def test_every_case_resolves_to_a_real_item(self, calculus) -> None:
         for case in evaluation.cases(calculus, BAND):

@@ -82,7 +82,19 @@ class TestTheRepertoireComesFromTheCode:
         assert "level:nudge" in repertoire()
         assert "level:worked_step" in repertoire()
         assert "move:reflect" in repertoire()
-        assert len(repertoire()) == 6
+        assert len(repertoire()) == 8
+
+    def test_it_picked_up_the_new_level_and_move_on_its_own(self) -> None:
+        """The derivation is the point, and this is what it was for.
+
+        ``level:none`` and ``move:present`` arrived when the enums gained them,
+        and ``teaching.py`` was not touched. Asserted rather than assumed,
+        because a repertoire written down by hand would have gone stale here and
+        the record would have reported full coverage of a repertoire two items
+        short.
+        """
+        assert "level:none" in repertoire()
+        assert "move:present" in repertoire()
 
 
 class TestItCanSayTheSystemDidNotTryEverything:
@@ -109,8 +121,9 @@ class TestItCanSayTheSystemDidNotTryEverything:
         sit(
             store,
             observation("power_rule", "incorrect", 0.15, 0.10),
-            *[turn("power_rule", m, level) for m in ("hint", "reflect", "remediate")
-              for level in ("nudge", "targeted", "worked_step")],
+            *[turn("power_rule", m, level)
+              for m in ("hint", "reflect", "remediate", "present")
+              for level in ("none", "nudge", "targeted", "worked_step")],
         )
         [found] = records(store, "L1", "coupled")
         assert found.not_attempted == frozenset()

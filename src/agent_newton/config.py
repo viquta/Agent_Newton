@@ -38,6 +38,9 @@ LearnerKind = Literal["simulated", "human"]
 # model-free set as a whole is what makes fast, exactly reproducible runs
 # possible.
 TutorImpl = Literal["llm", "template"]
+#: Which scaffolding ladder is in force. ``banded`` is what every measured
+#: result was produced under; see :class:`ScaffoldingConfig`.
+ScaffoldingPolicy = Literal["banded", "banded_plus"]
 DiagnosticImpl = Literal["llm", "oracle", "noised_oracle"]
 
 #: Which misconceptions the diagnostic agent may choose between — the item's
@@ -280,6 +283,45 @@ class ZPDConfig(BaseModel):
         return self
 
 
+class ScaffoldingConfig(BaseModel):
+    """How much support a learner is given, and when.
+
+    Two knobs, both defaulting to the behaviour every measured result was
+    produced under, so a run that does not mention this block behaves exactly as
+    it did before the block existed.
+    """
+
+    #: Which ladder the reactive hint level comes from.
+    #:
+    #: ``banded`` is the original rule: a nudge above ``theta_lower``, a targeted
+    #: hint above ``theta_lower / 2``, a worked step below it, escalating on
+    #: repeated failure to a ceiling of ``worked_step``.
+    #:
+    #: ``banded_plus`` reads every cut point off the band instead. Above
+    #: ``theta_upper`` nothing is disclosed at all; inside the band escalation
+    #: stops at ``targeted``, so a learner the model believes is nearly there is
+    #: never handed the step; below ``theta_lower`` the original two levels
+    #: remain. ``theta_lower / 2`` survives only as the boundary between naming
+    #: the error and working the step, which is the one place it was ever doing
+    #: work.
+    policy: ScaffoldingPolicy = "banded"
+    #: Whether support may be given *before* the first attempt.
+    #:
+    #: Off, everything support does is reactive: the tutor is called only after
+    #: a step has already failed. On, a learner below ``theta_lower`` is shown
+    #: the rule — and further down, a solved example on other numbers — beside
+    #: the question itself.
+    #:
+    #: **Off for every cohort, and it must stay off.** Not because it would
+    #: corrupt a measurement: the simulated learner improves only through
+    #: ``receive_hint``, so nothing shown at presentation reaches it and no
+    #: cohort number can move. It stays off because that inertness is a property
+    #: of today's simulator rather than of the design, and a cohort quietly
+    #: running with support on would stop being the run the numbers were
+    #: produced under the moment that changed.
+    offer_at_presentation: bool = False
+
+
 class DecayConfig(BaseModel):
     """How the learner model goes stale between sessions.
 
@@ -472,6 +514,9 @@ class Config(BaseModel):
     agents: AgentsConfig = Field(default_factory=lambda: AgentsConfig())
     bkt: BKTConfig = Field(default_factory=lambda: BKTConfig())
     zpd: ZPDConfig = Field(default_factory=lambda: ZPDConfig())
+    scaffolding: ScaffoldingConfig = Field(
+        default_factory=lambda: ScaffoldingConfig()
+    )
     arbitration: ArbitrationConfig = Field(default_factory=lambda: ArbitrationConfig())
     decay: DecayConfig = Field(default_factory=lambda: DecayConfig())
     paths: PathsConfig = Field(default_factory=lambda: PathsConfig())

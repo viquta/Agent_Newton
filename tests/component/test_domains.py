@@ -21,7 +21,10 @@ from agent_newton.domains.content import YamlConceptGraph
 from agent_newton.domains.validate import (
     ANSWERS_VERIFY,
     CONCEPT_HAS_A_LABEL,
+    CONCEPT_HAS_A_RESOURCE,
     GOALS_ARE_REACHABLE,
+    RESOURCE_IS_PLAIN_TEXT,
+    RESOURCE_KEEPS_ITS_DISTANCE,
     RULES_PRODUCE_ERRORS,
     GUESSABLE_FAMILY,
     TEMPLATES_ARE_SOUND,
@@ -729,3 +732,187 @@ class TestAGuessableFamilyIsFlagged:
             if w.check == GUESSABLE_FAMILY
         )
         assert flagged == [], f"guessable families are back: {flagged}"
+
+
+class TestResources:
+    """What may be shown beside a question, and the two ways it can be wrong.
+
+    Both problems are content defects that would reach a learner looking
+    perfectly reasonable — one hands over an answer, the other arrives as
+    mangled notation — so both are caught here rather than at the keyboard.
+    """
+
+    def test_calculus_covers_every_concept_it_teaches(self, calculus) -> None:
+        taught = {
+            concept_id
+            for concept_id in calculus.concepts.ids()
+            if calculus.items.for_concept(concept_id, "practice")
+        }
+        assert {r.concept_id for r in calculus.resources.all()} >= taught
+
+    def test_a_domain_may_offer_none(self, toy) -> None:
+        # Optional, like templates. toy_algebra has none and must still validate.
+        assert toy.resources is None
+        assert validate(toy).ok
+
+    def test_the_hash_appears_only_when_there_are_resources(self, toy, calculus) -> None:
+        # Absent for a domain with none, so every manifest written before
+        # resources existed stays byte-identical and comparable.
+        assert "resources_hash" not in toy.content_hashes()
+        assert "resources_hash" in calculus.content_hashes()
+
+    def test_the_hash_moves_when_the_content_does(self, calculus) -> None:
+        from agent_newton.domains.content import YamlConceptResources
+
+        before = calculus.resources.content_hash()
+        changed = YamlConceptResources(
+            [replace(r, formula=r.formula + " and one more thing")
+             for r in calculus.resources.all()]
+        )
+        assert changed.content_hash() != before
+
+    def test_reordering_does_not_move_the_hash(self, calculus) -> None:
+        from agent_newton.domains.content import YamlConceptResources
+
+        shuffled = YamlConceptResources(list(reversed(calculus.resources.all())))
+        assert shuffled.content_hash() == calculus.resources.content_hash()
+
+    def test_no_worked_example_answers_an_item(self, calculus) -> None:
+        assert not [p for p in validate(calculus).problems
+                    if p.check == RESOURCE_KEEPS_ITS_DISTANCE]
+
+    def test_that_check_can_fail(self, calculus) -> None:
+        """A guard that cannot fail proves nothing.
+
+        The shape it looks for: an example whose answer is an item's answer.
+        Taken from the item itself rather than written out, so this stays true
+        if the bank is re-authored.
+        """
+        from agent_newton.domains.content import YamlConceptResources
+
+        item = calculus.items.for_concept("power_rule", "practice")[0]
+        stray = replace(
+            calculus.resources.get("power_rule"), example_answer=item.answer
+        )
+        broken = replace(
+            calculus,
+            resources=YamlConceptResources(
+                [stray]
+                + [r for r in calculus.resources.all() if r.concept_id != "power_rule"]
+            ),
+        )
+        report = validate(broken)
+        assert not report.ok
+        assert [p for p in report.problems if p.check == RESOURCE_KEEPS_ITS_DISTANCE]
+
+    def test_it_catches_an_answer_written_differently(self, calculus) -> None:
+        """Asked of the verifier, not of the string.
+
+        `5x^4` and `5*x**4` are the same disclosure, and a string comparison
+        sees two different texts — which is the whole reason `answer_leaked`
+        works the way it does.
+        """
+        from agent_newton.domains.content import YamlConceptResources
+
+        stray = replace(calculus.resources.get("power_rule"), example_answer="5x^4")
+        broken = replace(
+            calculus,
+            resources=YamlConceptResources(
+                [stray]
+                + [r for r in calculus.resources.all() if r.concept_id != "power_rule"]
+            ),
+        )
+        assert [p for p in validate(broken).problems
+                if p.check == RESOURCE_KEEPS_ITS_DISTANCE]
+
+    def test_it_looks_past_the_item_as_written(self, calculus) -> None:
+        """A variant is what a learner sees on a repetition.
+
+        This is not hypothetical: an example written for this branch cleared
+        every item as written and every one of the first eight draws, and
+        answered the ninth. Checking the item alone would have shipped it.
+        """
+        from agent_newton.domains.content import YamlConceptResources
+
+        base = calculus.items.get("ca_impl_p1")
+        ninth = calculus.templates["ca_impl_p1"].variant(base, 9)
+        assert ninth.answer != base.answer
+
+        stray = replace(
+            calculus.resources.get("implicit_differentiation"),
+            example_answer=ninth.answer,
+        )
+        broken = replace(
+            calculus,
+            resources=YamlConceptResources(
+                [stray]
+                + [r for r in calculus.resources.all()
+                   if r.concept_id != "implicit_differentiation"]
+            ),
+        )
+        assert [p for p in validate(broken).problems
+                if p.check == RESOURCE_KEEPS_ITS_DISTANCE]
+
+    def test_no_resource_carries_a_backslash_command(self, calculus) -> None:
+        assert not [p for p in validate(calculus).problems
+                    if p.check == RESOURCE_IS_PLAIN_TEXT]
+
+    @pytest.mark.parametrize("field", ["formula", "worked_example"])
+    def test_that_check_can_fail_too(self, calculus, field: str) -> None:
+        from agent_newton.domains.content import YamlConceptResources
+
+        stray = replace(
+            calculus.resources.get("power_rule"),
+            **{field: r"the rate is \frac{f(b) - f(a)}{b - a}"},
+        )
+        broken = replace(
+            calculus,
+            resources=YamlConceptResources(
+                [stray]
+                + [r for r in calculus.resources.all() if r.concept_id != "power_rule"]
+            ),
+        )
+        report = validate(broken)
+        assert not report.ok
+        assert [p for p in report.problems if p.check == RESOURCE_IS_PLAIN_TEXT]
+
+    def test_a_gap_is_a_warning_not_a_failure(self, calculus) -> None:
+        """A concept may legitimately need no statement beyond its questions.
+
+        What must not happen is that nobody noticed — the same reasoning as the
+        catalogue-entry warning, which exists because three concepts went
+        undiagnosable and nothing said so.
+        """
+        from agent_newton.domains.content import YamlConceptResources
+
+        thinned = replace(
+            calculus,
+            resources=YamlConceptResources(
+                [r for r in calculus.resources.all() if r.concept_id != "power_rule"]
+            ),
+        )
+        report = validate(thinned)
+        assert report.ok
+        assert [w for w in report.warnings
+                if w.check == CONCEPT_HAS_A_RESOURCE and "power_rule" in w.message]
+
+    def test_two_resources_for_one_concept_are_refused(self, calculus) -> None:
+        from agent_newton.domains.content import YamlConceptResources
+
+        one = calculus.resources.get("power_rule")
+        with pytest.raises(DomainError, match="duplicate resource"):
+            YamlConceptResources([one, one])
+
+    def test_the_example_is_labelled_as_not_the_question(self, calculus) -> None:
+        """An unlabelled solved problem above a question invites a copy.
+
+        The label is the only thing telling the reader the numbers are not
+        theirs, so it is composed in one place and asserted here rather than
+        left to whichever front end happens to render it.
+        """
+        resource = calculus.resources.get("power_rule")
+        assert resource.shown(False) == resource.formula
+        shown = resource.shown(True)
+        assert resource.formula in shown
+        assert resource.worked_example in shown
+        assert "not your question" in shown

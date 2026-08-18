@@ -93,6 +93,26 @@ zpd:
   theta_lower: 0.70
   theta_upper: 0.90
 
+# On here and nowhere else, both of them.
+#
+# `banded_plus` reads every cut point off the band above. Above theta_upper
+# nothing is disclosed; inside the band escalation stops at `targeted`, so
+# failing twice on a concept the model believes is nearly there no longer hands
+# over the step; below theta_lower the two original levels remain.
+#
+# `offer_at_presentation` shows the rule beside the question for a concept below
+# theta_lower, and a solved example on other numbers further down. Support stops
+# being purely reactive: help arrives with the problem rather than only after
+# the learner has already got it wrong.
+#
+# Both stay off for every cohort. Nothing here can move a cohort number — the
+# simulated learner improves only through `receive_hint` — but that is a fact
+# about today's simulator rather than about the design, and a scan over this
+# directory refuses either knob in an experiment config.
+scaffolding:
+  policy: banded_plus
+  offer_at_presentation: true
+
 # What a gap between sittings does to the model's belief. Off by default and off
 # for every cohort — a single-session run must behave exactly as it did before
 # sequences existed. On here because the demo is where coming back is the point.
