@@ -74,6 +74,14 @@ class FullStateView:
     #:
     #: Empty for every cohort. Nothing but the demo sets it.
     requested: frozenset[str] = frozenset()
+    #: Requested concepts the band would otherwise have closed, reopened for
+    #: review. A subset of ``requested``, and empty unless
+    #: ``cohort.review_on_request`` is on.
+    #:
+    #: Here rather than recomputed by each reader because the board is what
+    #: knows the configuration, and two readers deciding it separately could
+    #: disagree about which zone the session is actually in.
+    reviewing: frozenset[str] = frozenset()
 
     def consecutive_correct(self) -> int:
         count = 0

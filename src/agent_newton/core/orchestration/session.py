@@ -278,6 +278,10 @@ class Session:
                 ((result.concept_id, result.verdict) for result in pretest.per_item),
                 weight=self.config.cohort.pretest_weight,
                 floor=self.config.cohort.seed_floor,
+                # A held-out item is evidence, not proof. Without this, one
+                # correct pre-test answer at weight 3 landed past `theta_upper`
+                # and closed the concept for the whole sitting.
+                ceiling=self.config.zpd.theta_upper,
             )
 
         # Two counts, because they answer different questions.

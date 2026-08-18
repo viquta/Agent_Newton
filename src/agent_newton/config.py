@@ -416,6 +416,24 @@ class CohortConfig(BaseModel):
     #: Inert unless ``seed_from_pretest`` is on, and that is off for every
     #: cohort.
     pretest_weight: int = Field(default=1, ge=1)
+    #: Whether asking for a concept reopens it when the model calls it mastered.
+    #:
+    #: Off, a request for something above ``theta_upper`` is declined: the
+    #: concept is outside the frontier, so no planner can select it. On, it is
+    #: admitted for review — the upper bound gives way, the prerequisite rule
+    #: does not.
+    #:
+    #: The reason a request may do what an inference may not: the estimate has
+    #: been measured wrong in exactly that region. A sitting ended with three
+    #: concepts above ``theta_upper`` that a held-out post-test showed the
+    #: learner could not do, and with ``pretest_weight`` above 1 a single
+    #: correct pre-test answer lands near it on its own. Working the concept is
+    #: then the check — right and the belief holds, wrong and it falls.
+    #:
+    #: **Off for every cohort**, and doubly inert there: nothing outside the
+    #: demo records a request at all, so the set it would act on is empty. The
+    #: knob exists so that is a decision rather than an accident.
+    review_on_request: bool = False
     #: Floor a seeded estimate may not fall below. 0.0 is no floor.
     #:
     #: Exists because two correct things combined into a wrong one. Seeding at

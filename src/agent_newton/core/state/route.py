@@ -90,6 +90,7 @@ def next_goal(
     prior: float,
     requested: frozenset[str] = frozenset(),
     graph: ConceptGraph | None = None,
+    reviewing: frozenset[str] = frozenset(),
 ) -> str | None:
     """The first declared goal not yet reached, or None when all are.
 
@@ -109,18 +110,39 @@ def next_goal(
     moves, the route to it does not, and everything on the way is still worked
     first. Empty for every cohort, and inert without a graph to resolve it.
 
-    ⚠️ Only requests the learner **cannot yet do** are served. A person asked
-    for two concepts; the pre-test then put one of them at 0.98, and the goal
-    moved to serve that one — the thing he had just demonstrated — while the
-    other sat at 0.32 in the frontier and was never reached, because it was not
-    on the way to the goal his own request had chosen. Honouring a request for
-    something already mastered is honouring it in the only way that cannot help.
+    ⚠️ **Requests the learner cannot yet do come first, and that ordering is
+    load-bearing.** A person asked for two concepts; the pre-test then put one
+    of them at 0.98, and the goal moved to serve that one — the thing he had
+    just demonstrated — while the other sat at 0.32 in the frontier and was
+    never reached, because it was not on the way to the goal his own request had
+    chosen. Serving the mastered half of a request first is serving it in the
+    only way that cannot help.
+
+    ``reviewing`` is the *fallback* to that, never a competitor: when nothing
+    requested is still outstanding, aim at a goal whose route passes through
+    what was asked for anyway. Without this the frontier reopening the concept
+    achieves nothing — a reopened concept that is not on the way to the current
+    goal is not a candidate, and ``implicit_differentiation`` is a sibling of
+    ``integration_by_substitution`` rather than a prerequisite, so the goal that
+    follows it does not pass through it.
     """
     outstanding = [goal for goal in goals if not reached(goal, mastery, band, prior)]
     if requested and graph is not None:
+        # A reviewed goal is servable although it is reached — that is what
+        # being under review means, and `outstanding` excludes it by definition.
+        # Without this a request for a *goal* could not be honoured at all:
+        # `relevant` includes the goal itself, so nothing else names it either.
+        servable = [
+            goal
+            for goal in goals
+            if goal in reviewing or not reached(goal, mastery, band, prior)
+        ]
         live = {c for c in requested if not reached(c, mastery, band, prior)}
-        for goal in outstanding:
+        for goal in servable:
             if relevant(goal, graph) & live:
+                return goal
+        for goal in servable:
+            if relevant(goal, graph) & reviewing:
                 return goal
     return outstanding[0] if outstanding else None
 

@@ -83,6 +83,9 @@ class GoalDirectedPlanner:
             # own copy of what the learner asked for would be private state.
             # Empty for every cohort.
             requested=full.requested,
+            # The board decided which of those the band had closed. Only a
+            # fallback: a request still outstanding always chooses first.
+            reviewing=full.reviewing,
             graph=domain.concepts,
         )
         if goal is None:

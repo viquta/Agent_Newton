@@ -314,3 +314,39 @@ class TestTheScaffoldingLadderStaysOutOfExperiments:
         loaded = Config.from_yaml(stray)
         assert loaded.scaffolding.policy == "banded_plus"
         assert loaded.scaffolding.offer_at_presentation
+
+
+class TestReviewOnRequestStaysOutOfExperiments:
+    """Reopening a mastered concept relaxes the band, so a cohort must not.
+
+    Doubly inert there — nothing outside the demo records a request, so the set
+    it acts on is empty — and the knob exists so that is a decision rather than
+    an accident. It is also the one relaxation a learner can trigger, and the
+    coupled arm is the only one that could act on it.
+    """
+
+    def _experiment_configs(self) -> list[Path]:
+        return sorted(
+            path
+            for path in CONFIG_DIR.glob("*.yaml")
+            if path.name not in HUMAN_CONFIGS
+        )
+
+    def test_no_experiment_config_reopens_on_request(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert not config.cohort.review_on_request, (
+                f"{path.name} reopens concepts the band has closed; no measured "
+                f"result was produced with the upper bound relaxed"
+            )
+
+    def test_the_default_is_off(self) -> None:
+        assert not Config().cohort.review_on_request
+
+    def test_the_human_config_turns_it_on(self) -> None:
+        assert Config.from_yaml(CONFIG_DIR / "demo.yaml").cohort.review_on_request
+
+    def test_the_check_can_fail(self, tmp_path: Path) -> None:
+        stray = tmp_path / "stray.yaml"
+        stray.write_text("domain: toy_algebra\ncohort:\n  review_on_request: true\n")
+        assert Config.from_yaml(stray).cohort.review_on_request

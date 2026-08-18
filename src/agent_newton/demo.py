@@ -639,15 +639,46 @@ def _ask_what_to_practise(
     for concept_id in sorted(requested, key=ids.index):
         name = graph.get(concept_id).name
         if route.reached(concept_id, mastery, config.zpd, prior):
-            # Honest rather than accommodating: the band is what decides what is
-            # offered, and a request cannot waive it without making mastery mean
-            # something different for the person who asked.
-            body.append(f"  {name}", style="bold")
-            body.append(
-                f" — the model has you at {mastery.get(concept_id, prior):.2f} "
-                f"here, so it will not come round unless that goes stale.\n",
-                style="dim",
-            )
+            # ⚠️ This used to decline: "it will not come round unless that goes
+            # stale". Honest about the band, and wrong about which of the two of
+            # you to believe — the estimate has been measured wrong in exactly
+            # this range, and one pre-test answer used to be enough to put a
+            # concept here.
+            if config.cohort.review_on_request:
+                # ⚠️ Reopening lifts the upper bound and nothing else. A concept
+                # whose prerequisites are unmet stays closed, and saying
+                # "this is revision" without checking would promise something
+                # the session then never delivers.
+                blocked = [
+                    c
+                    for c in graph.all_prerequisites(concept_id)
+                    if mastery.get(c, prior) < config.zpd.theta_lower
+                ]
+                body.append(f"  {name}", style="bold")
+                if blocked:
+                    body.append(
+                        f" — the model has you at "
+                        f"{mastery.get(concept_id, prior):.2f} here, so this "
+                        f"would be revision, but "
+                        + ", ".join(graph.get(c).name for c in blocked)
+                        + " come first.\n",
+                        style="dim",
+                    )
+                else:
+                    body.append(
+                        f" — the model has you at "
+                        f"{mastery.get(concept_id, prior):.2f} here, so this is "
+                        f"revision. If it turns out you are rusty, that shows up "
+                        f"and it becomes ordinary work again.\n",
+                        style="dim",
+                    )
+            else:
+                body.append(f"  {name}", style="bold")
+                body.append(
+                    f" — the model has you at {mastery.get(concept_id, prior):.2f} "
+                    f"here, so it will not come round unless that goes stale.\n",
+                    style="dim",
+                )
             continue
         needed = [
             c

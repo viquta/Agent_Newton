@@ -17,6 +17,8 @@ Two invariants this file exists to hold:
 
 from __future__ import annotations
 
+import math
+
 from typing import Any, Iterable, Literal
 
 from agent_newton.config import Config
@@ -88,6 +90,11 @@ class Blackboard:
                 # weakness bumps the version, so the cache invalidates at
                 # exactly the step the zone changes.
                 waived=self.weaknesses,
+                # Always empty unless the learner asked for something the band
+                # had closed *and* the run permits reopening it. Recording a
+                # request bumps the version, so the cache invalidates at the
+                # step the zone changes, exactly as a weakness does.
+                reviewing=self.reviewing,
             )
             self._frontier_cache = (self._state.version, frontier)
         return self._frontier_cache[1]
@@ -117,6 +124,21 @@ class Blackboard:
         """Concepts the learner asked for. Empty unless a front end asked."""
         return self._requested
 
+    @property
+    def reviewing(self) -> frozenset[str]:
+        """Requested concepts the band had closed, reopened at their request.
+
+        Only those the estimate calls mastered: asking for something already in
+        the frontier changes nothing, and including it here would report a
+        relaxation that did no work.
+        """
+        if not self._config.cohort.review_on_request:
+            return frozenset()
+        upper = self._config.zpd.theta_upper
+        return frozenset(
+            c for c in self._requested if self.probability(c) >= upper
+        )
+
     def view(self, arm: str | None = None) -> FullStateView | ItemCorrectnessView:
         """The view this arm's planner receives.
 
@@ -140,6 +162,7 @@ class Blackboard:
                 reflections=tuple(self._state.reflections),
                 weaknesses=self.weaknesses,
                 requested=self._requested,
+                reviewing=self.reviewing,
             )
         return ItemCorrectnessView(
             outcomes=tuple(self._state.outcomes),
@@ -251,6 +274,7 @@ class Blackboard:
         results: Iterable[tuple[str, Verdict]],
         weight: int = 1,
         floor: float = 0.0,
+        ceiling: float | None = None,
     ) -> int:
         """Fold a held-out test's results into the learner model. Returns the count.
 
@@ -295,6 +319,20 @@ class Blackboard:
         nudge. The floor keeps the concept a priority without claiming the
         learner is at the very bottom of it; see ``CohortConfig.seed_floor`` for
         why it must stay under ``theta_lower``.
+
+        ``ceiling`` is the mirror, and it was missing. Nothing bounded a seeded
+        estimate from above, so at ``weight`` 3 one correct pre-test answer
+        landed near 0.96 — past ``theta_upper``, out of the frontier, and
+        unreachable for the rest of the sitting on the strength of a single
+        question. A learner who asked for that concept was told it would not
+        come round. **A held-out item is evidence, not proof**: seeding may
+        raise the estimate as far as the band's edge and not across it, so a
+        concept the test suggests is known stays selectable and has to be
+        demonstrated in practice like any other.
+
+        Passed as ``theta_upper`` and applied strictly below it, since the
+        frontier's test is ``< theta_upper`` and landing exactly on the edge
+        would close the concept just as surely.
         """
         seeded = 0
         for concept_id, verdict in results:
@@ -305,6 +343,8 @@ class Blackboard:
             for _ in range(weight):
                 after = bkt.revise(after, verdict is Verdict.CORRECT, self._config.bkt)
             after = max(after, floor)
+            if ceiling is not None:
+                after = min(after, math.nextafter(ceiling, 0.0))
             self._state.mastery[concept_id] = after
             seeded += 1
             self._bump(

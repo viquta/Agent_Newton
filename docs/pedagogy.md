@@ -22,6 +22,23 @@ The planner's guardrail layer calls this on every proposal, so a model that
 suggests an out-of-band item has that suggestion rejected rather than merely
 discouraged.
 
+The frontier itself admits two relaxations, both off by default, both recorded,
+and neither available to an agent:
+
+| `zpd.compute` | relaxes | set by |
+|---|---|---|
+| `waived` | the prerequisite rule — a set-aside concept stops blocking its dependants | `cohort.max_visits_per_concept` |
+| `reviewing` | the mastery rule — a concept the estimate has closed stays selectable | `cohort.review_on_request`, from what the learner asked for |
+
+`reviewing` is the only one a learner can trigger, and it lifts the upper bound
+alone: a request reopens a concept and never opens the material behind one whose
+prerequisites are unmet. Working the concept then tests the estimate that closed
+it — answered correctly the belief holds, answered wrongly it falls and the
+concept re-enters unaided.
+
+Seeding from a held-out test is capped at `theta_upper`, so one test item can
+raise the estimate but not declare mastery.
+
 ## Scaffolding
 
 ```python

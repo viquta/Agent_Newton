@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from agent_newton.config import BKTConfig, Config, ZPDConfig
-from agent_newton.core.state import bkt, zpd
+from agent_newton.core.state import bkt, route, zpd
 from agent_newton.core.state.store import Blackboard, new_blackboard
 from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
 from agent_newton.domains import registry
@@ -419,3 +419,141 @@ class TestAConceptReopenedAtTheLearnersRequest:
             mastery, graph, ZPDConfig(), 0.15, reviewing=frozenset(graph.ids())
         )
         assert set(plain) == set(asked)
+
+
+class TestAskingForSomethingTheBandHasClosed:
+    """The other half: the board, the goal and the seeding cap.
+
+    A learner asked for `implicit_differentiation`, one correct pre-test answer
+    had seeded it to 0.965, and the request was declined because the concept had
+    left the frontier. Three things had to change together — reopening it is
+    useless if no goal's route passes through it, and neither helps if a single
+    test item can put it there in the first place.
+    """
+
+    def _board(self, *, review: bool, requested=("implicit_differentiation",)):
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        config = Config(domain="calculus")
+        config.cohort.review_on_request = review
+        board = new_blackboard("victor", 1, domain.concepts, config)
+        for concept_id in domain.concepts.all_prerequisites("implicit_differentiation"):
+            board.state.mastery[concept_id] = 0.85
+        board.state.mastery["implicit_differentiation"] = 0.965
+        board.record_request(list(requested))
+        return domain, config, board
+
+    def test_declined_when_the_run_does_not_permit_it(self) -> None:
+        _, _, board = self._board(review=False)
+        assert board.reviewing == frozenset()
+        assert "implicit_differentiation" not in board.frontier
+
+    def test_reopened_when_it_does(self) -> None:
+        _, _, board = self._board(review=True)
+        assert board.reviewing == frozenset({"implicit_differentiation"})
+        assert "implicit_differentiation" in board.frontier
+
+    def test_and_the_goal_moves_to_reach_it(self) -> None:
+        """Reopening alone would not have been enough, which is the subtle part.
+
+        `implicit_differentiation` is a *sibling* of
+        `integration_by_substitution`, not a prerequisite, so the goal that
+        follows it does not pass through it — and a reopened concept off the
+        route is not a candidate.
+        """
+        domain, config, board = self._board(review=True)
+        view = board.view()
+        # Only the coupled view carries any of this, which is the architecture
+        # rather than a detail: a request is learner input both arms could be
+        # handed, and acting on it needs the posteriors and the graph.
+        assert isinstance(view, FullStateView)
+        goal = route.next_goal(
+            domain.concepts.goals(),
+            view.mastery,
+            config.zpd,
+            bkt.initial(config.bkt),
+            requested=view.requested,
+            graph=domain.concepts,
+            reviewing=view.reviewing,
+        )
+        assert goal == "implicit_differentiation"
+
+    def test_a_request_still_outstanding_is_served_first(self) -> None:
+        """⚠️ The guard that must survive this change.
+
+        A person asked for two concepts, the pre-test put one at 0.98, the goal
+        moved to serve that one, and the other sat at 0.32 unreached. Revision
+        is a fallback to real work, never a competitor with it.
+        """
+        domain, config, board = self._board(
+            review=True,
+            requested=("implicit_differentiation", "integration_by_substitution"),
+        )
+        board.state.mastery["integration_by_substitution"] = 0.32
+        view = board.view()
+        # Only the coupled view carries any of this, which is the architecture
+        # rather than a detail: a request is learner input both arms could be
+        # handed, and acting on it needs the posteriors and the graph.
+        assert isinstance(view, FullStateView)
+        goal = route.next_goal(
+            domain.concepts.goals(),
+            view.mastery,
+            config.zpd,
+            bkt.initial(config.bkt),
+            requested=view.requested,
+            graph=domain.concepts,
+            reviewing=view.reviewing,
+        )
+        assert goal == "integration_by_substitution"
+
+    def test_asking_for_something_already_open_reopens_nothing(self) -> None:
+        # `reviewing` reports a relaxation that did work. A concept already in
+        # the frontier needed none.
+        _, _, board = self._board(review=True, requested=("chain_rule",))
+        assert board.reviewing == frozenset()
+
+    def test_it_never_opens_material_behind_an_unmet_prerequisite(self) -> None:
+        domain, config, board = self._board(review=True)
+        for concept_id in domain.concepts.all_prerequisites("implicit_differentiation"):
+            board.state.mastery[concept_id] = 0.10
+        assert "implicit_differentiation" in board.reviewing
+        assert "implicit_differentiation" not in board.frontier
+
+
+class TestOneHeldOutItemMayNotDeclareMastery:
+    """``seed_floor`` bounded a seeded estimate from below and nothing from above.
+
+    At ``pretest_weight: 3`` one correct pre-test answer landed near 0.96 — past
+    ``theta_upper``, out of the frontier, and unreachable for the rest of the
+    sitting on the strength of a single question.
+    """
+
+    def _seed(self, correct: bool, ceiling: float | None):
+        from agent_newton.domains import registry
+
+        domain = registry.load_domain("calculus")
+        config = Config(domain="calculus")
+        board = new_blackboard("L1", 1, domain.concepts, config)
+        verdict = Verdict.CORRECT if correct else Verdict.INCORRECT
+        board.seed_from_test([("chain_rule", verdict)], weight=3, ceiling=ceiling)
+        return board.probability("chain_rule"), config
+
+    def test_uncapped_it_clears_the_band(self) -> None:
+        value, config = self._seed(correct=True, ceiling=None)
+        assert value >= config.zpd.theta_upper
+
+    def test_capped_it_stays_selectable(self) -> None:
+        value, config = self._seed(correct=True, ceiling=Config().zpd.theta_upper)
+        assert value < config.zpd.theta_upper
+
+    def test_the_cap_still_lets_the_evidence_count(self) -> None:
+        # Raised well above the prior, just not across the edge: this is a cap
+        # on the claim, not a refusal to learn from the test.
+        value, config = self._seed(correct=True, ceiling=Config().zpd.theta_upper)
+        assert value > config.zpd.theta_lower
+
+    def test_it_does_not_touch_a_wrong_answer(self) -> None:
+        capped, _ = self._seed(correct=False, ceiling=Config().zpd.theta_upper)
+        uncapped, _ = self._seed(correct=False, ceiling=None)
+        assert capped == uncapped

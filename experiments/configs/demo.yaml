@@ -70,6 +70,18 @@ cohort:
   # wrong pre-test answer would unlock the material behind it; the config
   # refuses that.
   seed_floor: 0.40
+  # On here and nowhere else. Asking for a concept the model already calls
+  # mastered reopens it for revision instead of being declined.
+  #
+  # The reason a request may do what an inference may not: a sitting ended with
+  # three concepts above theta_upper that the held-out post-test showed the
+  # learner could not do, and until the seeding was capped one correct pre-test
+  # answer landed near 0.96 on its own. Refusing an explicit request on the
+  # strength of that number defers to the least reliable thing on the board.
+  # Working the concept is then the check the estimate has been owed.
+  #
+  # Prerequisites are still never skipped — only the upper bound gives way.
+  review_on_request: true
 
 simulator:
   learner: human
