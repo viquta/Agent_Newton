@@ -197,10 +197,20 @@ class DemoObserver(Watching):
         #: replanning notes, which is not beside the question in any sense a
         #: reader would recognise.
         #:
-        #: Keyed on the item id so a stale offer cannot outlive the question it
-        #: was made for: the session offers at most once per item, and an
-        #: unkeyed field would keep showing the last concept's rule on every
-        #: question after it that got no offer of its own.
+        #: ⚠️ **Cleared at ``item_started``, and an item id is not enough.** This
+        #: was keyed on the id alone, on the reasoning that an offer could then
+        #: not outlive the question it was made for. An id does not identify a
+        #: *posing*: a concept is worked until its posterior clears the band, so
+        #: the same item comes round repeatedly under the same id with new
+        #: numbers. A learner who was offered the rule at 0.30 and met that item
+        #: again at 0.80 was shown the rule a second time, having earned their
+        #: way out of it — while the audit log correctly recorded no second
+        #: offer. Found in a sitting; the reporter's own words were that they
+        #: were not supposed to get it "if i have now over 0.7".
+        #:
+        #: The session calls ``item_started`` and then decides whether to offer,
+        #: so clearing here makes "nothing was offered for this posing" the
+        #: default rather than something that has to be signalled.
         self._offered: tuple[str, str] | None = None
 
     def board_panel(self, board: Blackboard) -> Panel:
@@ -248,6 +258,9 @@ class DemoObserver(Watching):
         )
 
     def item_started(self, item: Item, board: Blackboard) -> None:
+        # A new posing of a question carries no support until the session says
+        # so, and it says so straight after this returns.
+        self._offered = None
         self._console.print()
         self._console.print(self.board_panel(board))
         self._remind(item)
@@ -273,7 +286,13 @@ class DemoObserver(Watching):
         self._offered = (item.id, resource.shown(support.shows_example))
 
     def support_for(self, item: Item) -> str | None:
-        """What was offered with this question, if anything was."""
+        """What was offered with this question, if anything was.
+
+        The id check is a second lock rather than the mechanism: clearing at
+        ``item_started`` is what makes this per posing. It stays because the two
+        fail differently — a missed clear shows a stale offer for the same item,
+        a mismatched id would show another concept's rule entirely.
+        """
         if self._offered is None or self._offered[0] != item.id:
             return None
         return self._offered[1]

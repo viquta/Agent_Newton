@@ -9,6 +9,7 @@ number where there is none.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import replace
 
 import pytest
@@ -1696,3 +1697,123 @@ class TestEndingTrainingEarly:
             "finished:learner_ended_it",
             "phase:posttest",
         ]
+
+
+class TestWhatTheLearnerSawMatchesWhatWasRecorded:
+    """The front end against the audit log, which is the only pair worth checking.
+
+    A support offer is decided by the session and rendered by the demo, and
+    those are two objects. Asserting either against itself proves nothing: the
+    session was right in the sitting that found this and the log recorded it
+    correctly, while the screen showed a learner the rule again on a concept
+    they had just carried from 0.30 to 0.80.
+
+    So this drives the real session with the real observer and asks the question
+    the demo's own prompt asks — ``observer.support_for(item)`` — at exactly the
+    point the demo asks it, then counts against the log.
+    """
+
+    def _sitting(self, monkeypatch):
+        from agent_newton.core.orchestration.session import build_session
+        from agent_newton.demo import DemoObserver
+        from rich.console import Console
+
+        calculus = registry.load_domain("calculus")
+        config = Config.model_validate(
+            {
+                "domain": "calculus",
+                "arm": "coupled",
+                "cohort": {
+                    "n_learners": 1,
+                    "max_items": 12,
+                    "max_steps_per_item": 3,
+                    "administer_tests": False,
+                },
+                # Declared simulated, with a HumanLearner injected below —
+                # `scaffold_probe.py` does the same and for the same reason. A
+                # person carries no injected label, so the config validator
+                # refuses an oracle beside one and is right to; every answer
+                # here is correct, so nothing is ever diagnosed.
+                "simulator": {"learner": "simulated", "surface": "symbolic"},
+                "agents": {
+                    "tutor": {"impl": "template"},
+                    "diagnostic": {"impl": "oracle"},
+                    "planner": {"impl": "goal_directed"},
+                },
+                "scaffolding": {
+                    "policy": "banded_plus",
+                    "offer_at_presentation": True,
+                },
+            }
+        )
+        observer = DemoObserver(Console(quiet=True), calculus, config)
+        seen: list[tuple[str, str | None]] = []
+
+        def ask(item, attempt: int) -> str:
+            # What `demo.ask` does, at the point it does it.
+            if attempt == 0:
+                seen.append((item.id, observer.support_for(item)))
+            # Right every time, so items are worked through and come round
+            # again — which is the situation the defect needed.
+            return item.answer
+
+        session = build_session(
+            "victor",
+            config.seed,
+            calculus,
+            config,
+            learner=HumanLearner(ask),
+            observer=observer,
+        )
+        session.run()
+        return session, seen
+
+    def test_a_panel_carries_support_exactly_when_one_was_offered(
+        self, monkeypatch
+    ) -> None:
+        session, seen = self._sitting(monkeypatch)
+        offered = [
+            record.evidence["item_id"]
+            for record in session.board.audit_log
+            if record.cause == "tutor" and record.evidence["move"] == "present"
+        ]
+        shown = [item_id for item_id, support in seen if support is not None]
+        assert shown == offered
+
+    def test_the_same_item_asked_again_higher_up_shows_nothing(
+        self, monkeypatch
+    ) -> None:
+        """The defect itself, as a case rather than as a count.
+
+        A learner answering correctly climbs past ``theta_lower``, and a concept
+        is worked until it clears ``theta_upper`` — so an item is posed again
+        under the same id with the learner no longer below the line. That second
+        posing must be bare.
+        """
+        session, seen = self._sitting(monkeypatch)
+        offered = Counter(
+            record.evidence["item_id"]
+            for record in session.board.audit_log
+            if record.cause == "tutor" and record.evidence["move"] == "present"
+        )
+        posed = Counter(item_id for item_id, _ in seen)
+        shown = Counter(item_id for item_id, support in seen if support is not None)
+
+        # The case has to exist or the assertion below is about nothing: an item
+        # posed more than once, whose later postings earned their way out of
+        # being offered anything.
+        outgrown = [
+            item_id for item_id in posed
+            if posed[item_id] > 1 and offered[item_id] < posed[item_id]
+        ]
+        assert outgrown, (
+            "no item was posed again after its support stopped, so the case "
+            "this test exists for was never reached"
+        )
+        for item_id in outgrown:
+            assert shown[item_id] == offered[item_id], (
+                f"{item_id} was posed {posed[item_id]} times and offered support "
+                f"{offered[item_id]} time(s), but the learner was shown it "
+                f"{shown[item_id]} time(s) — the later posings re-rendered an "
+                f"offer the session had decided not to make"
+            )
