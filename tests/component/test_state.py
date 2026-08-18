@@ -351,3 +351,71 @@ class TestTheAblation:
         # answer it.
         for arm in ("coupled", "decoupled"):
             assert self._board(graph, arm).view().consecutive_correct() == 1
+
+
+class TestAConceptReopenedAtTheLearnersRequest:
+    """``reviewing`` relaxes the upper bound, which only a learner may ask for.
+
+    Built after a sitting: the learner asked for `implicit_differentiation`, one
+    correct pre-test answer had just seeded it to 0.965 at
+    ``pretest_weight: 3``, and the request was refused because the concept had
+    left the frontier. The estimate has been measured unreliable in exactly that
+    region — §7i ended with three concepts above ``theta_upper`` that the
+    held-out post-test showed the learner could not do.
+
+    ⚠️ Nothing passes this yet. The parameter and its behaviour are here; the
+    board, the goal choice and the front end are the other half.
+    """
+
+    def _graph(self):
+        from agent_newton.domains import registry
+
+        return registry.load_domain("calculus").concepts
+
+    def test_a_mastered_concept_stays_out_by_default(self) -> None:
+        graph = self._graph()
+        mastery = {c: 0.96 for c in graph.ids()}
+        assert "implicit_differentiation" not in zpd.compute(
+            mastery, graph, ZPDConfig(), 0.15
+        )
+
+    def test_and_comes_back_when_it_was_asked_for(self) -> None:
+        graph = self._graph()
+        mastery = {c: 0.96 for c in graph.ids()}
+        frontier = zpd.compute(
+            mastery,
+            graph,
+            ZPDConfig(),
+            0.15,
+            reviewing=frozenset({"implicit_differentiation"}),
+        )
+        assert "implicit_differentiation" in frontier
+        assert "implicit_differentiation" in frontier.reason
+
+    def test_it_does_not_open_the_material_behind_an_unmet_prerequisite(self) -> None:
+        """The other bound is untouched, and that is the whole distinction.
+
+        A request reopens a concept. It must never open what depends on one the
+        learner cannot do — that is ``waived``, and it exists for a different
+        reason and behind a different knob.
+        """
+        graph = self._graph()
+        mastery = {c: 0.05 for c in graph.ids()}
+        frontier = zpd.compute(
+            mastery,
+            graph,
+            ZPDConfig(),
+            0.15,
+            reviewing=frozenset({"integration_by_substitution"}),
+        )
+        assert "integration_by_substitution" not in frontier
+
+    def test_requesting_something_unmastered_changes_nothing(self) -> None:
+        # It was already in the frontier; asking for it cannot add it twice.
+        graph = self._graph()
+        mastery = {c: 0.05 for c in graph.ids()}
+        plain = zpd.compute(mastery, graph, ZPDConfig(), 0.15)
+        asked = zpd.compute(
+            mastery, graph, ZPDConfig(), 0.15, reviewing=frozenset(graph.ids())
+        )
+        assert set(plain) == set(asked)

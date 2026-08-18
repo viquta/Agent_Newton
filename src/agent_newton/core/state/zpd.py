@@ -51,6 +51,7 @@ def compute(
     band: ZPDConfig,
     prior: float,
     waived: frozenset[str] = frozenset(),
+    reviewing: frozenset[str] = frozenset(),
 ) -> Frontier:
     """Derive the frontier from mastery estimates and the prerequisite graph.
 
@@ -70,6 +71,27 @@ def compute(
 
     Empty by default. Only ``cohort.max_visits_per_concept`` fills it, that is
     unset in every experiment config, and there is a test on both.
+
+    ``reviewing`` concepts stay in the frontier although the estimate has them
+    mastered. **This relaxes the other bound, and only a learner can ask for
+    it.** The two are deliberately separate: ``waived`` steps past a
+    prerequisite the learner has not met, and this reopens something the model
+    believes they no longer need.
+
+    Why a request may do that when an inference may not: the estimate has been
+    measured wrong in exactly this region. A sitting ended with three concepts
+    above ``theta_upper`` that the held-out post-test showed the learner could
+    not do, and one correct pre-test answer at ``pretest_weight: 3`` lands near
+    0.96 on its own. Refusing a learner's explicit request on the strength of
+    that number is deferring to the least reliable thing on the board. Working
+    the concept is also the check: answered correctly the estimate holds,
+    answered wrongly it falls and the concept re-enters on its own terms.
+
+    ⚠️ It does **not** touch the prerequisite rule. A request reopens a concept;
+    it never opens the material behind one the learner cannot do.
+
+    Empty for every cohort — ``cohort.review_on_request`` is off there and
+    nothing outside the demo records a request at all, with a test on each.
     """
 
     def p(concept_id: str) -> float:
@@ -78,7 +100,9 @@ def compute(
     def satisfied(concept_id: str) -> bool:
         return concept_id in waived or p(concept_id) > band.theta_lower
 
-    unmastered = [c for c in graph.ids() if p(c) < band.theta_upper]
+    unmastered = [
+        c for c in graph.ids() if p(c) < band.theta_upper or c in reviewing
+    ]
 
     if not unmastered:
         # Nothing left to teach. An empty frontier here means the learner is
@@ -86,11 +110,23 @@ def compute(
         # anything reachable — hence not a fallback.
         return Frontier(frozenset(), reason="all concepts mastered")
 
+    reopened = sorted(c for c in reviewing if p(c) >= band.theta_upper)
+
     in_zone = frozenset(
         c for c in unmastered if all(satisfied(q) for q in graph.prerequisites(c))
     )
     if in_zone:
-        return Frontier(in_zone)
+        # Said in `reason` rather than left to be inferred from the set: a zone
+        # holding a concept the estimate calls mastered is not the zone the rule
+        # describes, and a run has to be able to show why.
+        return Frontier(
+            in_zone,
+            reason=(
+                f"reopened at the learner's request: {', '.join(reopened)}"
+                if reopened
+                else ""
+            ),
+        )
 
     # Should be unreachable. Topological order places every prerequisite before
     # its dependants, so the *first* unmastered concept in that order cannot
