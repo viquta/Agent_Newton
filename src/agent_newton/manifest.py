@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import subprocess
 from datetime import datetime, timezone
@@ -24,6 +25,13 @@ from typing import Iterable, Sequence
 from pydantic import BaseModel, Field
 
 from agent_newton.config import Config
+
+
+#: Set when the working tree is not reachable from where the run happens — a
+#: container built from a copy of the source has no ``.git`` to ask. Supplied at
+#: build time, so the manifest still names the commit that produced the number.
+SHA_ENV = "AGENT_NEWTON_GIT_SHA"
+DIRTY_ENV = "AGENT_NEWTON_GIT_DIRTY"
 
 
 def _git(*args: str) -> str | None:
@@ -97,7 +105,16 @@ class RunManifest(BaseModel):
 
     @classmethod
     def create(cls, config: Config, run_id: str) -> RunManifest:
-        status = _git("status", "--porcelain")
+        # The environment is consulted first and answers both fields together.
+        # Taking the sha from it and the dirty flag from a subprocess that found
+        # no repository would report a clean tree on no evidence.
+        declared = os.environ.get(SHA_ENV) or None
+        if declared:
+            git_sha: str | None = declared
+            git_dirty = os.environ.get(DIRTY_ENV, "").strip().lower() not in ("", "0", "false")
+        else:
+            git_sha = _git("rev-parse", "HEAD")
+            git_dirty = bool(_git("status", "--porcelain"))
         agents = config.agents
 
         def role(spec, impl: str) -> str:
@@ -117,8 +134,8 @@ class RunManifest(BaseModel):
             run_id=run_id,
             run_name=config.run_name,
             created_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            git_sha=_git("rev-parse", "HEAD"),
-            git_dirty=bool(status),
+            git_sha=git_sha,
+            git_dirty=git_dirty,
             config_hash=config.content_hash(),
             arm=config.arm,
             domain=config.domain,

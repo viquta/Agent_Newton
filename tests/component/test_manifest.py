@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from agent_newton import manifest as manifest_module
 from agent_newton.config import Config
 from agent_newton.manifest import (
     IncomparableRunsError,
@@ -29,6 +30,41 @@ class TestRunManifest:
         assert manifest.run_name == "demo"
         assert manifest.seed == 42
         assert manifest.config_hash
+
+    def test_takes_the_sha_from_the_environment_when_declared(self, monkeypatch) -> None:
+        # A container built from a copy of the source has no .git to ask, and a
+        # manifest recording null there breaks the chain from a reported number
+        # back to the commit that produced it.
+        monkeypatch.setenv(manifest_module.SHA_ENV, "abc123")
+        monkeypatch.delenv(manifest_module.DIRTY_ENV, raising=False)
+        monkeypatch.setattr(manifest_module, "_git", lambda *args: None)
+
+        manifest = RunManifest.create(Config(), run_id="r1")
+        assert manifest.git_sha == "abc123"
+        assert manifest.git_dirty is False
+
+    def test_declared_sha_carries_its_own_dirty_flag(self, monkeypatch) -> None:
+        monkeypatch.setenv(manifest_module.SHA_ENV, "abc123")
+        monkeypatch.setenv(manifest_module.DIRTY_ENV, "1")
+        monkeypatch.setattr(manifest_module, "_git", lambda *args: None)
+
+        assert RunManifest.create(Config(), run_id="r1").git_dirty is True
+
+    def test_reads_the_working_tree_when_nothing_is_declared(self, monkeypatch) -> None:
+        # The other half of the guard: the environment does not shadow a real
+        # repository, and an empty value is not a declaration.
+        monkeypatch.setenv(manifest_module.SHA_ENV, "")
+        monkeypatch.setenv(manifest_module.DIRTY_ENV, "1")
+        monkeypatch.setattr(
+            manifest_module,
+            "_git",
+            lambda *args: "deadbeef" if args[0] == "rev-parse" else "",
+        )
+
+        manifest = RunManifest.create(Config(), run_id="r1")
+        assert manifest.git_sha == "deadbeef"
+        # From `git status`, which reported nothing — not from DIRTY_ENV.
+        assert manifest.git_dirty is False
 
     def test_records_model_free_roles_by_impl_not_model_name(self) -> None:
         # An oracle diagnostic never calls gemma4:12b, so recording that model
