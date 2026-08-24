@@ -56,25 +56,32 @@ ensure_image() {
   fi
 }
 
-# Files written into the mounted results/ should belong to whoever ran this.
-# Docker Desktop maps ownership itself; on Linux nothing does.
-user_flag() {
+# Flags for `compose run`, as a global array.
+#
+# ⚠️ This must be called plainly, never inside `$( )` or `<( )`. Both connect the
+# command's stdout to a pipe, so `[ -t 1 ]` there is false whatever the caller's
+# terminal is — which silently passed -T on every invocation, so compose never
+# allocated a TTY, colour was disabled everywhere and `shell` gave a
+# non-interactive bash with no prompt.
+compose_flags() {
+  FLAGS=()
+  # Files written into the mounted results/ should belong to whoever ran this.
+  # Docker Desktop maps ownership itself; on Linux nothing does.
   case "$(uname -s)" in
-    Linux) printf -- '--user\n%s:%s\n' "$(id -u)" "$(id -g)" ;;
+    Linux) FLAGS+=(--user "$(id -u):$(id -g)") ;;
   esac
-}
-
-# `docker compose run` allocates a TTY by default. The demo needs one; a
-# redirected or piped invocation must not have one.
-tty_flag() {
-  if [ ! -t 0 ] || [ ! -t 1 ]; then printf -- '-T\n'; fi
+  # `compose run` allocates a TTY by default. The demo and the shell need one; a
+  # redirected or piped invocation must not have one.
+  if [ ! -t 0 ] || [ ! -t 1 ]; then FLAGS+=(-T); fi
 }
 
 run_in_container() {
   ensure_image
-  local extra=()
-  while IFS= read -r line; do [ -n "$line" ] && extra+=("$line"); done < <(user_flag; tty_flag)
-  compose run --rm "${extra[@]}" "$SERVICE" "$@"
+  compose_flags
+  # The guarded expansion is for bash 3.2, which macOS ships: under `set -u` a
+  # bare "${FLAGS[@]}" on an empty array is an unbound variable, and the array is
+  # empty in the ordinary case — macOS, at a terminal.
+  compose run --rm ${FLAGS[@]+"${FLAGS[@]}"} "$SERVICE" "$@"
 }
 
 case "${1:-help}" in
@@ -100,10 +107,9 @@ case "${1:-help}" in
   dev)
     shift
     ensure_image
-    extra=()
-    while IFS= read -r line; do [ -n "$line" ] && extra+=("$line"); done < <(user_flag; tty_flag)
+    compose_flags
     compose -f docker-compose.yml -f docker-compose.dev.yml \
-      run --rm "${extra[@]}" "$SERVICE" "$@"
+      run --rm ${FLAGS[@]+"${FLAGS[@]}"} "$SERVICE" "$@"
     ;;
 
   *)          run_in_container "$@" ;;
