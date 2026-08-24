@@ -27,6 +27,26 @@ observations. A test enforces that no agent-to-agent call path exists.
 
 ## Install
 
+Two ways in. **If you have Docker, you need nothing else** — not Python, not
+`uv`, not a model:
+
+```bash
+git clone https://github.com/viquta/Agent_Newton.git
+cd Agent_Newton
+./newton help
+```
+
+That one command builds the image on first use — a few minutes, once — and then
+prints every experiment, evaluation and check in the project as a single verb:
+`./newton test`, `./newton all`, `./newton arch`, `./newton demo`. Every call
+after the first starts in about a second.
+
+**→ [docs/docker.md](docs/docker.md) is the full reference** — the verb table,
+where output goes, what needs a model, and how to run it without the wrapper
+script.
+
+Or work on the host directly:
+
 ```bash
 uv sync --dev
 ```
@@ -34,16 +54,6 @@ uv sync --dev
 ```bash
 uv run pytest -q
 ```
-
-Or run everything in a container, with nothing on the host but Docker:
-
-```bash
-./newton help
-```
-
-That lists every experiment, evaluation and check as a single verb — `./newton
-test`, `./newton all`, `./newton arch`, `./newton demo`. `make` targets mirror
-them. See [docs/docker.md](docs/docker.md).
 
 ## Run
 

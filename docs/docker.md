@@ -16,8 +16,10 @@ DOC=pedagogy` — and delegate to the same script.
 
 ## Without the wrapper
 
-`./newton` is a shell script wrapping `docker compose`. Compose reaches every
-verb directly, which is what to use on Windows without WSL or Git Bash:
+`./newton` is a shell script wrapping `docker compose`, and it builds the image
+by itself on first use. Compose reaches every verb directly, which is what to use
+on Windows without WSL or Git Bash — the difference being that the build is a
+separate step you run yourself:
 
 ```bash
 # `newton` in these is the service named in docker-compose.yml — not ./newton.
