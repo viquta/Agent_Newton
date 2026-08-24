@@ -32,3 +32,40 @@ jobs:
       # zero-LLM end-to-end run, is expected to pass here.
       - name: Test
         run: uv run pytest -m "not slow" -q
+
+  # The container is how anyone without this toolchain runs the project, so a
+  # base-image or dependency change that breaks it has to fail here rather than
+  # in front of whoever tried it. Building also exercises the entrypoint: a verb
+  # whose command is wrong fails the job.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: agent-newton:ci
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Content and configuration
+        run: docker run --rm agent-newton:ci check
+
+      # The same suite the job above runs, minus tests/test_publishable.py:
+      # the image carries no working tree, so `git ls-files` has nothing to
+      # answer with and the module skips. That job still runs it.
+      - name: Test
+        run: docker run --rm agent-newton:ci test
+
+      - name: Verifier gold set
+        run: docker run --rm agent-newton:ci verifier
+
+      - name: End-to-end run
+        run: docker run --rm agent-newton:ci smoke
