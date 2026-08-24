@@ -141,7 +141,8 @@ ${BOLD}Run an experiment${OFF}  ${DIM}— no model involved; summaries land in $
   ${CYAN}all${OFF}               every model-free experiment above, in order
 
 ${BOLD}Needs a model${OFF}  ${DIM}— host Ollama at \$OLLAMA_HOST, or ./newton up-models${OFF}
-  ${CYAN}demo${OFF}              work through a session yourself, blackboard visible
+  ${CYAN}demo [name]${OFF}       work through a session yourself, blackboard visible
+                    ${DIM}a name resumes that learner; a new one starts fresh${OFF}
   ${CYAN}diagnostic${OFF}        score the diagnostic agent against injected labels
   ${CYAN}tutor${OFF}             score the tutor on the turns a learner would read
 
@@ -312,7 +313,15 @@ case "$verb" in
   # --- model-backed -------------------------------------------------------
   demo)
     require_model demo
-    exec agent-newton demo --config "$DEMO" "$@"
+    # A bare first argument is who is sitting down, the way `cohort` takes an
+    # arm: `demo alice` rather than `demo --learner alice`. Anything starting
+    # with a dash is a flag and passes straight through.
+    who=()
+    case "${1:-}" in
+      ""|-*) : ;;
+      *) who=(--learner "$1"); shift ;;
+    esac
+    exec agent-newton demo --config "$DEMO" "${who[@]}" "$@"
     ;;
   diagnostic)
     require_model diagnostic

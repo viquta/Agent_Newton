@@ -133,7 +133,7 @@ against the stored directory for the model and flags they default to.
 
 | | |
 |---|---|
-| `demo` | work through a session yourself, with the shared state visible |
+| `demo [name]` | work through a session yourself, with the shared state visible. A name says who is sitting down — the same one resumes that learner, a new one starts fresh. Equivalent to `--learner <name>` |
 | `diagnostic` | score the diagnostic agent against the injected labels |
 | `tutor` | score the tutor on the turns a learner would read |
 
