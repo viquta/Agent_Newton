@@ -18,6 +18,10 @@ uv run pyright
 uv run agent-newton domain validate all
 ```
 
+The same commands run in a container as short verbs — `./newton test`,
+`./newton typecheck`, `./newton check`. `docs/docker.md` has the full list, and
+`docker/entrypoint.sh` is where a new verb is added.
+
 Both `pytest` and `pyright` gate CI. Run them before committing — and chain off
 the command itself, not off a pipe, or a failure will not stop the commit.
 

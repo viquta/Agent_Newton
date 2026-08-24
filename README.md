@@ -35,6 +35,16 @@ uv sync --dev
 uv run pytest -q
 ```
 
+Or run everything in a container, with nothing on the host but Docker:
+
+```bash
+./newton help
+```
+
+That lists every experiment, evaluation and check as a single verb — `./newton
+test`, `./newton all`, `./newton arch`, `./newton demo`. `make` targets mirror
+them. See [docs/docker.md](docs/docker.md).
+
 ## Run
 
 Validate a run configuration:
