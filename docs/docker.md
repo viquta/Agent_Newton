@@ -27,6 +27,24 @@ docker compose run --rm newton test           # the verb is whatever follows the
 docker compose run --rm newton paired --n 40  # flags after the verb reach the experiment
 ```
 
+`newton` names three different things in this project, and these commands use the
+middle one:
+
+| Where | What it is |
+|---|---|
+| `./newton` | the shell script on the host, which wraps everything below |
+| `newton` in a compose command | the **service** defined in `docker-compose.yml` |
+| `/usr/local/bin/newton` | the **entrypoint** inside the image, which reads the verb |
+
+So the last line reads: run the `newton` service in a container that deletes
+itself, and hand its entrypoint the verb `paired` with `--n 40` after it. The
+entrypoint appends that flag to the ones `run_paired.py` is already given, and
+the later `--n` wins over the earlier — which is why a default can be overridden
+without restating the command it belongs to.
+
+`--rm` is why Docker Desktop's Containers tab stays empty: the container is gone
+as soon as the verb finishes.
+
 Two things the wrapper does that a plain `docker compose build` does not, so do
 them yourself if you skip it:
 
@@ -41,10 +59,9 @@ them yourself if you skip it:
 service: `up` runs the default command — the help — prefixes every line with the
 service name, and leaves a stopped container behind. Use `run --rm`.
 
-For the same reason, Docker Desktop's **Containers** tab stays empty. Each verb
-creates a container, runs, and deletes itself. The image is under **Images**, and
-the GUI's Run button only ever runs the help. Drop the `--rm` if you want a
-container to inspect there afterwards.
+In Docker Desktop the image is under **Images**, not Containers, and the GUI's
+Run button only ever runs the help. Drop the `--rm` if you want a container left
+behind to inspect there.
 
 ## The verbs
 
