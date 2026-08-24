@@ -20,10 +20,11 @@ DOC=pedagogy` — and delegate to the same script.
 verb directly, which is what to use on Windows without WSL or Git Bash:
 
 ```bash
-docker compose build newton
-docker compose run --rm newton help
-docker compose run --rm newton test
-docker compose run --rm newton paired --n 40
+# `newton` in these is the service named in docker-compose.yml — not ./newton.
+docker compose build newton                   # build the image; once, then only after a change
+docker compose run --rm newton help           # one verb, in a container that deletes itself
+docker compose run --rm newton test           # the verb is whatever follows the service name
+docker compose run --rm newton paired --n 40  # flags after the verb reach the experiment
 ```
 
 Two things the wrapper does that a plain `docker compose build` does not, so do
