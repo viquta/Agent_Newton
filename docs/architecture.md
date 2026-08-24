@@ -17,7 +17,8 @@ direct call between two agents would be a design error, so
    (domain)  │      └───┬──────────┬──────────┬────────┘
              │          │ view     │ view     │ view
    Tutor ◄───┘      Tutor      Diagnostic   Planner
-                            ▲
+                                               ▲
+                                               │ gates
               Arbitration policy: thresholds, guardrails, audit
 ```
 
@@ -31,13 +32,17 @@ direct call between two agents would be a design error, so
 | `bkt.py` | Bayesian Knowledge Tracing — per-concept mastery posterior from a stream of correct/incorrect observations |
 | `zpd.py` | The mastery frontier, derived from the posteriors and the prerequisite graph |
 | `route.py` | The way to the goal, derived from the posteriors, the error trace and the graph |
+| `decay.py` | What a gap between sittings does to a posterior. Both estimates relax toward the BKT prior — belief going stale, not the learner forgetting. Nothing schedules a review: a decayed posterior falls back below `θ_upper` and the route passes through it again. |
 | `store.py` | The blackboard. Every mutation bumps `version` and appends to an immutable audit log. |
 | `views.py` | `FullStateView` and `ItemCorrectnessView` |
 
 **Views** are how the same state is exposed differently to different
 configurations. `FullStateView` carries per-concept posteriors, the error trace,
-misconception labels and the frontier. `ItemCorrectnessView` carries only the
-correct/incorrect stream. They are two views over one state object, not two
+misconception labels and the frontier; it also carries what the learner said
+(`reflections`, reachable per concept through `said_about`), the concepts worked
+often enough to be set aside (`weaknesses`), and the concepts a learner asked for
+and is being given again (`requested`, `reviewing`). `ItemCorrectnessView`
+carries only the correct/incorrect stream. They are two views over one state object, not two
 implementations, so a configuration that changes the view changes what an agent
 can see and nothing else.
 
@@ -113,7 +118,8 @@ can be asserted in tests and logged per decision:
 | Predicate | Rule |
 |---|---|
 | Band membership | An item may be selected only if its concept is in the frontier |
-| Scaffolding | Hint level is chosen from position within the band and the recent error trace |
+| Scaffolding | Hint level is chosen from position within the band and the recent error trace. Two ladders: `banded` steps at `θ_lower` and `θ_lower / 2`; `banded_plus` reads every cut point off the band instead, disclosing nothing above `θ_upper` and capping escalation at `targeted` inside it |
+| Support at presentation | A second axis, decided *before* the first attempt rather than after a failure: below `θ_lower` the rule is shown beside the question, and further down a solved example on other numbers |
 | Fading | Hint level is monotonically non-increasing in mastery, all else equal |
 | Error-first | A reflective prompt is required after a confirmed misconception, before remediation |
 
@@ -126,7 +132,7 @@ text.
 |---|---|---|
 | `tutor` | Hints and step-level feedback at the level the scaffolding predicate selects | Every step |
 | `diagnostic` | Classifies an incorrect step into the domain's misconception catalogue, structured as elicit → differentiate → remediate → verify | Only on incorrect steps |
-| `planner` | Names the goal, and selects the next concept and item on the way to it | Per item, and on replan |
+| `planner` | Names the goal, and selects the next concept and item on the way to it | `select()` every item; `plan()` only when arbitration allows a replan, or an item was set aside |
 
 A planner makes two decisions at two timescales. `plan()` names the target —
 the first declared goal not yet reached. `select()` chooses the item on the way
@@ -138,6 +144,8 @@ is limited at both.
 | `goal_directed` | Routes toward the declared goals from the posteriors and the error trace |
 | `greedy` | Frontier selection with no target — the undirected predecessor, kept as a baseline |
 | `llm` | Proposes among the goal-directed candidates; the guardrail decides whether the proposal stands |
+| `oracle` | Selects against the simulated learner's profile — the ceiling a selection policy could reach, not a condition any real agent could occupy |
+| `reverse`, `shuffled` | Ordering probes. Same material, deliberately worse order, so an outcome that depends on sequencing can be told from one that does not |
 
 The model-backed planner is hybrid: the model proposes, and a deterministic
 guardrail layer rejects out-of-band, off-route or thrashing choices and falls
@@ -188,6 +196,47 @@ between the arms a conservative estimate.
 Setting a goal is recorded under the audit cause `plan`, not `replan`, so it
 stays out of the trigger counts a threshold analysis reads.
 
+### The session loop (`core/orchestration/`)
+
+`session.py` is the only thing that moves information between agents, and the
+single file to read first for control flow. Each step: the planner selects, the
+learner answers, the verifier grades, the diagnostic labels an incorrect step,
+the board updates, the arbitration policy decides whether the plan may reopen,
+and the tutor replies at the level the scaffolding predicate chose.
+
+`SessionObserver` is how a session is watched without being altered — the demo's
+live panel is one, and a run's `events.jsonl` another. Nothing an observer does
+reaches the loop.
+
+A session ends for one of four reasons, and which one is an outcome rather than
+an implementation detail:
+
+| Stop reason | Meaning |
+|---|---|
+| `budget_spent` | The item budget ran out — the ordinary ending |
+| `every_goal_reached` | Every declared goal cleared `θ_upper`. Only a planner that names goals can reach this |
+| `nothing_left_to_select` | The planner returned no item: the frontier emptied, or a fixed-order walk ran off the end of its list |
+| `learner_ended_it` | A person stopped |
+
+`nothing_left_to_select` is why the decoupled arm can attempt fewer items than
+the budget allows, and it is not the same event as `every_goal_reached`. Only one
+of the two planners can tell them apart, which is why both are recorded.
+
+### Evaluation (`core/evaluation/`)
+
+Each component is scored against something that is not another model's opinion.
+
+| Module | Scores |
+|---|---|
+| `verifier.py` | The symbolic verifier against a hand-labelled gold set, including correct answers written differently |
+| `diagnostic.py` | Inferred labels against the injected ones. The only place the two ever meet |
+| `planning.py` | A planner's selections against a reference policy |
+| `outcomes.py` | Learning outcomes per learner — gain, normalised gain, remediation |
+| `teaching.py` | What was taught per concept, so appropriate instruction can be established for a learner who never grasps one |
+| `sitting.py` | A stored audit log rendered back as prose |
+| `tutor.py` | Hints against deterministic checks, and against a judge for the two questions no predicate can settle |
+| `statistics.py` | Paired tests over the arms, with correction across outcomes |
+
 ### Verifier
 
 Supplied by the domain and called by the orchestrator after every step. Never a
@@ -203,6 +252,8 @@ Hybrid by design:
   correct or which buggy rule fires, and owns remediation: a misconception's
   firing probability drops only when a hint correctly targets it.
 - `surface.py` renders the decided step into natural student language.
+- `human.py` puts a person behind the same `Learner` protocol, which is how the
+  demo runs the cohorts' session loop with someone answering at a keyboard.
 
 The rule engine owns behaviour; the model only phrases it. Setting
 `simulator.surface: symbolic` removes the model entirely, making runs fast and

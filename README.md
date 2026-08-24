@@ -91,7 +91,7 @@ uv run agent-newton evaluate diagnostic --domain calculus
 | Path | Contents |
 |---|---|
 | `src/agent_newton/core/` | Subject-independent: state, agents, pedagogy predicates, arbitration, simulator, orchestration, evaluation |
-| `src/agent_newton/domains/` | Subject matter behind five Protocols |
+| `src/agent_newton/domains/` | Subject matter behind five required Protocols, and two optional ones |
 | `src/agent_newton/llm/` | Ollama / Anthropic / OpenAI adapters and a response cache |
 | `experiments/` | Run configurations, cohort runner, analysis |
 | `docs/` | Technical reference |
