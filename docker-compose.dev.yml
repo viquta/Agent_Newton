@@ -1,0 +1,13 @@
+# Mounts the working tree over the copy baked into the image, so source edits
+# take effect without a rebuild. The environment stays the image's.
+#
+#   ./newton dev test
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm newton test
+
+services:
+  newton:
+    volumes:
+      - .:/app
+      # Keep the image's environment rather than the host's .venv, which is
+      # built for a different platform.
+      - /app/.venv

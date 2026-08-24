@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+#
+# Everything in the container, from the host.
+#
+#   ./newton help          what there is to run
+#   ./newton test          the test suite
+#   ./newton all           every model-free experiment
+#   ./newton demo          a session at the keyboard (needs a model)
+#
+# The first call builds the image. Verbs not listed under "on the host" below
+# are passed to the container's dispatcher unchanged, along with their flags.
+
+set -euo pipefail
+cd "$(dirname "$0")"
+
+IMAGE="agent-newton:local"
+SERVICE="newton"
+MODEL="${NEWTON_MODEL:-gemma4:12b}"
+
+if [ -t 1 ]; then BOLD=$'\033[1m'; DIM=$'\033[2m'; OFF=$'\033[0m'
+else BOLD=""; DIM=""; OFF=""; fi
+
+if docker compose version >/dev/null 2>&1; then
+  compose() { docker compose "$@"; }
+elif command -v docker-compose >/dev/null 2>&1; then
+  compose() { docker-compose "$@"; }
+else
+  echo "docker compose is not available — install Docker Desktop, or the compose plugin" >&2
+  exit 1
+fi
+
+# Recorded in the manifest of every run made in the container. Without them the
+# git fields come back null and a summary stops being traceable to a commit.
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  GIT_SHA="$(git rev-parse HEAD)"
+  GIT_DIRTY="$([ -n "$(git status --porcelain)" ] && echo 1 || true)"
+else
+  GIT_SHA=""; GIT_DIRTY=""
+fi
+export GIT_SHA GIT_DIRTY
+
+# Created here rather than by the daemon, which would own them as root.
+mkdir -p results .cache/llm
+
+# A containerised Ollama, if one is running, is what the container should reach.
+if [ -z "${OLLAMA_HOST:-}" ] && [ -n "$(compose ps -q ollama 2>/dev/null || true)" ]; then
+  export OLLAMA_HOST="http://ollama:11434"
+fi
+
+build() { compose build "$@" "$SERVICE"; }
+
+ensure_image() {
+  if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    echo "${BOLD}building $IMAGE${OFF}${DIM} — first run only, a few minutes${OFF}"
+    build
+  fi
+}
+
+# Flags for `compose run`, as a global array.
+#
+# ⚠️ This must be called plainly, never inside `$( )` or `<( )`. Both connect the
+# command's stdout to a pipe, so `[ -t 1 ]` there is false whatever the caller's
+# terminal is — which silently passed -T on every invocation, so compose never
+# allocated a TTY, colour was disabled everywhere and `shell` gave a
+# non-interactive bash with no prompt.
+compose_flags() {
+  FLAGS=()
+  # Files written into the mounted results/ should belong to whoever ran this.
+  # Docker Desktop maps ownership itself; on Linux nothing does.
+  case "$(uname -s)" in
+    Linux) FLAGS+=(--user "$(id -u):$(id -g)") ;;
+  esac
+  # `compose run` allocates a TTY by default. The demo and the shell need one; a
+  # redirected or piped invocation must not have one.
+  if [ ! -t 0 ] || [ ! -t 1 ]; then FLAGS+=(-T); fi
+}
+
+run_in_container() {
+  ensure_image
+  compose_flags
+  # The guarded expansion is for bash 3.2, which macOS ships: under `set -u` a
+  # bare "${FLAGS[@]}" on an empty array is an unbound variable, and the array is
+  # empty in the ordinary case — macOS, at a terminal.
+  compose run --rm ${FLAGS[@]+"${FLAGS[@]}"} "$SERVICE" "$@"
+}
+
+case "${1:-help}" in
+  build)      shift; build "$@" ;;
+  rebuild)    shift; build --no-cache "$@" ;;
+
+  up-models)
+    shift
+    compose --profile models up -d ollama
+    echo "${BOLD}pulling $MODEL${OFF}${DIM} — several GB, once${OFF}"
+    compose --profile models exec ollama ollama pull "$MODEL"
+    echo
+    echo "Ollama is up. Model-backed verbs will use it:"
+    echo "  ${DIM}./newton demo${OFF}"
+    echo "${DIM}A model served in a container runs on CPU. On a machine with a GPU,"
+    echo "running Ollama on the host instead is considerably faster.${OFF}"
+    ;;
+  pull)       shift; compose --profile models exec ollama ollama pull "${1:-$MODEL}" ;;
+  down)       shift; compose --profile models down "$@" ;;
+
+  # Source from the working tree instead of the image's copy — no rebuild
+  # between edits.
+  dev)
+    shift
+    ensure_image
+    compose_flags
+    compose -f docker-compose.yml -f docker-compose.dev.yml \
+      run --rm ${FLAGS[@]+"${FLAGS[@]}"} "$SERVICE" "$@"
+    ;;
+
+  *)          run_in_container "$@" ;;
+esac

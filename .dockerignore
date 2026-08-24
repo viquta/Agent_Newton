@@ -1,0 +1,50 @@
+# Working notes and draft prose. Gitignored because the text must not be
+# published; an image is distribution, so it must not travel in one either.
+research_private/
+
+# Rebuilt inside the image from pyproject.toml and uv.lock.
+.venv/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# The SHA reaches the image as a build argument instead; see the Dockerfile.
+.git/
+.github/
+
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+.coverage
+htmlcov/
+.DS_Store
+.idea/
+.vscode/
+
+# Regenerable, and large.
+.cache/
+
+# Where the container's experiment verbs write. Working output, and it grows.
+results/reruns/
+
+# Untracked run artifacts: raw per-call logs and local learner stores.
+results/**/llm_calls.jsonl
+results/**/raw/
+*.db
+*.db.bak-*
+*.sqlite
+*.sqlite3
+
+# Secrets never belong in a layer.
+.env
+.env.*
+*.key
+*.pem
+*.p12
+secrets.yaml
+secrets.yml
+credentials.json
+
+specs_draft/

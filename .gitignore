@@ -54,6 +54,11 @@ chroma/
 *.sqlite3
 *.db
 
+# --- Re-runs. ------------------------------------------------------------
+# Where the container's experiment verbs write. A re-run reproduces a stored
+# summary rather than replacing it, so what it produces is working output.
+results/reruns/
+
 # --- Run artifacts. ------------------------------------------------------
 # Manifests, aggregated metrics and figures ARE committed (see
 # results/README.md); raw per-call LLM logs are not — hundreds of MB per cohort.

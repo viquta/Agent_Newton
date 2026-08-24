@@ -18,6 +18,10 @@ uv run pyright
 uv run agent-newton domain validate all
 ```
 
+The same commands run in a container as short verbs — `./newton test`,
+`./newton typecheck`, `./newton check`. `docs/docker.md` has the full list, and
+`docker/entrypoint.sh` is where a new verb is added.
+
 Both `pytest` and `pyright` gate CI. Run them before committing — and chain off
 the command itself, not off a pipe, or a failure will not stop the commit.
 
@@ -45,7 +49,8 @@ These are enforced by tests rather than convention. Breaking one should mean
 changing the test deliberately, not working around it.
 
 - **`core/` never imports a concrete domain.** It is generic over the five
-  Protocols in `domains/base.py` and receives a `Domain` as a parameter.
+  required Protocols in `domains/base.py` — plus two optional ones — and
+  receives a `Domain` as a parameter.
 - **Agents never call one another.** All coordination passes through the shared
   state, so nothing can happen that the audit log does not record.
 - **`UNPARSEABLE` is not a verdict about the learner.** It means the verifier

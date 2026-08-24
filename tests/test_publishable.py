@@ -97,7 +97,11 @@ def tracked_files() -> list[Path]:
             timeout=30,
         )
     except (subprocess.SubprocessError, OSError):  # pragma: no cover
-        pytest.skip("git unavailable")
+        # allow_module_level, because this is also called while parametrising
+        # below — a plain skip there is a collection error rather than a skip.
+        # Reached where there is no working tree to ask, such as a container
+        # built from a copy of the source; CI always has one.
+        pytest.skip("git unavailable", allow_module_level=True)
     return [
         Path(line)
         for line in out.stdout.splitlines()

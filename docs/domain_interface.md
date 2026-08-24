@@ -1,7 +1,8 @@
 # The domain interface
 
-The subject matter is a plug-in. `core/` is generic over five Protocols and
-receives a `Domain` as a parameter; it never imports a concrete domain.
+The subject matter is a plug-in. `core/` is generic over five required Protocols
+and receives a `Domain` as a parameter; it never imports a concrete domain. Two
+further Protocols are optional, and a domain may supply neither.
 
 `toy_algebra` is the reference implementation — deliberately small, and used as
 the fast test fixture. `calculus` is the primary domain.
@@ -24,6 +25,21 @@ one implementation tends to leak that implementation's assumptions.
 | `BuggyRule` | Python | How the simulator errs — one per misconception |
 
 Three of the five are pure content, so adding items or concepts needs no Python.
+
+## The two optional members
+
+A domain may omit both. Omitting them reproduces the behaviour from before either
+existed, so they extend what content can do rather than adding a requirement.
+
+| Member | Supplied as | What it adds |
+|---|---|---|
+| `ItemTemplate` | Python, one per item | Numeric variants of a repeated item, drawn per repetition. Draw 0 is the item as written, so the YAML stays the readable definition. Prompt, answer and `params` regenerate together — regenerating one alone desynchronises the buggy rules, which compute against `params`, from the question asked. |
+| `ConceptResources` | `resources.yaml` | What may be shown *beside* a question: the rule, and a worked example on other numbers. Keyed on the concept rather than the item, because an item's own worked solution is its answer. |
+
+`Domain.variant` returns the item unchanged when it has no template, and
+`Domain.resource_for` returns None when a concept has no resource.
+`domain validate` warns about a concept with practice items and no resource — a
+gap may be deliberate, but it must not go unnoticed.
 
 ### Goals
 

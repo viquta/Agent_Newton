@@ -1,0 +1,58 @@
+# Two services. `newton` is the project; `ollama` only starts when asked for by
+# name, under the `models` profile.
+#
+#   docker compose run --rm newton test
+#   docker compose --profile models up -d ollama
+#
+# `./newton` wraps both, and fills GIT_SHA from the working tree.
+
+services:
+  newton:
+    build:
+      context: .
+      args:
+        GIT_SHA: "${GIT_SHA:-}"
+        GIT_DIRTY: "${GIT_DIRTY:-}"
+        PYTHON_VERSION: "${PYTHON_VERSION:-3.12}"
+    image: agent-newton:local
+    environment:
+      # The host's own Ollama by default: a model served there gets the host's
+      # GPU, which a container on macOS cannot. `./newton up-models` overrides
+      # this to reach the service below instead.
+      OLLAMA_HOST: "${OLLAMA_HOST:-http://host.docker.internal:11434}"
+      # Read by the entrypoint's verbs. Left empty, each falls back to the
+      # value the stored results were produced under.
+      NEWTON_N: "${NEWTON_N:-}"
+      NEWTON_SEED: "${NEWTON_SEED:-}"
+      NEWTON_MODEL: "${NEWTON_MODEL:-}"
+      NEWTON_OUT: "${NEWTON_OUT:-}"
+      # Only needed by a configuration naming a hosted provider; an Ollama run
+      # uses neither. Empty unless the host has them set.
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+    extra_hosts:
+      # Resolves host.docker.internal on Linux, where it is not built in.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Runs write here, and the artifacts are the point of running them.
+      - ./results:/app/results
+      # The response cache. Keeping it means an interrupted model-backed
+      # evaluation restarts without paying for the calls again.
+      - ./.cache:/app/.cache
+    stdin_open: true
+    tty: true
+    init: true
+
+  ollama:
+    profiles: ["models"]
+    # Pinned, like everything else here: `latest` would make two people running
+    # the same command run different servers. Matches the version this was
+    # exercised against on the host.
+    image: ollama/ollama:0.32.5
+    volumes:
+      - ollama-models:/root/.ollama
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+
+volumes:
+  ollama-models:

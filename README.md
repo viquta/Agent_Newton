@@ -27,6 +27,25 @@ observations. A test enforces that no agent-to-agent call path exists.
 
 ## Install
 
+Two ways in. **If you have Docker:**
+
+```bash
+git clone https://github.com/viquta/Agent_Newton.git
+cd Agent_Newton
+./newton help
+```
+
+That one command builds the image on first use — a few minutes, once — and then
+prints every experiment, evaluation and check in the project as a single verb:
+`./newton test`, `./newton all`, `./newton arch`, `./newton demo`. Every call
+after the first starts in about a second.
+
+**→ [docs/docker.md](docs/docker.md) is the full reference** — the verb table,
+where output goes, what needs a model, and how to run it without the wrapper
+script.
+
+Or work on the host directly:
+
 ```bash
 uv sync --dev
 ```
@@ -81,7 +100,7 @@ uv run agent-newton evaluate diagnostic --domain calculus
 | Path | Contents |
 |---|---|
 | `src/agent_newton/core/` | Subject-independent: state, agents, pedagogy predicates, arbitration, simulator, orchestration, evaluation |
-| `src/agent_newton/domains/` | Subject matter behind five Protocols |
+| `src/agent_newton/domains/` | Subject matter behind five required Protocols, and two optional ones |
 | `src/agent_newton/llm/` | Ollama / Anthropic / OpenAI adapters and a response cache |
 | `experiments/` | Run configurations, cohort runner, analysis |
 | `docs/` | Technical reference |
