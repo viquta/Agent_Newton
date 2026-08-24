@@ -27,8 +27,7 @@ observations. A test enforces that no agent-to-agent call path exists.
 
 ## Install
 
-Two ways in. **If you have Docker, you need nothing else** — not Python, not
-`uv`, not a model:
+Two ways in. **If you have Docker:**
 
 ```bash
 git clone https://github.com/viquta/Agent_Newton.git
