@@ -14,9 +14,36 @@ starts in about a second.
 `make` targets mirror the verbs — `make test`, `make paired`, `make arch
 DOC=pedagogy` — and delegate to the same script.
 
-`./newton` is a shell script, so on Windows run it from WSL or Git Bash. Without
-either, every verb is still reachable through compose directly:
-`docker compose run --rm newton test`.
+## Without the wrapper
+
+`./newton` is a shell script wrapping `docker compose`. Compose reaches every
+verb directly, which is what to use on Windows without WSL or Git Bash:
+
+```bash
+docker compose build newton
+docker compose run --rm newton help
+docker compose run --rm newton test
+docker compose run --rm newton paired --n 40
+```
+
+Two things the wrapper does that a plain `docker compose build` does not, so do
+them yourself if you skip it:
+
+- **It passes the commit.** Without `GIT_SHA`, the image carries no commit and
+  every manifest a run writes records `git_sha: null`, which breaks the chain
+  from a number back to the code that produced it. Build with
+  `GIT_SHA=$(git rev-parse HEAD) docker compose build newton`.
+- **On Linux, it maps your user.** Without `--user "$(id -u):$(id -g)"`, files
+  written into `results/` are owned by root.
+
+**There is no `docker compose up`.** This is a command-line program, not a
+service: `up` runs the default command — the help — prefixes every line with the
+service name, and leaves a stopped container behind. Use `run --rm`.
+
+For the same reason, Docker Desktop's **Containers** tab stays empty. Each verb
+creates a container, runs, and deletes itself. The image is under **Images**, and
+the GUI's Run button only ever runs the help. Drop the `--rm` if you want a
+container to inspect there afterwards.
 
 ## The verbs
 
