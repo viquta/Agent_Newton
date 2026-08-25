@@ -21,6 +21,7 @@ from agent_newton.domains.content import YamlConceptGraph
 from agent_newton.domains.validate import (
     ANSWERS_VERIFY,
     CONCEPT_HAS_A_LABEL,
+    CONCEPT_HAS_A_LESSON,
     CONCEPT_HAS_A_RESOURCE,
     GOALS_ARE_REACHABLE,
     RESOURCE_IS_PLAIN_TEXT,
@@ -916,3 +917,191 @@ class TestResources:
         assert resource.formula in shown
         assert resource.worked_example in shown
         assert "not your question" in shown
+
+
+class TestLessons:
+    """What a concept *is*, as opposed to what to do with it.
+
+    Two optional fields on ``ConceptResource`` rather than a structure of their
+    own, because everything a lesson needs already surrounds it: one entry per
+    concept, the plain-text rule, an example validated against every item and
+    every template draw, a content hash and a column in the store.
+
+    They exist because every instructional move before them was a reply to a
+    failed step. A learner who had never met a concept and one who held a
+    misconception about it were answered identically, and a sitting recorded
+    what that costs — someone asked what sin(x) was three times, in three
+    channels, and was told about the product rule each time.
+    """
+
+    @pytest.fixture
+    def calculus(self):
+        return registry.load_domain("calculus")
+
+    @pytest.fixture
+    def toy(self):
+        return registry.load_domain("toy_algebra")
+
+    def test_every_calculus_concept_carries_one(self, calculus) -> None:
+        missing = [
+            c for c in calculus.concepts.ids()
+            if (r := calculus.resources.for_concept(c)) is not None and not r.teaches
+        ]
+        assert not missing, f"concepts with a rule but no lesson: {missing}"
+
+    def test_a_resource_without_one_is_still_valid(self, calculus) -> None:
+        # The fields are optional, and a domain that fills in neither behaves
+        # exactly as every domain did before they existed.
+        bare = replace(
+            calculus.resources.get("power_rule"), what_it_means="", why_it_works=""
+        )
+        assert not bare.teaches
+        assert bare.shown(with_example=False) == bare.formula
+
+    def test_a_reason_alone_is_not_a_lesson(self, calculus) -> None:
+        # `teaches` keys on `what_it_means` alone. A concept can be explained
+        # without a justification being offered, and some genuinely cannot be
+        # given one at this level; a justification with nothing to justify is
+        # the combination that makes no sense.
+        assert not replace(
+            calculus.resources.get("power_rule"),
+            what_it_means="",
+            why_it_works="because it does",
+        ).teaches
+
+    # -- the hash ---------------------------------------------------------
+
+    def test_adding_the_fields_did_not_move_the_hash_for_content_without_them(
+        self, calculus
+    ) -> None:
+        """⚠️ The guard that kept every existing learner out of a false warning.
+
+        ``content_drift`` refuses to resume a learner across a change in the
+        subject matter by comparing this hash. Folding two empty strings into
+        every entry would have told every learner already in the store that
+        their content had changed — over an addition none of them could have
+        been shown.
+
+        So the lesson fields enter the hash only where a lesson exists. An entry
+        without one hashes exactly as it did before they were added, and the
+        expected value here is the one recorded in sittings already stored.
+        """
+        from agent_newton.domains.content import YamlConceptResources
+
+        bare = YamlConceptResources(
+            [
+                replace(r, what_it_means="", why_it_works="")
+                for r in calculus.resources.all()
+            ]
+        )
+        assert bare.content_hash() == "6a76d53d16344d71"
+
+    def test_writing_a_lesson_does_move_the_hash(self, calculus) -> None:
+        # The other half, and it is what makes the hash mean anything: a learner
+        # now reads something they did not read before, and resuming across that
+        # is a change worth reporting.
+        from agent_newton.domains.content import YamlConceptResources
+
+        bare = YamlConceptResources(
+            [
+                replace(r, what_it_means="", why_it_works="")
+                for r in calculus.resources.all()
+            ]
+        )
+        assert calculus.resources.content_hash() != bare.content_hash()
+
+    # -- what a learner reads ---------------------------------------------
+
+    def test_the_lesson_is_composed_in_one_place(self, calculus) -> None:
+        # The session records what was taught and the front end displays it. A
+        # learner reading one thing while the audit log records another would be
+        # unnoticeable, and would make the record worth nothing.
+        resource = calculus.resources.get("antiderivative")
+        text = resource.lesson()
+        assert resource.what_it_means.strip() in text
+        assert resource.why_it_works.strip() in text
+        assert resource.worked_example in text
+
+    def test_the_example_is_labelled_as_not_being_the_question(self, calculus) -> None:
+        # An unlabelled solved problem is an invitation to copy its answer into
+        # the box. The label is load-bearing here for the same reason it is in
+        # `shown`.
+        text = calculus.resources.get("power_rule").lesson()
+        assert "not your question" in text
+
+    def test_a_lesson_never_states_its_own_example_answer(self, calculus) -> None:
+        # The example is worked, and stopping short of the result is the same
+        # rule the worked-step level follows. The answer is checked, never shown.
+        for resource in calculus.resources.all():
+            assert resource.example_answer not in resource.what_it_means
+            assert resource.example_answer not in resource.why_it_works
+
+    # -- validation -------------------------------------------------------
+
+    def test_the_shipped_lessons_are_plain_text(self, calculus) -> None:
+        assert not [
+            p for p in validate(calculus).problems if p.check == RESOURCE_IS_PLAIN_TEXT
+        ]
+
+    def test_the_plain_text_check_covers_the_lesson_fields(self, calculus) -> None:
+        """A guard that cannot fail proves nothing.
+
+        The lesson fields are the longest prose a learner reads anywhere here,
+        so they are the likeliest place for a backslash to arrive — and it is
+        invisible to whoever wrote it, appearing only once the text has been
+        through JSON. A learner read one as ``rac{f(b) - f(a)}{b - a}`` and
+        could not tell it meant a division.
+        """
+        from agent_newton.domains.content import YamlConceptResources
+
+        for field in ("what_it_means", "why_it_works"):
+            broken = replace(
+                calculus,
+                resources=YamlConceptResources(
+                    [
+                        replace(
+                            calculus.resources.get("power_rule"),
+                            **{field: "the rule is \\frac{n}{x}"},
+                        )
+                    ]
+                ),
+            )
+            assert [
+                p
+                for p in validate(broken).problems
+                if p.check == RESOURCE_IS_PLAIN_TEXT and field in p.message
+            ], f"a backslash in {field} was not caught"
+
+    def test_a_concept_with_no_lesson_is_warned_about(self, calculus) -> None:
+        """And the check can fail, which is the point of this test.
+
+        A warning rather than a problem: a concept may genuinely not want one.
+        What must not happen is that nobody noticed.
+        """
+        from agent_newton.domains.content import YamlConceptResources
+
+        thinned = replace(
+            calculus,
+            resources=YamlConceptResources(
+                [
+                    replace(r, what_it_means="", why_it_works="")
+                    if r.concept_id == "power_rule"
+                    else r
+                    for r in calculus.resources.all()
+                ]
+            ),
+        )
+        report = validate(thinned)
+        assert report.ok, "a missing lesson must not fail validation"
+        assert [
+            w
+            for w in report.warnings
+            if w.check == CONCEPT_HAS_A_LESSON and "power_rule" in w.message
+        ]
+
+    def test_nothing_is_warned_about_for_a_domain_with_no_resources(self, toy) -> None:
+        # A domain offering nothing is not a domain missing something.
+        assert toy.resources is None
+        assert not [
+            w for w in validate(toy).warnings if w.check == CONCEPT_HAS_A_LESSON
+        ]

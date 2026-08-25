@@ -262,6 +262,12 @@ class YamlConceptResources:
                     worked_example=entry["worked_example"],
                     example_answer=entry["example_answer"],
                     source=entry.get("source", ""),
+                    # Optional. A concept with a rule and no lesson is an
+                    # ordinary state and every entry looked like that before
+                    # lessons existed; `domain validate` warns rather than
+                    # refusing, so the gap is noticed without being forbidden.
+                    what_it_means=entry.get("what_it_means", ""),
+                    why_it_works=entry.get("why_it_works", ""),
                 )
             )
         return cls(entries)
@@ -281,9 +287,25 @@ class YamlConceptResources:
     def content_hash(self) -> str:
         # Sorted, so reordering the file does not change the hash — but changing
         # what a learner would be shown does.
+        #
+        # ⚠️ The lesson fields are appended only where a lesson exists, and that
+        # is deliberate rather than lazy. `content_drift` refuses to resume a
+        # learner across a change in the subject matter by comparing this hash,
+        # so folding two empty strings into every entry would have told every
+        # existing learner their content had changed on their next sitting —
+        # for an addition none of them could have been shown. An entry with no
+        # lesson hashes exactly as it did before lessons existed, and one with a
+        # lesson hashes differently because a learner would now read something
+        # new.
+        def _key(r: ConceptResource) -> str:
+            key = f"{r.concept_id}|{r.formula}|{r.worked_example}|{r.example_answer}"
+            if r.teaches:
+                key += f"|{r.what_it_means}|{r.why_it_works}"
+            return key
+
         return hash_content(
             *(
-                f"{r.concept_id}|{r.formula}|{r.worked_example}|{r.example_answer}"
+                _key(r)
                 for r in sorted(self._by_concept.values(), key=lambda r: r.concept_id)
             )
         )

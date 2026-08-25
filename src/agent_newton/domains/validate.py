@@ -33,6 +33,7 @@ CONCEPT_HAS_A_LABEL = "concept_has_a_label"
 TEMPLATES_ARE_SOUND = "templates_are_sound"
 GUESSABLE_FAMILY = "guessable_family"
 CONCEPT_HAS_A_RESOURCE = "concept_has_a_resource"
+CONCEPT_HAS_A_LESSON = "concept_has_a_lesson"
 RESOURCE_KEEPS_ITS_DISTANCE = "resource_keeps_its_distance"
 RESOURCE_IS_PLAIN_TEXT = "resource_is_plain_text"
 ANSWERS_ARE_UNAMBIGUOUS = "answers_are_unambiguous"
@@ -527,8 +528,41 @@ def _check_resources(domain: Domain, report: ValidationReport) -> None:
                 f"question and nothing else",
             )
 
+    # A concept that can be practised and cannot be *explained*. Separate from
+    # the warning above, and the distinction is the whole point of having added
+    # lessons: a resource states the rule, which answers "what do I do here"; a
+    # lesson states what the thing is and why, which answers "what is this". A
+    # learner who has never met the concept needs the second, and until now the
+    # system had nothing to give them — a sitting recorded someone asking what
+    # sin(x) was three times and being told about the product rule each time,
+    # because the product rule was all there was to tell them.
+    #
+    # A warning rather than a failure, like every other content gap here. Some
+    # concepts may genuinely not want one. What must not happen is that nobody
+    # noticed.
+    for concept_id in sorted(domain.concepts.ids()):
+        resource = resources.for_concept(concept_id)
+        if resource is None or resource.teaches:
+            continue
+        if domain.items.for_concept(concept_id, "practice"):
+            report.warn(
+                CONCEPT_HAS_A_LESSON,
+                f"concept {concept_id!r} has a rule but no lesson, so a learner "
+                f"who has never met it can be told what to do and never what it "
+                f"is",
+            )
+
     for resource in resources.all():
-        for field_name in ("formula", "worked_example"):
+        # The lesson fields join the sweep. They are the longest prose a learner
+        # reads anywhere in the system, so they are the likeliest place for a
+        # backslash to arrive — and the damage is invisible to whoever wrote it,
+        # because it only appears once the text has been through JSON.
+        for field_name in (
+            "formula",
+            "worked_example",
+            "what_it_means",
+            "why_it_works",
+        ):
             text = getattr(resource, field_name)
             if PLAIN_TEXT_ONLY.search(text):
                 report.add(
