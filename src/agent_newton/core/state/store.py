@@ -68,6 +68,9 @@ class Blackboard:
         #: arms could be handed it fairly. Empty for every cohort; nothing but
         #: the demo sets it.
         self._teaching_style: TeachingStyle | None = None
+        #: A concept the learner asked to have explained, not yet answered.
+        #: Session-scoped like the rest of what a person says in a sitting.
+        self._pending_lesson: str | None = None
         #: Concepts answered correctly at least once in *this* sitting. Used to
         #: end a review: reopening a concept is a check on the estimate that
         #: closed it, and one demonstration is the check. Without this a
@@ -583,6 +586,39 @@ class Blackboard:
             requested=sorted(self._requested),
         )
         return self._requested
+
+    def request_lesson(self, concept_id: str) -> None:
+        """The learner asked to have this concept explained.
+
+        Learner *input*, like ``record_request`` and the teaching style — a
+        thing a person said, not an inference about what they know. What is done
+        with it is the session's decision, and the threshold it bypasses is the
+        one about *difficulty*, never the one about whether the run teaches at
+        all: a run with teaching off has no lesson to give and asking cannot
+        conjure one.
+
+        It is the trigger the ideas note lists first, and the cheapest to honour
+        correctly, because a learner saying "I do not know what this is" is
+        better evidence of that than three wrong answers are.
+        """
+        self._pending_lesson = concept_id
+        self._bump(
+            "annotation",
+            f"the learner asked what {concept_id} is",
+            concept_id=concept_id,
+            asked_for_a_lesson=True,
+        )
+
+    def take_lesson_request(self) -> str | None:
+        """The concept asked about, and clear it. None if nothing was asked.
+
+        Taken rather than read, because a request is answered once. Left
+        standing it would re-teach the same concept every time the loop came
+        round, which is the failure the throttle in ``should_explain`` exists to
+        prevent arriving through the other door.
+        """
+        asked, self._pending_lesson = self._pending_lesson, None
+        return asked
 
     def record_teaching_style(self, style: TeachingStyle | None) -> None:
         """How the learner would like concepts explained to them.

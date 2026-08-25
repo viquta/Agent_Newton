@@ -44,6 +44,7 @@ from agent_newton.core.orchestration.session import (
 from agent_newton.core.simulator.human import HumanLearner
 from agent_newton.core.evaluation import outcomes
 from agent_newton.core.state import bkt, route
+from agent_newton.core.state.schema import TeachingStyle
 from agent_newton.core.state.store import Blackboard
 from agent_newton.domains import registry
 from agent_newton.manifest import RunManifest
@@ -61,6 +62,14 @@ from agent_newton.domains.base import (
 #: Where a mastery bar sits between "no idea" and "done".
 _BAR = 18
 
+#: One line each, for the chooser. Here rather than on the enum because the enum
+#: is shared state and this is a front end's wording.
+_STYLE_BLURB = {
+    TeachingStyle.PLAIN: "plainly — what it is, why it works, an example",
+    TeachingStyle.SOCRATIC: "as questions I answer as we go",
+    TeachingStyle.REAL_WORLD: "starting from where the idea is actually used",
+}
+
 QUIT = ":q"
 #: Ends training and goes straight to the post-test. Distinct from `:q`, which
 #: ends the sitting where it stands: someone who has had enough of the questions
@@ -70,6 +79,14 @@ END_TRAINING = ":e"
 #: Declines a prompt that would otherwise insist. A refusal that can be recorded
 #: is worth more than a field somebody filled with a full stop to get past it.
 DECLINE = ":s"
+#: Asks what the current concept actually *is*.
+#:
+#: The trigger the ideas note lists first, and the cheapest to honour correctly:
+#: someone saying "I do not know what this is" is better evidence of that than
+#: three wrong answers are. It costs no attempt and is answered once the current
+#: question is over, which is where a lesson belongs — between questions, with
+#: the next one still to come.
+EXPLAIN = ":why"
 
 
 def _bar(value: float, band) -> Text:
@@ -212,6 +229,11 @@ class DemoObserver(Watching):
         #: so clearing here makes "nothing was offered for this posing" the
         #: default rather than something that has to be signalled.
         self._offered: tuple[str, str] | None = None
+        #: Set at `item_started`, and what `:why` is about. None until the first
+        #: question, so asking before one has been posed is answered honestly
+        #: rather than with the last thing that happened to be on screen.
+        self._working_concept: str | None = None
+        self._board: Blackboard | None = None
 
     def board_panel(self, board: Blackboard) -> Panel:
         graph = self._domain.concepts
@@ -261,6 +283,11 @@ class DemoObserver(Watching):
         # A new posing of a question carries no support until the session says
         # so, and it says so straight after this returns.
         self._offered = None
+        # What `:why` would be about, and where to record the asking. Both are
+        # taken here rather than threaded through every prompt, because this is
+        # the one place that knows which question is in front of the learner.
+        self._working_concept = item.concept_id
+        self._board = board
         self._console.print()
         self._console.print(self.board_panel(board))
         self._remind(item)
@@ -284,6 +311,28 @@ class DemoObserver(Watching):
         check.
         """
         self._offered = (item.id, resource.shown(support.shows_example))
+
+    @property
+    def working_concept(self) -> str | None:
+        """The concept the question on screen is about, if there is one.
+
+        None during the held-out banks and before the first question. A learner
+        asking what a concept is mid-test would be asking to be told the thing
+        the test is measuring, so there is deliberately nothing to answer with.
+        """
+        return None if self.testing else self._working_concept
+
+    @property
+    def board_for_requests(self) -> Blackboard:
+        """Where a stated request is recorded.
+
+        A front end may record what a person *said* — `record_request` already
+        does — and may not decide what is done about it. Asking for a lesson is
+        input; whether one is given, and how it is voiced, stays with the
+        session and the rules.
+        """
+        assert self._board is not None
+        return self._board
 
     def support_for(self, item: Item) -> str | None:
         """What was offered with this question, if anything was.
@@ -560,6 +609,28 @@ class DemoObserver(Watching):
             Panel(body, title=f"{label.lower()} result", border_style="yellow")
         )
 
+    def lesson_offered(self, concept_id: str, text: str) -> None:
+        """The concept explained, between questions.
+
+        Printed rather than held, unlike ``support_offered``. That one is
+        material shown *with* a question and belongs above it; this one is not
+        attached to a question at all — it arrives because the learner kept
+        getting the concept wrong, and the next question comes after it.
+
+        Its own border and its own title, because a learner should be able to
+        tell being taught from being corrected. Every other panel on this screen
+        is a response to something they just did.
+        """
+        self._console.print(
+            Panel(
+                Text(text),
+                title=f"a moment on {_readable(concept_id)}",
+                subtitle="not a question — read it and carry on",
+                border_style="cyan",
+                padding=(1, 2),
+            )
+        )
+
     def tutor_replied(self, item: Item, hint: Hint) -> None:
         self._console.print(
             Panel(
@@ -573,6 +644,65 @@ class DemoObserver(Watching):
 
 class Quit(Exception):
     """The person asked to stop."""
+
+
+def _ask_how_to_explain(console: Console, board, asked) -> None:  # noqa: ANN001
+    """Let the learner say how they would like things explained.
+
+    Asked beside "what shall we practise", and for the same reason: it is
+    something only the learner knows. Everything else on the blackboard is an
+    inference *about* them; this and the request are the learner talking.
+
+    Two people reached for this control independently — it is written in
+    `docs/pedagogy.md` as *"how much help do you want today, and in which
+    areas"*, and a learner at a keyboard asked to be told, per concept, how much
+    they already knew. That is the argument for offering it.
+
+    What it changes is stated plainly, because a control whose effect is
+    overstated is worse than none. The style decides how a lesson is **voiced**.
+    The content is the same under all three: written by a person, checked
+    against every question in every bank, and identical whichever is picked.
+    """
+    console.print()
+    table = Table(show_header=False, box=None, padding=(0, 1))
+    for number, style in enumerate(TeachingStyle, start=1):
+        table.add_row(
+            Text(f"{number:>2}", style="cyan"),
+            Text(_STYLE_BLURB[style]),
+        )
+    console.print(
+        Panel(
+            Group(
+                Text(
+                    "If a concept needs explaining, how would you like it "
+                    "put?\nThis changes the wording, never the mathematics.\n",
+                    style="dim",
+                ),
+                table,
+            ),
+            title="how shall I explain things",
+            border_style="magenta",
+        )
+    )
+    said = asked(
+        "  [magenta]a number[/magenta]  "
+        "[dim](enter to let the system vary it)[/dim]",
+        optional=True,
+    ).strip()
+    styles = list(TeachingStyle)
+    if said.isdigit() and 1 <= int(said) <= len(styles):
+        chosen = styles[int(said) - 1]
+        board.record_teaching_style(chosen)
+        console.print(f"  [dim]{_STYLE_BLURB[chosen]}[/dim]")
+        return
+    # Not a fallback so much as the better default. Left alone, a repeat lesson
+    # is told a *different* way — which is the point of having more than one, and
+    # is what a learner who did not understand the first account actually needs.
+    board.record_teaching_style(None)
+    console.print(
+        "  [dim]no preference — a concept explained twice will be put "
+        "differently the second time[/dim]"
+    )
 
 
 def _ask_what_to_practise(
@@ -1166,6 +1296,24 @@ def run_demo(
                     )
                     continue
                 raise StopTraining
+            if said == EXPLAIN:
+                # Goes through this reader like the rest, for the reason above
+                # it: a control word that works at one prompt out of three is
+                # worse than not offering one. `:q` was exactly that, and typing
+                # it at the working prompt was silently recorded as prose.
+                working = observer.working_concept
+                if working is None:
+                    console.print(
+                        f"  [dim]{EXPLAIN} explains the concept you are working "
+                        f"on. There is not one just now.[/dim]"
+                    )
+                    continue
+                observer.board_for_requests.request_lesson(working)
+                console.print(
+                    f"  [dim]noted — you will get a moment on "
+                    f"{_readable(working)} after this question[/dim]"
+                )
+                continue
             if said == DECLINE:
                 return ""
             if said or not insist:
@@ -1187,8 +1335,11 @@ def run_demo(
         hint = (
             f"[dim]({QUIT} to stop)[/dim]"
             if observer.testing
+            # `:why` is offered here and not during a test. Asking what a
+            # concept is mid-test would be asking to be told the thing the test
+            # is measuring, and the reader answers accordingly.
             else f"[dim]({QUIT} to stop, {END_TRAINING} to end training and go "
-            f"to the post-test)[/dim]"
+            f"to the post-test, {EXPLAIN} if you want this explained)[/dim]"
         )
         return _asked(f"  your answer  {hint}")
 
@@ -1334,6 +1485,11 @@ def run_demo(
     session.elapsed_days = 0.0
     try:
         _ask_what_to_practise(console, domain, session.board, config, _asked)
+        # Only where the run can actually explain anything. Offering a choice
+        # that does nothing is worse than not offering one — it tells the
+        # learner a control exists and then ignores it.
+        if config.teaching.explain_after > 0:
+            _ask_how_to_explain(console, session.board, _asked)
     except Quit:
         console.print("\n[dim]stopped before the pre-test[/dim]")
 

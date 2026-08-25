@@ -88,6 +88,13 @@ class AlwaysWrong:
         return None
 
 
+def _board(domain):
+    """A fresh blackboard, for the pieces that need one without a session."""
+    from agent_newton.core.state.store import new_blackboard
+
+    return new_blackboard("L_probe", 1, domain.concepts, _config())
+
+
 def _lessons_in(board) -> list[dict]:
     return [
         record.evidence
@@ -489,3 +496,132 @@ class TestAModelMayRevoiceALessonButNotWriteOne:
         assert self._tutor(Dead()).explain(resource, TeachingStyle.SOCRATIC) == (
             resource.lesson()
         )
+
+
+class TestWhatALearnerSeesAndCanAskFor:
+    """The demo's half: a lesson has to be visible, and askable for.
+
+    Tested at the observer and the chooser rather than by driving a whole
+    sitting, because a sitting needs a model and this is about the wiring.
+    """
+
+    def _console(self):
+        import io
+
+        from rich.console import Console
+
+        buffer = io.StringIO()
+        return Console(file=buffer, width=100, force_terminal=False), buffer
+
+    def test_a_lesson_is_shown_as_its_own_kind_of_panel(self, calculus) -> None:
+        # A learner should be able to tell being taught from being corrected.
+        # Every other panel on that screen is a response to something they did.
+        from agent_newton.demo import DemoObserver
+
+        console, buffer = self._console()
+        observer = DemoObserver(console, calculus, _config())
+        observer.lesson_offered("power_rule", "a power tells you how fast it grows")
+        shown = buffer.getvalue()
+        assert "a moment on" in shown
+        assert "not a question" in shown
+        assert "how fast it grows" in shown
+
+    def test_nothing_is_offered_to_ask_about_during_a_test(self, calculus) -> None:
+        """Asking what a concept is mid-test is asking to be told the thing the
+        test is measuring.
+
+        The banks are the instrument, and every absolute score before the
+        concept came off the question heading is inflated because the display
+        named the method. This is the same mistake with a different door.
+        """
+        from agent_newton.demo import DemoObserver
+
+        console, _ = self._console()
+        observer = DemoObserver(console, calculus, _config())
+        item = calculus.items.for_concept("power_rule", "practice")[0]
+        observer.item_started(item, _board(calculus))
+        assert observer.working_concept == "power_rule"
+        observer.phase_started("posttest", 5)
+        assert observer.working_concept is None
+
+    def test_the_style_chooser_records_what_was_picked(self, calculus) -> None:
+        from agent_newton.demo import _ask_how_to_explain
+
+        console, _ = self._console()
+        board = _board(calculus)
+        _ask_how_to_explain(console, board, lambda prompt, **kw: "2")
+        assert board.teaching_style is list(TeachingStyle)[1]
+
+    def test_saying_nothing_leaves_it_to_the_rule(self, calculus) -> None:
+        # Not a fallback so much as the better default: a concept explained
+        # twice is then put differently the second time, which is what a learner
+        # who did not understand the first account needs.
+        from agent_newton.demo import _ask_how_to_explain
+
+        console, buffer = self._console()
+        board = _board(calculus)
+        _ask_how_to_explain(console, board, lambda prompt, **kw: "")
+        assert board.teaching_style is None
+        assert "differently the second time" in buffer.getvalue()
+
+    def test_nonsense_is_treated_as_no_preference(self, calculus) -> None:
+        from agent_newton.demo import _ask_how_to_explain
+
+        console, _ = self._console()
+        board = _board(calculus)
+        _ask_how_to_explain(console, board, lambda prompt, **kw: "banana")
+        assert board.teaching_style is None
+
+    def test_every_style_is_offered_and_described(self, calculus) -> None:
+        # A chooser that lists fewer options than exist is how a control quietly
+        # stops covering what it claims to.
+        from agent_newton.demo import _STYLE_BLURB
+
+        assert set(_STYLE_BLURB) == set(TeachingStyle)
+
+
+class TestAskingForALesson:
+    """``:why`` — the trigger the ideas note lists first.
+
+    Someone saying "I do not know what this is" is better evidence of that than
+    three wrong answers are, so it bypasses the difficulty threshold. It does
+    not bypass whether the run teaches at all: a run with teaching off has no
+    lesson to give, and asking cannot conjure one.
+    """
+
+    def test_asking_gets_a_lesson_before_the_threshold(self, calculus) -> None:
+        session = build_session("L_ask", 1, calculus, _config(), learner=AlwaysWrong())
+        assert not session._offer_lesson("power_rule"), "no errors yet, so nothing owed"
+        session.board.request_lesson("power_rule")
+        assert session._offer_lesson("power_rule")
+
+    def test_a_request_is_answered_once(self, calculus) -> None:
+        # Left standing it would re-teach on every pass, which is the failure
+        # the throttle in `should_explain` exists to prevent, arriving through
+        # the other door.
+        session = build_session("L_ask", 1, calculus, _config(), learner=AlwaysWrong())
+        session.board.request_lesson("power_rule")
+        assert session._offer_lesson("power_rule")
+        assert not session._offer_lesson("power_rule")
+
+    def test_asking_about_one_concept_does_not_teach_another(self, calculus) -> None:
+        session = build_session("L_ask", 1, calculus, _config(), learner=AlwaysWrong())
+        session.board.request_lesson("power_rule")
+        assert not session._offer_lesson("chain_rule")
+
+    def test_asking_cannot_teach_in_a_run_that_does_not_teach(self, calculus) -> None:
+        # Structural rather than a matter of nobody calling it: every cohort
+        # passes through this branch.
+        session = build_session(
+            "L_ask", 1, calculus, _config(explain_after=0), learner=AlwaysWrong()
+        )
+        session.board.request_lesson("power_rule")
+        assert not session._offer_lesson("power_rule")
+
+    def test_the_asking_is_on_the_record(self, calculus) -> None:
+        session = build_session("L_ask", 1, calculus, _config(), learner=AlwaysWrong())
+        session.board.request_lesson("power_rule")
+        assert [
+            r for r in session.board.audit_log
+            if r.evidence.get("asked_for_a_lesson")
+        ], "a sitting has to be readable back against what the learner asked for"

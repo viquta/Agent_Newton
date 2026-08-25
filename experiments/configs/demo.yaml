@@ -121,6 +121,30 @@ zpd:
   theta_lower: 0.70
   theta_upper: 0.90
 
+# On here and nowhere else. After three recorded errors on one concept the
+# system explains what the concept *is*, rather than commenting on another
+# failed attempt at it.
+#
+# The gap it closes: every other instructional move is a reply to a step, so a
+# learner who has never met a concept and one who holds a misconception about it
+# were answered identically. A sitting recorded the cost — someone asked what
+# sin(x) was three times, in three channels, and was told about the product rule
+# each time, because that was all there was to tell them.
+#
+# Three is a threshold rather than a measurement. Below it a learner is taught
+# after a slip; above it they spend a sitting failing something nobody explained.
+# Judge it from a sitting.
+#
+# `:why` asks for one directly and bypasses the count — someone saying they do
+# not know what this is, is better evidence of that than three wrong answers.
+#
+# It must stay 0 for every cohort. Nothing here can move a cohort number today
+# (a lesson targets a concept, and the simulated learner improves only through
+# `receive_hint`), but that is a fact about this simulator rather than about the
+# design, and a scan over this directory refuses anything else.
+teaching:
+  explain_after: 3
+
 # On here and nowhere else, both of them.
 #
 # `banded_plus` reads every cut point off the band above. Above theta_upper

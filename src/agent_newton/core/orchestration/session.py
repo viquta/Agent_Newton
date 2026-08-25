@@ -771,7 +771,16 @@ class Session:
         """
         after = self.config.teaching.explain_after
         if after <= 0:
+            # Teaching is off for this run, and asking cannot conjure a lesson
+            # a run does not give. Structural rather than a matter of nobody
+            # calling it: every cohort passes through here.
             return False
+
+        # An explicit ask bypasses the difficulty threshold and nothing else. A
+        # learner saying "I do not know what this is" is better evidence of that
+        # than three wrong answers are, and it is the trigger the ideas note
+        # lists first. Taken rather than read, so it is answered once.
+        asked = self.board.take_lesson_request() == concept_id
 
         resource = self.domain.resource_for(concept_id)
         if resource is None or not resource.teaches:
@@ -791,7 +800,7 @@ class Session:
             and record.evidence.get("move") == TutorMove.EXPLAIN.value
             and record.evidence.get("concept_id") == concept_id
         )
-        if not should_explain(errors, taught, after=after):
+        if not asked and not should_explain(errors, taught, after=after):
             return False
 
         # Which account to give, and the learner's own choice wins where they
