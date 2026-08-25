@@ -82,7 +82,11 @@ class TestTheRepertoireComesFromTheCode:
         assert "level:nudge" in repertoire()
         assert "level:worked_step" in repertoire()
         assert "move:reflect" in repertoire()
-        assert len(repertoire()) == 8
+        # Four levels and five moves. Pinned rather than computed, so adding to
+        # either enum lands here as a failing test that asks whether the record
+        # and the fixtures below have kept up — which is exactly what happened
+        # when `move:explain` arrived.
+        assert len(repertoire()) == 9
 
     def test_it_picked_up_the_new_level_and_move_on_its_own(self) -> None:
         """The derivation is the point, and this is what it was for.
@@ -92,9 +96,15 @@ class TestTheRepertoireComesFromTheCode:
         because a repertoire written down by hand would have gone stale here and
         the record would have reported full coverage of a repertoire two items
         short.
+
+        ``move:explain`` is the third instance and it behaved the same way: the
+        record began reporting a lesson as outstanding the moment the enum
+        gained one, and the two tests that failed were both pins saying the
+        repertoire used to be smaller.
         """
         assert "level:none" in repertoire()
         assert "move:present" in repertoire()
+        assert "move:explain" in repertoire()
 
 
 class TestItCanSayTheSystemDidNotTryEverything:
@@ -124,6 +134,12 @@ class TestItCanSayTheSystemDidNotTryEverything:
             *[turn("power_rule", m, level)
               for m in ("hint", "reflect", "remediate", "present")
               for level in ("none", "nudge", "targeted", "worked_step")],
+            # A lesson has no support level -- it is not a quantity of the
+            # answer, it is an account of the concept -- so it is recorded at
+            # its own label. Reaching everything now means having explained the
+            # concept as well as having hinted at it, which is the point of the
+            # move existing.
+            turn("power_rule", "explain", "lesson"),
         )
         [found] = records(store, "L1", "coupled")
         assert found.not_attempted == frozenset()

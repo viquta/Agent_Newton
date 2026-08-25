@@ -92,6 +92,26 @@ class TutorMove(str, Enum):
     #: decision, it is chosen by a rule, and it has to appear in the record of
     #: what a learner was taught.
     PRESENT = "present"
+    #: The concept explained: what it is, and why it behaves as it does.
+    #:
+    #: The second move that is not a reply, and it differs from every other one
+    #: in *kind* rather than in degree. ``HINT`` and ``REMEDIATE`` comment on an
+    #: attempt and presuppose the learner has the concept; ``PRESENT`` states
+    #: the rule beside the question. None of them ever says what a derivative
+    #: *is*. So when a learner fails the same concept repeatedly, the honest
+    #: reading may not be that they hold a misconception — it may be that they
+    #: were never taught it, and no amount of hinting on a failed attempt is
+    #: teaching.
+    #:
+    #: ⚠️ Deliberately **not** a fourth ``HintLevel``. That ladder is a scale of
+    #: how much of the answer is revealed, and mastery decides where a learner
+    #: starts on it — but the decoupled view carries no posteriors, so its
+    #: tutor reads 0.0 and already sits at the top. A level above
+    #: ``WORKED_STEP`` would be reached after one failure in that arm and three
+    #: in the other, handing the arm defined by having *less* information
+    #: substantially *more* teaching. It would not look like a bug; it would
+    #: look like the coupling advantage disappearing.
+    EXPLAIN = "explain"
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,6 +223,42 @@ def hint_level(
 
     escalated = int(base) + max(0, prior_failures)
     return HintLevel(min(escalated, int(ceiling)))
+
+
+def should_explain(
+    errors_on_concept: int,
+    lessons_already_given: int,
+    *,
+    after: int,
+) -> bool:
+    """Whether the learner is owed an explanation of this concept.
+
+    ``after`` is how many recorded errors on one concept buy a lesson; ``0``
+    disables it, which is every cohort.
+
+    **Both inputs are counted from things that mean the same in both arms**, and
+    that is the whole design rather than a detail. ``errors_on_concept`` comes
+    from the error trace, which lives on the shared state and is written
+    identically whichever planner is running — only the *view* differs, and the
+    session reads the board. ``lessons_already_given`` comes from the audit log.
+    Neither is mastery, neither is the frontier, and neither is a hint level; a
+    trigger derived from any of those would fire at different rates in the two
+    arms and would be measuring the manipulation instead of the learner.
+
+    ⚠️ ``UNPARSEABLE`` responses never enter the error trace, so they cannot buy
+    a lesson. That is correct and worth saying out loud: "the learner keeps
+    getting this wrong" and "the verifier keeps failing to read them" are
+    different events, and a lesson triggered by the second would be teaching
+    someone who may have been right all along.
+
+    Repeats are throttled by requiring the threshold again for each one, so a
+    learner who keeps struggling is taught again rather than either once or
+    every time. The second lesson is where explaining it *differently* starts to
+    matter — see :func:`style_for`.
+    """
+    if after <= 0:
+        return False
+    return errors_on_concept >= after * (lessons_already_given + 1)
 
 
 def check_fading(
@@ -352,6 +408,21 @@ def check_move(
     is a tax rather than a step, and was asked for the other way round: *"I like
     the hint better first, and then a reflection."*
     """
+    # ⚠️ Stated rather than reached by falling through the test below, which is
+    # what a new move would otherwise do. A lesson is permitted at any point,
+    # including after a misconception is confirmed and before any reflective
+    # turn, and the reason is that the error-first rule is about *correction*:
+    # it puts the learner's own reasoning between their error and the answer to
+    # it. A lesson is not the answer to their error. It is the account of the
+    # concept they may never have had, and withholding it until they have
+    # explained reasoning they do not have is the wrong way round.
+    #
+    # Written as its own branch because the alternative — letting it pass
+    # through `move is not REMEDIATE` — is the disjunction shape that has
+    # already hidden one defect here: a check that admits a case by accident
+    # reads exactly like one that admits it on purpose.
+    if move is TutorMove.EXPLAIN:
+        return None
     if move is not TutorMove.REMEDIATE or not misconception_confirmed:
         return None
     if already_explained or TutorMove.REFLECT in moves_since_confirmation:

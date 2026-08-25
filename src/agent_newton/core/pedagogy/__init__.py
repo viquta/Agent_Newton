@@ -17,6 +17,7 @@ from agent_newton.core.pedagogy.policy import (
     may_select,
     move_for,
     next_required_move,
+    should_explain,
     support_at_presentation,
 )
 
@@ -34,5 +35,6 @@ __all__ = [
     "may_select",
     "move_for",
     "next_required_move",
+    "should_explain",
     "support_at_presentation",
 ]

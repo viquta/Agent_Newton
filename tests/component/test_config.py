@@ -388,3 +388,49 @@ class TestPrerequisiteDoubtStaysOutOfExperiments:
         stray = tmp_path / "stray.yaml"
         stray.write_text("domain: toy_algebra\nbkt:\n  prerequisite_doubt: 0.25\n")
         assert Config.from_yaml(stray).bkt.prerequisite_doubt == 0.25
+
+
+class TestTheTeachingLayerStaysOutOfExperiments:
+    """A cohort must not be taught, and the reason is stated in advance.
+
+    Nothing here can move a cohort number today. A lesson targets a *concept*,
+    and the simulated learner improves only when a hint names a misconception it
+    holds — so the exposition reaches nothing it responds to, and there is a
+    test on that beside the feature.
+
+    It stays off anyway, because that inertness is a property of *this*
+    simulator rather than of the design. The moment a mechanism is added that
+    responds to having been taught, a cohort quietly running with teaching on
+    stops being the run every measured figure came from — and it would look like
+    the numbers moved rather than like the policy changed.
+    """
+
+    def _experiment_configs(self) -> list[Path]:
+        return sorted(
+            path
+            for path in CONFIG_DIR.glob("*.yaml")
+            if path.name not in HUMAN_CONFIGS
+        )
+
+    def test_no_experiment_config_explains_anything(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert config.teaching.explain_after == 0, (
+                f"{path.name} explains a concept after "
+                f"{config.teaching.explain_after} errors; no cohort run has ever "
+                f"been given exposition, and a run that was is not comparable "
+                f"with the ones the results came from"
+            )
+
+    def test_the_default_is_off(self) -> None:
+        # Zero rather than a plausible threshold: off is what every measured
+        # result was produced under, and a default nobody chose is a policy
+        # nobody chose.
+        assert Config().teaching.explain_after == 0
+
+    def test_the_check_can_fail(self, tmp_path: Path) -> None:
+        # A guard that cannot fail proves nothing. This is the shape the scan
+        # above is looking for, and it must be rejected.
+        stray = tmp_path / "stray.yaml"
+        stray.write_text("domain: toy_algebra\nteaching:\n  explain_after: 3\n")
+        assert Config.from_yaml(stray).teaching.explain_after == 3

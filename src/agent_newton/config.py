@@ -402,6 +402,34 @@ class ScaffoldingConfig(BaseModel):
     offer_at_presentation: bool = False
 
 
+class TeachingConfig(BaseModel):
+    """Whether the system may explain a concept, and after how much difficulty.
+
+    Off by default, and off for every cohort, with a scan over the config
+    directory that refuses it and a test proving that scan can fail.
+
+    It stays off for the reason the design note gave in advance rather than
+    after a null result: a lesson targets a *concept*, and the simulated learner
+    improves only when a hint names a misconception it holds, so nothing here
+    can move a cohort number. That inertness is a property of today's simulator
+    rather than of the design, and a cohort quietly running with teaching on
+    would stop being the run every measured figure came from the moment that
+    changed.
+    """
+
+    #: Recorded errors on one concept before a lesson is offered. ``0`` is off.
+    #:
+    #: Counted from the error trace, which lives on the shared state and is
+    #: written identically in both arms — never from mastery, the frontier or a
+    #: hint level, any of which would fire at different rates per arm and would
+    #: be measuring the manipulation rather than the learner.
+    #:
+    #: Three is the number the design note proposed, and it is a threshold
+    #: rather than a discovery: below it a learner is being taught after a slip,
+    #: above it they spend the sitting failing something nobody explained.
+    explain_after: int = Field(default=0, ge=0)
+
+
 class DecayConfig(BaseModel):
     """How the learner model goes stale between sessions.
 
@@ -616,6 +644,7 @@ class Config(BaseModel):
         default_factory=lambda: ScaffoldingConfig()
     )
     arbitration: ArbitrationConfig = Field(default_factory=lambda: ArbitrationConfig())
+    teaching: TeachingConfig = Field(default_factory=lambda: TeachingConfig())
     decay: DecayConfig = Field(default_factory=lambda: DecayConfig())
     paths: PathsConfig = Field(default_factory=lambda: PathsConfig())
 

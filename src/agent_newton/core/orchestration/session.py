@@ -51,6 +51,7 @@ from agent_newton.core.pedagogy import (
     Support,
     TutorMove,
     check_move,
+    should_explain,
     support_at_presentation,
 )
 from agent_newton.core.simulator import (
@@ -149,6 +150,21 @@ class SessionObserver(Protocol):
         """
         ...
 
+    def lesson_offered(self, concept_id: str, text: str) -> None:
+        """The concept was explained, between items rather than during one.
+
+        Distinct from :meth:`support_offered`, which states the rule beside a
+        question, and from :meth:`tutor_replied`, which answers a step. This one
+        answers the possibility that the learner was never taught the thing at
+        all — which no reply to a failed attempt can address, because every one
+        of them presupposes the concept is there to be corrected.
+
+        Fires only when the run permits it, the error trace has reached the
+        threshold, and the domain carries a lesson for the concept. Silence
+        means "not taught", never "taught and empty".
+        """
+        ...
+
     def tutor_replied(self, item: Item, hint: Hint) -> None: ...
 
     def reflection_recorded(self, item: Item, text: str) -> None: ...
@@ -205,6 +221,9 @@ class Watching:
     def support_offered(
         self, item: Item, support: Support, resource: ConceptResource
     ) -> None:
+        return None
+
+    def lesson_offered(self, concept_id: str, text: str) -> None:
         return None
 
     def tutor_replied(self, item: Item, hint: Hint) -> None:
@@ -419,6 +438,11 @@ class Session:
                     item.concept_id, self.config.cohort.max_visits_per_concept
                 )
                 self._work_item(item, diagnoses, repetition=repetition)
+                # After the item, so the lesson lands between questions and the
+                # errors this item produced are already in the trace. Off for
+                # every cohort — `teaching.explain_after` is 0 there, and a scan
+                # over the config directory refuses anything else.
+                self._offer_lesson(item.concept_id)
         except StopTraining:
             # The learner said they had had enough. Not an error and not an
             # exhaustion: the material and the budget both had more to give, and
@@ -718,6 +742,80 @@ class Session:
         )
         if self.observer is not None:
             self.observer.support_offered(item, support, resource)
+
+    def _offer_lesson(self, concept_id: str) -> bool:
+        """Explain the concept, if the learner keeps getting it wrong.
+
+        The design note's sequence is ``3 failures -> teach -> offer it again ->
+        still failing -> waive the prerequisite and record the weakness``. The
+        dwelling cap was built as the third step with the first two missing, so
+        it treated the symptom: a learner who cannot do a concept is stepped
+        past it, when the honest reading may be that nobody ever told them what
+        it was.
+
+        Called **between items**, so a lesson arrives before the next attempt
+        rather than in the middle of one. A learner who has just been explained
+        the concept gets to try it with that in hand, which is the whole point
+        of the ordering.
+
+        ⚠️ Every input is arm-invariant, and that is deliberate rather than
+        incidental. The error trace and the audit log both live on the board,
+        which is shared; only the *view* differs between arms, and nothing here
+        reads a view. A trigger keyed on mastery or the frontier would fire at
+        different rates in the two arms and would be measuring the manipulation
+        rather than the learner — and it would look like a finding, not a fault.
+
+        Returns whether anything was taught, so the caller can count it.
+        """
+        after = self.config.teaching.explain_after
+        if after <= 0:
+            return False
+
+        resource = self.domain.resource_for(concept_id)
+        if resource is None or not resource.teaches:
+            # Optional content, legitimately absent. `domain validate` warns
+            # about the gap; the loop simply has nothing to say here.
+            return False
+
+        errors = sum(
+            1
+            for event in self.board.state.error_trace
+            if event.concept_id == concept_id
+        )
+        taught = sum(
+            1
+            for record in self.board.audit_log
+            if record.cause == "tutor"
+            and record.evidence.get("move") == TutorMove.EXPLAIN.value
+            and record.evidence.get("concept_id") == concept_id
+        )
+        if not should_explain(errors, taught, after=after):
+            return False
+
+        text = resource.lesson()
+        self.board.record_turn(
+            # A lesson is about the concept, not about any one question, and
+            # there may not be a question in front of the learner when it
+            # arrives. Recorded against the concept so the record says what it
+            # means.
+            item_id="",
+            concept_id=concept_id,
+            move=TutorMove.EXPLAIN.value,
+            level="lesson",
+            # ⚠️ Targets nothing, for the reason `_offer_support` gives and with
+            # more at stake here. `remediation_ratio` is the declared primary
+            # outcome and it counts what a hint aimed at; a target on a lesson
+            # would credit it with remediation it did not do. A lesson explains
+            # a concept — it does not correct a misconception, and it must never
+            # reach `receive_hint`.
+            targets=None,
+            text=text,
+            mastery=0.0,
+            prior_failures=errors,
+        )
+        if self.observer is not None:
+            self.observer.lesson_offered(concept_id, text)
+        return True
 
     def _work_item(
         self,
