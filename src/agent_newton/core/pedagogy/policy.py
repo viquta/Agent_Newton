@@ -269,6 +269,7 @@ def should_explain(
     lessons_already_given: int,
     *,
     after: int,
+    accounts_available: int = 3,
 ) -> bool:
     """Whether the learner is owed an explanation of this concept.
 
@@ -294,8 +295,24 @@ def should_explain(
     learner who keeps struggling is taught again rather than either once or
     every time. The second lesson is where explaining it *differently* starts to
     matter — see :func:`style_for`.
+
+    ⚠️ And they stop once every account has been given. ``accounts_available``
+    is the size of the style repertoire, and past it :func:`style_for` comes
+    back round to one the learner has already read — which the response cache
+    then returns byte-identical, because the prompt is the same. A sitting
+    produced exactly that: six lessons on one concept, three distinct accounts
+    and then the same three again word for word. It is the "same hint three
+    times" defect arriving through a new door, and the honest reading is the
+    same one: if three different accounts did not land, a fourth identical one
+    will not either.
+
+    Stopping is not withdrawing. ``:why`` still works — an explicit ask is
+    answered whatever the count — and the concept keeps every other kind of
+    support it had.
     """
     if after <= 0:
+        return False
+    if accounts_available > 0 and lessons_already_given >= accounts_available:
         return False
     return errors_on_concept >= after * (lessons_already_given + 1)
 

@@ -625,3 +625,49 @@ class TestAskingForALesson:
             r for r in session.board.audit_log
             if r.evidence.get("asked_for_a_lesson")
         ], "a sitting has to be readable back against what the learner asked for"
+
+
+class TestTeachingStopsWhenThereIsNothingNewToSay:
+    """⚠️ Found by driving a real sitting, not by a unit test.
+
+    Six lessons landed on one concept: three distinct accounts, and then the
+    same three again word for word — because ``style_for`` comes back round and
+    the response cache returns the identical text for the identical prompt. It
+    is §7i's "same hint three times" arriving through a new door, and the honest
+    reading is the one recorded there: if three different accounts did not land,
+    a fourth identical one will not either.
+    """
+
+    def test_the_repertoire_is_the_ceiling(self) -> None:
+        assert should_explain(99, 2, after=3, accounts_available=3)
+        assert not should_explain(99, 3, after=3, accounts_available=3)
+
+    def test_the_ceiling_is_read_off_the_styles_that_exist(self, calculus) -> None:
+        # Rather than configured, so it cannot drift from the number of accounts
+        # there actually are. Adding a fourth style raises it on its own.
+        session = build_session("L_cap", 1, calculus, _config(), learner=AlwaysWrong())
+        session.run()
+        by_concept: dict[str, int] = {}
+        for lesson in _lessons_in(session.board):
+            by_concept[lesson["concept_id"]] = by_concept.get(lesson["concept_id"], 0) + 1
+        assert by_concept, "the fixture must provoke lessons"
+        assert max(by_concept.values()) <= len(TeachingStyle)
+
+    def test_every_account_is_a_different_one(self, calculus) -> None:
+        # The property the ceiling exists to protect: while lessons are given at
+        # all, no two on a concept are the same account.
+        assert len({style_for(n) for n in range(len(TeachingStyle))}) == len(
+            TeachingStyle
+        )
+
+    def test_asking_is_still_answered_after_the_ceiling(self, calculus) -> None:
+        # Stopping is not withdrawing. An explicit ask is answered whatever the
+        # count — a learner who wants to read it again may.
+        session = build_session("L_cap", 1, calculus, _config(), learner=AlwaysWrong())
+        session.run()
+        taught = {lesson["concept_id"] for lesson in _lessons_in(session.board)}
+        exhausted = next(iter(taught))
+        before = len(_lessons_in(session.board))
+        session.board.request_lesson(exhausted)
+        assert session._offer_lesson(exhausted)
+        assert len(_lessons_in(session.board)) == before + 1

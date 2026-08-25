@@ -800,7 +800,14 @@ class Session:
             and record.evidence.get("move") == TutorMove.EXPLAIN.value
             and record.evidence.get("concept_id") == concept_id
         )
-        if not asked and not should_explain(errors, taught, after=after):
+        if not asked and not should_explain(
+            errors,
+            taught,
+            after=after,
+            # Read off the repertoire rather than configured, so the ceiling
+            # cannot drift from the number of accounts that actually exist.
+            accounts_available=len(TeachingStyle),
+        ):
             return False
 
         # Which account to give, and the learner's own choice wins where they
