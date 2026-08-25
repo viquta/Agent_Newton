@@ -83,6 +83,28 @@ class Learner(Protocol):
         """
         ...
 
+    def discuss(self, concept_id: str, prompt: str) -> str | None:
+        """Reply to the tutor while a concept is being explained, or ``None``.
+
+        Half of a conversation rather than an answer to anything. A lesson is
+        about a *concept* and may happen with no question in front of the
+        learner at all, which is why this takes a concept id where
+        :meth:`reflect` takes an item.
+
+        ⚠️ That difference is the whole reason this is a separate method rather
+        than a reuse of :meth:`reflect`. Reflecting through here would need a
+        synthetic ``Item``, whose id would flow into the recorded utterance and
+        from there into ``said_about`` — which filters by concept *and* item. A
+        sitting once had the tutor ask a learner to review their derivative of
+        ``u^4`` on a question containing no ``u^4``, and that is the same defect
+        being reintroduced on purpose.
+
+        ``None`` ends the conversation, and a simulated learner always returns
+        it. That is what makes a dialogue structurally unreachable in a cohort:
+        not a flag that is off, but a learner who cannot talk.
+        """
+        ...
+
     def show_working(
         self, item: Item, response: str, required: bool = False
     ) -> str | None:
@@ -202,6 +224,19 @@ class SimulatedLearner:
 
         The reflective prompt still costs it a turn — that is what gives the
         error-first rule a price — but it produces no prose.
+        """
+        return None
+
+    def discuss(self, concept_id: str, prompt: str) -> str | None:  # noqa: ARG002
+        """Nothing to say. A rule engine cannot hold a conversation.
+
+        Returning ``None`` ends the dialogue at its first turn, so a lesson
+        collapses to the opening and its written summary however
+        ``teaching.lesson_turns`` is set. That is the guarantee worth having: a
+        cohort cannot be taught conversationally because its learner cannot
+        converse, which is an inability rather than a configuration — and there
+        is a test asserting *that* rather than only asserting the numbers did
+        not move.
         """
         return None
 

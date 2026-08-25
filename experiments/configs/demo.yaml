@@ -144,6 +144,27 @@ zpd:
 # design, and a scan over this directory refuses anything else.
 teaching:
   explain_after: 3
+  # A lesson is a conversation, not a wall of text. The tutor says a little and
+  # asks; you answer; it takes up what you said and asks the next thing. Three
+  # exchanges is the backstop rather than the mechanism — a blank line or :done
+  # ends it whenever you have had enough.
+  #
+  # It closes with the written account either way, so leaving early never costs
+  # you the explanation. That account is the authored text: checked as plain
+  # text, and checked not to answer any question in any bank at any draw. The
+  # conversation above it is the model's and is checked against nothing, which
+  # is why the thing you keep is the one a person wrote.
+  #
+  # The first version of this was one shot and read as a monologue — the model
+  # asked questions and answered them itself, because the instruction told it
+  # to. A sitting said so: "I really thought that would be more of a dialogue
+  # between me and the Tutor."
+  #
+  # ⚠️ Costs up to four model calls per lesson at 15-27s each. If the talking
+  # starts outstaying its welcome, this is the dial. It must stay 0 for every
+  # cohort — and a simulated learner cannot converse anyway, so a dialogue is
+  # unreachable there whatever this says.
+  lesson_turns: 3
 
 # On here and nowhere else, both of them.
 #

@@ -12,6 +12,8 @@ computed from the shared state, so it fires at the same rate in both arms.
 
 from __future__ import annotations
 
+from typing import Sequence
+
 import pytest
 
 from agent_newton.config import Config
@@ -61,8 +63,15 @@ class AlwaysWrong:
 
     learner_id = "L_wrong"
 
-    def __init__(self) -> None:
+    def __init__(self, says: Sequence[str] = ()) -> None:
         self.hints: list[str | None] = []
+        #: What this learner says when a concept is explained to them, in order.
+        #: Empty is the default and matches `SimulatedLearner`, which returns
+        #: None and so ends a lesson at its opening turn — the behaviour every
+        #: cohort has whatever the config says.
+        self._says = list(says)
+        #: Every prompt the tutor put to them during a lesson.
+        self.asked: list[str] = []
 
     #: Parseable, and wrong for every item in the bank. It has to be readable:
     #: an answer the verifier cannot parse is `UNPARSEABLE`, which never enters
@@ -80,6 +89,10 @@ class AlwaysWrong:
     def show_working(self, item, response: str, required: bool = False) -> str | None:
         return None
 
+    def discuss(self, concept_id: str, prompt: str) -> str | None:
+        self.asked.append(prompt)
+        return self._says.pop(0) if self._says else None
+
     def receive_hint(self, targeted_misconception: str | None) -> bool:
         self.hints.append(targeted_misconception)
         return False
@@ -95,13 +108,28 @@ def _board(domain):
     return new_blackboard("L_probe", 1, domain.concepts, _config())
 
 
-def _lessons_in(board) -> list[dict]:
+def _turns_in(board) -> list[dict]:
+    """Every turn of every lesson, openings and replies and summaries alike."""
     return [
         record.evidence
         for record in board.audit_log
         if record.cause == "tutor"
         and record.evidence.get("move") == TutorMove.EXPLAIN.value
     ]
+
+
+def _lessons_in(board) -> list[dict]:
+    """One entry per *lesson*, which is the opening turn of each.
+
+    A lesson is a conversation, so counting turns counts exchanges. Everything
+    that asks "how many lessons has this learner had" has to count openings —
+    see the counting note on `Session._offer_lesson`.
+    """
+    return [turn for turn in _turns_in(board) if turn.get("opening")]
+
+
+def _summaries_in(board) -> list[dict]:
+    return [turn for turn in _turns_in(board) if turn.get("level") == "summary"]
 
 
 class TestTheTrigger:
@@ -199,13 +227,14 @@ class TestALessonIsNotRemediation:
         learner = AlwaysWrong()
         session = build_session("L_wrong", 1, calculus, _config(), learner=learner)
         session.run()
-        for lesson in _lessons_in(session.board):
-            assert lesson["move"] == "explain"
-            # The style stands where a hint records its support level. A lesson
-            # has no support level — it is not a quantity of the answer — and
-            # recording one would invite it to be read as a rung on the ladder,
-            # which is exactly what it is not.
-            assert lesson["level"] in {s.label for s in TeachingStyle}
+        allowed = {s.label for s in TeachingStyle} | {"summary"}
+        for turn in _turns_in(session.board):
+            assert turn["move"] == "explain"
+            # The style stands where a hint records its support level, and the
+            # closing summary stands beside it. A lesson has no support level —
+            # it is not a quantity of the answer — and recording one would
+            # invite it to be read as a rung on the ladder, which it is not.
+            assert turn["level"] in allowed
 
 
 class TestTheTriggerIsArmInvariant:
@@ -371,6 +400,9 @@ class TestTheStyleIsChosenByARule:
         lessons = _lessons_in(session.board)
         assert lessons
         assert all(lesson["level"] == "real_world" for lesson in lessons)
+        # And the summary is the authored account whatever style was chosen —
+        # the style is how it was talked about, not what is left behind.
+        assert _summaries_in(session.board)
 
 
 class TestTheTemplateTutorIgnoresTheStyle:
@@ -436,16 +468,107 @@ class TestAModelMayRevoiceALessonButNotWriteOne:
 
         return LLMTutor(provider, ZPDConfig())
 
-    def test_plain_calls_no_model_at_all(self, calculus) -> None:
-        # So a model-free run still teaches, and the first lesson on every
-        # concept is exactly what was authored.
-        provider = self.Replies("should never be used")
+    def test_every_style_opens_by_talking(self, calculus) -> None:
+        """⚠️ Changed deliberately, and it is the point of the revision.
+
+        `PLAIN` used to return the authored text untouched and call no model.
+        That made it an exposition rather than an opening, and a learner said
+        what the whole thing then reads like: *"I really thought that would be
+        more of a dialogue between me and the Tutor."* Every style now opens
+        with something the learner can reply to.
+
+        Nothing is lost by it. The authored text is still what the learner is
+        left holding — it is the summary, and the summary calls no model.
+        """
+        for style in TeachingStyle:
+            provider = self.Replies("So — what do you think a power does?")
+            self._tutor(provider).explain(calculus.resources.get("power_rule"), style)
+            assert provider.calls == 1, f"{style.label} did not open a conversation"
+
+    def test_a_lesson_turn_is_not_bounded_by_a_hint_shaped_schema(self) -> None:
+        """⚠️ Found by driving a sitting, and it is one defect in a third place.
+
+        A field description goes into the JSON schema, and the schema is what
+        constrains decoding — so `HintReply`'s "Two sentences at most" is not
+        documentation, it is an instruction. A lesson opening stopped at
+        "have you ever worked with the concept of", mid-sentence, because of it.
+
+        `_TUTOR_SYSTEM` once demanded two sentences globally while `WORKED_STEP`
+        asked for the step to be worked through; that was fixed by moving the
+        budget from the prompt to the level. It survived one layer further down,
+        where nothing reads like a length budget at all.
+        """
+        from agent_newton.core.agents.schemas import HintReply, LessonReply
+
+        assert LessonReply is not HintReply
+        hint = HintReply.model_json_schema()["properties"]["text"]["description"]
+        lesson = LessonReply.model_json_schema()["properties"]["text"]["description"]
+        assert "two sentences" in hint.lower()
+        assert "two sentences" not in lesson.lower()
+
+    def test_a_turn_that_stops_mid_sentence_is_refused(self) -> None:
+        """⚠️ Observed at a keyboard, not hypothesised.
+
+        An opening came back as *"...have you ever worked with the concept of "*
+        — valid JSON, right shape, schema-clean, cut off mid-phrase, and it
+        reached the learner looking like a question that had been asked.
+        Deterministic at temperature zero, so it recurred identically on every
+        re-run: not noise a retry outruns.
+
+        Refusing it here rather than at the call site is what puts it through
+        `complete()`'s repair loop, which shows the model its own reply and asks
+        again. On the real case that produced a finished question.
+        """
+        import pydantic
+
+        from agent_newton.core.agents.schemas import LessonReply
+
+        with pytest.raises(pydantic.ValidationError):
+            LessonReply(text="have you ever worked with the concept of ")
+
+    def test_a_finished_turn_is_accepted(self) -> None:
+        # And the guard can pass, which is the other half of it meaning
+        # anything.
+        from agent_newton.core.agents.schemas import LessonReply
+
+        for good in (
+            "What do you think a rate is?",
+            "Try it and see.",
+            "Work it through (carefully).",
+            'The word "rate" means speed.',
+        ):
+            assert LessonReply(text=good).text == good
+
+    def test_a_tutor_that_cannot_finish_falls_back_to_the_authored_account(
+        self, calculus
+    ) -> None:
+        # The existing `ProviderError` path, reached through the repair loop
+        # giving up. A lesson that cannot be talked through is still a lesson.
+        import json
+
+        from agent_newton.llm.base import Completion
+
+        class NeverFinishes:
+            label = "fake/model"
+
+            def generate(self, prompt, schema, system):  # noqa: ANN001
+                return Completion(
+                    text=json.dumps({"text": "and then the concept of "}),
+                    model="fake",
+                    provider="fake",
+                )
+
         resource = calculus.resources.get("power_rule")
-        assert (
-            self._tutor(provider).explain(resource, TeachingStyle.PLAIN)
-            == resource.lesson()
-        )
-        assert provider.calls == 0
+        assert self._tutor(NeverFinishes()).explain(
+            resource, TeachingStyle.SOCRATIC
+        ) == resource.lesson()
+
+    def test_the_summary_is_authored_and_needs_no_model(self, calculus) -> None:
+        # The guarantees belong to the thing the learner keeps. A conversation
+        # is re-checked against nothing; the authored account is checked as
+        # plain text and checked not to answer any item at any draw.
+        resource = calculus.resources.get("power_rule")
+        assert resource.lesson()  # composed without a provider at all
 
     def test_a_styled_lesson_is_used_when_it_comes_back_clean(self, calculus) -> None:
         provider = self.Replies("What happens to the power? It comes down in front.")
@@ -523,8 +646,23 @@ class TestWhatALearnerSeesAndCanAskFor:
         observer.lesson_offered("power_rule", "a power tells you how fast it grows")
         shown = buffer.getvalue()
         assert "a moment on" in shown
-        assert "not a question" in shown
         assert "how fast it grows" in shown
+        # And the learner is told how to leave, in the panel that starts it.
+        assert ":done" in shown
+
+    def test_the_summary_is_marked_as_the_thing_to_keep(self, calculus) -> None:
+        # The conversation above it was written by a model and is checked
+        # against nothing; this is the text a person wrote and the validator
+        # checked. A learner should be able to tell which one is theirs.
+        from agent_newton.demo import DemoObserver
+
+        console, buffer = self._console()
+        DemoObserver(console, calculus, _config()).lesson_summary(
+            "power_rule", "bring the power down and reduce it by one"
+        )
+        shown = buffer.getvalue()
+        assert "short version" in shown
+        assert "yours to keep" in shown
 
     def test_nothing_is_offered_to_ask_about_during_a_test(self, calculus) -> None:
         """Asking what a concept is mid-test is asking to be told the thing the
@@ -670,4 +808,237 @@ class TestTeachingStopsWhenThereIsNothingNewToSay:
         before = len(_lessons_in(session.board))
         session.board.request_lesson(exhausted)
         assert session._offer_lesson(exhausted)
+        # One more *lesson*, however many turns it took.
         assert len(_lessons_in(session.board)) == before + 1
+
+
+class TestALessonIsAConversation:
+    """⚠️ The revision a sitting asked for.
+
+    The first version produced a monologue shaped like a dialogue: the style
+    instruction told the model to ask questions and answer each one itself. A
+    learner watched it do that and said so — *"I really thought that would be
+    more of a dialogue between me and the Tutor."*
+
+    A lesson now opens, listens, and replies, and ends with the authored account
+    in writing however it ended.
+    """
+
+    def _config_talking(self, turns: int = 3) -> Config:
+        config = _config()
+        config.teaching.lesson_turns = turns
+        return config
+
+    def test_the_learner_is_asked_and_the_tutor_replies(self, calculus) -> None:
+        learner = AlwaysWrong(says=["I think it is a ratio", "oh, dividing"])
+        session = build_session(
+            "L_talk", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.run()
+        assert learner.asked, "the learner was never asked anything"
+        # opening + two replies + summary, per lesson
+        turns = _turns_in(session.board)
+        assert len(turns) > len(_lessons_in(session.board))
+
+    def test_what_the_learner_said_is_kept(self, calculus) -> None:
+        learner = AlwaysWrong(says=["I think it is a ratio"])
+        session = build_session(
+            "L_talk", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.run()
+        lesson_words = [
+            u for u in session.board.state.reflections if u.kind == "lesson"
+        ]
+        assert lesson_words
+        assert any("ratio" in u.text for u in lesson_words)
+
+    def test_a_lesson_utterance_belongs_to_no_question(self, calculus) -> None:
+        """⚠️ And its ``kind`` is what stops that being read back wrongly.
+
+        `LLMTutor.respond` labels an utterance "on an earlier question, not the
+        one above" whenever its item id does not match. A lesson has no question,
+        so without a kind of its own what the learner said while being taught
+        would come back to them as a remark about something else — the sitting-3
+        defect one level finer.
+        """
+        learner = AlwaysWrong(says=["I do not follow"])
+        session = build_session(
+            "L_talk", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.run()
+        for utterance in session.board.state.reflections:
+            if utterance.kind == "lesson":
+                assert utterance.item_id == ""
+
+    def test_the_tutor_is_told_what_was_said(self, calculus) -> None:
+        # Handed over like `said_this_item` on `respond`: an agent is told what
+        # was said, never given a channel to another agent.
+        seen: list[int] = []
+
+        class Listening:
+            def respond(self, *a, **kw):  # noqa: ANN001, ANN002, ANN003
+                raise AssertionError("not under test")
+
+            def explain(self, resource, style, exchanges=()):  # noqa: ANN001
+                seen.append(len(exchanges))
+                return f"turn {len(exchanges)}"
+
+        learner = AlwaysWrong(says=["a", "b"])
+        session = build_session(
+            "L_talk", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.tutor = Listening()
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        # opening sees nothing, then one exchange, then two.
+        assert seen[:3] == [0, 1, 2]
+
+    # -- ending it --------------------------------------------------------
+
+    def test_saying_nothing_ends_it(self, calculus) -> None:
+        learner = AlwaysWrong(says=[])          # like a simulated learner
+        session = build_session(
+            "L_quiet", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.run()
+        assert _lessons_in(session.board)
+        assert not [
+            u for u in session.board.state.reflections if u.kind == "lesson"
+        ]
+
+    def test_the_turn_cap_bounds_a_learner_who_keeps_talking(self, calculus) -> None:
+        learner = AlwaysWrong(says=["yes"] * 50)
+        session = build_session(
+            "L_chatty", 1, calculus, self._config_talking(turns=2), learner=learner
+        )
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        said = [u for u in session.board.state.reflections if u.kind == "lesson"]
+        assert len(said) == 2
+
+    def test_one_turn_is_the_default_everywhere(self) -> None:
+        # Today's behaviour, so every existing test and the whole cohort path
+        # are untouched by this existing.
+        assert Config().teaching.lesson_turns == 0
+
+    # -- the summary ------------------------------------------------------
+
+    def test_every_lesson_leaves_the_authored_account_behind(
+        self, calculus
+    ) -> None:
+        learner = AlwaysWrong(says=["mm"])
+        session = build_session(
+            "L_talk", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.run()
+        lessons = _lessons_in(session.board)
+        summaries = _summaries_in(session.board)
+        assert len(summaries) == len(lessons)
+
+    def test_the_summary_is_the_authored_text_verbatim(self, calculus) -> None:
+        """The guarantees belong to the thing the learner is left holding.
+
+        The conversation is the model's and is re-checked against nothing. This
+        is what a person wrote and what `domain validate` has checked is plain
+        text and checked does not answer any item on the concept at any draw.
+        """
+        learner = AlwaysWrong(says=["mm"])
+        session = build_session(
+            "L_talk", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        [summary] = [
+            t for t in _summaries_in(session.board) if t["concept_id"] == "power_rule"
+        ]
+        assert summary["text"] == calculus.resources.get("power_rule").lesson()
+
+    def test_declining_to_talk_still_teaches(self, calculus) -> None:
+        # A conversational lesson that produces *less* than the one-shot when
+        # someone is not in the mood to talk would be worse than the one-shot.
+        quiet = AlwaysWrong(says=[])
+        session = build_session(
+            "L_quiet", 1, calculus, self._config_talking(), learner=quiet
+        )
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        assert _summaries_in(session.board)
+
+    # -- the counting hazard ----------------------------------------------
+
+    def test_a_conversation_counts_as_one_lesson(self, calculus) -> None:
+        """⚠️ The hazard the revision created, asserted rather than trusted.
+
+        `taught` drives both which account comes next and the ceiling that stops
+        teaching once every account has been given. Counting turns instead of
+        openings would count every exchange as a fresh lesson: the ceiling would
+        trip inside the first conversation and the rotation would skip accounts.
+        """
+        learner = AlwaysWrong(says=["a", "b", "c"])
+        session = build_session(
+            "L_count", 1, calculus, self._config_talking(), learner=learner
+        )
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        on_power_rule = [
+            t for t in _turns_in(session.board) if t["concept_id"] == "power_rule"
+        ]
+        assert len(on_power_rule) > 1, "the fixture must produce a real conversation"
+        assert (
+            len([t for t in on_power_rule if t.get("opening")]) == 1
+        ), "a conversation must count as one lesson, not one per exchange"
+
+    def test_the_rotation_still_advances_one_account_per_lesson(
+        self, calculus
+    ) -> None:
+        # The observable consequence of the count being right.
+        session = build_session(
+            "L_rot", 1, calculus, self._config_talking(), learner=AlwaysWrong(says=["a"])
+        )
+        for _ in range(len(TeachingStyle)):
+            session.board.request_lesson("power_rule")
+            session._offer_lesson("power_rule")
+        levels = [
+            t["level"]
+            for t in _lessons_in(session.board)
+            if t["concept_id"] == "power_rule"
+        ]
+        assert levels == [s.label for s in TeachingStyle]
+
+
+class TestACohortCannotBeTalkedTo:
+    """The guarantee worth having: an inability, not a setting.
+
+    `explain_after` and `lesson_turns` are both 0 for every experiment config
+    and a scan enforces it. But the stronger statement is that a simulated
+    learner cannot hold a conversation at all, so a dialogue is unreachable in a
+    cohort however the config is set.
+    """
+
+    def test_a_simulated_learner_says_nothing(self, calculus) -> None:
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import SimulatedLearner, sample_profile
+
+        profile = sample_profile("L1", 1, calculus.misconceptions, SimulatorConfig())
+        learner = SimulatedLearner(profile, calculus, SimulatorConfig())
+        assert learner.discuss("power_rule", "what do you think?") is None
+
+    def test_so_a_lesson_collapses_to_one_turn_and_its_summary(
+        self, calculus
+    ) -> None:
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import SimulatedLearner, sample_profile
+
+        config = _config()
+        config.teaching.lesson_turns = 5      # generous, and it will not be used
+        profile = sample_profile("L1", 1, calculus.misconceptions, SimulatorConfig())
+        session = build_session(
+            "L1", 1, calculus, config,
+            learner=SimulatedLearner(profile, calculus, SimulatorConfig()),
+        )
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        on_power_rule = [
+            t for t in _turns_in(session.board) if t["concept_id"] == "power_rule"
+        ]
+        assert len(on_power_rule) == 2, "an opening and a summary, and nothing else"

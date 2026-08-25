@@ -422,15 +422,28 @@ class TestTheTeachingLayerStaysOutOfExperiments:
                 f"with the ones the results came from"
             )
 
+    def test_no_experiment_config_holds_a_conversation(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert config.teaching.lesson_turns == 0, (
+                f"{path.name} lets a lesson run to "
+                f"{config.teaching.lesson_turns} exchanges; no cohort has ever "
+                f"been talked to"
+            )
+
     def test_the_default_is_off(self) -> None:
         # Zero rather than a plausible threshold: off is what every measured
         # result was produced under, and a default nobody chose is a policy
         # nobody chose.
         assert Config().teaching.explain_after == 0
+        assert Config().teaching.lesson_turns == 0
 
     def test_the_check_can_fail(self, tmp_path: Path) -> None:
         # A guard that cannot fail proves nothing. This is the shape the scan
         # above is looking for, and it must be rejected.
         stray = tmp_path / "stray.yaml"
-        stray.write_text("domain: toy_algebra\nteaching:\n  explain_after: 3\n")
+        stray.write_text(
+            "domain: toy_algebra\nteaching:\n  explain_after: 3\n  lesson_turns: 3\n"
+        )
         assert Config.from_yaml(stray).teaching.explain_after == 3
+        assert Config.from_yaml(stray).teaching.lesson_turns == 3

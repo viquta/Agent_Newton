@@ -428,6 +428,23 @@ class TeachingConfig(BaseModel):
     #: rather than a discovery: below it a learner is being taught after a slip,
     #: above it they spend the sitting failing something nobody explained.
     explain_after: int = Field(default=0, ge=0)
+    #: Exchanges a lesson may run to before the written summary closes it.
+    #:
+    #: ``0`` is one turn and the summary, which is what the one-shot lesson
+    #: already did, so every measured result and every existing test is
+    #: unaffected by this existing.
+    #:
+    #: A backstop rather than the mechanism: the learner ends a lesson by saying
+    #: nothing or by typing the exit word, and this only stops a conversation
+    #: running away. It is deliberately small — talking is time not spent on
+    #: questions, and a lesson that outstays its welcome is the complaint the
+    #: item templates were built for arriving in a new place.
+    #:
+    #: ⚠️ Inert for a cohort twice over. It is 0 in every experiment config, and
+    #: `SimulatedLearner.discuss` returns None — so a simulated learner ends the
+    #: conversation at its first turn whatever this says. The second is the
+    #: guarantee worth having: an inability rather than a setting.
+    lesson_turns: int = Field(default=0, ge=0)
 
 
 class DecayConfig(BaseModel):

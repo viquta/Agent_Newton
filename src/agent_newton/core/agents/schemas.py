@@ -18,7 +18,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, field_validator, create_model
 
 from agent_newton.domains.base import Domain
 
@@ -81,9 +81,70 @@ def plan_schema(domain_name: str, concept_ids: tuple[str, ...]) -> type[BaseMode
 
 
 class HintReply(BaseModel):
-    """Reply shape for the tutor. Domain-independent — it is prose."""
+    """Reply shape for a hint. Domain-independent — it is prose."""
 
     text: str = Field(description="What to say to the learner. Two sentences at most.")
+
+
+class LessonReply(BaseModel):
+    """Reply shape for one turn of a lesson.
+
+    ⚠️ Separate from :class:`HintReply` because of its *description*, which is
+    the whole point. A field description goes into the JSON schema, and the
+    schema is what Ollama constrains decoding against — so "Two sentences at
+    most" is not documentation, it is an instruction the model obeys. A lesson
+    turn asked for two or three sentences and a question, and the model stopped
+    at "have you ever worked with the concept of", mid-sentence, because the
+    schema told it to.
+
+    That is the third instance of one defect. `_TUTOR_SYSTEM` once demanded two
+    sentences globally while `WORKED_STEP` asked for the step to be worked
+    through, and the fix then was to move the length budget from the system
+    prompt to the level. It survived here, one layer further down, where nothing
+    reads like a length budget at all.
+    """
+
+    text: str = Field(
+        description=(
+            "What to say to the student: a little, and then one question they "
+            "can answer. A few sentences."
+        )
+    )
+
+    @field_validator("text")
+    @classmethod
+    def _must_be_a_finished_thought(cls, text: str) -> str:
+        """Reject a turn that stops mid-sentence.
+
+        ⚠️ Observed, not hypothetical. One opening came back as *"...To start
+        off, have you ever worked with the concept of "* — valid JSON, correct
+        shape, schema-clean, and cut off mid-phrase. It reached the learner
+        looking like a question that had been asked.
+
+        Deterministic at temperature zero, so it recurred identically on every
+        re-run: this is not noise that a retry outruns. It is one bad
+        generation for one prompt, and the thing that makes it dangerous is that
+        nothing downstream could tell — it is the silent-failure shape this
+        project keeps finding, in the one place a learner reads directly.
+
+        Raising here rather than checking at the call site is deliberate: a
+        `ValidationError` is what `complete()`'s repair loop already handles, so
+        the model is shown its own truncated reply and asked again, and a
+        provider that cannot manage it falls back to the authored account
+        through the existing `ProviderError` path. No new machinery, and the
+        failure is counted where every other malformed reply is counted.
+
+        Trailing quotes and brackets are stripped before the test, so a turn
+        ending in a quoted phrase or a parenthesis is not called truncated.
+        """
+        trimmed = text.rstrip().rstrip(')"\'’”')
+        if not trimmed.endswith((".", "?", "!", ":")):
+            raise ValueError(
+                f"the reply stops mid-sentence: ...{text.rstrip()[-40:]!r}. "
+                f"Finish the sentence, and end with the question you are putting "
+                f"to the student."
+            )
+        return text
 
 
 def schemas_for(domain: Domain) -> dict[str, Any]:

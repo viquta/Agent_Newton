@@ -35,8 +35,13 @@ class TemplateTutor:
         self._band = band
         self._policy: ScaffoldingPolicy = policy
 
-    def explain(self, resource: ConceptResource, style: TeachingStyle) -> str:
-        """The lesson as authored. ``style`` is accepted and ignored.
+    def explain(
+        self,
+        resource: ConceptResource,
+        style: TeachingStyle,
+        exchanges: Sequence[tuple[str, str]] = (),
+    ) -> str:
+        """The lesson as authored. ``style`` and ``exchanges`` are ignored.
 
         Deliberate, and the same reasoning as ``respond`` ignoring ``response``:
         the cohorts run this tutor, so its output must not vary with anything
@@ -47,6 +52,11 @@ class TemplateTutor:
         Ignoring the style is not a degraded lesson. ``PLAIN`` *is* the authored
         text, and the authored text is the one thing every domain offering
         resources is guaranteed to have.
+
+        Nor is ignoring the conversation. This tutor has nothing to say back
+        that it did not already say, so a dialogue driven by it would be the
+        same paragraph repeated — which is the failure the account ceiling was
+        added to prevent. It gives its one turn and the summary follows.
         """
         return resource.lesson()
 

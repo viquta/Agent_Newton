@@ -87,6 +87,14 @@ DECLINE = ":s"
 #: question is over, which is where a lesson belongs — between questions, with
 #: the next one still to come.
 EXPLAIN = ":why"
+#: Ends a lesson. The written summary follows either way, so leaving a
+#: conversation never costs the learner the explanation.
+#:
+#: Redundant with pressing enter, deliberately. Enter is the idiom every
+#: optional prompt here already uses and is what most people will do; this is
+#: for someone who would rather say so than guess. A stated affordance that
+#: works is worth more than a discovered one that also works.
+END_LESSON = ":done"
 
 
 def _bar(value: float, band) -> Text:
@@ -234,6 +242,9 @@ class DemoObserver(Watching):
         #: rather than with the last thing that happened to be on screen.
         self._working_concept: str | None = None
         self._board: Blackboard | None = None
+        #: The concept currently being talked about, so only the first turn of a
+        #: lesson announces itself.
+        self._in_lesson: str | None = None
 
     def board_panel(self, board: Blackboard) -> Panel:
         graph = self._domain.concepts
@@ -610,7 +621,7 @@ class DemoObserver(Watching):
         )
 
     def lesson_offered(self, concept_id: str, text: str) -> None:
-        """The concept explained, between questions.
+        """One turn of a lesson, or the written account that closes it.
 
         Printed rather than held, unlike ``support_offered``. That one is
         material shown *with* a question and belongs above it; this one is not
@@ -620,16 +631,50 @@ class DemoObserver(Watching):
         Its own border and its own title, because a learner should be able to
         tell being taught from being corrected. Every other panel on this screen
         is a response to something they just did.
+
+        The first turn of a lesson announces the concept; the rest do not, so a
+        conversation reads as a conversation rather than as the same heading
+        four times.
         """
+        opening = self._in_lesson != concept_id
+        self._in_lesson = concept_id
         self._console.print(
             Panel(
                 Text(text),
-                title=f"a moment on {_readable(concept_id)}",
-                subtitle="not a question — read it and carry on",
+                title=(
+                    f"a moment on {_readable(concept_id)}" if opening else "tutor"
+                ),
+                subtitle=(
+                    f"say what you think, or {END_LESSON} when you have had enough"
+                ),
                 border_style="cyan",
                 padding=(1, 2),
             )
         )
+
+    def lesson_summary(self, concept_id: str, text: str) -> None:
+        """The authored account, which closes every lesson however it ended.
+
+        Marked as something to keep rather than something to answer. It is the
+        text a person wrote and the validator checked, and it is the only part
+        of a lesson that carries those guarantees — the conversation above it
+        was written by a model and is checked against nothing.
+        """
+        self._in_lesson = None
+        self._console.print(
+            Panel(
+                Text(text),
+                title=f"{_readable(concept_id)} — the short version",
+                subtitle="yours to keep; the questions carry on below",
+                border_style="cyan",
+                padding=(1, 2),
+            )
+        )
+
+    def lesson_reply_recorded(self, concept_id: str, text: str) -> None:
+        # Echoed back so a transcript reads as a conversation. The learner has
+        # just typed it, so this is for the record rather than for them.
+        self._console.print(Text(f"  you: {text}", style="dim"))
 
     def tutor_replied(self, item: Item, hint: Hint) -> None:
         self._console.print(
@@ -1296,6 +1341,13 @@ def run_demo(
                     )
                     continue
                 raise StopTraining
+            if said == END_LESSON:
+                # Only meaningful at the lesson prompt, and harmless elsewhere:
+                # it reads as an empty answer, which every prompt here already
+                # handles. Routed through this reader like every other control
+                # word, because `:q` once worked at one prompt out of three
+                # while the intro said it worked anywhere.
+                return ""
             if said == EXPLAIN:
                 # Goes through this reader like the rest, for the reason above
                 # it: a control word that works at one prompt out of three is
@@ -1342,6 +1394,21 @@ def run_demo(
             f"to the post-test, {EXPLAIN} if you want this explained)[/dim]"
         )
         return _asked(f"  your answer  {hint}")
+
+    def discuss(concept_id: str, prompt: str) -> str:
+        """The learner's side of a lesson.
+
+        Prose on the same terms as a reflection — never verified, never an
+        attempt, never an unmeasurable step. Optional, so a blank line ends the
+        conversation and the written summary follows either way: someone who is
+        not in the mood to talk still gets the explanation.
+        """
+        return _asked(
+            f"  [magenta]your turn[/magenta]  "
+            f"[dim](enter or {END_LESSON} to finish — you get the short version "
+            f"either way)[/dim]",
+            optional=True,
+        )
 
     def ask_reflection(item: Item, prompt: str) -> str:
         # Prose, not an answer. It never reaches the verifier and costs no
@@ -1415,6 +1482,7 @@ def run_demo(
     learner = HumanLearner(
         ask, learner_id=learner_id,
         ask_reflection=ask_reflection, ask_working=ask_working,
+        discuss=discuss,
     )
 
     gap = elapsed_days if elapsed_days is not None else _days_since(store, learner_id, config)

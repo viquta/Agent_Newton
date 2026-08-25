@@ -542,7 +542,7 @@ class Blackboard:
         text: str,
         item_id: str,
         concept_id: str,
-        kind: Literal["reflection", "working"] = "reflection",
+        kind: Literal["reflection", "working", "lesson"] = "reflection",
     ) -> None:
         """Record what the learner said, in words.
 
@@ -679,6 +679,7 @@ class Blackboard:
         text: str,
         mastery: float = 0.0,
         prior_failures: int = 0,
+        opening: bool = False,
     ) -> None:
         """Record what the tutor said, and under which rules it said it.
 
@@ -711,6 +712,12 @@ class Blackboard:
             mastery=mastery,
             prior_failures=prior_failures,
             text=text,
+            # ⚠️ Marks the first turn of a lesson, and only ever that. A lesson
+            # is a conversation, so anything asking "how many lessons has this
+            # learner had on this concept" has to count openings — counting
+            # turns would count every exchange as a fresh lesson and trip the
+            # account ceiling inside the first one.
+            opening=opening,
         )
 
     def record_plan(self, plan: Plan, **evidence: Any) -> Plan:

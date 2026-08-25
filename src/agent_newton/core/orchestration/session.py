@@ -167,6 +167,28 @@ class SessionObserver(Protocol):
         """
         ...
 
+    def lesson_summary(self, concept_id: str, text: str) -> None:
+        """The authored account, closing a lesson however it ended.
+
+        Its own hook rather than another :meth:`lesson_offered`, because it is a
+        different kind of thing: the conversation above it was written by a
+        model and is checked against nothing, and this is the text a person
+        wrote and the validator checked. A learner should be able to tell which
+        one is theirs to keep.
+        """
+        ...
+
+    def lesson_reply_recorded(self, concept_id: str, text: str) -> None:
+        """What the learner said back, while the concept was being explained.
+
+        The other half of :meth:`lesson_offered`. Distinct from
+        :meth:`reflection_recorded`, which answers a question about a *step* —
+        this one has no step and no question in front of it, and a front end
+        that showed them the same way would be telling the learner their remark
+        about a concept was a remark about whatever they last got wrong.
+        """
+        ...
+
     def tutor_replied(self, item: Item, hint: Hint) -> None: ...
 
     def reflection_recorded(self, item: Item, text: str) -> None: ...
@@ -226,6 +248,12 @@ class Watching:
         return None
 
     def lesson_offered(self, concept_id: str, text: str) -> None:
+        return None
+
+    def lesson_summary(self, concept_id: str, text: str) -> None:
+        return None
+
+    def lesson_reply_recorded(self, concept_id: str, text: str) -> None:
         return None
 
     def tutor_replied(self, item: Item, hint: Hint) -> None:
@@ -793,12 +821,18 @@ class Session:
             for event in self.board.state.error_trace
             if event.concept_id == concept_id
         )
+        # ⚠️ Openings, not turns. A lesson is a conversation now, so counting
+        # `move == explain` records would count every exchange as a fresh
+        # lesson: the ceiling would trip inside the first one and the rotation
+        # would skip accounts. `opening` marks the first turn of each lesson and
+        # is the only thing that means "a lesson happened".
         taught = sum(
             1
             for record in self.board.audit_log
             if record.cause == "tutor"
             and record.evidence.get("move") == TutorMove.EXPLAIN.value
             and record.evidence.get("concept_id") == concept_id
+            and record.evidence.get("opening")
         )
         if not asked and not should_explain(
             errors,
@@ -815,33 +849,81 @@ class Session:
         # account is unlikely to be helped by the plain account again, which is
         # what the rotation is for.
         style = style_for(taught, chosen=self.board.teaching_style)
-        text = self.tutor.explain(resource, style)
-        self.board.record_turn(
-            # A lesson is about the concept, not about any one question, and
-            # there may not be a question in front of the learner when it
-            # arrives. Recorded against the concept so the record says what it
-            # means.
-            item_id="",
-            concept_id=concept_id,
-            move=TutorMove.EXPLAIN.value,
-            # The style stands where a hint records its support level. A lesson
-            # has no support level — it is not a quantity of the answer — and
-            # recording one would invite it to be read as a rung on the ladder,
-            # which is exactly what it is not.
-            level=style.label,
-            # ⚠️ Targets nothing, for the reason `_offer_support` gives and with
-            # more at stake here. `remediation_ratio` is the declared primary
-            # outcome and it counts what a hint aimed at; a target on a lesson
-            # would credit it with remediation it did not do. A lesson explains
-            # a concept — it does not correct a misconception, and it must never
-            # reach `receive_hint`.
-            targets=None,
-            text=text,
-            mastery=0.0,
-            prior_failures=errors,
-        )
-        if self.observer is not None:
-            self.observer.lesson_offered(concept_id, text)
+
+        def _say(text: str, *, level: str, opening: bool = False) -> None:
+            """Record one turn of the lesson, and show it.
+
+            The closing summary goes to its own hook. A front end should be able
+            to mark the account the learner keeps differently from the talking
+            that led to it — one is theirs to take away and the other was a
+            conversation.
+            """
+            self.board.record_turn(
+                # A lesson is about the concept, not about any one question, and
+                # there may not be a question in front of the learner when it
+                # arrives. Recorded against the concept so the record says what
+                # it means.
+                item_id="",
+                concept_id=concept_id,
+                move=TutorMove.EXPLAIN.value,
+                # The style stands where a hint records its support level. A
+                # lesson has no support level — it is not a quantity of the
+                # answer — and recording one would invite it to be read as a
+                # rung on the ladder, which is exactly what it is not.
+                level=level,
+                # ⚠️ Targets nothing, for the reason `_offer_support` gives and
+                # with more at stake here. `remediation_ratio` is the declared
+                # primary outcome and it counts what a hint aimed at; a target
+                # on a lesson would credit it with remediation it did not do. A
+                # lesson explains a concept — it does not correct a
+                # misconception, and it must never reach `receive_hint`.
+                targets=None,
+                text=text,
+                mastery=0.0,
+                prior_failures=errors,
+                opening=opening,
+            )
+            if self.observer is None:
+                return
+            if level == "summary":
+                self.observer.lesson_summary(concept_id, text)
+            else:
+                self.observer.lesson_offered(concept_id, text)
+
+        said = self.tutor.explain(resource, style)
+        _say(said, level=style.label, opening=True)
+
+        # The conversation. Bounded, but the learner is what usually ends it —
+        # they say nothing, or they say they are done. Either way the summary
+        # below still runs, so declining to talk never costs them the lesson.
+        exchanges: list[tuple[str, str]] = []
+        for _ in range(self.config.teaching.lesson_turns):
+            replied = self.learner.discuss(concept_id, said)
+            if not replied:
+                break
+            self.board.record_reflection(
+                replied,
+                # Empty on purpose: a lesson is about a concept and there may be
+                # no question in front of the learner. `kind` is what stops this
+                # being read back to them later as a remark about some other
+                # question — see Utterance.
+                item_id="",
+                concept_id=concept_id,
+                kind="lesson",
+            )
+            if self.observer is not None:
+                self.observer.lesson_reply_recorded(concept_id, replied)
+            exchanges.append((said, replied))
+            said = self.tutor.explain(resource, style, exchanges)
+            _say(said, level=style.label)
+
+        # ⚠️ Always, however the conversation ended, and it is the authored text
+        # rather than anything generated. The conversation is the model's and is
+        # re-checked against nothing; this is what a person wrote and what
+        # `domain validate` has checked is plain text and does not answer any
+        # item on the concept at any draw. The guarantees belong to the thing
+        # the learner is left holding.
+        _say(resource.lesson(), level="summary")
         return True
 
     def _work_item(

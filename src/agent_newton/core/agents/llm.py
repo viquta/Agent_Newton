@@ -28,7 +28,7 @@ from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
 from agent_newton.core.state import route
 from agent_newton.core.state.schema import Emphasis, Plan
 from agent_newton.core.agents.schemas import UNKNOWN, diagnosis_schema, plan_schema
-from agent_newton.core.agents.schemas import HintReply
+from agent_newton.core.agents.schemas import HintReply, LessonReply
 from agent_newton.core.pedagogy import (
     HintLevel,
     TeachingStyle,
@@ -305,16 +305,29 @@ class LLMTutor:
         said = ""
         if isinstance(view, FullStateView):
             for utterance in view.said_about(item.concept_id):
-                when = (
-                    "on this question"
-                    if utterance.item_id == item.id
-                    else "on an earlier question, not the one above"
-                )
-                label = (
-                    f"The student showed this working {when}"
-                    if utterance.kind == "working"
-                    else f"The student said {when}, when asked what they were unsure of"
-                )
+                if utterance.kind == "lesson":
+                    # ⚠️ Its own branch, and the reason `Utterance.kind` gained a
+                    # third value. A lesson is about a *concept* and often has no
+                    # question in front of it, so its utterances carry an empty
+                    # item id — which the test below would read as "some other
+                    # question" and hand back to the learner as a remark about
+                    # work they were not doing. It is the sitting-3 defect one
+                    # level finer, and this is where it would have surfaced.
+                    label = (
+                        "The student said this while this concept was being "
+                        "explained to them, not about the question above"
+                    )
+                else:
+                    when = (
+                        "on this question"
+                        if utterance.item_id == item.id
+                        else "on an earlier question, not the one above"
+                    )
+                    label = (
+                        f"The student showed this working {when}"
+                        if utterance.kind == "working"
+                        else f"The student said {when}, when asked what they were unsure of"
+                    )
                 said += f"\n{label}: {utterance.text}"
 
         # What this tutor has already said on this question, and an instruction
@@ -366,7 +379,12 @@ class LLMTutor:
             targets=diagnosis.misconception_id if move is TutorMove.REMEDIATE else None,
         )
 
-    def explain(self, resource: ConceptResource, style: TeachingStyle) -> str:
+    def explain(
+        self,
+        resource: ConceptResource,
+        style: TeachingStyle,
+        exchanges: Sequence[tuple[str, str]] = (),
+    ) -> str:
         """Re-voice the authored lesson in the style the rules chose.
 
         **The model does not write the lesson.** It is handed text a person
@@ -377,9 +395,12 @@ class LLMTutor:
         keyboard, and the guarantees the content carries are guarantees about
         *that* text.
 
-        ``PLAIN`` returns it untouched and calls no model at all, so the first
-        lesson on any concept is exactly what was authored and a model-free run
-        still teaches.
+        A lesson is a conversation and this writes one side of it. With no
+        ``exchanges`` it opens — a little, and then a question the learner can
+        answer. With exchanges it replies to what they said and puts the next
+        piece to them. Neither turn delivers the whole account: the learner is
+        given that in writing when the conversation ends, and it is the authored
+        text rather than anything generated here.
 
         Two guards on what comes back, and a fallback to the authored text if
         either trips:
@@ -393,24 +414,30 @@ class LLMTutor:
           stopped re-voicing and started writing, which is the thing this is
           built not to do.
 
-        ⚠️ What is *not* guaranteed: that a re-voiced lesson still avoids
-        answering an item. The authored example is checked against every item
-        and every draw, and a model asked to rephrase it could in principle
-        arrive at an item's numbers. Re-checking every generated lesson against
-        every form of every item on the concept is affordable but is not done
-        here, and the honest statement is that ``PLAIN`` carries the guarantee
-        and the other two inherit it only as far as "keep every fact and add
-        none" is obeyed.
+        ⚠️ What is *not* guaranteed: that a generated turn avoids answering an
+        item. The authored example is checked against every item and every draw;
+        a model talking around it could in principle arrive at an item's
+        numbers. Re-checking every turn against every form of every item on the
+        concept is affordable and is not done here. The honest statement is that
+        the **summary** carries the guarantee, because the summary is the
+        authored text, and the conversation inherits it only as far as "do not
+        add mathematics that is not in it" is obeyed.
         """
         authored = resource.lesson()
-        instruction = _STYLE_INSTRUCTION.get(style)
-        if instruction is None:
-            return authored
+        if exchanges:
+            instruction = _STYLE_REPLY
+            said = "\n".join(
+                f"You: {mine}\nThe student: {theirs}" for mine, theirs in exchanges
+            )
+            context = f"\n\nThe conversation so far:\n{said}"
+        else:
+            instruction = _STYLE_OPENING[style]
+            context = ""
 
-        prompt = f"{instruction}\n\nThe explanation:\n{authored}"
+        prompt = f"{instruction}\n\nThe explanation to work from:\n{authored}{context}"
         try:
             reply = complete(
-                self._provider, prompt, HintReply, system=_EXPLAIN_SYSTEM
+                self._provider, prompt, LessonReply, system=_EXPLAIN_SYSTEM
             )
             text = reply.text
         except ProviderError:
@@ -427,6 +454,10 @@ class LLMTutor:
                 extra={"event": "tutor.lesson_rejected", "reason": "not_plain_text"},
             )
             return authored
+        # Measured against the authored account, which a single conversational
+        # turn should come in well under rather than near. It is here to catch a
+        # model that has abandoned the conversation and delivered the lecture,
+        # which is the failure this design exists to avoid.
         if len(text) > _STYLED_LESSON_LIMIT * len(authored):
             log.warning(
                 "styled lesson for %s ran to %d characters against an authored "
@@ -440,26 +471,48 @@ class LLMTutor:
         return text
 
 
-#: What each style asks for. The *content* is the authored lesson in every case
-#: — these change how it is voiced, never what it says.
-_STYLE_INSTRUCTION = {
+#: How each style **opens** a lesson.
+#:
+#: ⚠️ These used to say how to *voice* a finished account, and the Socratic one
+#: said to answer each question "yourself in a line before asking the next". The
+#: model did exactly that and produced a monologue shaped like a dialogue — a
+#: learner watched it ask and answer its own questions and said so: *"I really
+#: thought that would be more of a dialogue between me and the Tutor."* The
+#: clause that caused it is gone, and every style now ends by putting something
+#: to the learner that they can actually reply to.
+_STYLE_OPENING = {
+    TeachingStyle.PLAIN: (
+        "Say plainly what this concept is, in two or three sentences. Then ask "
+        "the student one short question to find out where they are with it."
+    ),
     TeachingStyle.SOCRATIC: (
-        "Re-voice the explanation below as a short series of questions that "
-        "lead the student to the idea, answering each one yourself in a line "
-        "before asking the next. Keep every fact that is there and add none."
+        "Do not explain it yet. Ask the student one short question that starts "
+        "them towards the idea — something they can have a go at from what they "
+        "already know. One question only, and then stop."
     ),
     TeachingStyle.REAL_WORLD: (
-        "Re-voice the explanation below so it opens with one concrete situation "
-        "where this idea is actually used, then gives the explanation itself. "
-        "Keep every fact that is there and add no new mathematics."
+        "Open with one concrete situation where this idea is actually used, in "
+        "two or three sentences. Then ask the student one short question "
+        "connecting that situation to the mathematics."
     ),
 }
 
+#: How it **continues**, once the student has said something back.
+_STYLE_REPLY = (
+    "Reply to what the student just said. Take up what they got right, and put "
+    "the next small piece to them as a question they can answer. Two or three "
+    "sentences, then the question. Do not deliver the whole explanation — they "
+    "will be given it in writing when you are done."
+)
+
 _EXPLAIN_SYSTEM = (
-    "You are a mathematics tutor explaining a concept to a student who may "
-    "never have met it. You are given an explanation that has already been "
-    "written and checked. Re-voice it in the style asked for. Do not add "
-    "mathematics that is not there, do not correct it, and do not extend it. "
+    "You are a mathematics tutor talking a student through a concept they may "
+    "never have met. You are given an explanation that has already been written "
+    "and checked; use it as the ground you are working from. Do not add "
+    "mathematics that is not in it, do not correct it, and do not extend it.\n"
+    "This is a conversation. Say a little and then ask, so the student does some "
+    "of the thinking. Never deliver the whole explanation at once, and never "
+    "answer your own question in the same breath as asking it.\n"
     "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
     "Never use LaTeX or backslash commands."
 )

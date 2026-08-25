@@ -102,7 +102,12 @@ class Tutor(Protocol):
         explained: bool = False,
     ) -> Hint: ...
 
-    def explain(self, resource: ConceptResource, style: TeachingStyle) -> str:
+    def explain(
+        self,
+        resource: ConceptResource,
+        style: TeachingStyle,
+        exchanges: Sequence[tuple[str, str]] = (),
+    ) -> str:
         """The lesson a learner reads, in the account the rules chose.
 
         Separate from :meth:`respond` because it answers a different question.
@@ -119,6 +124,13 @@ class Tutor(Protocol):
         ``style`` comes from :func:`~agent_newton.core.pedagogy.policy.style_for`
         rather than from a prompt, like the support level and the move. A
         model-free tutor is free to ignore it, and the one the cohorts run does.
+
+        ``exchanges`` is the conversation so far, oldest first, as
+        ``(what the tutor said, what the learner said back)``. Empty on the
+        opening turn. Handed over the same way ``said_this_item`` is on
+        :meth:`respond`, and for the same reason: an agent is *told* what was
+        said, never given a channel to another agent — the learner's words reach
+        here through the session and the board, like everything else.
         """
         ...
 
