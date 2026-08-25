@@ -139,7 +139,7 @@ class TestItCanSayTheSystemDidNotTryEverything:
             # its own label. Reaching everything now means having explained the
             # concept as well as having hinted at it, which is the point of the
             # move existing.
-            turn("power_rule", "explain", "lesson"),
+            turn("power_rule", "explain", "plain"),
         )
         [found] = records(store, "L1", "coupled")
         assert found.not_attempted == frozenset()

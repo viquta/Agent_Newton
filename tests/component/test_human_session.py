@@ -933,6 +933,12 @@ class TestAnUnreadableAnswerIsNotAnAttempt:
                     level=HintLevel.NUDGE,
                 )
 
+            def explain(self, resource, style):  # noqa: ANN001
+                # Present so this still satisfies `Tutor`. This test is about
+                # what the tutor is told it has already said, and a lesson is
+                # not one of those turns.
+                return resource.lesson()
+
         class Nothing:
             def diagnose(self, item, response, domain):  # noqa: ANN001
                 return Diagnosis(None)

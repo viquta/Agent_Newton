@@ -29,6 +29,7 @@ from agent_newton.core.state.schema import (
     ErrorEvent,
     LearnerState,
     Plan,
+    TeachingStyle,
     Utterance,
 )
 from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
@@ -60,6 +61,13 @@ class Blackboard:
         #: standing instruction, and a request that outlived the sitting it was
         #: made in would steer routing nobody had asked for.
         self._requested: frozenset[str] = frozenset()
+        #: The account of a concept the learner asked for, if they asked. None
+        #: leaves it to the rule. Learner *input* rather than learner *model*,
+        #: on the same footing as `requested` and `Emphasis` — a thing a person
+        #: said about themselves, not an inference about what they know, so both
+        #: arms could be handed it fairly. Empty for every cohort; nothing but
+        #: the demo sets it.
+        self._teaching_style: TeachingStyle | None = None
         #: Concepts answered correctly at least once in *this* sitting. Used to
         #: end a review: reopening a concept is a check on the estimate that
         #: closed it, and one demonstration is the check. Without this a
@@ -129,6 +137,11 @@ class Blackboard:
     def requested(self) -> frozenset[str]:
         """Concepts the learner asked for. Empty unless a front end asked."""
         return self._requested
+
+    @property
+    def teaching_style(self) -> TeachingStyle | None:
+        """How the learner asked to have things explained, if they said."""
+        return self._teaching_style
 
     @property
     def reviewing(self) -> frozenset[str]:
@@ -570,6 +583,28 @@ class Blackboard:
             requested=sorted(self._requested),
         )
         return self._requested
+
+    def record_teaching_style(self, style: TeachingStyle | None) -> None:
+        """How the learner would like concepts explained to them.
+
+        Recorded through the same path as everything else, so a sitting can be
+        read back against what the person actually asked for. It changes how a
+        lesson is voiced and never what it says: the content is authored,
+        validated, and the same under every style.
+
+        This is the control both `docs/pedagogy.md` and a learner at the
+        keyboard asked for independently — "how much help do you want today, and
+        in which areas", and a confidence check when a concept opens. Two people
+        reaching for the same control is the argument for having it.
+        """
+        self._teaching_style = style
+        self._bump(
+            "annotation",
+            f"the learner asked to be taught {style.label}"
+            if style is not None
+            else "the learner left the teaching style to the system",
+            teaching_style=None if style is None else style.value,
+        )
 
     def note_visit(self, concept_id: str, cap: int | None) -> bool:
         """Count one working of this concept. Returns whether it just became a weakness.

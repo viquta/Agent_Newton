@@ -17,12 +17,13 @@ from typing import Sequence
 from agent_newton.core.agents.base import Diagnosis, Hint, StateView
 from agent_newton.core.pedagogy import (
     HintLevel,
+    TeachingStyle,
     TutorMove,
     hint_level,
     move_for,
 )
 from agent_newton.config import ScaffoldingPolicy, ZPDConfig
-from agent_newton.domains.base import Domain, Item
+from agent_newton.domains.base import ConceptResource, Domain, Item
 
 
 class TemplateTutor:
@@ -33,6 +34,21 @@ class TemplateTutor:
     ) -> None:
         self._band = band
         self._policy: ScaffoldingPolicy = policy
+
+    def explain(self, resource: ConceptResource, style: TeachingStyle) -> str:
+        """The lesson as authored. ``style`` is accepted and ignored.
+
+        Deliberate, and the same reasoning as ``respond`` ignoring ``response``:
+        the cohorts run this tutor, so its output must not vary with anything
+        the model-backed one gained. A lesson whose wording moved with the style
+        would make every measured number depend on something outside the
+        manipulation. There is a test asserting it cannot vary.
+
+        Ignoring the style is not a degraded lesson. ``PLAIN`` *is* the authored
+        text, and the authored text is the one thing every domain offering
+        resources is guaranteed to have.
+        """
+        return resource.lesson()
 
     def respond(
         self,

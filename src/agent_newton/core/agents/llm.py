@@ -31,6 +31,7 @@ from agent_newton.core.agents.schemas import UNKNOWN, diagnosis_schema, plan_sch
 from agent_newton.core.agents.schemas import HintReply
 from agent_newton.core.pedagogy import (
     HintLevel,
+    TeachingStyle,
     TutorMove,
     hint_level,
     may_select,
@@ -43,7 +44,13 @@ from agent_newton.llm.base import (
     ProviderError,
     complete,
 )
-from agent_newton.domains.base import Domain, Item, Misconception
+from agent_newton.domains.base import (
+    PLAIN_TEXT_ONLY,
+    ConceptResource,
+    Domain,
+    Item,
+    Misconception,
+)
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +90,13 @@ _TUTOR_SYSTEM = (
 #: evaluation counts these apart from bad hints — a failure to produce a turn is
 #: not a wrongly-pitched one — and a literal in two places would drift.
 FALLBACK_HINT = "That step is not right yet — take another look at it."
+
+#: How much longer than the authored lesson a re-voiced one may run.
+#:
+#: Generous, because a Socratic account genuinely needs more words than a
+#: declarative one. It is here to catch a model that has stopped rephrasing and
+#: started composing, not to police style.
+_STYLED_LESSON_LIMIT = 3.0
 
 _PLANNER_SYSTEM = (
     "You choose what a student should work on next, given what they have shown "
@@ -351,6 +365,104 @@ class LLMTutor:
             # nothing; only remediation carries a target.
             targets=diagnosis.misconception_id if move is TutorMove.REMEDIATE else None,
         )
+
+    def explain(self, resource: ConceptResource, style: TeachingStyle) -> str:
+        """Re-voice the authored lesson in the style the rules chose.
+
+        **The model does not write the lesson.** It is handed text a person
+        wrote, that ``domain validate`` has already checked is plain text and
+        does not answer any item on the concept at any template draw, and it is
+        asked to say the same thing differently. That is deliberate: the
+        mathematics a learner is taught should not be generated fresh at a
+        keyboard, and the guarantees the content carries are guarantees about
+        *that* text.
+
+        ``PLAIN`` returns it untouched and calls no model at all, so the first
+        lesson on any concept is exactly what was authored and a model-free run
+        still teaches.
+
+        Two guards on what comes back, and a fallback to the authored text if
+        either trips:
+
+        * **Plain text.** The LaTeX ban is the sitting-2 defect — a reply
+          arrives as JSON, ``\\f`` parses to a form feed, and a learner read
+          ``rac{f(b) - f(a)}{b - a}`` without being able to tell it meant a
+          division. Checked against the same pattern the content is checked
+          against, so a fix to one is a fix to both.
+        * **Length.** A re-voicing that runs to several times the original has
+          stopped re-voicing and started writing, which is the thing this is
+          built not to do.
+
+        ⚠️ What is *not* guaranteed: that a re-voiced lesson still avoids
+        answering an item. The authored example is checked against every item
+        and every draw, and a model asked to rephrase it could in principle
+        arrive at an item's numbers. Re-checking every generated lesson against
+        every form of every item on the concept is affordable but is not done
+        here, and the honest statement is that ``PLAIN`` carries the guarantee
+        and the other two inherit it only as far as "keep every fact and add
+        none" is obeyed.
+        """
+        authored = resource.lesson()
+        instruction = _STYLE_INSTRUCTION.get(style)
+        if instruction is None:
+            return authored
+
+        prompt = f"{instruction}\n\nThe explanation:\n{authored}"
+        try:
+            reply = complete(
+                self._provider, prompt, HintReply, system=_EXPLAIN_SYSTEM
+            )
+            text = reply.text
+        except ProviderError:
+            # A sitting must survive a dead backend, and the authored lesson is
+            # a complete lesson rather than a degraded one — the style was the
+            # only thing lost.
+            return authored
+
+        if PLAIN_TEXT_ONLY.search(text):
+            log.warning(
+                "styled lesson for %s came back with a backslash command; "
+                "using the authored text",
+                resource.concept_id,
+                extra={"event": "tutor.lesson_rejected", "reason": "not_plain_text"},
+            )
+            return authored
+        if len(text) > _STYLED_LESSON_LIMIT * len(authored):
+            log.warning(
+                "styled lesson for %s ran to %d characters against an authored "
+                "%d; using the authored text",
+                resource.concept_id,
+                len(text),
+                len(authored),
+                extra={"event": "tutor.lesson_rejected", "reason": "over_length"},
+            )
+            return authored
+        return text
+
+
+#: What each style asks for. The *content* is the authored lesson in every case
+#: — these change how it is voiced, never what it says.
+_STYLE_INSTRUCTION = {
+    TeachingStyle.SOCRATIC: (
+        "Re-voice the explanation below as a short series of questions that "
+        "lead the student to the idea, answering each one yourself in a line "
+        "before asking the next. Keep every fact that is there and add none."
+    ),
+    TeachingStyle.REAL_WORLD: (
+        "Re-voice the explanation below so it opens with one concrete situation "
+        "where this idea is actually used, then gives the explanation itself. "
+        "Keep every fact that is there and add no new mathematics."
+    ),
+}
+
+_EXPLAIN_SYSTEM = (
+    "You are a mathematics tutor explaining a concept to a student who may "
+    "never have met it. You are given an explanation that has already been "
+    "written and checked. Re-voice it in the style asked for. Do not add "
+    "mathematics that is not there, do not correct it, and do not extend it. "
+    "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
+    "Never use LaTeX or backslash commands."
+)
 
 
 class LLMPlanner:

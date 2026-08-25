@@ -8,6 +8,7 @@ from agent_newton.core.pedagogy.policy import (
     ERROR_FIRST,
     HintLevel,
     Support,
+    TeachingStyle,
     TutorMove,
     Violation,
     check_fading,
@@ -18,6 +19,7 @@ from agent_newton.core.pedagogy.policy import (
     move_for,
     next_required_move,
     should_explain,
+    style_for,
     support_at_presentation,
 )
 
@@ -26,6 +28,7 @@ __all__ = [
     "ERROR_FIRST",
     "HintLevel",
     "Support",
+    "TeachingStyle",
     "TutorMove",
     "Violation",
     "check_fading",
@@ -36,5 +39,6 @@ __all__ = [
     "move_for",
     "next_required_move",
     "should_explain",
+    "style_for",
     "support_at_presentation",
 ]

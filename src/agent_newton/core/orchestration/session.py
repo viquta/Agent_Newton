@@ -49,9 +49,11 @@ from agent_newton.core.evaluation.outcomes import (
 )
 from agent_newton.core.pedagogy import (
     Support,
+    TeachingStyle,
     TutorMove,
     check_move,
     should_explain,
+    style_for,
     support_at_presentation,
 )
 from agent_newton.core.simulator import (
@@ -792,7 +794,12 @@ class Session:
         if not should_explain(errors, taught, after=after):
             return False
 
-        text = resource.lesson()
+        # Which account to give, and the learner's own choice wins where they
+        # made one — see `style_for`. A learner who did not understand the plain
+        # account is unlikely to be helped by the plain account again, which is
+        # what the rotation is for.
+        style = style_for(taught, chosen=self.board.teaching_style)
+        text = self.tutor.explain(resource, style)
         self.board.record_turn(
             # A lesson is about the concept, not about any one question, and
             # there may not be a question in front of the learner when it
@@ -801,7 +808,11 @@ class Session:
             item_id="",
             concept_id=concept_id,
             move=TutorMove.EXPLAIN.value,
-            level="lesson",
+            # The style stands where a hint records its support level. A lesson
+            # has no support level — it is not a quantity of the answer — and
+            # recording one would invite it to be read as a rung on the ladder,
+            # which is exactly what it is not.
+            level=style.label,
             # ⚠️ Targets nothing, for the reason `_offer_support` gives and with
             # more at stake here. `remediation_ratio` is the declared primary
             # outcome and it counts what a hint aimed at; a target on a lesson

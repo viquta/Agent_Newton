@@ -71,6 +71,35 @@ class Emphasis(str, Enum):
     ADVANCE = "advance"
 
 
+class TeachingStyle(str, Enum):
+    """How a concept is explained, as opposed to how much is given away.
+
+    A second axis on the lesson, and it is not a scale: none of these is *more*
+    support than another. They are different accounts of the same content, and
+    which one lands is a fact about the learner that nothing in the state
+    records.
+
+    Beside :class:`Emphasis` rather than in ``core/pedagogy`` because it is the
+    same kind of thing — something a learner states about themselves, carried on
+    the shared layer for any agent to read. The *rule* that picks one lives in
+    ``core/pedagogy`` with the other instructional rules; this is only the
+    vocabulary. Keeping it here also keeps the dependency pointing one way:
+    pedagogy reads state, and state does not read pedagogy.
+    """
+
+    #: The lesson as written: what it means, why it works, the rule, an example.
+    #: Needs no model, so a model-free run still teaches.
+    PLAIN = "plain"
+    #: The same content, led by questions the learner answers for themselves.
+    SOCRATIC = "socratic"
+    #: The same content, anchored to where the idea is actually used.
+    REAL_WORLD = "real_world"
+
+    @property
+    def label(self) -> str:
+        return self.value
+
+
 class ErrorEvent(BaseModel):
     """One incorrect step, as it enters the rolling trace."""
 

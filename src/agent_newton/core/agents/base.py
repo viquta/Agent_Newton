@@ -15,10 +15,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol, Sequence, runtime_checkable
 
-from agent_newton.core.pedagogy import HintLevel, TutorMove
+from agent_newton.core.pedagogy import HintLevel, TeachingStyle, TutorMove
 from agent_newton.core.state.schema import Plan
 from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
-from agent_newton.domains.base import Domain, Item
+from agent_newton.domains.base import ConceptResource, Domain, Item
 
 StateView = FullStateView | ItemCorrectnessView
 
@@ -101,6 +101,26 @@ class Tutor(Protocol):
         said_this_item: Sequence[str] = (),
         explained: bool = False,
     ) -> Hint: ...
+
+    def explain(self, resource: ConceptResource, style: TeachingStyle) -> str:
+        """The lesson a learner reads, in the account the rules chose.
+
+        Separate from :meth:`respond` because it answers a different question.
+        Every hint comments on an attempt and presupposes the learner has the
+        concept; this presupposes they may not, and there is nothing for it to
+        respond to — it is called between items, with no step in front of it.
+
+        ``resource`` carries the authored content, already checked as plain text
+        and already checked not to answer any item on the concept at any
+        template draw. **A tutor may re-voice it; it does not write it.** That
+        keeps the mathematics something a person wrote and validated, and leaves
+        the model the part it is good at.
+
+        ``style`` comes from :func:`~agent_newton.core.pedagogy.policy.style_for`
+        rather than from a prompt, like the support level and the move. A
+        model-free tutor is free to ignore it, and the one the cohorts run does.
+        """
+        ...
 
 
 @runtime_checkable

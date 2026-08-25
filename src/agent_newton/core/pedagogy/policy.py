@@ -31,6 +31,7 @@ from enum import Enum, IntEnum
 from typing import Sequence
 
 from agent_newton.config import ScaffoldingPolicy, ZPDConfig
+from agent_newton.core.state.schema import TeachingStyle
 from agent_newton.core.state.zpd import Frontier
 
 
@@ -112,6 +113,44 @@ class TutorMove(str, Enum):
     #: substantially *more* teaching. It would not look like a bug; it would
     #: look like the coupling advantage disappearing.
     EXPLAIN = "explain"
+
+
+def style_for(
+    lessons_already_given: int,
+    *,
+    chosen: TeachingStyle | None = None,
+    repertoire: Sequence[TeachingStyle] = (
+        TeachingStyle.PLAIN,
+        TeachingStyle.SOCRATIC,
+        TeachingStyle.REAL_WORLD,
+    ),
+) -> TeachingStyle:
+    """Which account of the concept to give.
+
+    Precedence is stated here rather than left to emerge, because two rules that
+    can disagree will eventually disagree at a keyboard:
+
+    1. **What the learner asked for**, if they asked. A stated preference is not
+       overridden by "you had that one last time" — it is a thing a person said
+       about themselves, and the rotation is only a guess.
+    2. **Otherwise, something they have not had yet.** A learner who did not
+       understand the plain account is unlikely to be helped by the plain
+       account again, which is the ideas note's point: *after receiving
+       teaching-point_z, they still seem to misunderstand it, so try another
+       way.*
+    3. **Plain first.** It is the authored text, it needs no model, and it is
+       the one every domain is guaranteed to have.
+
+    ``chosen`` is learner **input**, not learner **model** — the same footing as
+    ``Emphasis`` and a stated request, so both arms could be handed it fairly.
+    And the same caveat: it must stay out of every cohort, because choosing your
+    own account changes what the tutor gives.
+    """
+    if chosen is not None:
+        return chosen
+    if not repertoire:
+        return TeachingStyle.PLAIN
+    return repertoire[lessons_already_given % len(repertoire)]
 
 
 @dataclass(frozen=True, slots=True)

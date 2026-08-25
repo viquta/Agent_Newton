@@ -16,7 +16,13 @@ import pytest
 
 from agent_newton.config import Config
 from agent_newton.core.orchestration.session import build_session
-from agent_newton.core.pedagogy import TutorMove, check_move, should_explain
+from agent_newton.core.pedagogy import (
+    TeachingStyle,
+    TutorMove,
+    check_move,
+    should_explain,
+    style_for,
+)
 from agent_newton.core.simulator.engine import SimulatedStep
 from agent_newton.domains import registry
 from agent_newton.domains.base import VerificationResult, Verdict
@@ -188,7 +194,11 @@ class TestALessonIsNotRemediation:
         session.run()
         for lesson in _lessons_in(session.board):
             assert lesson["move"] == "explain"
-            assert lesson["level"] == "lesson"
+            # The style stands where a hint records its support level. A lesson
+            # has no support level — it is not a quantity of the answer — and
+            # recording one would invite it to be read as a rung on the ladder,
+            # which is exactly what it is not.
+            assert lesson["level"] in {s.label for s in TeachingStyle}
 
 
 class TestTheTriggerIsArmInvariant:
@@ -283,3 +293,199 @@ class TestWhatCannotBuyALesson:
         )
         session.run()
         assert not _lessons_in(session.board)
+
+
+class TestTheStyleIsChosenByARule:
+    """Not by a prompt, like every other instructional decision here.
+
+    A model asked to "be Socratic if that seems better" can talk itself out of
+    it, and a constraint a model can talk itself out of is not one. The same
+    reasoning already puts the support level and the move in the rules rather
+    than in the tutor's instructions.
+    """
+
+    def test_the_first_lesson_is_the_authored_one(self) -> None:
+        # PLAIN is the text a person wrote and the validator checked, and it
+        # needs no model — so the first lesson on any concept is the same in a
+        # model-free run as at a keyboard.
+        assert style_for(0) is TeachingStyle.PLAIN
+
+    def test_a_repeat_lesson_is_told_differently(self) -> None:
+        """The ideas note's point, and the reason the rotation exists.
+
+        *After receiving teaching-point_z, they still seem to misunderstand it*
+        — a learner who did not understand the plain account is unlikely to be
+        helped by the plain account again.
+        """
+        assert style_for(1) is not TeachingStyle.PLAIN
+        assert style_for(2) not in {style_for(0), style_for(1)}
+
+    def test_it_comes_back_round_rather_than_running_out(self) -> None:
+        # A learner who exhausts the repertoire is still owed a lesson.
+        assert style_for(3) is style_for(0)
+
+    def test_what_the_learner_asked_for_wins(self) -> None:
+        # Precedence stated explicitly, because two rules that can disagree
+        # eventually will. A stated preference is not overridden by "you had
+        # that one last time" — the rotation is a guess and the preference is
+        # not.
+        for given in range(4):
+            assert (
+                style_for(given, chosen=TeachingStyle.SOCRATIC)
+                is TeachingStyle.SOCRATIC
+            )
+
+    def test_it_is_learner_input_and_not_learner_model(self, calculus) -> None:
+        """Which is what would make it fair to hand to both arms.
+
+        The same footing as ``Emphasis`` and a stated request: a thing a person
+        said about themselves, not an inference about what they know. It lives
+        beside ``Emphasis`` on the state for that reason.
+        """
+        from agent_newton.core.state.schema import Emphasis, TeachingStyle as OnTheState
+
+        assert OnTheState is TeachingStyle
+        assert Emphasis.__module__ == TeachingStyle.__module__
+
+    def test_the_board_records_the_choice(self, calculus) -> None:
+        session = build_session("L_style", 1, calculus, _config(), learner=AlwaysWrong())
+        assert session.board.teaching_style is None
+        session.board.record_teaching_style(TeachingStyle.REAL_WORLD)
+        assert session.board.teaching_style is TeachingStyle.REAL_WORLD
+        assert [
+            r for r in session.board.audit_log
+            if r.evidence.get("teaching_style") == "real_world"
+        ], "a choice the learner made must be readable back from the sitting"
+
+    def test_the_chosen_style_is_what_gets_recorded(self, calculus) -> None:
+        session = build_session("L_style", 1, calculus, _config(), learner=AlwaysWrong())
+        session.board.record_teaching_style(TeachingStyle.REAL_WORLD)
+        session.run()
+        lessons = _lessons_in(session.board)
+        assert lessons
+        assert all(lesson["level"] == "real_world" for lesson in lessons)
+
+
+class TestTheTemplateTutorIgnoresTheStyle:
+    """⚠️ The cohorts run it, so its output must not vary with anything.
+
+    A lesson whose wording moved with the style would make every measured number
+    depend on something outside the manipulation — the same reasoning that keeps
+    ``respond`` from varying with the learner's response.
+    """
+
+    def test_every_style_produces_the_same_text(self, calculus) -> None:
+        from agent_newton.config import ZPDConfig
+        from agent_newton.core.agents.tutor import TemplateTutor
+
+        tutor = TemplateTutor(ZPDConfig())
+        resource = calculus.resources.get("power_rule")
+        texts = {tutor.explain(resource, style) for style in TeachingStyle}
+        assert len(texts) == 1
+
+    def test_and_it_is_the_authored_lesson(self, calculus) -> None:
+        # Ignoring the style is not a degraded lesson. PLAIN *is* the authored
+        # text, and it is the one thing every domain offering resources has.
+        from agent_newton.config import ZPDConfig
+        from agent_newton.core.agents.tutor import TemplateTutor
+
+        resource = calculus.resources.get("power_rule")
+        assert (
+            TemplateTutor(ZPDConfig()).explain(resource, TeachingStyle.SOCRATIC)
+            == resource.lesson()
+        )
+
+
+class TestAModelMayRevoiceALessonButNotWriteOne:
+    """The mathematics a learner is taught is authored and validated.
+
+    A model is handed text that ``domain validate`` has already checked is plain
+    text and does not answer any item on the concept at any template draw, and
+    is asked to say the same thing differently. Generating the mathematics fresh
+    at a keyboard would throw those guarantees away.
+    """
+
+    class Replies:
+        label = "fake/model"
+
+        def __init__(self, text: str) -> None:
+            self._text = text
+            self.calls = 0
+
+        def generate(self, prompt, schema, system):  # noqa: ANN001
+            from agent_newton.llm.base import Completion
+            import json
+
+            self.calls += 1
+            return Completion(
+                text=json.dumps({"text": self._text}),
+                model="fake",
+                provider="fake",
+            )
+
+    def _tutor(self, provider):
+        from agent_newton.config import ZPDConfig
+        from agent_newton.core.agents.llm import LLMTutor
+
+        return LLMTutor(provider, ZPDConfig())
+
+    def test_plain_calls_no_model_at_all(self, calculus) -> None:
+        # So a model-free run still teaches, and the first lesson on every
+        # concept is exactly what was authored.
+        provider = self.Replies("should never be used")
+        resource = calculus.resources.get("power_rule")
+        assert (
+            self._tutor(provider).explain(resource, TeachingStyle.PLAIN)
+            == resource.lesson()
+        )
+        assert provider.calls == 0
+
+    def test_a_styled_lesson_is_used_when_it_comes_back_clean(self, calculus) -> None:
+        provider = self.Replies("What happens to the power? It comes down in front.")
+        text = self._tutor(provider).explain(
+            calculus.resources.get("power_rule"), TeachingStyle.SOCRATIC
+        )
+        assert text.startswith("What happens to the power?")
+        assert provider.calls == 1
+
+    def test_a_backslash_in_the_reply_falls_back_to_the_authored_text(
+        self, calculus
+    ) -> None:
+        """The sitting-2 defect, arriving through a new door.
+
+        A reply comes back as JSON, ``\\f`` parses to a form feed, and a learner
+        read ``rac{f(b) - f(a)}{b - a}`` without being able to tell it meant a
+        division. Checked against the same pattern the authored content is
+        checked against, so a fix to one is a fix to both.
+        """
+        resource = calculus.resources.get("power_rule")
+        provider = self.Replies("the rule is \\frac{n}{x}")
+        assert self._tutor(provider).explain(resource, TeachingStyle.SOCRATIC) == (
+            resource.lesson()
+        )
+
+    def test_a_reply_that_stopped_rephrasing_falls_back(self, calculus) -> None:
+        # A re-voicing several times the length of the original has stopped
+        # re-voicing and started composing, which is the thing this is built not
+        # to do.
+        resource = calculus.resources.get("power_rule")
+        provider = self.Replies("word " * 4000)
+        assert self._tutor(provider).explain(resource, TeachingStyle.SOCRATIC) == (
+            resource.lesson()
+        )
+
+    def test_a_dead_backend_still_teaches(self, calculus) -> None:
+        # The authored lesson is a complete lesson, not a degraded one. Only the
+        # style was lost.
+        from agent_newton.llm.base import ProviderError
+
+        class Dead:
+            label = "fake/dead"
+
+            def generate(self, prompt, schema, system):  # noqa: ANN001
+                raise ProviderError("ollama is not running")
+
+        resource = calculus.resources.get("power_rule")
+        assert self._tutor(Dead()).explain(resource, TeachingStyle.SOCRATIC) == (
+            resource.lesson()
+        )
