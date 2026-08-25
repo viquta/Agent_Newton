@@ -110,10 +110,54 @@ class ModelSpec(BaseModel):
     #: proportionally expensive. Recorded in the manifest, so a run states which
     #: it used.
     think: bool | None = None
+    #: Tokens this role may generate per call, deliberation included.
+    #:
+    #: ``None`` keeps the provider's own default, which is what every measured
+    #: run used. Raising it is what makes ``think: true`` possible at all — a
+    #: model that deliberates spends the budget before it answers, and one
+    #: observed diagnosis decoded 8,485 tokens without producing one.
+    max_tokens: int | None = Field(default=None, gt=0)
+    #: The context window: prompt, deliberation and answer *together*.
+    #:
+    #: Separate from :attr:`max_tokens` because they bound different things and
+    #: raising one without the other just moves the failure. ``None`` leaves the
+    #: server's default alone, which is what every run before this did — nothing
+    #: set it.
+    #:
+    #: ⚠️ It fails quietly. Ollama drops the oldest context rather than refusing,
+    #: so a prompt that does not fit yields a confident answer to a question the
+    #: model was shown only part of. The provider warns when a prompt approaches
+    #: it; there is nothing in a reply that would say so.
+    context_tokens: int | None = Field(default=None, gt=0)
+    #: Seconds to wait for one call before giving up.
+    #:
+    #: ``None`` keeps the provider's default. Deliberation needs more of this as
+    #: well as more tokens, which is why all three are here rather than only the
+    #: budget.
+    #:
+    #: Unlike the other two it is **not** part of the cache key: how long the
+    #: caller was willing to wait does not change what came back.
+    timeout_seconds: float | None = Field(default=None, gt=0)
 
     def label(self) -> str:
-        thinking = "" if self.think is None else f" (think={str(self.think).lower()})"
-        return f"{self.provider}/{self.model}{thinking}"
+        """What the manifest records about this role.
+
+        Every field that changes what the model does appears, so a run states
+        the configuration it was produced under rather than only the model name.
+        Each is omitted when unset, so a spec written before these existed
+        produces the string those runs recorded.
+        """
+        parts = []
+        if self.think is not None:
+            parts.append(f"think={str(self.think).lower()}")
+        if self.max_tokens is not None:
+            parts.append(f"max_tokens={self.max_tokens}")
+        if self.context_tokens is not None:
+            parts.append(f"num_ctx={self.context_tokens}")
+        if self.timeout_seconds is not None:
+            parts.append(f"timeout={self.timeout_seconds:g}s")
+        detail = f" ({', '.join(parts)})" if parts else ""
+        return f"{self.provider}/{self.model}{detail}"
 
 
 class TutorSpec(ModelSpec):

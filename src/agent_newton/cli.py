@@ -399,6 +399,27 @@ def evaluate_diagnostic(
     limit: int | None = typer.Option(None, "--limit", help="Stop after N cases."),
     out: Path | None = typer.Option(None, "--out", help="Output directory."),
     dry_run: bool = typer.Option(False, "--dry-run", help="List the cases and exit."),
+    max_tokens: int | None = typer.Option(
+        None,
+        "--max-tokens",
+        help="Tokens the model may generate per call, deliberation included. "
+        "Unset keeps the provider default (1024). Raise it with --think, or a "
+        "reasoning model spends the budget before it answers.",
+    ),
+    context_tokens: int | None = typer.Option(
+        None,
+        "--context-tokens",
+        help="Context window: prompt, deliberation and answer together. Unset "
+        "leaves the server's own. Raise it alongside --max-tokens -- Ollama "
+        "truncates silently rather than refusing, so a prompt that does not fit "
+        "produces a confident answer to a question it only partly saw.",
+    ),
+    timeout_seconds: float | None = typer.Option(
+        None,
+        "--timeout",
+        help="Seconds allowed for one call. Unset keeps the provider default "
+        "(120). Deliberation needs wall-clock as well as tokens.",
+    ),
     label_space: str = typer.Option(
         "concept",
         "--label-space",
@@ -437,7 +458,14 @@ def evaluate_diagnostic(
         console.print(f"[red]unknown label space {label_space!r}[/red]")
         raise typer.Exit(code=1)
 
-    spec = ModelSpec(provider=provider, model=model, think=think)  # pyright: ignore[reportArgumentType]
+    spec = ModelSpec(
+        provider=provider,  # pyright: ignore[reportArgumentType]
+        model=model,
+        think=think,
+        max_tokens=max_tokens,
+        context_tokens=context_tokens,
+        timeout_seconds=timeout_seconds,
+    )
     agent = LLMDiagnostic(
         build_provider(spec, Path(".cache/llm")),
         label_space=label_space,  # pyright: ignore[reportArgumentType]
@@ -449,6 +477,14 @@ def evaluate_diagnostic(
     # the same kind of thing: a narrower one is an easier task, so the two
     # figures must not land in the same directory either.
     suffix = "" if think is None else f"_think-{str(think).lower()}"
+    # The call limits join it for the same reason. A budget that lets a model
+    # finish deliberating and one that cuts it off mid-thought are two different
+    # measurements of the same model, and landing them in one directory would
+    # overwrite the first with the second.
+    if max_tokens is not None:
+        suffix += f"_predict-{max_tokens}"
+    if context_tokens is not None:
+        suffix += f"_ctx-{context_tokens}"
     suffix += f"_labels-{label_space}"
     directory = (
         out
@@ -531,6 +567,27 @@ def evaluate_tutor(
     model: str = typer.Option("gemma4:12b", "--model", help="Model writing the hints."),
     provider: str = typer.Option("ollama", "--provider"),
     think: bool | None = typer.Option(None, "--think/--no-think"),
+    max_tokens: int | None = typer.Option(
+        None,
+        "--max-tokens",
+        help="Tokens the model may generate per call, deliberation included. "
+        "Unset keeps the provider default (1024). Raise it with --think, or a "
+        "reasoning model spends the budget before it answers.",
+    ),
+    context_tokens: int | None = typer.Option(
+        None,
+        "--context-tokens",
+        help="Context window: prompt, deliberation and answer together. Unset "
+        "leaves the server's own. Raise it alongside --max-tokens -- Ollama "
+        "truncates silently rather than refusing, so a prompt that does not fit "
+        "produces a confident answer to a question it only partly saw.",
+    ),
+    timeout_seconds: float | None = typer.Option(
+        None,
+        "--timeout",
+        help="Seconds allowed for one call. Unset keeps the provider default "
+        "(120). Deliberation needs wall-clock as well as tokens.",
+    ),
     judge_model: str | None = typer.Option(
         None,
         "--judge-model",
@@ -596,10 +653,21 @@ def evaluate_tutor(
         raise typer.Exit(code=1)
 
     cache = Path(".cache/llm")
-    spec = ModelSpec(provider=provider, model=model, think=think)  # pyright: ignore[reportArgumentType]
+    spec = ModelSpec(
+        provider=provider,  # pyright: ignore[reportArgumentType]
+        model=model,
+        think=think,
+        max_tokens=max_tokens,
+        context_tokens=context_tokens,
+        timeout_seconds=timeout_seconds,
+    )
     agent = LLMTutor(build_provider(spec, cache), band)
 
     suffix = "" if think is None else f"_think-{str(think).lower()}"
+    if max_tokens is not None:
+        suffix += f"_predict-{max_tokens}"
+    if context_tokens is not None:
+        suffix += f"_ctx-{context_tokens}"
     directory = (
         out or Path("results") / f"tutor_{domain_name}_{model.replace(':', '-')}{suffix}"
     )

@@ -21,7 +21,13 @@ def build_provider(
     if spec.provider == "ollama":
         from agent_newton.llm.ollama import OllamaProvider
 
-        provider: LLMProvider = OllamaProvider(spec.model, think=spec.think)
+        provider: LLMProvider = OllamaProvider(
+            spec.model,
+            think=spec.think,
+            max_tokens=spec.max_tokens,
+            context_tokens=spec.context_tokens,
+            timeout=spec.timeout_seconds,
+        )
     elif spec.provider == "anthropic":
         from agent_newton.llm.remote import AnthropicProvider
 

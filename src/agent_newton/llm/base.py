@@ -37,6 +37,27 @@ class MalformedResponse(ProviderError):
     """The model replied, but not with something matching the schema."""
 
 
+class ProviderTimeout(ProviderError):
+    """The call did not finish inside the time allowed.
+
+    Distinct from a plain :class:`ProviderError` for the same reason
+    :class:`MalformedResponse` is: it decides whether asking again is worth
+    anything. A dropped connection is worth retrying — the next attempt may find
+    the server. A timeout is not: decoding is deterministic at temperature zero,
+    so the identical question takes the identical time and fails the identical
+    way, and three attempts turn one wait into three.
+
+    That matters most where the wait is longest. A deliberating model given a
+    generous ``timeout`` is exactly the case where a silent triple retry is felt
+    as the system having hung.
+
+    It stays a ``ProviderError`` so every existing handler keeps working:
+    ``LLMDiagnostic`` counts it as a failure to infer, ``LLMTutor`` falls back to
+    a fixed hint, and the sitting survives a dead backend. Only the retry
+    predicate treats it specially.
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class Completion:
     """One raw response, before schema validation."""
