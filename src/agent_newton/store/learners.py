@@ -57,6 +57,37 @@ def check_learner_id(learner_id: str) -> str:
     return learner_id
 
 
+#: Bumped when a projection changes shape, so ``_backfill`` runs once and then
+#: stops. Stored in ``PRAGMA user_version``, which SQLite keeps for exactly this.
+_SCHEMA_VERSION = 1
+
+_INSERT_TURN = (
+    "INSERT INTO turn (session_id, item_id, concept_id, move, level, targets, "
+    "text, mastery, prior_failures) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+)
+
+
+def _turn_row(session_id: int, evidence: Mapping[str, Any]) -> tuple:
+    """One ``tutor`` audit record, flattened into columns.
+
+    Tolerant of missing keys, because it also runs over rows written before
+    those keys existed — ``mastery`` and ``prior_failures`` were added after the
+    first sittings, and a backfill that raised on them would refuse to migrate
+    exactly the history worth migrating.
+    """
+    return (
+        session_id,
+        str(evidence.get("item_id") or ""),
+        str(evidence.get("concept_id") or ""),
+        str(evidence.get("move") or ""),
+        str(evidence.get("level") or ""),
+        evidence.get("targets"),
+        str(evidence.get("text") or ""),
+        float(evidence.get("mastery") or 0.0),
+        int(evidence.get("prior_failures") or 0),
+    )
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -94,7 +125,66 @@ class LearnerStore:
                 self._db.execute(f"ALTER TABLE session ADD COLUMN {column} TEXT")
             except sqlite3.OperationalError:
                 pass
+        for column in ("concept_id", "item_id"):
+            try:
+                self._db.execute(f"ALTER TABLE event ADD COLUMN {column} TEXT")
+            except sqlite3.OperationalError:
+                pass
+        # ⚠️ Here rather than in schema.sql. That file is executed in full on
+        # every open and *before* this runs, so an index on a column this
+        # migration has yet to add raises on any store an earlier schema
+        # created — which is every store holding a sitting worth keeping.
+        self._db.execute(
+            "CREATE INDEX IF NOT EXISTS event_by_concept ON event(concept_id)"
+        )
         self._db.commit()
+        self._backfill()
+
+    def _backfill(self) -> None:
+        """Fill the new columns and the ``turn`` table from rows already stored.
+
+        A store holds sittings that cannot be regenerated — a person sat at a
+        keyboard once and said what they said — so adding a column and leaving
+        every existing row NULL would make the new shape useless for exactly the
+        history it was added to make readable.
+
+        Guarded by ``PRAGMA user_version`` rather than by looking at whether the
+        rows are empty. An emptiness check would re-run on any store that
+        genuinely has no turns, and would silently stop being a migration and
+        start being a repair that fires at random.
+
+        Reads only ``event.evidence``, which was authoritative all along, and
+        writes nothing back to it.
+        """
+        version = self._db.execute("PRAGMA user_version").fetchone()[0]
+        if version >= _SCHEMA_VERSION:
+            return
+
+        for row in self._db.execute(
+            "SELECT event_id, cause, evidence FROM event"
+        ).fetchall():
+            try:
+                evidence = json.loads(row["evidence"])
+            except (TypeError, ValueError):
+                continue
+            if not isinstance(evidence, dict):
+                continue
+            self._db.execute(
+                "UPDATE event SET concept_id = ?, item_id = ? WHERE event_id = ?",
+                (evidence.get("concept_id"), evidence.get("item_id"), row["event_id"]),
+            )
+
+        self._db.execute("DELETE FROM turn")
+        self._db.executemany(
+            _INSERT_TURN,
+            [
+                _turn_row(row["session_id"], json.loads(row["evidence"]))
+                for row in self._db.execute(
+                    "SELECT session_id, evidence FROM event WHERE cause = 'tutor'"
+                ).fetchall()
+            ],
+        )
+        self._db.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
         self._db.commit()
 
     def close(self) -> None:
@@ -216,11 +306,30 @@ class LearnerStore:
             ),
         )
         self._db.executemany(
-            "INSERT INTO event (session_id, version, cause, summary, evidence) "
-            "VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO event (session_id, version, cause, summary, evidence, "
+            "concept_id, item_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
             [
-                (session_id, r.version, r.cause, r.summary, json.dumps(r.evidence, default=str))
+                (
+                    session_id,
+                    r.version,
+                    r.cause,
+                    r.summary,
+                    json.dumps(r.evidence, default=str),
+                    r.evidence.get("concept_id"),
+                    r.evidence.get("item_id"),
+                )
                 for r in audit_log
+            ],
+        )
+        # What the system said back. Same source and same per-sitting scope as
+        # the utterances below — the audit log, never the state, for the reason
+        # written there.
+        self._db.executemany(
+            _INSERT_TURN,
+            [
+                _turn_row(session_id, r.evidence)
+                for r in audit_log
+                if r.cause == "tutor"
             ],
         )
         # ⚠️ Read from the audit log, not from ``state.reflections``.
@@ -351,6 +460,35 @@ class LearnerStore:
             sql += " AND u.concept_id = ?"
             params.append(concept_id)
         return list(self._db.execute(sql + " ORDER BY ss.seq, u.utterance_id", params))
+
+    def turns(
+        self, learner_id: str, arm: str, concept_id: str | None = None,
+        move: str | None = None,
+    ) -> list[sqlite3.Row]:
+        """Everything the system said to this learner, across sittings.
+
+        The counterpart to :meth:`utterances`. Between them a sitting can be
+        read as a conversation rather than as a list of verdicts — which is what
+        it was before turns were stored at all, when a transcript held every
+        answer the learner gave and nothing the system replied.
+
+        ``move`` narrows to one kind. ``move='explain'`` is what answers "has
+        this learner been taught this concept before, and how was it put" — the
+        question a second lesson has to ask before repeating the first one.
+        """
+        sql = (
+            "SELECT t.*, ss.seq FROM turn t "
+            "JOIN session ss ON ss.session_id = t.session_id "
+            "WHERE ss.learner_id = ? AND ss.arm = ?"
+        )
+        params: list[object] = [learner_id, arm]
+        if concept_id is not None:
+            sql += " AND t.concept_id = ?"
+            params.append(concept_id)
+        if move is not None:
+            sql += " AND t.move = ?"
+            params.append(move)
+        return list(self._db.execute(sql + " ORDER BY ss.seq, t.turn_id", params))
 
     def events(
         self, learner_id: str, arm: str, cause: str | None = None

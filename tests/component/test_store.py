@@ -8,11 +8,20 @@ round-trips lossily and silently changes what the planner sees.
 
 from __future__ import annotations
 
+import json
+import sqlite3
+from pathlib import Path
+
 import pytest
 
 from agent_newton.config import Config, SimulatorConfig
 from agent_newton.core.simulator import sample_profile
-from agent_newton.core.state.schema import LearnerState, Plan, Utterance
+from agent_newton.core.state.schema import (
+    AuditRecord,
+    LearnerState,
+    Plan,
+    Utterance,
+)
 from agent_newton.core.state.store import new_blackboard
 from agent_newton.domains import registry
 from agent_newton.domains.base import VerificationResult, Verdict
@@ -433,4 +442,283 @@ class TestALearnerIdIsAlsoADirectoryName:
         ).fetchall()
         assert rows == []
         assert store.learners(), "the table survived the lookup"
+        store.close()
+
+
+class TestTheEventTableCanBeRead:
+    """``evidence`` is a JSON blob, and a table you have to un-JSON is a table
+    nobody reads.
+
+    The record of a sitting is where defects get found — the scaffolding
+    collapse in a human sitting was found by asking which support levels a
+    learner had ever been given, and answering that took a wrapper around the
+    tutor. The keys almost every cause carries are columns now, and the blob is
+    still there and still authoritative.
+    """
+
+    def _sitting(self, store: LearnerStore, log) -> int:
+        store.ensure_learner("L1", "human", "calculus")
+        session_id = store.open_session(
+            learner_id="L1", arm="coupled", config_hash="h"
+        )
+        store.close_session(
+            session_id, state=LearnerState(learner_id="L1", seed=1), audit_log=log
+        )
+        return session_id
+
+    def _turn(self, **evidence) -> AuditRecord:
+        base = {
+            "item_id": "ca_pow_p1",
+            "concept_id": "power_rule",
+            "move": "hint",
+            "level": "nudge",
+            "targets": None,
+            "text": "look again at the exponent",
+            "mastery": 0.4,
+            "prior_failures": 1,
+        }
+        base.update(evidence)
+        return AuditRecord(
+            version=1, cause="tutor", summary="hint at nudge", evidence=base
+        )
+
+    def test_the_common_keys_are_columns(self, store) -> None:
+        self._sitting(store, [self._turn()])
+        row = store._db.execute(
+            "SELECT concept_id, item_id FROM event WHERE cause = 'tutor'"
+        ).fetchone()
+        assert row["concept_id"] == "power_rule"
+        assert row["item_id"] == "ca_pow_p1"
+
+    def test_the_blob_is_still_there(self, store) -> None:
+        # Nothing is dropped. An audit record may carry anything, and a schema
+        # keeping only the columns someone thought of would quietly lose the
+        # rest.
+        self._sitting(store, [self._turn(something_unusual=7)])
+        stored = json.loads(
+            store._db.execute("SELECT evidence FROM event").fetchone()["evidence"]
+        )
+        assert stored["something_unusual"] == 7
+
+    def test_a_record_with_no_concept_leaves_the_column_empty(self, store) -> None:
+        # Decay names a concept; an exhausted item budget names neither. NULL is
+        # the honest value, and a placeholder would read as a real id.
+        self._sitting(
+            store,
+            [
+                AuditRecord(
+                    version=1,
+                    cause="annotation",
+                    summary="item budget spent",
+                    evidence={"items_given": 10},
+                )
+            ],
+        )
+        row = store._db.execute("SELECT concept_id, item_id FROM event").fetchone()
+        assert row["concept_id"] is None
+        assert row["item_id"] is None
+
+
+class TestTurnsAreProjectedLikeUtterances:
+    """The counterpart to the utterance table, and it closes the same gap.
+
+    A transcript once held every answer the learner gave and nothing the system
+    replied. Turns are recorded now, but only inside the blob — so reading a
+    sitting back still meant parsing JSON.
+    """
+
+    def _sat(self, store: LearnerStore, *turns) -> None:
+        store.ensure_learner("L1", "human", "calculus")
+        session_id = store.open_session(
+            learner_id="L1", arm="coupled", config_hash="h"
+        )
+        store.close_session(
+            session_id,
+            state=LearnerState(learner_id="L1", seed=1),
+            audit_log=list(turns),
+        )
+
+    def _turn(self, **evidence) -> AuditRecord:
+        base = {
+            "item_id": "ca_pow_p1",
+            "concept_id": "power_rule",
+            "move": "hint",
+            "level": "nudge",
+            "targets": None,
+            "text": "look again",
+            "mastery": 0.4,
+            "prior_failures": 1,
+        }
+        base.update(evidence)
+        return AuditRecord(version=1, cause="tutor", summary="a turn", evidence=base)
+
+    def test_a_turn_becomes_a_row(self, store) -> None:
+        self._sat(store, self._turn())
+        [row] = store.turns("L1", "coupled")
+        assert row["move"] == "hint"
+        assert row["level"] == "nudge"
+        assert row["text"] == "look again"
+        assert row["mastery"] == pytest.approx(0.4)
+        assert row["prior_failures"] == 1
+
+    def test_nothing_but_a_tutor_record_becomes_one(self, store) -> None:
+        self._sat(
+            store,
+            AuditRecord(version=1, cause="annotation", summary="something", evidence={}),
+        )
+        assert store.turns("L1", "coupled") == []
+
+    def test_it_can_be_narrowed_to_one_move(self, store) -> None:
+        # `move='explain'` is what answers "has this learner been taught this
+        # concept before, and how was it put" — the question a second lesson has
+        # to ask before repeating the first one.
+        self._sat(
+            store,
+            self._turn(),
+            self._turn(move="explain", level="plain", text="a derivative is..."),
+        )
+        [lesson] = store.turns("L1", "coupled", move="explain")
+        assert lesson["level"] == "plain"
+
+    def test_it_can_be_narrowed_to_one_concept(self, store) -> None:
+        self._sat(store, self._turn(), self._turn(concept_id="chain_rule"))
+        assert len(store.turns("L1", "coupled", concept_id="power_rule")) == 1
+
+    def test_only_this_sitting_is_projected(self, store) -> None:
+        """⚠️ The 81-row bug, which the utterance table already carries a
+        warning about.
+
+        The state is resumed whole and carries everything the learner has ever
+        said, so projecting *it* wrote the entire history under each new session
+        id. The audit log is per sitting, which is what a per-sitting projection
+        needs — and it is the same source the event rows come from.
+        """
+        store.ensure_learner("L1", "human", "calculus")
+        for _ in range(3):
+            session_id = store.open_session(
+                learner_id="L1", arm="coupled", config_hash="h"
+            )
+            store.close_session(
+                session_id,
+                state=LearnerState(learner_id="L1", seed=1),
+                audit_log=[self._turn()],
+            )
+        assert len(store.turns("L1", "coupled")) == 3
+
+    def test_a_remediation_target_survives_and_nothing_else_carries_one(
+        self, store
+    ) -> None:
+        # Load-bearing rather than incidental: `remediation_ratio` counts what a
+        # hint aimed at, so a target on a lesson would credit it with
+        # remediation it did not do.
+        self._sat(
+            store,
+            self._turn(move="remediate", targets="power_rule_forgets_decrement"),
+            self._turn(move="explain", level="plain"),
+        )
+        by_move = {row["move"]: row["targets"] for row in store.turns("L1", "coupled")}
+        assert by_move["remediate"] == "power_rule_forgets_decrement"
+        assert by_move["explain"] is None
+
+
+class TestTheBackfillRunsOnceOverHistoryThatCannotBeRegenerated:
+    """A store holds sittings a person produced once, at a keyboard.
+
+    Adding a column and leaving every existing row NULL would make the new shape
+    useless for exactly the history it was added to make readable.
+    """
+
+    def _store_with_an_old_row(self, tmp_path) -> Path:
+        """A store shaped the way one written before this change would be."""
+        path = tmp_path / "old.db"
+        db = sqlite3.connect(path)
+        db.executescript(
+            """
+            CREATE TABLE learner (learner_id TEXT PRIMARY KEY, kind TEXT,
+                domain TEXT, created_at TEXT);
+            CREATE TABLE session (session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                learner_id TEXT, arm TEXT, seq INTEGER, elapsed_days REAL
+                DEFAULT 0, run_id TEXT, config_hash TEXT, decay_half_life_days
+                REAL, started_at TEXT, ended_at TEXT, stop_reason TEXT,
+                UNIQUE (learner_id, arm, seq));
+            CREATE TABLE state (session_id INTEGER PRIMARY KEY,
+                learner_state TEXT, planner_state TEXT);
+            CREATE TABLE event (event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER, version INTEGER, cause TEXT, summary TEXT,
+                evidence TEXT);
+            CREATE TABLE utterance (utterance_id INTEGER PRIMARY KEY
+                AUTOINCREMENT, session_id INTEGER, kind TEXT, item_id TEXT,
+                concept_id TEXT, text TEXT);
+            CREATE TABLE profile (session_id INTEGER PRIMARY KEY, firing TEXT,
+                initial TEXT);
+            """
+        )
+        db.execute(
+            "INSERT INTO learner VALUES ('L1', 'human', 'calculus', 'then')"
+        )
+        db.execute(
+            "INSERT INTO session (learner_id, arm, seq, config_hash, started_at) "
+            "VALUES ('L1', 'coupled', 0, 'h', 'then')"
+        )
+        db.execute(
+            "INSERT INTO event (session_id, version, cause, summary, evidence) "
+            "VALUES (1, 1, 'tutor', 'a turn', ?)",
+            (
+                json.dumps(
+                    {
+                        "item_id": "ca_pow_p1",
+                        "concept_id": "power_rule",
+                        "move": "remediate",
+                        "level": "worked_step",
+                        "targets": "power_rule_forgets_decrement",
+                        "text": "bring the exponent down",
+                    }
+                ),
+            ),
+        )
+        db.commit()
+        db.close()
+        return path
+
+    def test_an_old_turn_becomes_readable(self, tmp_path) -> None:
+        store = LearnerStore(self._store_with_an_old_row(tmp_path))
+        [row] = store.turns("L1", "coupled")
+        assert row["move"] == "remediate"
+        assert row["level"] == "worked_step"
+        assert row["targets"] == "power_rule_forgets_decrement"
+        store.close()
+
+    def test_an_old_event_gains_its_concept(self, tmp_path) -> None:
+        store = LearnerStore(self._store_with_an_old_row(tmp_path))
+        row = store._db.execute("SELECT concept_id FROM event").fetchone()
+        assert row["concept_id"] == "power_rule"
+        store.close()
+
+    def test_keys_that_did_not_exist_yet_do_not_stop_it(self, tmp_path) -> None:
+        # `mastery` and `prior_failures` were added after the first sittings. A
+        # backfill that raised on them would refuse to migrate exactly the
+        # history worth migrating.
+        store = LearnerStore(self._store_with_an_old_row(tmp_path))
+        [row] = store.turns("L1", "coupled")
+        assert row["mastery"] == pytest.approx(0.0)
+        assert row["prior_failures"] == 0
+        store.close()
+
+    def test_reopening_does_not_duplicate_anything(self, tmp_path) -> None:
+        """Guarded on ``PRAGMA user_version`` rather than on the rows being
+        empty.
+
+        An emptiness check would re-run on any store that genuinely has no
+        turns, and would stop being a migration and start being a repair that
+        fires at random.
+        """
+        path = self._store_with_an_old_row(tmp_path)
+        for _ in range(3):
+            store = LearnerStore(path)
+            assert len(store.turns("L1", "coupled")) == 1
+            store.close()
+
+    def test_a_fresh_store_is_already_at_the_current_version(self, tmp_path) -> None:
+        store = LearnerStore(tmp_path / "fresh.db")
+        assert store._db.execute("PRAGMA user_version").fetchone()[0] >= 1
         store.close()
