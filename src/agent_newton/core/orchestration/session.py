@@ -53,6 +53,7 @@ from agent_newton.core.evaluation.outcomes import (
     administer,
     dose_by_concept,
 )
+from agent_newton.core.recall import EmbeddedRecall, KeyedRecall, Recall
 from agent_newton.core.pedagogy import (
     Support,
     TeachingStyle,
@@ -1320,6 +1321,29 @@ class Session:
             self.observer.item_finished(item, solved=False, reason="attempts_spent")
 
 
+def _recall_for(config: Config) -> Recall | None:
+    """How the tutor finds what this learner said before, if it does.
+
+    ``None`` is off and is the default: the tutor reads ``said_about``, which is
+    what every measured result was produced under.
+
+    Built here rather than in the tutor so that a run which does not want it
+    opens no embedding connection and embeds nothing — the same reason the
+    confusion detector is built only where it is asked for.
+    """
+    recall = config.teaching.recall
+    if not recall.enabled:
+        return None
+    if recall.strategy == "keyed":
+        return KeyedRecall()
+    from agent_newton.llm.embed import CachedEmbedder, OllamaEmbedder
+
+    return EmbeddedRecall(
+        CachedEmbedder(OllamaEmbedder(recall.model), config.paths.cache_dir.parent / "embed"),
+        recall.threshold,
+    )
+
+
 def build_session(
     learner_id: str,
     seed: int,
@@ -1365,6 +1389,7 @@ def build_session(
             build_provider(agents.tutor, cache_dir),
             config.zpd,
             config.scaffolding.policy,
+            recall=_recall_for(config),
         )
         if config.teaching.detect_confusion:
             confusion = LLMConfusionDetector(

@@ -440,10 +440,20 @@ class TestTheTeachingLayerStaysOutOfExperiments:
                 f"prose for it to read"
             )
 
+    def test_no_experiment_config_recalls_anything(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert not config.teaching.recall.enabled, (
+                f"{path.name} gives the tutor a recall strategy; every measured "
+                f"result was produced with it reading `said_about` and nothing "
+                f"else"
+            )
+
     def test_the_default_is_off(self) -> None:
         # Zero rather than a plausible threshold: off is what every measured
         # result was produced under, and a default nobody chose is a policy
         # nobody chose.
+        assert Config().teaching.recall.strategy == "off"
         assert Config().teaching.explain_after == 0
         assert Config().teaching.lesson_turns == 0
         assert not Config().teaching.detect_confusion
@@ -454,6 +464,8 @@ class TestTheTeachingLayerStaysOutOfExperiments:
         stray = tmp_path / "stray.yaml"
         stray.write_text(
             "domain: toy_algebra\nteaching:\n  explain_after: 3\n  lesson_turns: 3\n"
+            "  recall:\n    strategy: embedded\n"
         )
         assert Config.from_yaml(stray).teaching.explain_after == 3
         assert Config.from_yaml(stray).teaching.lesson_turns == 3
+        assert Config.from_yaml(stray).teaching.recall.enabled

@@ -44,6 +44,8 @@ from agent_newton.core.pedagogy import (
     may_select,
     move_for,
 )
+from agent_newton.core.recall.base import Recall
+from agent_newton.core.state.schema import Utterance
 from agent_newton.core.state.views import FullStateView
 from agent_newton.llm.base import (
     LLMProvider,
@@ -212,10 +214,14 @@ class LLMTutor:
         provider: LLMProvider,
         band: ZPDConfig,
         policy: ScaffoldingPolicy = "banded",
+        recall: Recall | None = None,
     ) -> None:
         self._provider = provider
         self._band = band
         self._policy: ScaffoldingPolicy = policy
+        #: How the learner's own words are found. ``None`` reads the last two
+        #: said about this concept, which is what every measured result used.
+        self._recall = recall
 
     def respond(
         self,
@@ -309,33 +315,45 @@ class LLMTutor:
         # u^4. Words from an earlier question are still worth having — they are
         # how the tutor knows what this learner keeps finding hard — but they
         # have to be marked as being about something else.
+        # ⚠️ Inside the `FullStateView` branch, and that is the whole of how the
+        # ablation survives this. The learner's words are something they told us
+        # about themselves, and the decoupled arm is *defined* by doing without
+        # them. Recall reaching the history by any other route — the session,
+        # the store — would hand one arm what the other lacks, and it would look
+        # like the coupling advantage growing rather than like a leak.
         said = ""
         if isinstance(view, FullStateView):
-            for utterance in view.said_about(item.concept_id):
+            for utterance in self._remembered(view, item, response):
+                # Two facts, and both have to survive: what kind of thing this
+                # was, and whether it was about the question in front of them.
+                # Deciding them in one chain lost the second whenever the first
+                # matched — a lesson remark from another concept came through
+                # labelled only as a lesson remark.
                 if utterance.kind == "lesson":
-                    # ⚠️ Its own branch, and the reason `Utterance.kind` gained a
-                    # third value. A lesson is about a *concept* and often has no
-                    # question in front of it, so its utterances carry an empty
-                    # item id — which the test below would read as "some other
-                    # question" and hand back to the learner as a remark about
-                    # work they were not doing. It is the sitting-3 defect one
-                    # level finer, and this is where it would have surfaced.
-                    label = (
-                        "The student said this while this concept was being "
-                        "explained to them, not about the question above"
-                    )
+                    kind = "said this while a concept was being explained to them"
+                elif utterance.kind == "working":
+                    kind = "showed this working"
                 else:
-                    when = (
-                        "on this question"
-                        if utterance.item_id == item.id
-                        else "on an earlier question, not the one above"
+                    kind = "said this when asked what they were unsure of"
+
+                if utterance.concept_id != item.concept_id:
+                    # ⚠️ Only reachable with recall on. Keyed reading could only
+                    # ever return remarks about the current concept, so nothing
+                    # had to say otherwise; recall reaches across, and an
+                    # unlabelled remark about limits arriving while the learner
+                    # works the power rule is §7i's leak one level out.
+                    about = (
+                        f", while working on {utterance.concept_id} rather than "
+                        f"the question above"
                     )
-                    label = (
-                        f"The student showed this working {when}"
-                        if utterance.kind == "working"
-                        else f"The student said {when}, when asked what they were unsure of"
-                    )
-                said += f"\n{label}: {utterance.text}"
+                elif utterance.kind == "lesson":
+                    about = ", not about the question above"
+                elif utterance.item_id == item.id:
+                    about = ", on this question"
+                else:
+                    about = ", on an earlier question, not the one above"
+
+                said += f"\nThe student {kind}{about}: {utterance.text}"
 
         # What this tutor has already said on this question, and an instruction
         # not to say it again. Two things needed it.
@@ -385,6 +403,30 @@ class LLMTutor:
             # nothing; only remediation carries a target.
             targets=diagnosis.misconception_id if move is TutorMove.REMEDIATE else None,
         )
+
+    def _remembered(
+        self, view: FullStateView, item: Item, response: str
+    ) -> Sequence[Utterance]:
+        """What this learner said that bears on the question in front of them.
+
+        Without a recall strategy this is ``view.said_about`` — the last two
+        things said about this concept — which is what every measured result was
+        produced under and stays the default.
+
+        With one, the whole history is ranked against what they just wrote. That
+        is the case the ideas note asks for: someone who asked what a gradient
+        was while working on limits has said something that bears on the power
+        rule, and keying on the concept cannot see it.
+        """
+        if self._recall is None:
+            return view.said_about(item.concept_id)
+        # ⚠️ The question *and* the answer, not the answer alone. A response is
+        # usually an expression — `5x^5` — and ranking prose against an
+        # expression matches almost nothing: the words a learner used when they
+        # were confused are in the same vocabulary as the question, not as the
+        # algebra. The prompt is what carries that vocabulary.
+        query = f"{' '.join(item.prompt.split())} {response}".strip()
+        return self._recall.about(view.reflections, item.concept_id, query)
 
     def explain(
         self,

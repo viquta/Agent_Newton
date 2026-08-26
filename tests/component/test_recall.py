@@ -279,3 +279,238 @@ class TestACohortHasNothingToRecall:
     def test_so_both_strategies_return_nothing(self) -> None:
         for strategy in (KeyedRecall(), EmbeddedRecall(Axes())):
             assert strategy.about((), "power_rule", "the gradient") == ()
+
+
+class Finds:
+    """A recall that returns the whole corpus and records what it was asked.
+
+    For the wiring tests: whether a recalled utterance reaches the prompt, and
+    how it is labelled when it does, are separate questions from whether the
+    ranking finds the right one.
+    """
+
+    label = "stub/finds"
+
+    def __init__(self) -> None:
+        self.queries: list[str] = []
+
+    def about(self, corpus, concept_id, query="", limit=3):  # noqa: ANN001
+        self.queries.append(query)
+        return tuple(corpus[:limit])
+
+
+class TestTheTutorUsesIt:
+    """Wiring the measured strategy in, off by default."""
+
+    def _tutor(self, recall=None):  # noqa: ANN001
+        from agent_newton.config import ZPDConfig
+        from agent_newton.core.agents.llm import LLMTutor
+
+        class Replies:
+            label = "fake/model"
+
+            def __init__(self) -> None:
+                self.prompts: list[str] = []
+
+            def generate(self, prompt, schema, system):  # noqa: ANN001
+                import json
+
+                from agent_newton.llm.base import Completion
+
+                self.prompts.append(prompt)
+                return Completion(
+                    text=json.dumps({"text": "look again."}),
+                    model="fake",
+                    provider="fake",
+                )
+
+        provider = Replies()
+        return LLMTutor(provider, ZPDConfig(), recall=recall), provider
+
+    def _view(self, *utterances: Utterance):
+        from agent_newton.core.state.views import FullStateView
+        from agent_newton.core.state.zpd import Frontier
+
+        return FullStateView(
+            mastery={"power_rule": 0.4},
+            error_trace=(),
+            frontier=Frontier(frozenset({"power_rule"})),
+            outcomes=(),
+            version=1,
+            reflections=utterances,
+        )
+
+    def _respond(self, tutor, view, domain):  # noqa: ANN001
+        from agent_newton.core.agents.base import Diagnosis
+
+        item = domain.items.for_concept("power_rule", "practice")[0]
+        return tutor.respond(
+            item,
+            Diagnosis(None),
+            view,
+            domain,
+            response="5x^5",
+            mastery=0.4,
+            prior_failures=0,
+            moves_this_item=[],
+        )
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def calculus(cls):
+        from agent_newton.domains import registry
+
+        return registry.load_domain("calculus")
+
+    def test_off_by_default_it_reads_only_this_concept(self, calculus) -> None:
+        # What every measured result was produced under. A remark filed under
+        # another concept is invisible, which is `said_about`'s whole behaviour.
+        tutor, provider = self._tutor()
+        view = self._view(_said("wait, what is a gradient", "limit_concept"))
+        self._respond(tutor, view, calculus)
+        assert "gradient" not in provider.prompts[0]
+
+    def test_with_recall_a_remark_from_another_concept_reaches_the_tutor(
+        self, calculus
+    ) -> None:
+        # The case the ideas note asks for, end to end. A stub strategy, because
+        # what is under test here is the wiring — whether a recalled utterance
+        # reaches the prompt at all — and the ranking is tested on its own above.
+        tutor, provider = self._tutor(Finds())
+        view = self._view(_said("wait, what is a gradient", "limit_concept"))
+        self._respond(tutor, view, calculus)
+        assert "wait, what is a gradient" in provider.prompts[0]
+
+    def test_the_query_carries_the_question_and_not_only_the_answer(
+        self, calculus
+    ) -> None:
+        """⚠️ A response is usually an expression, and prose does not rank
+        against algebra.
+
+        The words a learner used when they were confused are in the question's
+        vocabulary — "gradient", "ratio", "secant" — not in `5x^5`. Ranking
+        against the answer alone matched almost nothing, which made recall look
+        useless when it was being asked the wrong question.
+        """
+        asked = Finds()
+        tutor, _ = self._tutor(asked)
+        self._respond(tutor, self._view(), calculus)
+        assert "Differentiate" in asked.queries[0]
+        assert "5x^5" in asked.queries[0]
+
+    def test_and_it_is_labelled_as_being_about_something_else(
+        self, calculus
+    ) -> None:
+        """⚠️ Or it is §7i's leak one level out.
+
+        Keyed reading could only return remarks about the current concept, so
+        nothing ever had to say otherwise. Recall reaches across, and an
+        unlabelled remark about limits arriving while the learner works the
+        power rule is a tutor being handed context it will misuse — which is how
+        a learner came to be asked about their derivative of u^4 on a question
+        containing no u^4.
+        """
+        tutor, provider = self._tutor(Finds())
+        view = self._view(_said("wait, what is a gradient", "limit_concept"))
+        self._respond(tutor, view, calculus)
+        assert "while working on limit_concept" in provider.prompts[0]
+
+    def test_nothing_relevant_hands_the_tutor_nothing(self, calculus) -> None:
+        # Silence rather than the least irrelevant thing available. Real
+        # strategy here, because "returns nothing" is the behaviour under test.
+        tutor, provider = self._tutor(EmbeddedRecall(Axes(), threshold=0.5))
+        view = self._view(_said("what does ratio mean", "average_rate_of_change"))
+        self._respond(tutor, view, calculus)
+        assert "ratio" not in provider.prompts[0]
+
+
+class TestRecallCannotCrossTheArms:
+    """⚠️ The property the whole comparison rests on, and the one this could break.
+
+    The learner's words live on ``FullStateView`` and nowhere else — it is
+    something they told us about themselves, and the decoupled arm is *defined*
+    by doing without it. Recall reads the history from inside that branch. Had it
+    reached the store or the session instead, the decoupled arm would have been
+    handed what it is defined by lacking, and it would have looked like the
+    coupling advantage growing rather than like a leak.
+    """
+
+    def test_the_decoupled_view_carries_no_words_to_recall_from(self) -> None:
+        from agent_newton.core.state.views import ItemCorrectnessView
+
+        view = ItemCorrectnessView(outcomes=(True,), version=1)
+        assert not hasattr(view, "reflections")
+        assert not hasattr(view, "said_about")
+
+    def test_a_decoupled_tutor_reads_nothing_however_recall_is_set(self) -> None:
+        from agent_newton.config import ZPDConfig
+        from agent_newton.core.agents.base import Diagnosis
+        from agent_newton.core.agents.llm import LLMTutor
+        from agent_newton.core.state.views import ItemCorrectnessView
+        from agent_newton.domains import registry
+
+        class Replies:
+            label = "fake/model"
+
+            def __init__(self) -> None:
+                self.prompts: list[str] = []
+
+            def generate(self, prompt, schema, system):  # noqa: ANN001
+                import json
+
+                from agent_newton.llm.base import Completion
+
+                self.prompts.append(prompt)
+                return Completion(
+                    text=json.dumps({"text": "look again."}), model="f", provider="f"
+                )
+
+        class Everything:
+            label = "everything"
+
+            def about(self, corpus, concept_id, query="", limit=3):  # noqa: ANN001
+                raise AssertionError(
+                    "recall must not be consulted for the decoupled arm"
+                )
+
+        domain = registry.load_domain("calculus")
+        provider = Replies()
+        tutor = LLMTutor(provider, ZPDConfig(), recall=Everything())
+        tutor.respond(
+            domain.items.for_concept("power_rule", "practice")[0],
+            Diagnosis(None),
+            ItemCorrectnessView(outcomes=(), version=1),
+            domain,
+            response="5x^5",
+            mastery=0.0,
+            prior_failures=0,
+            moves_this_item=[],
+        )
+        assert provider.prompts, "the tutor still answered"
+
+
+class TestItIsOffForEveryCohort:
+    def test_the_default_is_off(self) -> None:
+        from agent_newton.config import Config
+
+        assert Config().teaching.recall.strategy == "off"
+
+    def test_a_run_that_does_not_want_it_builds_nothing(self) -> None:
+        # No embedding connection opened and nothing embedded, the same way the
+        # confusion detector is built only where it is asked for.
+        from agent_newton.config import Config
+        from agent_newton.core.orchestration.session import _recall_for
+
+        assert _recall_for(Config()) is None
+
+    def test_the_measured_default_is_what_gets_built(self) -> None:
+        from agent_newton.config import Config
+        from agent_newton.core.orchestration.session import _recall_for
+
+        config = Config()
+        config.teaching.recall.strategy = "embedded"
+        built = _recall_for(config)
+        assert built is not None
+        # 0.7 from the sweep, chosen for precision: 80% precision at 36% recall,
+        # and correctly silent when nothing is relevant.
+        assert "@0.7" in built.label

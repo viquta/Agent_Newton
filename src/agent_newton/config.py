@@ -402,6 +402,34 @@ class ScaffoldingConfig(BaseModel):
     offer_at_presentation: bool = False
 
 
+class RecallConfig(BaseModel):
+    """Finding what a learner said before, when it bears on what they are doing.
+
+    Two strategies exist because which one this system should use was measured
+    rather than assumed — see ``core/recall/base.py``. Off is the default and
+    what every measured result was produced under.
+    """
+
+    #: ``off`` leaves the tutor reading ``view.said_about``: the last two things
+    #: said about this concept, and nothing from anywhere else.
+    strategy: Literal["off", "keyed", "embedded"] = "off"
+    #: Similarity below which a match is dropped, for ``embedded``.
+    #:
+    #: 0.7 from the sweep, and chosen for precision rather than recall: 80%
+    #: precision at 36% recall, correctly silent when nothing is relevant.
+    #: Lower finds more and hands the tutor more noise; the curve is in the
+    #: commit that measured it.
+    threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    #: The embedding model. In the strategy's label, so a run states it.
+    model: str = "nomic-embed-text"
+    #: Utterances handed to the tutor at most.
+    limit: int = Field(default=3, ge=1)
+
+    @property
+    def enabled(self) -> bool:
+        return self.strategy != "off"
+
+
 class TeachingConfig(BaseModel):
     """Whether the system may explain a concept, and after how much difficulty.
 
@@ -472,6 +500,25 @@ class TeachingConfig(BaseModel):
     #: working or the reflection channel, so the text this reads is empty by
     #: construction.
     detect_confusion: bool = False
+    #: How the tutor finds what this learner said before, if it does.
+    #:
+    #: ``off`` is the default and what every measured result was produced under:
+    #: the tutor reads ``view.said_about``, which returns the last two things
+    #: said *about this concept* and nothing else.
+    #:
+    #: ``embedded`` ranks the learner's whole history against what they just
+    #: wrote. Measured over hand-labelled cases: at 0.7 it returns 80% precision
+    #: against the keyed reading's 10%, and — the part that matters for a tutor
+    #: prompt — it returns nothing when there is nothing worth returning. An
+    #: unrelated remark handed to a tutor as context is worse than silence,
+    #: because the tutor will try to use it.
+    #:
+    #: ⚠️ Whatever this says, recall happens **inside the coupled view**. The
+    #: learner's words are something they told us about themselves, and the
+    #: decoupled arm does without them — that is the manipulation, not an
+    #: oversight. Reaching the history any other way would hand one arm what the
+    #: other is defined by lacking.
+    recall: RecallConfig = Field(default_factory=lambda: RecallConfig())
 
 
 class DecayConfig(BaseModel):

@@ -199,6 +199,31 @@ teaching:
   # cannot exist there — and a simulated learner writes nothing in either
   # channel, so there would be nothing to read either way.
   detect_confusion: true
+  # On here and nowhere else. The tutor finds what you said before by *meaning*
+  # rather than by which concept it was filed under — so a question you asked
+  # about gradients while working on limits comes back when gradients turn up
+  # again under the power rule. Keying on the concept cannot see that; as far as
+  # a key is concerned you never said it.
+  #
+  # Measured over hand-labelled cases before being switched on. At 0.7 it
+  # returns 80% precision against the keyed reading's 10%, and — the part that
+  # matters for a tutor prompt — it returns nothing when there is nothing worth
+  # returning. An unrelated remark handed to a tutor as context is worse than
+  # silence, because the tutor will try to use it. Lower finds more and hands
+  # over more noise; the whole curve is in the commit that measured it.
+  #
+  # ⚠️ It searches the corpus *exactly* rather than through an index, which is
+  # what keeps it deterministic: same history, same question, same ranking. The
+  # objection recorded against retrieval was to approximate search, and this is
+  # not that.
+  #
+  # ⚠️ Recall happens inside the coupled view, where the learner's words live.
+  # The decoupled arm is defined by doing without them, so reaching the history
+  # any other way would hand one arm what the other lacks. Off for every cohort
+  # regardless, with a scan.
+  recall:
+    strategy: embedded
+    threshold: 0.7
 
 # On here and nowhere else, both of them.
 #
