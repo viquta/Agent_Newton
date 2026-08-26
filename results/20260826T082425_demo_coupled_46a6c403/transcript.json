@@ -1,0 +1,1781 @@
+{
+  "learner_id": "victor",
+  "completed": false,
+  "responses": [
+    {
+      "item_id": "ca_lim_pre1",
+      "response": "6"
+    },
+    {
+      "item_id": "ca_avg_pre1",
+      "response": "7"
+    },
+    {
+      "item_id": "ca_tan_pre1",
+      "response": "10 + h"
+    },
+    {
+      "item_id": "ca_inst_pre1",
+      "response": "8"
+    },
+    {
+      "item_id": "ca_fp_pre1",
+      "response": "t^2 + 2ht + h^2"
+    },
+    {
+      "item_id": "ca_pow_pre1",
+      "response": "7x^6"
+    },
+    {
+      "item_id": "ca_neg_pre1",
+      "response": "0"
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "response": "12"
+    }
+  ],
+  "turns": [
+    {
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "move": "present",
+      "level": "formula_and_example",
+      "targets": null,
+      "mastery": 0.22938763489553882,
+      "prior_failures": 0,
+      "text": "The gradient of the tangent at a point is what the gradients of the secants approach as the second point slides in towards the first. A secant taken at any finite separation is still a secant: its gradient is close to the tangent's, not equal to it. For y = x^2 the limit works out to 2x.\n\nAn example \u2014 not your question, and the numbers are different:\nThe tangent to y = x^3 at x = 1.\nSecants from x = 1 to x = 1 + h have gradient ((1 + h)^3 - 1)/h,\nwhich multiplies out to 3 + 3h + h^2.\nAs h shrinks towards 0 that approaches 3.\nThe tangent's gradient is 3.",
+      "opening": false,
+      "version": 821
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "To find the gradient of a line, how many points on that line do you usually need to know?",
+      "opening": true,
+      "version": 825
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "That is correct; normally we use two points to calculate a gradient. However, if we want to find the gradient at just one specific point on a curve, how many points would that seem to require based on what you just said?",
+      "opening": false,
+      "version": 827
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "You're right; since our usual formula requires two points, asking for the gradient at only one point seems like it should be impossible. If we only have one point, how could we possibly calculate a change in height over a change in distance?",
+      "opening": false,
+      "version": 829
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "That is the core problem! Since our standard formula requires two points to measure a change, having only one point makes it seem like we are missing information. \n\nWhat if we picked a second point very close to our first one so that we could calculate a gradient for the line connecting them?",
+      "opening": false,
+      "version": 831
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "Exactly! By picking a second point nearby, we can create a secant line and use our standard formula to find its gradient. If we move that second point even closer and closer to our first point, what do you think happens to the value of that secant's gradient?",
+      "opening": false,
+      "version": 833
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "A secant is simply a straight line that cuts through two points on a curve. So, when we calculate the gradient of a secant, we are using those two points to find a slope that is very close to the direction of the curve at our original point.\n\nIf we move that second point closer and closer to the first one, what do you think happens to the value of that secant's gradient?",
+      "opening": false,
+      "version": 835
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "You've hit on a very important distinction: while any secant with a finite distance between points gives an average rate of change, moving those points closer makes that average more and more specific to our original point. As the gap between the two points shrinks toward zero, the secant's gradient settles toward a single, definite value. Even though a secant is always technically a secant, what do you think happens to that value as the distance between the two points becomes infinitely small?",
+      "opening": false,
+      "version": 837
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "I'm referring to the numerical result of our gradient calculation. Even though we are using a secant line with two distinct points, as those points get closer and closer together, the resulting number starts to settle toward one specific value. \n\nIf you had a secant where the distance between the points was 0.1, then 0.01, then 0.001, what do you think that sequence of numbers would eventually approach?",
+      "opening": false,
+      "version": 839
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "That's a possibility if the curve is flat at that point, but it depends entirely on the specific shape of the curve we are looking at. Let's look at an example where the result isn't zero. If our curve is y = x^2 and we are looking at the point where x = 3, what do you think happens to the gradient as the distance between your two points shrinks toward zero?",
+      "opening": false,
+      "version": 841
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "In this context, the gradient is just another word for the slope or the steepness of the line. It tells us how much the height changes compared to how much the horizontal distance changes.\n\nIf we look at our curve y = x^2 and pick two points very close together near x = 3, what do you think that 'steepness' value would be as those points get closer?",
+      "opening": false,
+      "version": 843
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "You are right that the curve is quite steep at that point! While \"steep\" describes the shape, we want to find a specific number that represents exactly how steep it is.\n\nIf we use our secant formula with two points very close together near x = 3, what do you think happens to that numerical value as the distance between them shrinks toward zero?",
+      "opening": false,
+      "version": 845
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "Exactly! That formula is how we calculate the gradient of a secant line. As those two points get closer together, that specific calculation gives us a number that gets closer and closer to the true steepness at our point.\n\nIf we use your formula for y = x^2 at x = 3, and we pick a second point very close by using (x + h), what expression do you get for the gradient?",
+      "opening": false,
+      "version": 847
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "You've set up the calculation perfectly! By replacing the second point with (x + h), we can see how the gradient changes as h gets smaller.\n\nIf you take your expression and simplify it by expanding (x + h)^2, what does that formula look like?",
+      "opening": false,
+      "version": 849
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "socratic",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "If we simplify that expression, it becomes ((3+h)^2 - 9) / h, which expands to (9 + 6h + h^2 - 9) / h. This simplifies further to (6h + h^2) / h, or just 6 + h. As the distance h shrinks toward zero, that value settles at exactly 6.",
+      "opening": false,
+      "version": 850
+    },
+    {
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "move": "explain",
+      "level": "summary",
+      "targets": null,
+      "mastery": 0.0,
+      "prior_failures": 4,
+      "text": "The gradient of a curve at a single point. A gradient normally needs two points, so at first this looks like it is asking for something impossible.\n\nTake a second point nearby and you get a secant, whose gradient you can work out the ordinary way. Slide that second point in towards the first and the secant gradients settle towards a number. No finite separation gives it exactly \u2014 a secant is always a secant \u2014 but the value they approach is perfectly well defined, and that limit is what 'the gradient at a point' means.\n\nThe gradient of the tangent at a point is what the gradients of the secants approach as the second point slides in towards the first. A secant taken at any finite separation is still a secant: its gradient is close to the tangent's, not equal to it. For y = x^2 the limit works out to 2x.\n\nAn example \u2014 not your question, and the numbers are different:\nThe tangent to y = x^3 at x = 1.\nSecants from x = 1 to x = 1 + h have gradient ((1 + h)^3 - 1)/h,\nwhich multiplies out to 3 + 3h + h^2.\nAs h shrinks towards 0 that approaches 3.\nThe tangent's gradient is 3.",
+      "opening": false,
+      "version": 851
+    },
+    {
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "move": "present",
+      "level": "formula",
+      "targets": null,
+      "mastery": 0.6580483160338375,
+      "prior_failures": 0,
+      "text": "The gradient of the tangent at a point is what the gradients of the secants approach as the second point slides in towards the first. A secant taken at any finite separation is still a secant: its gradient is close to the tangent's, not equal to it. For y = x^2 the limit works out to 2x.",
+      "opening": false,
+      "version": 853
+    }
+  ],
+  "said": [
+    {
+      "text": "I don't know how to do the algebra part.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "What do I do first? I get confused with the algebra part.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "I don't understand this.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I thought that f'g is (x^2 + 1)^2 and that fg' is (x^3)",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I learned from the \"moving on\" note from the last problem.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I don't know any of this.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I followed the quotient rule (i think) and i just don't know what (x^-1)^2 is",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I give up, the hint didn't help me.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I tried using the quotient rule",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I think, the part with the uv^2",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "I really don't know.",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I don't know how the chain rule works.",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "what do I do with the inside of the parenthesese?",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "did not get anything",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "but I thought i did it right",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "which one is the fx and which is the gx",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "if outisde u is u^4, then the derivative is 4u^3 and the inside is 3x+1, then its derivative is 3, so this makes 4*27 which is 108",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "6x^2(x^3+1)^2",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "finally, i got it",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "i think i just forgot the power of 2",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "i dont understand implicit differentiation",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "everything",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "reflection"
+    },
+    {
+      "text": "I guess it doesn't matter if it is equal to 25 or36...",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "This is not learning, i just guessed from the other two problems",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "6x",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "idk",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "reflection"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    },
+    {
+      "text": "Differentiate: y = (x^2 + 1)(x^6 + 2)f(x) is (x^2 + 1)g(x) is (x^6 + 2)What was the product rule? I forgot the formula. I think it was something like: f\u2019g(x) + g\u2019(fx)d/dx of x^2+1 is 2xd/dx of x^6+2 is 6xso2(x^6+2) + 6(x^2+1) is my answer",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I think I forgot the formula",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "attempt 2Ok, so I was obviously wrong in my first attempt, but I did not get any hint on what I did wrong. So now I have 3 choices: 1) I quit. 2) I copy the same answer again. 3) I google for the product rule formula or use chatgpt for the answer.Google product rule and: \\([f(x)g(x)]' = f'(x)g(x) + f(x)g'(x)\\) So it is 2x(x^6 + 2) +  6x(x^2 + 1)",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "attempt 3  So, now I got the remediation step and it pasted a working answer for me. I see that I made another silly mistake where I just forgot to properly differentiate x^6. I thought it was just 6x but it was actually 6x^5",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "Differentiate: y = (x^2 + 1)(x^7 + 2)Ok, from the last problem, I got a lot of information: how to apply the product rule, and that I made some simple silly mistakes. Now I\u2019ll see if I get this right. f(x) is (x^2 + 1), so f\u2019(x) is 2xg(x) is (x^7 + 2) so g\u2019(x) is 7x^6Now doing a little multiplication and addition without know why (which is a problem for me, cause I am naturally curious, why do we even do this\u2026)f'g + fg': 2x(x^7 + 2) + (x^2 + 1),7x^6",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I accidentally put a comma in my answer.",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "f\u2019x is 2xg\u2019x is 8x^7so the answer should be: 2x(x^8+2) + (x^2+1)8x^7",
+      "item_id": "ca_prod_p1",
+      "concept_id": "product_rule",
+      "kind": "working"
+    },
+    {
+      "text": "i forgot the formula for the quotient rule",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I followed the hinz\nhint",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "ok, so u\u2019 is 2x\nand v\u2019 is 1",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "(x^2 * (x+5) - x^2 ) / (x+5)^2",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "I pasted a 5 instead of 4 from the last question and took away the *1",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "i'm sure this is the answer",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "im sure of it all",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "reflection"
+    },
+    {
+      "text": "3x^3 / 3x^3",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "I added the constant",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "maybe i should have kept the 3",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "i saw that fx = (x + 2) so f'x is 1, gx is x^2 so g'x is 2x. Then I applied the formula, which i believe was: f'x (gx) - g'x (fx) / gx^2",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "forgot to add the extra parenthesese",
+      "item_id": "ca_quot_p1",
+      "concept_id": "quotient_rule",
+      "kind": "working"
+    },
+    {
+      "text": "i followed the \"before you start\" steps",
+      "item_id": "ca_chain_p1",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "i thought taht 6x + 1 differentiated is 1",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "ok, i forgot that d/dx of 6x is 6",
+      "item_id": "ca_chain_p2",
+      "concept_id": "chain_rule",
+      "kind": "working"
+    },
+    {
+      "text": "idk what I'm doing",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "idk",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "i tried to apply the chain rule",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "2x + 2y dy/dx = 0 move the x across: 2y dy/dx = -2xdivide by 2y so that dy/dx = -2x/2y which is -x/y",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "i folloed the steps from last time",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "i did the remediation thing",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "first differentiate\u2026 2x + 6y dy/dx = 0 then 6y dy/dx = -2xthen dy/dx = -2x/6y",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "i put wrong on purpose to see if my blackboard updates",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "ok",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "reflection"
+    },
+    {
+      "text": "putting wrong again on purpose",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "4 + 2 is 99 (i know it's wrong)",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "reflection"
+    },
+    {
+      "text": "no",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "ok, the reflection seems to work",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "reflection"
+    },
+    {
+      "text": "i put wrong on purpose",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "i put it a bit wrong",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "for the differentiation of 4y^2 --> 8y so 2x/8y is 1/4y",
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "kind": "working"
+    },
+    {
+      "text": "idk what i did",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    },
+    {
+      "text": "i just did the outer integration, i don't know what else to do",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    },
+    {
+      "text": "i added the division now",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    },
+    {
+      "text": "i saw that i had to integrate and not differentiate",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    },
+    {
+      "text": "99",
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "kind": "working"
+    },
+    {
+      "text": "I factored the denominator with part of the nominator (x^2 - 9) = (x+3)(x-3). But I don't understand what a limit is.",
+      "item_id": "ca_lim_p1",
+      "concept_id": "limits_of_sequences",
+      "kind": "working"
+    },
+    {
+      "text": "I just guessed. I don't understand what a tangent is, what a limit of a gradient is, what a gradient is, what a secant is.",
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "kind": "working"
+    },
+    {
+      "text": "What is a gradient, and what do you mean by \"points\"?",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "I guess, no points?",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "Ich w\u00fcrde das Unterschied markieren.",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "i tried to differentiate",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "i increased the exponent and put the old exponent number as the denominator. I think this is how the power rule works for antiderivates, right?",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "I followed (n + 1) * x^(n+1) / (n + 1).",
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "kind": "working"
+    },
+    {
+      "text": "It looks like their derivatives would be the same, 2x",
+      "item_id": "",
+      "concept_id": "antiderivative",
+      "kind": "lesson"
+    },
+    {
+      "text": "I don't know, why does a constant matter here?",
+      "item_id": "",
+      "concept_id": "antiderivative",
+      "kind": "lesson"
+    },
+    {
+      "text": "But what does it matter, if there is a C or not C? It's just a constant. What does it do?",
+      "item_id": "",
+      "concept_id": "antiderivative",
+      "kind": "lesson"
+    },
+    {
+      "text": "I'm not so sure. I know that I need to do something like ((5 + h)^2 - 5)/h, but then I get stuck",
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "kind": "working"
+    },
+    {
+      "text": "this is how far i've gotten",
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "kind": "working"
+    },
+    {
+      "text": "well, x1 is 5, x2 is 5 + h, y1 is 25, and y2 is 25 + 10h + h^2\nso, i followed the formula: (y2 - y1) / (x2 - x1) and was left with 10 + h",
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "kind": "working"
+    },
+    {
+      "text": "2",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "just 1",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "I am not sure",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "it was the, as h approaches 0 that i didnt understand earlier",
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "kind": "working"
+    },
+    {
+      "text": "2",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "1",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "I'm not sure",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "Is that the \"+ h\" thing?",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "What does secant mean?",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "I thought that A secant is a straight line that passes through two points on a curve. The gradient of the secant gives the average rate of change between those points. If the second point is moved very close to the original point, the gradient of the secant approaches the gradient of the tangent to the curve at that point.",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "what value do you mean?",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "closer to 0",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "wait, what is a gradient",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "I guess that would be steep",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "So by distance, I guess you mean y2-y1 / x2 - x1",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    },
+    {
+      "text": "x2 + h - 3^2 / x + h - x",
+      "item_id": "",
+      "concept_id": "limit_concept",
+      "kind": "lesson"
+    }
+  ],
+  "mastery": {
+    "limits_of_sequences": 0.8999999999999999,
+    "average_rate_of_change": 0.8999999999999999,
+    "limit_concept": 0.6580483160338375,
+    "instantaneous_rate_of_change": 0.8999999999999999,
+    "derivative_from_first_principles": 0.8999999999999999,
+    "power_rule": 0.8999999999999999,
+    "negative_fractional_exponents": 0.3999274488686143,
+    "polynomial_differentiation": 0.39982839214082677,
+    "stationary_points": 0.7242546850074295,
+    "product_rule": 0.635694425655198,
+    "quotient_rule": 0.7099362984006243,
+    "chain_rule": 0.39982839214082677,
+    "implicit_differentiation": 0.7278695656763929,
+    "antiderivative": 0.22935679318280622,
+    "integration_by_substitution": 0.20369220119891293
+  },
+  "error_trace": [
+    {
+      "t": 82,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 84,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 85,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 86,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": null,
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 87,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.85,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 88,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.85,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 89,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 91,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 92,
+      "item_id": "ca_impl_p1",
+      "concept_id": "implicit_differentiation",
+      "misconception_label": "implicit_diff_omits_dydx",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 99,
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "misconception_label": "usub_forgets_du",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 100,
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "misconception_label": "usub_forgets_du",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 101,
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "misconception_label": "usub_forgets_du",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 102,
+      "item_id": "ca_usub_p1",
+      "concept_id": "integration_by_substitution",
+      "misconception_label": "usub_forgets_du",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 104,
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "misconception_label": "tangent_as_secant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 106,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": "antiderivative_omits_constant",
+      "confidence": 0.1,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 107,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": "antiderivative_omits_constant",
+      "confidence": 0.5,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 108,
+      "item_id": "ca_anti_p1",
+      "concept_id": "antiderivative",
+      "misconception_label": "antiderivative_omits_constant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 109,
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "misconception_label": "tangent_as_secant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 110,
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "misconception_label": "tangent_as_secant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    },
+    {
+      "t": 111,
+      "item_id": "ca_tan_p1",
+      "concept_id": "limit_concept",
+      "misconception_label": "tangent_as_secant",
+      "confidence": 1.0,
+      "verifier_label": "incorrect"
+    }
+  ],
+  "unmeasurable_steps": 0,
+  "audit_log": [
+    {
+      "version": 795,
+      "cause": "annotation",
+      "summary": "resumed learner 'victor'",
+      "evidence": {
+        "concepts": 15,
+        "arm": "coupled",
+        "known_concepts": 15,
+        "prior_steps": 111
+      }
+    },
+    {
+      "version": 796,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(limits_of_sequences) 0.896 -> 0.896",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.8963648355091618,
+        "mastery_after": 0.8961482370561911
+      }
+    },
+    {
+      "version": 797,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(average_rate_of_change) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.8999999999999999,
+        "mastery_after": 0.8997823466058429
+      }
+    },
+    {
+      "version": 798,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(limit_concept) 0.229 -> 0.229",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.22941068023431924,
+        "mastery_after": 0.22938763489553882
+      }
+    },
+    {
+      "version": 799,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(instantaneous_rate_of_change) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.8999999999999999,
+        "mastery_after": 0.8997823466058429
+      }
+    },
+    {
+      "version": 800,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(derivative_from_first_principles) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.8999999999999999,
+        "mastery_after": 0.8997823466058429
+      }
+    },
+    {
+      "version": 801,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(power_rule) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "power_rule",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.8999999999999999,
+        "mastery_after": 0.8997823466058429
+      }
+    },
+    {
+      "version": 802,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(negative_fractional_exponents) 0.400 -> 0.400",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.4,
+        "mastery_after": 0.3999274488686143
+      }
+    },
+    {
+      "version": 803,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(polynomial_differentiation) 0.400 -> 0.400",
+      "evidence": {
+        "concept_id": "polynomial_differentiation",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3999009145171569,
+        "mastery_after": 0.39982839214082677
+      }
+    },
+    {
+      "version": 804,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(stationary_points) 0.724 -> 0.724",
+      "evidence": {
+        "concept_id": "stationary_points",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.7244213846928359,
+        "mastery_after": 0.7242546850074295
+      }
+    },
+    {
+      "version": 805,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(product_rule) 0.636 -> 0.636",
+      "evidence": {
+        "concept_id": "product_rule",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.635835417291965,
+        "mastery_after": 0.635694425655198
+      }
+    },
+    {
+      "version": 806,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(quotient_rule) 0.710 -> 0.710",
+      "evidence": {
+        "concept_id": "quotient_rule",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.7100988416192134,
+        "mastery_after": 0.7099362984006243
+      }
+    },
+    {
+      "version": 807,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(chain_rule) 0.400 -> 0.400",
+      "evidence": {
+        "concept_id": "chain_rule",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.3999009145171569,
+        "mastery_after": 0.39982839214082677
+      }
+    },
+    {
+      "version": 808,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(implicit_differentiation) 0.728 -> 0.728",
+      "evidence": {
+        "concept_id": "implicit_differentiation",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.7280373147210576,
+        "mastery_after": 0.7278695656763929
+      }
+    },
+    {
+      "version": 809,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(antiderivative) 0.229 -> 0.229",
+      "evidence": {
+        "concept_id": "antiderivative",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.22937982956858383,
+        "mastery_after": 0.22935679318280622
+      }
+    },
+    {
+      "version": 810,
+      "cause": "decay",
+      "summary": "0.00586232 day(s) elapsed; P(integration_by_substitution) 0.204 -> 0.204",
+      "evidence": {
+        "concept_id": "integration_by_substitution",
+        "elapsed_days": 0.005862323495370371,
+        "half_life_days": 14.0,
+        "mastery_before": 0.20370778744188545,
+        "mastery_after": 0.20369220119891293
+      }
+    },
+    {
+      "version": 811,
+      "cause": "annotation",
+      "summary": "the learner asked to work on limit_concept",
+      "evidence": {
+        "requested": [
+          "limit_concept"
+        ]
+      }
+    },
+    {
+      "version": 812,
+      "cause": "annotation",
+      "summary": "the learner asked to be taught socratic",
+      "evidence": {
+        "teaching_style": "socratic"
+      }
+    },
+    {
+      "version": 813,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(limits_of_sequences) 0.896 -> 0.900",
+      "evidence": {
+        "concept_id": "limits_of_sequences",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.8961482370561911,
+        "mastery_after": 0.8999999999999999
+      }
+    },
+    {
+      "version": 814,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(average_rate_of_change) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "average_rate_of_change",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.8997823466058429,
+        "mastery_after": 0.8999999999999999
+      }
+    },
+    {
+      "version": 815,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(limit_concept) 0.229 -> 0.229",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.22938763489553882,
+        "mastery_after": 0.22938763489553882
+      }
+    },
+    {
+      "version": 816,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(instantaneous_rate_of_change) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "instantaneous_rate_of_change",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.8997823466058429,
+        "mastery_after": 0.8999999999999999
+      }
+    },
+    {
+      "version": 817,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(derivative_from_first_principles) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "derivative_from_first_principles",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.8997823466058429,
+        "mastery_after": 0.8999999999999999
+      }
+    },
+    {
+      "version": 818,
+      "cause": "seed",
+      "summary": "correct on a held-out item; P(power_rule) 0.900 -> 0.900",
+      "evidence": {
+        "concept_id": "power_rule",
+        "verdict": "correct",
+        "weight": 3,
+        "mastery_before": 0.8997823466058429,
+        "mastery_after": 0.8999999999999999
+      }
+    },
+    {
+      "version": 819,
+      "cause": "seed",
+      "summary": "incorrect on a held-out item; P(negative_fractional_exponents) 0.400 -> 0.400",
+      "evidence": {
+        "concept_id": "negative_fractional_exponents",
+        "verdict": "incorrect",
+        "weight": 3,
+        "mastery_before": 0.3999274488686143,
+        "mastery_after": 0.3999274488686143
+      }
+    },
+    {
+      "version": 820,
+      "cause": "replan",
+      "summary": "replan triggered by no_plan",
+      "evidence": {}
+    },
+    {
+      "version": 821,
+      "cause": "tutor",
+      "summary": "present at formula_and_example on ca_tan_p1",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "move": "present",
+        "level": "formula_and_example",
+        "targets": null,
+        "mastery": 0.22938763489553882,
+        "prior_failures": 0,
+        "text": "The gradient of the tangent at a point is what the gradients of the secants approach as the second point slides in towards the first. A secant taken at any finite separation is still a secant: its gradient is close to the tangent's, not equal to it. For y = x^2 the limit works out to 2x.\n\nAn example \u2014 not your question, and the numbers are different:\nThe tangent to y = x^3 at x = 1.\nSecants from x = 1 to x = 1 + h have gradient ((1 + h)^3 - 1)/h,\nwhich multiplies out to 3 + 3h + h^2.\nAs h shrinks towards 0 that approaches 3.\nThe tangent's gradient is 3.",
+        "opening": false
+      }
+    },
+    {
+      "version": 822,
+      "cause": "annotation",
+      "summary": "the learner asked what limit_concept is",
+      "evidence": {
+        "concept_id": "limit_concept",
+        "asked_for_a_lesson": true,
+        "inferred": false
+      }
+    },
+    {
+      "version": 823,
+      "cause": "observation",
+      "summary": "correct on ca_tan_p1; P(limit_concept) 0.229 -> 0.658",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "verdict": "correct",
+        "mastery_before": 0.22938763489553882,
+        "mastery_after": 0.6580483160338375,
+        "delta": 0.4286606811382987,
+        "misconception_label": null,
+        "response": "12"
+      }
+    },
+    {
+      "version": 824,
+      "cause": "annotation",
+      "summary": "working on ca_tan_p1",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "reflection": "it was the, as h approaches 0 that i didnt understand earlier",
+        "kind": "working"
+      }
+    },
+    {
+      "version": 825,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "To find the gradient of a line, how many points on that line do you usually need to know?",
+        "opening": true
+      }
+    },
+    {
+      "version": 826,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "2",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 827,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "That is correct; normally we use two points to calculate a gradient. However, if we want to find the gradient at just one specific point on a curve, how many points would that seem to require based on what you just said?",
+        "opening": false
+      }
+    },
+    {
+      "version": 828,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "1",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 829,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "You're right; since our usual formula requires two points, asking for the gradient at only one point seems like it should be impossible. If we only have one point, how could we possibly calculate a change in height over a change in distance?",
+        "opening": false
+      }
+    },
+    {
+      "version": 830,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "I'm not sure",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 831,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "That is the core problem! Since our standard formula requires two points to measure a change, having only one point makes it seem like we are missing information. \n\nWhat if we picked a second point very close to our first one so that we could calculate a gradient for the line connecting them?",
+        "opening": false
+      }
+    },
+    {
+      "version": 832,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "Is that the \"+ h\" thing?",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 833,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "Exactly! By picking a second point nearby, we can create a secant line and use our standard formula to find its gradient. If we move that second point even closer and closer to our first point, what do you think happens to the value of that secant's gradient?",
+        "opening": false
+      }
+    },
+    {
+      "version": 834,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "What does secant mean?",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 835,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "A secant is simply a straight line that cuts through two points on a curve. So, when we calculate the gradient of a secant, we are using those two points to find a slope that is very close to the direction of the curve at our original point.\n\nIf we move that second point closer and closer to the first one, what do you think happens to the value of that secant's gradient?",
+        "opening": false
+      }
+    },
+    {
+      "version": 836,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "I thought that A secant is a straight line that passes through two points on a curve. The gradient of the secant gives the average rate of change between those points. If the second point is moved very close to the original point, the gradient of the secant approaches the gradient of the tangent to the curve at that point.",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 837,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "You've hit on a very important distinction: while any secant with a finite distance between points gives an average rate of change, moving those points closer makes that average more and more specific to our original point. As the gap between the two points shrinks toward zero, the secant's gradient settles toward a single, definite value. Even though a secant is always technically a secant, what do you think happens to that value as the distance between the two points becomes infinitely small?",
+        "opening": false
+      }
+    },
+    {
+      "version": 838,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "what value do you mean?",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 839,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "I'm referring to the numerical result of our gradient calculation. Even though we are using a secant line with two distinct points, as those points get closer and closer together, the resulting number starts to settle toward one specific value. \n\nIf you had a secant where the distance between the points was 0.1, then 0.01, then 0.001, what do you think that sequence of numbers would eventually approach?",
+        "opening": false
+      }
+    },
+    {
+      "version": 840,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "closer to 0",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 841,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "That's a possibility if the curve is flat at that point, but it depends entirely on the specific shape of the curve we are looking at. Let's look at an example where the result isn't zero. If our curve is y = x^2 and we are looking at the point where x = 3, what do you think happens to the gradient as the distance between your two points shrinks toward zero?",
+        "opening": false
+      }
+    },
+    {
+      "version": 842,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "wait, what is a gradient",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 843,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "In this context, the gradient is just another word for the slope or the steepness of the line. It tells us how much the height changes compared to how much the horizontal distance changes.\n\nIf we look at our curve y = x^2 and pick two points very close together near x = 3, what do you think that 'steepness' value would be as those points get closer?",
+        "opening": false
+      }
+    },
+    {
+      "version": 844,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "I guess that would be steep",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 845,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "You are right that the curve is quite steep at that point! While \"steep\" describes the shape, we want to find a specific number that represents exactly how steep it is.\n\nIf we use our secant formula with two points very close together near x = 3, what do you think happens to that numerical value as the distance between them shrinks toward zero?",
+        "opening": false
+      }
+    },
+    {
+      "version": 846,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "So by distance, I guess you mean y2-y1 / x2 - x1",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 847,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "Exactly! That formula is how we calculate the gradient of a secant line. As those two points get closer together, that specific calculation gives us a number that gets closer and closer to the true steepness at our point.\n\nIf we use your formula for y = x^2 at x = 3, and we pick a second point very close by using (x + h), what expression do you get for the gradient?",
+        "opening": false
+      }
+    },
+    {
+      "version": 848,
+      "cause": "annotation",
+      "summary": "lesson on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "reflection": "x2 + h - 3^2 / x + h - x",
+        "kind": "lesson"
+      }
+    },
+    {
+      "version": 849,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "You've set up the calculation perfectly! By replacing the second point with (x + h), we can see how the gradient changes as h gets smaller.\n\nIf you take your expression and simplify it by expanding (x + h)^2, what does that formula look like?",
+        "opening": false
+      }
+    },
+    {
+      "version": 850,
+      "cause": "tutor",
+      "summary": "explain at socratic on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "socratic",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "If we simplify that expression, it becomes ((3+h)^2 - 9) / h, which expands to (9 + 6h + h^2 - 9) / h. This simplifies further to (6h + h^2) / h, or just 6 + h. As the distance h shrinks toward zero, that value settles at exactly 6.",
+        "opening": false
+      }
+    },
+    {
+      "version": 851,
+      "cause": "tutor",
+      "summary": "explain at summary on ",
+      "evidence": {
+        "item_id": "",
+        "concept_id": "limit_concept",
+        "move": "explain",
+        "level": "summary",
+        "targets": null,
+        "mastery": 0.0,
+        "prior_failures": 4,
+        "text": "The gradient of a curve at a single point. A gradient normally needs two points, so at first this looks like it is asking for something impossible.\n\nTake a second point nearby and you get a secant, whose gradient you can work out the ordinary way. Slide that second point in towards the first and the secant gradients settle towards a number. No finite separation gives it exactly \u2014 a secant is always a secant \u2014 but the value they approach is perfectly well defined, and that limit is what 'the gradient at a point' means.\n\nThe gradient of the tangent at a point is what the gradients of the secants approach as the second point slides in towards the first. A secant taken at any finite separation is still a secant: its gradient is close to the tangent's, not equal to it. For y = x^2 the limit works out to 2x.\n\nAn example \u2014 not your question, and the numbers are different:\nThe tangent to y = x^3 at x = 1.\nSecants from x = 1 to x = 1 + h have gradient ((1 + h)^3 - 1)/h,\nwhich multiplies out to 3 + 3h + h^2.\nAs h shrinks towards 0 that approaches 3.\nThe tangent's gradient is 3.",
+        "opening": false
+      }
+    },
+    {
+      "version": 852,
+      "cause": "annotation",
+      "summary": "mastery_delta suppressed by rate_limited",
+      "evidence": {
+        "concept": "limit_concept",
+        "before": 0.22938763489553882,
+        "after": 0.6580483160338375,
+        "delta": 0.4286606811382987,
+        "theta": 0.15,
+        "items_since_replan": 1,
+        "required": 2
+      }
+    },
+    {
+      "version": 853,
+      "cause": "tutor",
+      "summary": "present at formula on ca_tan_p1",
+      "evidence": {
+        "item_id": "ca_tan_p1",
+        "concept_id": "limit_concept",
+        "move": "present",
+        "level": "formula",
+        "targets": null,
+        "mastery": 0.6580483160338375,
+        "prior_failures": 0,
+        "text": "The gradient of the tangent at a point is what the gradients of the secants approach as the second point slides in towards the first. A secant taken at any finite separation is still a secant: its gradient is close to the tangent's, not equal to it. For y = x^2 the limit works out to 2x.",
+        "opening": false
+      }
+    }
+  ]
+}
