@@ -59,15 +59,32 @@ def check_learner_id(learner_id: str) -> str:
 
 #: Bumped when a projection changes shape, so ``_backfill`` runs once and then
 #: stops. Stored in ``PRAGMA user_version``, which SQLite keeps for exactly this.
-_SCHEMA_VERSION = 1
+_SCHEMA_VERSION = 2
 
 _INSERT_TURN = (
-    "INSERT INTO turn (session_id, item_id, concept_id, move, level, targets, "
-    "text, mastery, prior_failures) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO turn (session_id, version, item_id, concept_id, move, level, "
+    "targets, text, mastery, prior_failures) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+)
+
+_INSERT_UTTERANCE = (
+    "INSERT INTO utterance (session_id, version, kind, item_id, concept_id, text) "
+    "VALUES (?, ?, ?, ?, ?, ?)"
 )
 
 
-def _turn_row(session_id: int, evidence: Mapping[str, Any]) -> tuple:
+def _utterance_row(session_id: int, version: int, evidence: Mapping[str, Any]) -> tuple:
+    """One ``annotation`` record carrying a reflection, flattened into columns."""
+    return (
+        session_id,
+        version,
+        str(evidence.get("kind") or "reflection"),
+        str(evidence.get("item_id") or ""),
+        str(evidence.get("concept_id") or ""),
+        str(evidence.get("reflection") or ""),
+    )
+
+
+def _turn_row(session_id: int, version: int, evidence: Mapping[str, Any]) -> tuple:
     """One ``tutor`` audit record, flattened into columns.
 
     Tolerant of missing keys, because it also runs over rows written before
@@ -77,6 +94,7 @@ def _turn_row(session_id: int, evidence: Mapping[str, Any]) -> tuple:
     """
     return (
         session_id,
+        version,
         str(evidence.get("item_id") or ""),
         str(evidence.get("concept_id") or ""),
         str(evidence.get("move") or ""),
@@ -130,12 +148,30 @@ class LearnerStore:
                 self._db.execute(f"ALTER TABLE event ADD COLUMN {column} TEXT")
             except sqlite3.OperationalError:
                 pass
+        for table in ("turn", "utterance"):
+            try:
+                self._db.execute(f"ALTER TABLE {table} ADD COLUMN version INTEGER")
+            except sqlite3.OperationalError:
+                pass
         # ⚠️ Here rather than in schema.sql. That file is executed in full on
         # every open and *before* this runs, so an index on a column this
         # migration has yet to add raises on any store an earlier schema
         # created — which is every store holding a sitting worth keeping.
         self._db.execute(
             "CREATE INDEX IF NOT EXISTS event_by_concept ON event(concept_id)"
+        )
+        # Ordering a conversation means ordering turns against utterances, which
+        # is what `version` is for. Dropped and recreated rather than
+        # `IF NOT EXISTS`: an earlier schema created `turn_by_session` over
+        # `session_id` alone, and that name would keep the narrower index
+        # forever.
+        self._db.execute("DROP INDEX IF EXISTS turn_by_session")
+        self._db.execute(
+            "CREATE INDEX turn_by_session ON turn(session_id, version)"
+        )
+        self._db.execute(
+            "CREATE INDEX IF NOT EXISTS utterance_by_session "
+            "ON utterance(session_id, version)"
         )
         self._db.commit()
         self._backfill()
@@ -174,14 +210,39 @@ class LearnerStore:
                 (evidence.get("concept_id"), evidence.get("item_id"), row["event_id"]),
             )
 
+        # Both projections are rebuilt from the log, not only `turn`.
+        #
+        # ⚠️ `utterance` needed it. It held 194 rows against 140 the audit log
+        # accounted for — 54 left over from before `close_session` projected per
+        # sitting rather than from the resumed state, which carries everything a
+        # learner has ever said. They are real utterances filed against sittings
+        # they were not made in, and `LearnerStore.utterances` is what recall is
+        # meant to read across sittings, so they would have come back as history
+        # that did not happen.
+        #
+        # Nothing is lost by rebuilding: checked before doing it, every utterance
+        # in the table is in the log and none exists only in the table.
         self._db.execute("DELETE FROM turn")
         self._db.executemany(
             _INSERT_TURN,
             [
-                _turn_row(row["session_id"], json.loads(row["evidence"]))
+                _turn_row(row["session_id"], row["version"], json.loads(row["evidence"]))
                 for row in self._db.execute(
-                    "SELECT session_id, evidence FROM event WHERE cause = 'tutor'"
+                    "SELECT session_id, version, evidence FROM event "
+                    "WHERE cause = 'tutor'"
                 ).fetchall()
+            ],
+        )
+        self._db.execute("DELETE FROM utterance")
+        self._db.executemany(
+            _INSERT_UTTERANCE,
+            [
+                _utterance_row(row["session_id"], row["version"], evidence)
+                for row in self._db.execute(
+                    "SELECT session_id, version, evidence FROM event "
+                    "WHERE cause = 'annotation'"
+                ).fetchall()
+                if "reflection" in (evidence := json.loads(row["evidence"]))
             ],
         )
         self._db.execute(f"PRAGMA user_version = {_SCHEMA_VERSION}")
@@ -327,7 +388,7 @@ class LearnerStore:
         self._db.executemany(
             _INSERT_TURN,
             [
-                _turn_row(session_id, r.evidence)
+                _turn_row(session_id, r.version, r.evidence)
                 for r in audit_log
                 if r.cause == "tutor"
             ],
@@ -345,16 +406,9 @@ class LearnerStore:
         # projection needs, and it is the same source the event rows above are
         # built from. Where the two disagreed, this one was the odd one out.
         self._db.executemany(
-            "INSERT INTO utterance (session_id, kind, item_id, concept_id, text) "
-            "VALUES (?, ?, ?, ?, ?)",
+            _INSERT_UTTERANCE,
             [
-                (
-                    session_id,
-                    r.evidence["kind"],
-                    r.evidence["item_id"],
-                    r.evidence["concept_id"],
-                    r.evidence["reflection"],
-                )
+                _utterance_row(session_id, r.version, r.evidence)
                 for r in audit_log
                 if r.cause == "annotation" and "reflection" in r.evidence
             ],
@@ -459,7 +513,7 @@ class LearnerStore:
         if concept_id is not None:
             sql += " AND u.concept_id = ?"
             params.append(concept_id)
-        return list(self._db.execute(sql + " ORDER BY ss.seq, u.utterance_id", params))
+        return list(self._db.execute(sql + " ORDER BY ss.seq, u.version, u.utterance_id", params))
 
     def turns(
         self, learner_id: str, arm: str, concept_id: str | None = None,
@@ -488,7 +542,7 @@ class LearnerStore:
         if move is not None:
             sql += " AND t.move = ?"
             params.append(move)
-        return list(self._db.execute(sql + " ORDER BY ss.seq, t.turn_id", params))
+        return list(self._db.execute(sql + " ORDER BY ss.seq, t.version, t.turn_id", params))
 
     def audit(self, learner_id: str, arm: str) -> list[AuditRecord]:
         """This learner's whole history, back as audit records.

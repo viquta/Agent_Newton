@@ -722,3 +722,191 @@ class TestTheBackfillRunsOnceOverHistoryThatCannotBeRegenerated:
         store = LearnerStore(tmp_path / "fresh.db")
         assert store._db.execute("PRAGMA user_version").fetchone()[0] >= 1
         store.close()
+
+
+class TestAConversationCanBeReconstructedFromTheProjections:
+    """⚠️ `turn` and `utterance` are two tables, and a lesson is one conversation.
+
+    Their own ids order each table internally and say nothing across the pair,
+    so reconstructing who spoke when meant reading `event` and un-JSONing it —
+    the thing these tables exist to avoid. Zipping them by id *assumes* an
+    ordering rather than recovering one; it happened to read correctly, which is
+    worse than failing.
+
+    `version` is the ordering. Every mutation bumps it, so it is unique per
+    record and monotonic across a learner's whole history.
+    """
+
+    def _sat(self, store: LearnerStore, *records) -> None:
+        store.ensure_learner("L1", "human", "calculus")
+        session_id = store.open_session(
+            learner_id="L1", arm="coupled", config_hash="h"
+        )
+        store.close_session(
+            session_id,
+            state=LearnerState(learner_id="L1", seed=1),
+            audit_log=list(records),
+        )
+
+    def _tutor(self, version: int, text: str) -> AuditRecord:
+        return AuditRecord(
+            version=version, cause="tutor", summary="explain",
+            evidence={
+                "move": "explain", "level": "socratic", "text": text,
+                "item_id": "", "concept_id": "limit_concept", "targets": None,
+            },
+        )
+
+    def _said(self, version: int, text: str) -> AuditRecord:
+        return AuditRecord(
+            version=version, cause="annotation", summary="said",
+            evidence={
+                "reflection": text, "kind": "lesson",
+                "item_id": "", "concept_id": "limit_concept",
+            },
+        )
+
+    def test_both_projections_carry_the_version(self, store) -> None:
+        self._sat(store, self._tutor(1, "what do you think?"), self._said(2, "a ratio"))
+        assert store.turns("L1", "coupled")[0]["version"] == 1
+        assert store.utterances("L1", "coupled")[0]["version"] == 2
+
+    def test_the_two_interleave_correctly_by_version(self, store) -> None:
+        self._sat(
+            store,
+            self._tutor(1, "first"),
+            self._said(2, "reply one"),
+            self._tutor(3, "second"),
+            self._said(4, "reply two"),
+        )
+        rows = [(r["version"], r["text"]) for r in store.turns("L1", "coupled")]
+        rows += [(r["version"], r["text"]) for r in store.utterances("L1", "coupled")]
+        assert [t for _, t in sorted(rows)] == [
+            "first", "reply one", "second", "reply two",
+        ]
+
+    def test_ids_alone_would_not_have_told_you(self, store) -> None:
+        """Which is the whole point, and why this is not a cosmetic column.
+
+        Both tables start their autoincrement at 1, so the first turn and the
+        first utterance are both id 1 — indistinguishable in order, and the
+        obvious join produces a plausible-looking wrong answer rather than an
+        error.
+        """
+        self._sat(store, self._tutor(1, "first"), self._said(2, "reply one"))
+        assert store.turns("L1", "coupled")[0]["turn_id"] == 1
+        assert store.utterances("L1", "coupled")[0]["utterance_id"] == 1
+
+
+class TestTheUtteranceProjectionAgreesWithItsSource:
+    """⚠️ It did not, and `LearnerStore.utterances` is what recall reads.
+
+    The real store held 194 rows against 140 the audit log accounted for — 54
+    left over from before `close_session` projected per sitting rather than from
+    the resumed state, which carries everything a learner has ever said. Real
+    utterances, filed against sittings they were not made in, and they would
+    have come back as history that did not happen.
+
+    `turn` never had the problem because the previous migration rebuilt it. This
+    one rebuilds both.
+    """
+
+    def _legacy_store(self, tmp_path) -> Path:
+        """A store shaped the way one written before this migration would be."""
+        path = tmp_path / "legacy.db"
+        db = sqlite3.connect(path)
+        db.executescript(
+            """
+            CREATE TABLE learner (learner_id TEXT PRIMARY KEY, kind TEXT,
+                domain TEXT, created_at TEXT);
+            CREATE TABLE session (session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                learner_id TEXT, arm TEXT, seq INTEGER, elapsed_days REAL
+                DEFAULT 0, run_id TEXT, config_hash TEXT, decay_half_life_days
+                REAL, started_at TEXT, ended_at TEXT, stop_reason TEXT,
+                UNIQUE (learner_id, arm, seq));
+            CREATE TABLE state (session_id INTEGER PRIMARY KEY,
+                learner_state TEXT, planner_state TEXT);
+            CREATE TABLE event (event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER, version INTEGER, cause TEXT, summary TEXT,
+                evidence TEXT);
+            CREATE TABLE utterance (utterance_id INTEGER PRIMARY KEY
+                AUTOINCREMENT, session_id INTEGER, kind TEXT, item_id TEXT,
+                concept_id TEXT, text TEXT);
+            CREATE TABLE profile (session_id INTEGER PRIMARY KEY, firing TEXT,
+                initial TEXT);
+            """
+        )
+        db.execute("INSERT INTO learner VALUES ('L1','human','calculus','then')")
+        db.execute(
+            "INSERT INTO session (learner_id, arm, seq, config_hash, started_at) "
+            "VALUES ('L1','coupled',0,'h','then')"
+        )
+        db.execute(
+            "INSERT INTO event (session_id, version, cause, summary, evidence) "
+            "VALUES (1, 5, 'annotation', 'said', ?)",
+            (json.dumps({"reflection": "the real one", "kind": "lesson",
+                         "item_id": "", "concept_id": "limit_concept"}),),
+        )
+        # The stale shape: the state-projected copies, filed here but never said
+        # in this sitting.
+        for ghost in ("said in a sitting long past", "and another"):
+            db.execute(
+                "INSERT INTO utterance (session_id, kind, item_id, concept_id, text) "
+                "VALUES (1,'lesson','','limit_concept',?)",
+                (ghost,),
+            )
+        db.execute(
+            "INSERT INTO utterance (session_id, kind, item_id, concept_id, text) "
+            "VALUES (1,'lesson','','limit_concept','the real one')"
+        )
+        db.commit()
+        db.close()
+        return path
+
+    def test_the_rows_the_log_does_not_support_are_dropped(self, tmp_path) -> None:
+        store = LearnerStore(self._legacy_store(tmp_path))
+        rows = store.utterances("L1", "coupled")
+        assert [r["text"] for r in rows] == ["the real one"]
+        store.close()
+
+    def test_and_the_survivor_gains_its_version(self, tmp_path) -> None:
+        store = LearnerStore(self._legacy_store(tmp_path))
+        assert store.utterances("L1", "coupled")[0]["version"] == 5
+        store.close()
+
+    def test_rebuilding_loses_nothing_the_log_still_holds(self, tmp_path) -> None:
+        # The check that made this safe to do at all: every utterance in the
+        # table was in the log, and none existed only in the table.
+        store = LearnerStore(self._legacy_store(tmp_path))
+        from_log = {
+            json.loads(r["evidence"])["reflection"]
+            for r in store._db.execute(
+                "SELECT evidence FROM event WHERE cause='annotation'"
+            )
+        }
+        assert {r["text"] for r in store.utterances("L1", "coupled")} == from_log
+        store.close()
+
+    def test_reopening_does_not_rebuild_again(self, tmp_path) -> None:
+        path = self._legacy_store(tmp_path)
+        for _ in range(3):
+            store = LearnerStore(path)
+            assert len(store.utterances("L1", "coupled")) == 1
+            store.close()
+
+    def test_an_index_on_a_migrated_column_is_not_in_schema_sql(self) -> None:
+        """⚠️ The second time this bit, so it is asserted rather than remembered.
+
+        `schema.sql` is executed in full on every open and *before* the
+        migration, so an index naming a column the migration has yet to add
+        raises on any store an earlier schema created — which is every store
+        holding a sitting worth keeping. `event_by_concept` was moved for the
+        same reason and this one repeated it.
+        """
+        schema = Path("src/agent_newton/store/schema.sql").read_text()
+        for line in schema.splitlines():
+            if line.strip().startswith("CREATE INDEX"):
+                assert "version" not in line, (
+                    f"{line.strip()} indexes a migrated column from schema.sql; "
+                    f"it belongs in _migrate"
+                )
