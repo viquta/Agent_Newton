@@ -12,6 +12,7 @@ computed from the shared state, so it fires at the same rate in both arms.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Sequence
 
 import pytest
@@ -1042,3 +1043,244 @@ class TestACohortCannotBeTalkedTo:
             t for t in _turns_in(session.board) if t["concept_id"] == "power_rule"
         ]
         assert len(on_power_rule) == 2, "an opening and a summary, and nothing else"
+
+
+class TestReadingTheLearnersOwnWords:
+    """⚠️ The trigger a sitting asked for, by writing it down and being ignored.
+
+    Someone wrote *"I factored the denominator with part of the nominator
+    (x^2 - 9) = (x+3)(x-3). But I don't understand what a limit is"* in the
+    working channel, and then still had to type ``:why`` — for something the
+    system was already holding, in the channel that already captures it.
+    """
+
+    class Reads:
+        """A detector that fires on whatever substring it was given."""
+
+        def __init__(self, needle: str = "don't understand") -> None:
+            self._needle = needle
+            self.checked: list[str] = []
+
+        def confused(self, concept_id: str, text: str) -> str | None:
+            self.checked.append(text)
+            return text if self._needle in text else None
+
+    def _config_detecting(self) -> Config:
+        config = _config()
+        config.teaching.detect_confusion = True
+        return config
+
+    def test_saying_so_in_the_working_channel_is_enough(self, calculus) -> None:
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.confusion = self.Reads()
+        session._note_if_confused(
+            "limits_of_sequences",
+            "I factored the denominator. But I don't understand what a limit is.",
+        )
+        assert session.board.take_lesson_request() == ("limits_of_sequences", True)
+
+    def test_an_ordinary_wrong_answer_is_not_confusion(self, calculus) -> None:
+        # The distinction the whole trigger rests on: someone attempting the
+        # work and getting it wrong has met the concept and slipped, and those
+        # need different help.
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.confusion = self.Reads()
+        session._note_if_confused("power_rule", "I brought the power down but kept it")
+        assert session.board.take_lesson_request() is None
+
+    def test_it_leads_to_a_lesson_without_waiting_for_three_errors(
+        self, calculus
+    ) -> None:
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.confusion = self.Reads()
+        assert not session._offer_lesson("power_rule"), "nothing owed yet"
+        session._note_if_confused("power_rule", "I don't understand any of this")
+        assert session._offer_lesson("power_rule")
+
+    # -- what separates it from asking -------------------------------------
+
+    def test_an_inference_still_stops_at_the_ceiling(self, calculus) -> None:
+        """⚠️ And an explicit ask does not, which is the whole distinction.
+
+        A person asking again has decided they want it again. A detector firing
+        repeatedly would re-teach the same three accounts round and round, which
+        is the repetition the ceiling was added to stop — arriving through a
+        door that bypasses it.
+        """
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.confusion = self.Reads()
+        for _ in range(len(TeachingStyle)):
+            session._note_if_confused("power_rule", "I don't understand")
+            assert session._offer_lesson("power_rule")
+        session._note_if_confused("power_rule", "I don't understand")
+        assert not session._offer_lesson("power_rule"), (
+            "an inference past the ceiling would cycle the same accounts again"
+        )
+
+    def test_but_asking_outright_is_still_answered(self, calculus) -> None:
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.confusion = self.Reads()
+        for _ in range(len(TeachingStyle)):
+            session._note_if_confused("power_rule", "I don't understand")
+            session._offer_lesson("power_rule")
+        session.board.request_lesson("power_rule")
+        assert session._offer_lesson("power_rule")
+
+    def test_the_two_are_told_apart_on_the_record(self, calculus) -> None:
+        # Counted separately, so a detector firing on ordinary mistakes shows up
+        # as a rate rather than as mysterious teaching.
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.board.request_lesson("power_rule")
+        session.board.request_lesson("chain_rule", inferred=True)
+        by_concept = {
+            r.evidence["concept_id"]: r.evidence.get("inferred")
+            for r in session.board.audit_log
+            if r.evidence.get("asked_for_a_lesson")
+        }
+        assert by_concept == {"power_rule": False, "chain_rule": True}
+
+    def test_the_evidence_is_recorded_not_just_the_verdict(self, calculus) -> None:
+        # A trigger whose evidence is a boolean cannot be argued with after the
+        # fact, which is why the detector returns the words rather than True.
+        detector = self.Reads()
+        assert detector.confused("limits", "I don't understand limits") is not None
+        assert detector.confused("limits", "the answer is 6") is None
+
+    # -- the guards --------------------------------------------------------
+
+    def test_off_reads_nothing_at_all(self, calculus) -> None:
+        # Not merely "detects nothing": the detector is never consulted, so a
+        # run that does not want this makes no extra model call.
+        detector = self.Reads()
+        session = build_session(
+            "L_off", 1, calculus, _config(), learner=AlwaysWrong()
+        )
+        session.confusion = detector
+        session._note_if_confused("power_rule", "I don't understand any of this")
+        assert detector.checked == []
+        assert session.board.take_lesson_request() is None
+
+    def test_the_model_free_detector_says_no_to_everything(self) -> None:
+        from agent_newton.core.agents.tutor import NoConfusion
+
+        assert NoConfusion().confused("limits", "I have no idea what this is") is None
+
+    def test_a_model_free_run_is_refused_rather_than_looking_like_it_worked(
+        self,
+    ) -> None:
+        """⚠️ The failure this validator exists to prevent.
+
+        Left unchecked the run would look fine: the detector would be the
+        model-free one, it would answer no to everything, nothing would ever
+        trigger, and the manifest would record the feature as on. Every number
+        would be the kind that looks plausible and means nothing — the same
+        shape the human-diagnostic check already guards.
+        """
+        with pytest.raises(ValueError, match="detect_confusion"):
+            Config.model_validate(
+                {
+                    "teaching": {"detect_confusion": True},
+                    "agents": {"tutor": {"impl": "template"}},
+                }
+            )
+
+    def test_a_cohort_has_nothing_to_read_even_if_it_were_on(self, calculus) -> None:
+        # The structural half. A simulated learner writes nothing in either
+        # prose channel, so the text this reads is empty by construction rather
+        # than by configuration.
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import SimulatedLearner, sample_profile
+
+        profile = sample_profile("L1", 1, calculus.misconceptions, SimulatorConfig())
+        learner = SimulatedLearner(profile, calculus, SimulatorConfig())
+        item = calculus.items.for_concept("power_rule", "practice")[0]
+        assert learner.show_working(item, "wrong", required=True) is None
+        assert learner.reflect(item, "which part are you unsure of?") is None
+
+
+class TestTheConfusionDetectorAgreesWithHandLabels:
+    """Calibration, on the same terms as the tutor judge's.
+
+    A detector nobody measured is worse than none, because it looks like one.
+    The set is balanced 4/4, so answering "confused" to everything scores 50%
+    rather than well, and the `false` half is the hard one: hedging, uncertainty
+    about an answer, and "this was confusing" all describe someone who is doing
+    the work.
+
+    Skipped where no model is reachable — it is a measurement of a model, and a
+    version of it that ran without one would be measuring nothing.
+    """
+
+    GOLD = Path("tests/fixtures/gold/calculus_confusion_cases.yaml")
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def cases(cls):
+        import yaml
+
+        return yaml.safe_load(cls.GOLD.read_text())["cases"]
+
+    def test_the_set_is_balanced(self, cases) -> None:
+        # Or a detector that always says yes would score well by saying nothing.
+        confused = sum(1 for case in cases if case["confused"])
+        assert confused == len(cases) - confused
+
+    def test_every_case_says_where_it_came_from(self, cases) -> None:
+        # The catalogue's convention: content stays traceable rather than
+        # accumulating invented examples.
+        for case in cases:
+            assert case["source"].strip()
+
+    def test_saying_confused_to_everything_scores_half(self, cases) -> None:
+        # The floor the real figure has to beat, stated rather than assumed.
+        always = sum(1 for case in cases if case["confused"] is True)
+        assert always / len(cases) == 0.5
+
+    def test_the_model_free_detector_scores_the_other_half(self, cases) -> None:
+        from agent_newton.core.agents.tutor import NoConfusion
+
+        detector = NoConfusion()
+        agreed = sum(
+            1
+            for case in cases
+            if (detector.confused(case["concept_id"], case["text"]) is not None)
+            == case["confused"]
+        )
+        assert agreed / len(cases) == 0.5
+
+    def test_it_is_calibrated_against_the_hand_labels(self, cases) -> None:
+        """The real figure. Needs a model, so it skips without one."""
+        import urllib.error
+        import urllib.request
+
+        try:
+            urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2)
+        except (urllib.error.URLError, OSError):
+            pytest.skip("no model reachable; this measures one")
+
+        from agent_newton.config import ModelSpec
+        from agent_newton.core.agents.llm import LLMConfusionDetector
+        from agent_newton.llm.factory import build_provider
+
+        detector = LLMConfusionDetector(
+            build_provider(ModelSpec(model="gemma4:12b", think=False), Path(".cache/llm"))
+        )
+        wrong = [
+            case
+            for case in cases
+            if (detector.confused(case["concept_id"], case["text"]) is not None)
+            != case["confused"]
+        ]
+        assert not wrong, "disagreed on: " + "; ".join(c["text"][:50] for c in wrong)

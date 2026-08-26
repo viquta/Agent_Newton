@@ -1,0 +1,69 @@
+# Hand-labelled: does what the learner wrote say they do not know what the
+# concept IS, as opposed to showing a mistake in applying it?
+#
+# Balanced 4/4 on purpose. A detector that answers "confused" to everything must
+# score 50% here, not well — the same reason the tutor judge's set is balanced.
+#
+# The distinction is the whole point of the trigger and it is not the obvious
+# one. Someone who describes a method, even a wrong method, has met the concept
+# and slipped; someone who says the idea is missing has not met it, and no
+# amount of correcting the slip will reach them. The hard half is `false`:
+# hedging, uncertainty about an answer, and "this was confusing" all describe
+# someone who is doing the work.
+#
+# Run against a model with:
+#   uv run pytest tests/component/test_lessons.py -k calibrat -q
+# which skips when no model is reachable.
+cases:
+  - concept_id: limits_of_sequences
+    text: >-
+      I factored the denominator with part of the nominator (x^2 - 9) =
+      (x+3)(x-3). But I don't understand what a limit is.
+    confused: true
+    source: >-
+      Written by a person using this system, 2026-08-25. It is the case that
+      produced this trigger: they wrote it in the working channel and still had
+      to ask for a lesson by hand.
+
+  - concept_id: product_rule
+    text: idk what any of this means
+    confused: true
+    source: "The plainest form of it, named in the ideas note."
+
+  - concept_id: chain_rule
+    text: what even is a derivative
+    confused: true
+    source: "Wording written for this set."
+
+  - concept_id: limit_concept
+    text: I have no idea what P and Q are supposed to be here
+    confused: true
+    source: >-
+      A sitting reported exactly this about an item that named P and Q without
+      introducing either. The item was rewritten; the sentence is kept because
+      it is what not-knowing-the-idea sounds like.
+
+  - concept_id: power_rule
+    text: I brought the 5 down but I left the exponent as 5
+    confused: false
+    source: "A described method, wrongly applied. The learner has met the rule."
+
+  - concept_id: chain_rule
+    text: I differentiated the outside and forgot the inside
+    confused: false
+    source: "The catalogue's own chain-rule error, described by the learner."
+
+  - concept_id: antiderivative
+    text: I think I add one to the power then divide, not totally sure
+    confused: false
+    source: >-
+      ⚠️ The false positive the first prompt produced. It fired on "not totally
+      sure" and would have taught someone whose method is right. Hedging is not
+      not-knowing, and this case is why the instruction says so explicitly.
+
+  - concept_id: quotient_rule
+    text: this one was confusing but I got there in the end
+    confused: false
+    source: >-
+      Says the word and means the opposite. A detector matching on "confusing"
+      would fail here, which is why there is no keyword list.

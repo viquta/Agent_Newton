@@ -147,6 +147,33 @@ class LessonReply(BaseModel):
         return text
 
 
+class ConfusionReply(BaseModel):
+    """Whether a learner's own words say they do not understand the concept.
+
+    Deliberately narrow, and the narrowness is the point. It is **not** asked
+    whether the learner is struggling, whether they are frustrated, or whether
+    they need help — those are judgements about a person. It is asked one
+    question about a piece of text: does it say the concept itself is not
+    understood, as opposed to showing a mistake in applying it?
+
+    Those are different things and the distinction is what makes the trigger
+    worth having. Someone who differentiates wrongly has met the concept and
+    slipped; someone who writes "I don't understand what a limit is" has not met
+    it, and no amount of correcting the slip will help them.
+    """
+
+    confused: bool = Field(
+        description=(
+            "True only if the student says they do not know what the concept "
+            "is or means. False if they are attempting it and getting it wrong."
+        )
+    )
+    quote: str = Field(
+        default="",
+        description="The words that say so, copied exactly. Empty if false.",
+    )
+
+
 def schemas_for(domain: Domain) -> dict[str, Any]:
     return {
         "diagnosis": diagnosis_schema(domain.name, tuple(domain.misconceptions.ids())),

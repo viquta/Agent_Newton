@@ -431,12 +431,22 @@ class TestTheTeachingLayerStaysOutOfExperiments:
                 f"been talked to"
             )
 
+    def test_no_experiment_config_reads_the_learners_words(self) -> None:
+        for path in self._experiment_configs():
+            config = Config.from_yaml(path)
+            assert not config.teaching.detect_confusion, (
+                f"{path.name} reads the learner's prose for confusion; no "
+                f"cohort has ever had that, and a simulated learner writes no "
+                f"prose for it to read"
+            )
+
     def test_the_default_is_off(self) -> None:
         # Zero rather than a plausible threshold: off is what every measured
         # result was produced under, and a default nobody chose is a policy
         # nobody chose.
         assert Config().teaching.explain_after == 0
         assert Config().teaching.lesson_turns == 0
+        assert not Config().teaching.detect_confusion
 
     def test_the_check_can_fail(self, tmp_path: Path) -> None:
         # A guard that cannot fail proves nothing. This is the shape the scan

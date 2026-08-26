@@ -70,7 +70,7 @@ class Blackboard:
         self._teaching_style: TeachingStyle | None = None
         #: A concept the learner asked to have explained, not yet answered.
         #: Session-scoped like the rest of what a person says in a sitting.
-        self._pending_lesson: str | None = None
+        self._pending_lesson: tuple[str, bool] | None = None
         #: Concepts answered correctly at least once in *this* sitting. Used to
         #: end a review: reopening a concept is a check on the estimate that
         #: closed it, and one demonstration is the check. Without this a
@@ -587,8 +587,18 @@ class Blackboard:
         )
         return self._requested
 
-    def request_lesson(self, concept_id: str) -> None:
+    def request_lesson(self, concept_id: str, *, inferred: bool = False) -> None:
         """The learner asked to have this concept explained.
+
+        ``inferred`` says the learner did not ask in so many words — the system
+        read it out of something they wrote. ⚠️ The two are kept apart because
+        they earn different things. Both skip the difficulty threshold, since
+        "I do not know what this is" is better evidence than three wrong answers
+        either way. Only an explicit ask also skips the account ceiling: a
+        person asking again has decided they want it again, while an inference
+        firing repeatedly would re-teach the same three accounts round and round
+        — which is the repetition the ceiling was added to stop, arriving
+        through a door that bypasses it.
 
         Learner *input*, like ``record_request`` and the teaching style — a
         thing a person said, not an inference about what they know. What is done
@@ -601,21 +611,28 @@ class Blackboard:
         correctly, because a learner saying "I do not know what this is" is
         better evidence of that than three wrong answers are.
         """
-        self._pending_lesson = concept_id
+        self._pending_lesson = (concept_id, inferred)
         self._bump(
             "annotation",
-            f"the learner asked what {concept_id} is",
+            f"the learner said they do not understand {concept_id}"
+            if inferred
+            else f"the learner asked what {concept_id} is",
             concept_id=concept_id,
             asked_for_a_lesson=True,
+            # Counted separately so the detector's rate is visible. A rising
+            # one means it is firing on ordinary mistakes, which is a fact about
+            # the detector rather than about the learner — the same reading
+            # `UNPARSEABLE` gets.
+            inferred=inferred,
         )
 
-    def take_lesson_request(self) -> str | None:
-        """The concept asked about, and clear it. None if nothing was asked.
+    def take_lesson_request(self) -> tuple[str, bool] | None:
+        """``(concept, whether it was inferred)``, and clear it.
 
-        Taken rather than read, because a request is answered once. Left
-        standing it would re-teach the same concept every time the loop came
-        round, which is the failure the throttle in ``should_explain`` exists to
-        prevent arriving through the other door.
+        None when nothing was asked. Taken rather than read, because a request
+        is answered once. Left standing it would re-teach the same concept every
+        time the loop came round, which is the failure the throttle in
+        ``should_explain`` exists to prevent arriving through the other door.
         """
         asked, self._pending_lesson = self._pending_lesson, None
         return asked

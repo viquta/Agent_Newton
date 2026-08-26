@@ -28,7 +28,11 @@ from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
 from agent_newton.core.state import route
 from agent_newton.core.state.schema import Emphasis, Plan
 from agent_newton.core.agents.schemas import UNKNOWN, diagnosis_schema, plan_schema
-from agent_newton.core.agents.schemas import HintReply, LessonReply
+from agent_newton.core.agents.schemas import (
+    ConfusionReply,
+    HintReply,
+    LessonReply,
+)
 from agent_newton.core.pedagogy import (
     HintLevel,
     TeachingStyle,
@@ -516,6 +520,83 @@ _EXPLAIN_SYSTEM = (
     "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
     "Never use LaTeX or backslash commands."
 )
+
+
+_CONFUSION_SYSTEM = (
+    "You are reading one thing a mathematics student wrote, to answer a single "
+    "question about it: do they say they do not know what the concept IS?\n\n"
+    "True means they are telling you the idea itself is missing — they do not "
+    "know what the thing is or what it means, so there is nothing for them to "
+    "apply.\n"
+    "False means anything else, and this is the harder half:\n"
+    "  - attempting the work and getting it wrong -> false\n"
+    "  - using a wrong method confidently -> false\n"
+    "  - not being sure their answer is right -> false\n"
+    "  - hedging: 'I think', 'not totally sure', 'maybe' -> false\n"
+    "  - saying a step was hard, or that they found it confusing -> false\n\n"
+    "Someone who describes a method, even a wrong one, has met the concept. "
+    "Being unsure of an answer is not the same as not knowing what the question "
+    "is about, and a student who says both is doing the work.\n"
+    "If it is true, copy the words that say so, exactly."
+)
+
+
+class LLMConfusionDetector:
+    """Asks a model whether the learner said they do not understand the concept.
+
+    Narrow on purpose. It decides nothing instructional: whether a lesson
+    happens, which account it takes and when it stops are all still rules. What
+    it produces is one fact about one string, written to the board like any
+    other observation.
+
+    ``detections`` and ``checks`` are reported per run. That is not
+    bookkeeping — a detector that fires on ordinary mistakes would teach a
+    learner who was doing fine, and the only thing that would show it is the
+    rate. It is the same reading `UNPARSEABLE` gets: a rising number is a fact
+    about the instrument, not about the learner.
+    """
+
+    def __init__(self, provider: LLMProvider) -> None:
+        self._provider = provider
+        self.checks = 0
+        self.detections = 0
+
+    @property
+    def rate(self) -> float:
+        return self.detections / self.checks if self.checks else 0.0
+
+    def confused(self, concept_id: str, text: str) -> str | None:
+        if not text.strip():
+            return None
+        self.checks += 1
+        prompt = (
+            f"The student is working on: {concept_id}\n"
+            f"They wrote:\n{text}\n\n"
+            f"Do they say they do not know what this concept is?"
+        )
+        try:
+            reply = complete(
+                self._provider, prompt, ConfusionReply, system=_CONFUSION_SYSTEM
+            )
+        except ProviderError:
+            # Not knowing is not the same as "no", but it has to become one
+            # somewhere: a sitting must survive a dead backend, and the fallback
+            # here costs a lesson that would have been offered rather than
+            # giving one that should not have been. The failure is logged so the
+            # rate stays honest.
+            log.warning(
+                "confusion detector produced nothing usable for %s",
+                concept_id,
+                extra={"event": "confusion.failed", "concept_id": concept_id},
+            )
+            return None
+        if not reply.confused:
+            return None
+        self.detections += 1
+        # The quote, when there is one, so the audit log records *what* was read
+        # that way. Falling back to the text itself rather than to True keeps
+        # the evidence readable either way.
+        return reply.quote.strip() or text.strip()
 
 
 class LLMPlanner:

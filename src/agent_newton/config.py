@@ -445,6 +445,24 @@ class TeachingConfig(BaseModel):
     #: conversation at its first turn whatever this says. The second is the
     #: guarantee worth having: an inability rather than a setting.
     lesson_turns: int = Field(default=0, ge=0)
+    #: Whether the learner's own words are read for "I do not know what this is".
+    #:
+    #: Off by default and off for every cohort. The trigger a sitting asked for:
+    #: someone wrote *"I factored the denominator ... But I don't understand
+    #: what a limit is"* in the working channel and still had to type `:why`,
+    #: for something the system was already holding the evidence for.
+    #:
+    #: ⚠️ Requires a model-backed tutor, and that is the structural guard rather
+    #: than a limitation. A model-free run has no way to tell "I do not
+    #: understand this" from a wrong answer, and a keyword list would be a
+    #: detector nobody measured — which is worse than none, because it would
+    #: look like one. Cohorts run `tutor.impl: template`, so the detector cannot
+    #: exist there even if this were set.
+    #:
+    #: Doubly inert besides: a simulated learner writes nothing in either the
+    #: working or the reflection channel, so the text this reads is empty by
+    #: construction.
+    detect_confusion: bool = False
 
 
 class DecayConfig(BaseModel):
@@ -680,6 +698,25 @@ class Config(BaseModel):
                 f"zpd.theta_lower ({self.zpd.theta_lower}): a seeded concept at "
                 f"or above it would unlock its dependants, so a wrong pre-test "
                 f"answer would open the material that depends on it"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_confusion_needs_a_model(self) -> Config:
+        """Reading a learner's words for confusion needs something that can read.
+
+        Left unchecked this would look like it ran: the detector would be the
+        model-free one, it would answer "no" to everything, no lesson would ever
+        be triggered that way, and the run would report the feature as on. Every
+        number would be the kind that looks plausible and means nothing — the
+        same failure shape the human-diagnostic check exists to prevent.
+        """
+        if self.teaching.detect_confusion and self.agents.tutor.impl != "llm":
+            raise ValueError(
+                f"teaching.detect_confusion needs agents.tutor.impl='llm'. A "
+                f"'{self.agents.tutor.impl}' tutor has no model to read the "
+                f"learner's words with, so nothing would ever be detected and "
+                f"the run would look like the feature was working."
             )
         return self
 

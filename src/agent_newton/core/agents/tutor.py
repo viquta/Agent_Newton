@@ -26,6 +26,23 @@ from agent_newton.config import ScaffoldingPolicy, ZPDConfig
 from agent_newton.domains.base import ConceptResource, Domain, Item
 
 
+class NoConfusion:
+    """Reads nothing into anything. The model-free detector, and the default.
+
+    Every cohort runs this, and it is what makes the trigger cost nothing there
+    rather than merely be switched off: no provider is built, no call is made,
+    and the answer is the same on every string.
+
+    It is also the honest floor. A run with no model has no way to tell "I do
+    not understand this" from a wrong answer, and inventing a keyword list would
+    be a detector nobody measured — worse than none, because it would look like
+    one.
+    """
+
+    def confused(self, concept_id: str, text: str) -> str | None:  # noqa: ARG002
+        return None
+
+
 class TemplateTutor:
     """Model-free tutor. Support level from the rules, target from the diagnosis."""
 

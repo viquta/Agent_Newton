@@ -143,6 +143,37 @@ class Diagnostic(Protocol):
 
 
 @runtime_checkable
+class ConfusionDetector(Protocol):
+    """Reads the learner's own words for "I do not know what this is".
+
+    Not an agent in the blackboard sense, and worth being clear about why. It
+    plans nothing, teaches nothing and holds no view of the learner model — it
+    classifies one string, the way the verifier classifies one answer. What it
+    produces is written to the board and acted on by the session, like every
+    other observation.
+
+    ⚠️ It is the one place a model is permitted to decide something, and the
+    reason is that it is **detection rather than instructional policy**. Whether
+    a lesson is given, which account it takes and when it stops are all still
+    rules; this only answers whether the learner said a thing. And it is counted,
+    so a detector that fires on ordinary mistakes shows up as a rate rather than
+    as mysterious teaching.
+
+    The model-free implementation says "no" to everything, which is what every
+    cohort runs.
+    """
+
+    def confused(self, concept_id: str, text: str) -> str | None:
+        """The words saying so, or ``None``.
+
+        Returning the quote rather than a bare ``True`` so the audit log can
+        record *what* was read that way. A trigger whose evidence is a boolean
+        cannot be argued with after the fact.
+        """
+        ...
+
+
+@runtime_checkable
 class Resumable(Protocol):
     """An agent whose own bookkeeping has to survive between sessions.
 

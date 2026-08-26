@@ -14,11 +14,12 @@ planner receives and therefore which planner can be used at all.
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Mapping, Protocol, runtime_checkable
 
 from agent_newton.config import Config
 from agent_newton.core.agents.base import (
+    ConfusionDetector,
     Diagnosis,
     Diagnostic,
     Hint,
@@ -28,7 +29,12 @@ from agent_newton.core.agents.base import (
     Tutor,
 )
 from agent_newton.core.agents.diagnostic import NoisedOracleDiagnostic, OracleDiagnostic
-from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
+from agent_newton.core.agents.llm import (
+    LLMConfusionDetector,
+    LLMDiagnostic,
+    LLMPlanner,
+    LLMTutor,
+)
 from agent_newton.core.agents.planner import (
     FixedOrderPlanner,
     FrontierPlanner,
@@ -37,7 +43,7 @@ from agent_newton.core.agents.planner import (
     ReverseOrderPlanner,
     ShuffledPlanner,
 )
-from agent_newton.core.agents.tutor import TemplateTutor
+from agent_newton.core.agents.tutor import NoConfusion, TemplateTutor
 from agent_newton.core.arbitration.policy import ArbitrationPolicy
 from agent_newton.core.state import bkt, route
 from agent_newton.llm.factory import build_provider
@@ -294,6 +300,9 @@ class Session:
     domain: Domain
     config: Config
     arbitration: ArbitrationPolicy
+    #: Reads the learner's own words for "I do not know what this is". The
+    #: model-free one says no to everything and is what every cohort runs.
+    confusion: ConfusionDetector = field(default_factory=NoConfusion)
     observer: SessionObserver | None = None
     #: Days since this learner's previous session. Drives decay; zero for a
     #: first sitting and for every single-session run, which is what keeps those
@@ -773,6 +782,47 @@ class Session:
         if self.observer is not None:
             self.observer.support_offered(item, support, resource)
 
+    def _confusions_about(self, concept_id: str) -> int:
+        """How often this learner has said they do not understand this concept.
+
+        Read from the audit log rather than counted as it happens, so it
+        describes the sitting rather than the detector's bookkeeping — the same
+        reason ``_cross_concept`` reads the error trace.
+        """
+        return sum(
+            1
+            for record in self.board.audit_log
+            if record.evidence.get("asked_for_a_lesson")
+            and record.evidence.get("inferred")
+            and record.evidence.get("concept_id") == concept_id
+        )
+
+    def _note_if_confused(self, concept_id: str, text: str) -> None:
+        """Read what the learner wrote, and act if it says they are lost.
+
+        The trigger a sitting asked for. Someone wrote *"I factored the
+        denominator with part of the nominator ... But I don't understand what a
+        limit is"* in the working channel and still had to type ``:why`` — for
+        something the system was already holding, in the channel that already
+        captures it.
+
+        It records a *request*, and nothing more. The decision to teach, which
+        account to give and when to stop are all still rules — this only says
+        the learner told us something, through the same path ``:why`` uses. What
+        separates the two is the ceiling: an explicit ask is honoured however
+        often it comes, and an inference is not, because a detector firing
+        repeatedly would cycle the same three accounts round and round.
+
+        ⚠️ Off unless the run says otherwise, and unreachable without a model.
+        The detector defaults to the one that reads nothing into anything.
+        """
+        if not self.config.teaching.detect_confusion:
+            return
+        quote = self.confusion.confused(concept_id, text)
+        if quote is None:
+            return
+        self.board.request_lesson(concept_id, inferred=True)
+
     def _offer_lesson(self, concept_id: str) -> bool:
         """Explain the concept, if the learner keeps getting it wrong.
 
@@ -804,11 +854,19 @@ class Session:
             # calling it: every cohort passes through here.
             return False
 
-        # An explicit ask bypasses the difficulty threshold and nothing else. A
-        # learner saying "I do not know what this is" is better evidence of that
-        # than three wrong answers are, and it is the trigger the ideas note
-        # lists first. Taken rather than read, so it is answered once.
-        asked = self.board.take_lesson_request() == concept_id
+        # A request bypasses the difficulty threshold. A learner saying "I do
+        # not know what this is" is better evidence of that than three wrong
+        # answers are, whether they said it in so many words or it was read out
+        # of their working. Taken rather than read, so it is answered once.
+        #
+        # ⚠️ Only an *explicit* ask also bypasses the account ceiling. A person
+        # asking again has decided they want it again; an inference firing
+        # repeatedly would re-teach the same three accounts round and round,
+        # which is the repetition the ceiling exists to stop.
+        pending = self.board.take_lesson_request()
+        asked = inferred = False
+        if pending is not None and pending[0] == concept_id:
+            asked, inferred = True, pending[1]
 
         resource = self.domain.resource_for(concept_id)
         if resource is None or not resource.teaches:
@@ -834,12 +892,33 @@ class Session:
             and record.evidence.get("concept_id") == concept_id
             and record.evidence.get("opening")
         )
+        # An inference still has to clear the ceiling; only the difficulty
+        # threshold gives way for it, and it gives way to 1 rather than to 0 —
+        # `should_explain` reads 0 as "teaching is off", which is a different
+        # statement and must not be reachable from a learner's remark.
         if not asked and not should_explain(
             errors,
             taught,
             after=after,
             # Read off the repertoire rather than configured, so the ceiling
             # cannot drift from the number of accounts that actually exist.
+            accounts_available=len(TeachingStyle),
+        ):
+            return False
+        if inferred and not should_explain(
+            # ⚠️ Counted over expressions of confusion, not over errors. Saying
+            # "I do not understand this" is what earns the first lesson, and
+            # saying it *again* after being taught is what earns the next one —
+            # a learner's own words are the currency here, and errors are a
+            # different signal that the threshold above already spends.
+            #
+            # Reading errors here instead made the second inferred lesson
+            # unreachable: a learner who says they are lost twice has zero new
+            # errors to show for it, which is exactly the case this trigger
+            # exists for.
+            self._confusions_about(concept_id),
+            taught,
+            after=1,
             accounts_available=len(TeachingStyle),
         ):
             return False
@@ -1024,6 +1103,10 @@ class Session:
                     )
                     if self.observer is not None:
                         self.observer.working_recorded(item, shown)
+                    # The channel the sitting's remark arrived in. Read here
+                    # rather than at the end of the item so the lesson lands
+                    # before the next attempt rather than after it.
+                    self._note_if_confused(item.concept_id, shown)
                 else:
                     # Asked and declined. Recorded because a refusal is a fact
                     # about the sitting — a rising rate means the prompt has
@@ -1156,6 +1239,10 @@ class Session:
                     self.board.record_reflection(said, item.id, item.concept_id)
                     if self.observer is not None:
                         self.observer.reflection_recorded(item, said)
+                    # Both prose channels, because a learner says it in
+                    # whichever one they are standing in. A sitting had someone
+                    # ask what sin(x) was three times, in three channels.
+                    self._note_if_confused(item.concept_id, said)
 
             moves.append(hint.move)
             replies.append(hint.text)
@@ -1227,6 +1314,12 @@ def build_session(
     agents = config.agents
     cache_dir = config.paths.cache_dir
 
+    # The detector reads the learner's words, so it needs the same kind of
+    # model the tutor does — and it is built only where the run asks for it, so
+    # a run that does not detect confusion opens no extra connection and makes
+    # no extra call. `NoConfusion` says no to everything, which is what every
+    # cohort gets.
+    confusion: ConfusionDetector = NoConfusion()
     if agents.tutor.impl == "template":
         tutor: Tutor = TemplateTutor(config.zpd, config.scaffolding.policy)
     else:
@@ -1235,6 +1328,10 @@ def build_session(
             config.zpd,
             config.scaffolding.policy,
         )
+        if config.teaching.detect_confusion:
+            confusion = LLMConfusionDetector(
+                build_provider(agents.tutor, cache_dir)
+            )
 
     if agents.diagnostic.impl == "oracle":
         diagnostic: Diagnostic = OracleDiagnostic()
@@ -1308,6 +1405,7 @@ def build_session(
         domain=domain,
         config=config,
         arbitration=ArbitrationPolicy(config.arbitration),
+        confusion=confusion,
         observer=observer,
         elapsed_days=elapsed_days,
         resumed=state is not None,
