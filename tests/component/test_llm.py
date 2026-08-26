@@ -653,3 +653,128 @@ class TestAPromptApproachingTheWindowSaysSo:
         with caplog.at_level("WARNING"):
             provider.generate("short", Answer, system="y" * 4000)
         assert any("context" in record.message for record in caplog.records)
+
+
+class TestAnExhaustedBudgetIsAskedOnce:
+    """⚠️ Measured, not reasoned about, and the measurement overturned the
+    original reasoning.
+
+    The repair loop covered this on the grounds that an exhausted budget
+    "yields a reply that fails schema validation, counted, visible, and over in
+    seconds". One case at three budgets, context window kept clear each time:
+    547s at 4096, 1114s at 8192, 2301s at 16384 — and no answer at any of them.
+    The cost doubles exactly with the budget and the outcome never changes, so a
+    model that deliberates without converging fills whatever room it is given.
+
+    Three attempts turned a thirteen-minute dead end into thirty-eight.
+    """
+
+    class Deliberates:
+        """A provider whose model always spends its budget without answering."""
+
+        label = "ollama/thinks-forever"
+
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def generate(self, prompt, schema, system):  # noqa: ANN001
+            from agent_newton.llm.base import BudgetExhausted
+
+            self.calls += 1
+            raise BudgetExhausted("spent its budget without producing an answer")
+
+    def test_the_repair_loop_does_not_ask_again(self) -> None:
+        from agent_newton.llm.base import BudgetExhausted
+
+        provider = self.Deliberates()
+        with pytest.raises(BudgetExhausted):
+            complete(provider, "classify", Answer)
+        assert provider.calls == 1
+
+    def test_an_ordinary_malformed_reply_is_still_repaired(self) -> None:
+        """The other half of the guard.
+
+        Without this, excluding budget exhaustion could be achieved by excluding
+        everything, and the test above would still pass. A reply that came back
+        *wrong* is worth showing to the model and asking again — that is what
+        the repair loop is for, and it still happens.
+        """
+        provider = FakeProvider("not json at all", GOOD)
+        assert complete(provider, "classify", Answer).label
+        assert len(provider.calls) == 2, "a repairable reply must be asked again"
+
+    def test_it_is_still_a_malformed_response(self) -> None:
+        # Every existing handler catches `ProviderError` or `MalformedResponse`:
+        # the diagnostic counts a failure to infer, the tutor falls back to a
+        # fixed hint, the demo stores the sitting. Narrowing the type must not
+        # narrow what survives.
+        from agent_newton.llm.base import BudgetExhausted
+
+        assert issubclass(BudgetExhausted, MalformedResponse)
+        assert issubclass(BudgetExhausted, ProviderError)
+
+    def test_the_provider_raises_it_rather_than_a_plain_malformed_reply(
+        self, monkeypatch
+    ) -> None:
+        from agent_newton.llm.base import BudgetExhausted
+        from agent_newton.llm.ollama import OllamaProvider
+
+        class Client:
+            def chat(self, **kwargs):  # noqa: ANN001, ANN003
+                return {
+                    "message": {"content": "", "thinking": "step 1, step 2, ..."},
+                    "done_reason": "length",
+                }
+
+        provider = OllamaProvider("gemma4:12b", think=True)
+        monkeypatch.setattr(provider, "_connect", lambda: Client())
+        with pytest.raises(BudgetExhausted):
+            provider.generate("classify", Answer, system=None)
+
+    def test_and_the_transport_does_not_retry_it_either(self, monkeypatch) -> None:
+        # Excluded there already by subclassing `MalformedResponse`. Asserted
+        # because the two exclusions are in different files and a change to
+        # either could quietly restore the 3x.
+        from agent_newton.llm.base import BudgetExhausted
+        from agent_newton.llm.ollama import OllamaProvider
+
+        class Client:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def chat(self, **kwargs):  # noqa: ANN001, ANN003
+                self.calls += 1
+                return {
+                    "message": {"content": "", "thinking": "..."},
+                    "done_reason": "length",
+                }
+
+        client = Client()
+        provider = OllamaProvider("gemma4:12b", think=True)
+        monkeypatch.setattr(provider, "_connect", lambda: client)
+        with pytest.raises(BudgetExhausted):
+            provider.generate("classify", Answer, system=None)
+        assert client.calls == 1
+
+    def test_the_message_says_raising_the_budget_will_not_help(
+        self, monkeypatch
+    ) -> None:
+        """Because that is what anyone reading it would try next — I did.
+
+        The numbers are in the message rather than a comment, so whoever meets
+        this at three in the morning does not spend an hour re-deriving them.
+        """
+        from agent_newton.llm.base import BudgetExhausted
+        from agent_newton.llm.ollama import OllamaProvider
+
+        class Client:
+            def chat(self, **kwargs):  # noqa: ANN001, ANN003
+                return {"message": {"content": "", "thinking": "..."},
+                        "done_reason": "length"}
+
+        provider = OllamaProvider("gemma4:12b", think=True)
+        monkeypatch.setattr(provider, "_connect", lambda: Client())
+        with pytest.raises(BudgetExhausted) as raised:
+            provider.generate("classify", Answer, system=None)
+        assert "think=False" in str(raised.value)
+        assert "not to help" in str(raised.value)

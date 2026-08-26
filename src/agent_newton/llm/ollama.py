@@ -44,6 +44,7 @@ from tenacity import (
 
 from agent_newton.llm.base import (
     Completion,
+    BudgetExhausted,
     MalformedResponse,
     ProviderError,
     ProviderTimeout,
@@ -223,6 +224,10 @@ class OllamaProvider:
         # identical time, so three attempts turn one wait into three and end in
         # the same place. That is felt hardest exactly where the timeout is
         # longest, which is the deliberating-model case this budget exists for.
+        #
+        # `BudgetExhausted` needs no entry of its own: it subclasses
+        # `MalformedResponse` and is excluded with it. What it is additionally
+        # excluded from is the *repair* loop, one layer up — see the class.
         retry=retry_if_exception_type(ProviderError)
         & retry_if_not_exception_type((MalformedResponse, ProviderTimeout)),
         stop=stop_after_attempt(3),
@@ -279,11 +284,12 @@ class OllamaProvider:
 
         # No answer. Which failure it is decides who handles it.
         if message.get("thinking") or response.get("done_reason") == "length":
-            raise MalformedResponse(
+            raise BudgetExhausted(
                 f"{self._model} spent its {self._max_tokens}-token budget without "
-                f"producing an answer. Reasoning models deliberate before they "
-                f"reply; set think=False for this role, or raise max_tokens — and "
-                f"raise context_tokens with it, since the window bounds the "
-                f"prompt and the deliberation together."
+                f"producing an answer. ⚠️ Raising the budget is measured not to "
+                f"help: at 4096, 8192 and 16384 tokens the same case took 547s, "
+                f"1114s and 2301s and answered at none of them. A model that "
+                f"deliberates without converging fills whatever room it is given. "
+                f"Set think=False for this role."
             )
         raise ProviderError(f"ollama returned an empty reply for {self._model}")
