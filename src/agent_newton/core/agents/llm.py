@@ -546,11 +546,14 @@ _STYLE_CLOSING = (
 #: this text by anything — the loop asks the learner, every turn, and the
 #: learner answers or does not.
 _STYLE_REPLY = (
-    "Reply to what the student just said. Take up what they got right, and put "
-    "the next small piece to them as a question they can answer. Two or three "
-    "sentences, then the question. Do not deliver the whole explanation — they "
-    "will be given it in writing when you are done.\n"
-    "If their answers show they have got the idea, say so plainly and add that "
+    "Reply to what the student just said. If they got something right, say what "
+    "*they* said rather than a fuller version of it — do not put words in their "
+    "mouth, and do not call something right that is unclear or wrong. If they "
+    "said they do not know, that is fine and needs no compliment; take the next "
+    "small step yourself and put it to them as a question they can answer.\n"
+    "Two or three sentences, then the question. Do not deliver the whole "
+    "explanation — they will be given it in writing when you are done.\n"
+    "If their own words show they have got the idea, say so plainly and add that "
     "they can stop here or keep going, as they prefer. Say it and then carry on "
     "as normal — it is their decision, not yours, and you never end the "
     "conversation yourself."
@@ -564,12 +567,29 @@ _EXPLAIN_SYSTEM = (
     "This is a conversation: the student does some of the thinking, so never "
     "deliver the whole explanation at once and never answer your own question "
     "in the same breath as asking it.\n"
+    "Describe only what the student actually wrote. Do not tell them what they "
+    "understand, what they meant, or which part they got right unless their own "
+    "words show it. Affirming something they did not say is worse than saying "
+    "nothing: it tells them they have arrived somewhere they have not.\n"
     "The instruction you are given says what this particular turn is for. "
     "Follow it.\n"
     "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
     "Never use LaTeX or backslash commands."
 )
-# ⚠️ "Say a little and then ask" used to live in the line above, and it made the
+# ⚠️ The "describe only what they wrote" rule is not new here. It is `_TUTOR_SYSTEM`'s,
+# word for word in intent, and it was never carried across to lessons — the same
+# omission as the groundedness check itself, which ran over hints and not over
+# lessons. Measured before it was carried across: 69.0% of lesson turns kept to
+# what the learner said, against a hint side the rule had governed all along.
+#
+# The failure it addresses is the softer half of what a sitting caught. "You've
+# set up the calculation perfectly!" on a malformed expression is the loud form;
+# the common one is "You're right that the specific number doesn't change how the
+# function behaves" to someone who wrote "It's just a constant. What does it do?"
+# — an affirmation that puts a more specific claim in the learner's mouth than
+# they made.
+#
+# ⚠️ "Say a little and then ask" used to live in the line below, and it made the
 # closing instruction unfollowable: asked to stop asking, the model asked anyway,
 # because the system prompt told it to on every turn. Whether a turn asks
 # something belongs to the turn.
