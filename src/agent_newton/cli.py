@@ -887,6 +887,87 @@ def evaluate_lessons(
             console.print(f"  {case_id}")
 
 
+@eval_app.command("recall")
+def evaluate_recall(
+    gold: Path = typer.Option(
+        Path("tests/fixtures/gold/calculus_recall_cases.yaml"), "--gold"
+    ),
+    embed_model: str = typer.Option("nomic-embed-text", "--embed-model"),
+    threshold: float = typer.Option(
+        0.5,
+        "--threshold",
+        help="Similarity below which a match is dropped. Higher returns less "
+        "and means it more; a strategy that always fills its quota looks good "
+        "on recall and bad on precision.",
+    ),
+    limit: int = typer.Option(3, "--limit", help="Utterances returned per query."),
+) -> None:
+    """Compare recall strategies on hand-labelled cases.
+
+    Two are built, so that which one this system should use is measured rather
+    than argued about. `bonus_lesson_idea.md` closed retrieval for *lesson
+    content* and that argument stands — fifteen lessons keyed by concept id is a
+    dict lookup. This is the other case the same note names as the one that
+    would earn an index: a corpus nobody keyed, queried in the learner's own
+    words.
+
+    ⚠️ Precision and recall are reported apart and never averaged. An unrelated
+    remark handed to a tutor as context is worse than silence, because the tutor
+    will try to use it.
+    """
+    from agent_newton.core.evaluation.recall import load_gold, score
+    from agent_newton.core.recall import EmbeddedRecall, KeyedRecall
+    from agent_newton.llm.embed import CachedEmbedder, OllamaEmbedder
+
+    from agent_newton.core.recall import Recall
+
+    cases = load_gold(gold)
+    strategies: list[Recall] = [KeyedRecall()]
+    try:
+        embedder = CachedEmbedder(
+            OllamaEmbedder(embed_model), Path(".cache/embed")
+        )
+        embedder.embed(["probe"])
+        strategies.append(EmbeddedRecall(embedder, threshold))
+    except Exception as exc:  # noqa: BLE001
+        console.print(
+            f"[yellow]no embedding model reachable ({type(exc).__name__}); "
+            f"scoring the keyed strategy only[/yellow]\n"
+        )
+
+    console.print(
+        f"[bold]{len(cases.cases)} case(s)[/bold] over {len(cases.corpus)} stored "
+        f"utterances\n"
+    )
+    table = Table(box=None, padding=(0, 2))
+    table.add_column("strategy")
+    table.add_column("precision", justify="right")
+    table.add_column("recall", justify="right")
+    table.add_column("noise", justify="right")
+    table.add_column("right to say nothing", justify="right")
+
+    reports = []
+    for strategy in strategies:
+        report = score(cases, strategy, limit)
+        reports.append(report)
+        table.add_row(
+            report.label,
+            f"{report.precision:.1%}",
+            f"{report.recall:.1%}",
+            str(report.noise),
+            f"{report.returned_nothing_correctly}/"
+            f"{sum(1 for c in cases.cases if not c.relevant)}",
+        )
+    console.print(table)
+
+    for report in reports:
+        missed = report.missed()
+        if missed:
+            console.print(f"\n[yellow]{report.label} missed[/yellow]")
+            for case_id, want in missed:
+                console.print(f"  {case_id}: {', '.join(sorted(want))}")
+
+
 @app.command("sitting")
 def sitting(
     run: str = typer.Argument(

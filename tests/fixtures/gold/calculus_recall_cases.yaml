@@ -1,0 +1,168 @@
+# Hand-labelled: which of a learner's past remarks bear on what they are doing now?
+#
+# One corpus, many queries — which is the shape a real recall has. The corpus is
+# taken from sittings a person actually had; `source: sitting` marks those, and
+# the few written for this set say so.
+#
+# ⚠️ Balanced to be losable by both strategies, which is the point of having it.
+#   * Cases where the remark is under a *different* concept — keyed cannot see
+#     them at all, and if embedding cannot either, embedding buys nothing.
+#   * Cases where a remark shares the concept and is irrelevant — keyed returns
+#     it and is wrong to; this is where a key costs precision.
+#   * Cases where *nothing* is relevant — a recaller that always fills its quota
+#     fails these, and filling the quota is the easiest way to look good on
+#     recall.
+#
+# Precision matters more than recall here and the set is built to say so. An
+# unrelated remark handed to a tutor as context is worse than silence, because
+# the tutor will try to use it.
+
+corpus:
+  - id: u_gradient_q
+    concept_id: limit_concept
+    kind: lesson
+    text: wait, what is a gradient
+    source: sitting
+  - id: u_gradient_steep
+    concept_id: limit_concept
+    kind: lesson
+    text: I guess that would be steep
+    source: sitting
+  - id: u_gradient_formula
+    concept_id: limit_concept
+    kind: lesson
+    text: So by distance, I guess you mean y2-y1 / x2 - x1
+    source: sitting
+  - id: u_secant_q
+    concept_id: limit_concept
+    kind: lesson
+    text: What does secant mean?
+    source: sitting
+  - id: u_secant_understood
+    concept_id: limit_concept
+    kind: lesson
+    text: >-
+      I thought that A secant is a straight line that passes through two points
+      on a curve. The gradient of the secant gives the average rate of change
+      between those points.
+    source: sitting
+  - id: u_h_approaches
+    concept_id: limit_concept
+    kind: working
+    text: it was the, as h approaches 0 that i didnt understand earlier
+    source: sitting
+  - id: u_counted_two
+    concept_id: limit_concept
+    kind: lesson
+    text: "2"
+    source: sitting
+  - id: u_ratio_q
+    concept_id: average_rate_of_change
+    kind: lesson
+    text: what does ratio mean
+    source: sitting
+  - id: u_division_guess
+    concept_id: average_rate_of_change
+    kind: lesson
+    text: I'm not sure what mathematical operation I would use. maybe division?
+    source: sitting
+  - id: u_arithmetic
+    concept_id: average_rate_of_change
+    kind: lesson
+    text: it would be 100/2 which is 50
+    source: sitting
+  - id: u_why_relevant
+    concept_id: average_rate_of_change
+    kind: lesson
+    text: Wait wait, why is average rate of change relevant in calculus?
+    source: sitting
+  - id: u_just_guessed
+    concept_id: average_rate_of_change
+    kind: working
+    text: i just guessed
+    source: sitting
+  - id: u_constant_q
+    concept_id: antiderivative
+    kind: lesson
+    text: But what does it matter, if there is a C or not C? It's just a constant.
+    source: sitting
+  - id: u_power_down
+    concept_id: power_rule
+    kind: working
+    text: I brought the exponent down but left it as it was
+    source: written for this set
+  - id: u_tired
+    concept_id: power_rule
+    kind: lesson
+    text: can we do something else
+    source: written for this set
+
+cases:
+  - id: rc_gradient_returns_under_a_new_concept
+    concept_id: power_rule
+    query: The gradient tells you how steeply the curve rises. What is the gradient here?
+    relevant: [u_gradient_q, u_gradient_steep]
+    note: >-
+      ⚠️ The case the whole comparison exists for. They asked what a gradient was
+      while working on limits, and gradients have come back under a different
+      concept. Keyed recall cannot return these — the key does not match, so as
+      far as it is concerned the remark was never made. If embedding cannot find
+      them either, it buys nothing and the argument in bonus_lesson_idea.md
+      stands unchanged.
+
+  - id: rc_secant_under_first_principles
+    concept_id: derivative_from_first_principles
+    query: We take a second point a distance h away and look at the line through both.
+    relevant: [u_secant_q, u_secant_understood, u_h_approaches]
+    note: >-
+      Same shape, and the useful one for a tutor: they have already worked out
+      what a secant is, and repeating that explanation would waste a turn. Also
+      the strongest case, because u_h_approaches says outright which part they
+      did not follow.
+
+  - id: rc_ratio_when_ratios_come_back
+    concept_id: quotient_rule
+    query: A quotient is a ratio — one thing divided by another.
+    relevant: [u_ratio_q]
+    note: >-
+      They asked what "ratio" meant, under a different concept. A tutor about to
+      use the word again should know that.
+
+  - id: rc_on_topic_and_relevant
+    concept_id: average_rate_of_change
+    query: What operation turns a change into a rate?
+    relevant: [u_division_guess, u_ratio_q]
+    note: >-
+      Both strategies should manage this one: the remarks share the concept and
+      bear on the question. A case neither can lose is worth having, because a
+      set only the hard cases can score turns a comparison into a stunt.
+
+  - id: rc_on_topic_and_irrelevant
+    concept_id: power_rule
+    query: Bring the exponent down in front and reduce it by one.
+    relevant: [u_power_down]
+    note: >-
+      ⚠️ Where a key costs precision. "can we do something else" is filed under
+      power_rule and says nothing about exponents; keyed recall returns it
+      because it matches on the key, and a tutor handed it will try to use it.
+      Only u_power_down bears on the question.
+
+  - id: rc_nothing_to_recall
+    concept_id: stationary_points
+    query: Set the derivative equal to zero and solve for x.
+    relevant: []
+    note: >-
+      ⚠️ Nothing in the corpus is about stationary points or about solving for
+      zero. A recaller that fills its quota fails here, and filling the quota is
+      the easiest way to look good on recall. Returning nothing is the right
+      answer and it has to be scoreable as such.
+
+  - id: rc_a_bare_number_is_not_context
+    concept_id: limit_concept
+    query: How many points do you need to find a gradient?
+    relevant: [u_gradient_q, u_gradient_formula]
+    note: >-
+      "2" is filed under this exact concept and was said in answer to almost
+      this exact question — and it is still useless as context, because a tutor
+      handed "2" learns nothing about the learner. Keyed recall, taking the most
+      recent on the concept, is liable to return it.
