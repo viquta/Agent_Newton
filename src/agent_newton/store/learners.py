@@ -490,6 +490,28 @@ class LearnerStore:
             params.append(move)
         return list(self._db.execute(sql + " ORDER BY ss.seq, t.turn_id", params))
 
+    def audit(self, learner_id: str, arm: str) -> list[AuditRecord]:
+        """This learner's whole history, back as audit records.
+
+        The rows carry ``evidence`` as JSON text, which is the shape a database
+        needs and the wrong shape for anything that reads a sitting back. Here
+        rather than at each call site so the parsing happens once — and because
+        a caller that has to remember to json.loads a column will eventually
+        forget.
+
+        In version order across sittings, so an ordering — who spoke when — is
+        still an ordering after the round trip.
+        """
+        return [
+            AuditRecord(
+                version=int(row["version"]),
+                cause=row["cause"],
+                summary=row["summary"],
+                evidence=json.loads(row["evidence"]) if row["evidence"] else {},
+            )
+            for row in self.events(learner_id, arm)
+        ]
+
     def events(
         self, learner_id: str, arm: str, cause: str | None = None
     ) -> Iterator[sqlite3.Row]:

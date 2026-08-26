@@ -1,0 +1,25 @@
+{
+  "run_id": "20260826T085044_demo_coupled_b736a896",
+  "run_name": "demo",
+  "created_at": "2026-08-26T08:50:44+00:00",
+  "git_sha": "a6757abdf67a94a1512df95a40135c890a9a9764",
+  "git_dirty": true,
+  "config_hash": "b736a89633beb29a",
+  "arm": "coupled",
+  "domain": "calculus",
+  "seed": 20260812,
+  "catalogue_hash": "ca5038117b556a2d",
+  "item_bank_hash": "587deac28ed7ca79",
+  "concept_graph_hash": "0d8b6ce2179205c4",
+  "resources_hash": "a14478cdda1097e2",
+  "models": {
+    "tutor": "ollama/gemma4:12b (think=false)",
+    "diagnostic": "ollama/gemma4:12b (think=false)",
+    "planner": "<goal_directed>",
+    "simulator_surface": "<symbolic>"
+  },
+  "uses_llm": true,
+  "decay_half_life_days": 14.0,
+  "python_version": "3.14.5",
+  "platform": "macOS-15.7.7-arm64-arm-64bit-Mach-O"
+}

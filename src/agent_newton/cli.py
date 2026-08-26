@@ -784,6 +784,109 @@ def evaluate_tutor(
         )
 
 
+@eval_app.command("lessons")
+def evaluate_lessons(
+    learner: str = typer.Option(..., "--learner", help="Whose sittings to read."),
+    arm: str = typer.Option("coupled", "--arm"),
+    judge_model: str = typer.Option(
+        "gemma4:26b",
+        "--judge-model",
+        help="The model doing the judging. Should differ from the one that "
+        "wrote the turns: a model grading its own replies measures its taste, "
+        "not its faithfulness.",
+    ),
+    provider: str = typer.Option("ollama", "--provider"),
+    gold: Path = typer.Option(
+        Path("tests/fixtures/gold/calculus_lesson_grounding_cases.yaml"),
+        "--gold",
+        help="Hand-labelled set the judge is calibrated against.",
+    ),
+    store_path: Path = typer.Option(Path("results/learners.db"), "--store"),
+) -> None:
+    """Score a learner's lesson turns for faithfulness to what they said.
+
+    The same question `evaluate tutor` asks of hints, over the part of the
+    system it was never pointed at. A sitting is why: a learner wrote
+    `x2 + h - 3^2 / x + h - x` and the tutor replied "You've set up the
+    calculation perfectly!" — which is a claim about their work that their work
+    does not support.
+
+    ⚠️ The agreement figure is not decoration. It measures the *judge*, and a
+    verdict rate quoted without it states a number whose error is unknown. Read
+    the disagreements before the rate.
+    """
+    import yaml
+
+    from agent_newton.core.evaluation.tutor import (
+        JudgeReport,
+        LessonExchange,
+        judge_lesson_grounded,
+        judge_lesson_turns,
+        lesson_exchanges,
+    )
+    from agent_newton.llm.factory import build_provider
+    from agent_newton.store import LearnerStore
+
+    spec = ModelSpec(provider=provider, model=judge_model, think=False)  # pyright: ignore[reportArgumentType]
+    judge = build_provider(spec, Path(".cache/llm"))
+
+    report = JudgeReport()
+    for case in yaml.safe_load(gold.read_text())["cases"]:
+        report.calibration.append(
+            (
+                case["id"],
+                bool(case["grounded"]),
+                judge_lesson_grounded(
+                    judge,
+                    LessonExchange(
+                        case["concept_id"],
+                        " ".join(str(case["said"]).split()),
+                        " ".join(str(case["reply"]).split()),
+                    ),
+                ),
+            )
+        )
+
+    with LearnerStore(store_path) as store:
+        exchanges = lesson_exchanges(store.audit(learner, arm))
+    answering = [e for e in exchanges if e.said.strip()]
+    if not answering:
+        console.print(
+            f"[yellow]{learner} has no lesson turns answering anything. "
+            f"Openings are not judged — there is nothing to be faithful to "
+            f"yet.[/yellow]"
+        )
+        raise typer.Exit()
+
+    console.print(
+        f"[bold]{len(answering)} lesson turn(s)[/bold] from {learner}, judged by "
+        f"{provider}/{judge_model}\n"
+    )
+    judge_lesson_turns(judge, answering, report)
+
+    table = Table(show_header=False, box=None, padding=(0, 1))
+    table.add_row("turns judged", str(len(report.verdicts)))
+    table.add_row("grounded", f"{report.grounded_rate:.1%}")
+    table.add_row("unobtainable", str(report.unobtainable))
+    table.add_row("judge agreement", f"{report.agreement:.1%} of {len(report.scored)}")
+    console.print(table)
+
+    if report.disagreements():
+        console.print("\n[yellow]the judge read these differently to the hand "
+                      "labels — read them before the rate above[/yellow]")
+        for case_id, hand, judged in report.disagreements():
+            console.print(f"  {case_id}: hand={hand} judge={judged}")
+
+    ungrounded = [i for i, j in report.verdicts if j is False]
+    if ungrounded:
+        console.print(
+            f"\n[yellow]{len(ungrounded)} turn(s) claimed more than the learner "
+            f"showed[/yellow]"
+        )
+        for case_id in ungrounded[:10]:
+            console.print(f"  {case_id}")
+
+
 @app.command("sitting")
 def sitting(
     run: str = typer.Argument(

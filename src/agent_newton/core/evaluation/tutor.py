@@ -662,6 +662,115 @@ def judge_grounded(
     return reply.grounded
 
 
+@dataclass(frozen=True, slots=True)
+class LessonExchange:
+    """One thing the tutor said in a lesson, and what the learner had said.
+
+    The lesson-shaped counterpart to a ``(step, reply)`` pair. There is no
+    exercise and no correct answer — a lesson is about a concept, and often
+    happens with no question in front of the learner at all — so the only thing
+    a claim about their work can be checked against is what they wrote in the
+    conversation.
+    """
+
+    concept_id: str
+    #: What the learner said immediately before this turn. Empty for an opening,
+    #: which is why openings are not judged: there is nothing to be faithful to.
+    said: str
+    reply: str
+
+
+def lesson_exchanges(audit_log) -> list[LessonExchange]:  # noqa: ANN001
+    """Pair each lesson turn with what the learner had just said.
+
+    Read from the audit log rather than from the ``turn`` and ``utterance``
+    tables, because the pairing is an *ordering* and those are two tables. The
+    log is one sequence in version order, which is the thing that actually
+    records who spoke when.
+
+    An opening turn carries no ``said`` and is dropped by
+    :func:`judge_lesson_turns` — see there.
+    """
+    exchanges: list[LessonExchange] = []
+    said = ""
+    for record in audit_log:
+        evidence = record.evidence
+        if record.cause == "annotation" and evidence.get("kind") == "lesson":
+            said = str(evidence.get("reflection", ""))
+        elif (
+            record.cause == "tutor"
+            and evidence.get("move") == TutorMove.EXPLAIN.value
+            # The written summary is authored content, not a claim about anyone.
+            and evidence.get("level") != "summary"
+        ):
+            exchanges.append(
+                LessonExchange(
+                    concept_id=str(evidence.get("concept_id", "")),
+                    said=said,
+                    reply=str(evidence.get("text", "")),
+                )
+            )
+            said = ""
+    return exchanges
+
+
+def judge_lesson_grounded(
+    provider: LLMProvider, exchange: LessonExchange
+) -> bool | None:
+    """Whether a lesson turn keeps to what the learner actually said.
+
+    The same question as :func:`judge_grounded`, over the inputs a lesson has.
+    A sitting is why it exists: a learner wrote ``x2 + h - 3^2 / x + h - x`` and
+    the tutor replied *"You've set up the calculation perfectly!"* — which is
+    the sitting-2 failure exactly, in the one part of the system that check was
+    never pointed at.
+
+    ⚠️ Phrased the same way round as the field it fills, and that is not a
+    stylistic choice. Asked the other way — "does the reply claim anything the
+    work does not show" — a model answering correctly sets ``grounded`` to the
+    opposite of what it means, and calibration reads as a judge performing below
+    chance rather than as a prompt that inverts it. That happened once here
+    already, at 30% against 90%.
+    """
+    prompt = (
+        f"The tutor is explaining: {exchange.concept_id}\n"
+        f"The student said: {exchange.said}\n\n"
+        f"The tutor replied: {exchange.reply}\n\n"
+        f"Is every claim the tutor's reply makes about the student's work "
+        f"supported by what the student said above?"
+    )
+    try:
+        reply = complete(provider, prompt, Groundedness, system=_JUDGE_SYSTEM)
+    except MalformedResponse:
+        return None
+    return reply.grounded
+
+
+def judge_lesson_turns(
+    provider: LLMProvider,
+    exchanges: Sequence[LessonExchange],
+    report: "JudgeReport | None" = None,
+) -> "JudgeReport":
+    """Score every lesson turn that answers something the learner said.
+
+    ⚠️ Openings are excluded, and for the same reason reflective turns are
+    excluded from the hint judging: they make no claim about the learner's work,
+    so groundedness has nothing to bite on and including them would dilute the
+    rate with cases that cannot fail.
+    """
+    report = report or JudgeReport()
+    for index, exchange in enumerate(exchanges):
+        if not exchange.said.strip():
+            continue
+        report.verdicts.append(
+            (
+                f"{exchange.concept_id}#{index}",
+                judge_lesson_grounded(provider, exchange),
+            )
+        )
+    return report
+
+
 @dataclass
 class JudgeReport:
     """The judge's verdicts, and its agreement with the hand labels.
