@@ -57,8 +57,9 @@ class TemplateTutor:
         resource: ConceptResource,
         style: TeachingStyle,
         exchanges: Sequence[tuple[str, str]] = (),
+        closing: bool = False,
     ) -> str:
-        """The lesson as authored. ``style`` and ``exchanges`` are ignored.
+        """The lesson as authored. Every other argument is accepted and ignored.
 
         Deliberate, and the same reasoning as ``respond`` ignoring ``response``:
         the cohorts run this tutor, so its output must not vary with anything

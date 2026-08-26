@@ -147,6 +147,33 @@ class LessonReply(BaseModel):
         return text
 
 
+class ClosingReply(LessonReply):
+    """The last turn of a lesson. Must answer, and must not ask.
+
+    ⚠️ Its own schema because the instruction alone did not hold. Asked to stop
+    asking, the model asked anyway — the system prompt said "say a little and
+    then ask" on every turn, and a rule a model can talk itself out of is not
+    one. The prompt conflict is fixed; this is what makes the rule checkable
+    rather than hoped for.
+
+    Only a *trailing* question is refused. A closing turn may perfectly well
+    contain one — "you asked what happens as it slides in: it settles on a
+    single value" — and what must not happen is that it ends on something the
+    learner has no way to reply to.
+    """
+
+    @field_validator("text")
+    @classmethod
+    def _must_not_ask(cls, text: str) -> str:
+        if text.rstrip().endswith("?"):
+            raise ValueError(
+                "this is the last turn and it ends on a question the student "
+                "cannot reply to. Answer what was left hanging instead, and "
+                "stop."
+            )
+        return text
+
+
 class ConfusionReply(BaseModel):
     """Whether a learner's own words say they do not understand the concept.
 

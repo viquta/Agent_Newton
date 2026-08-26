@@ -880,7 +880,7 @@ class TestALessonIsAConversation:
             def respond(self, *a, **kw):  # noqa: ANN001, ANN002, ANN003
                 raise AssertionError("not under test")
 
-            def explain(self, resource, style, exchanges=()):  # noqa: ANN001
+            def explain(self, resource, style, exchanges=(), closing=False):  # noqa: ANN001
                 seen.append(len(exchanges))
                 return f"turn {len(exchanges)}"
 
@@ -1284,3 +1284,157 @@ class TestTheConfusionDetectorAgreesWithHandLabels:
             != case["confused"]
         ]
         assert not wrong, "disagreed on: " + "; ".join(c["text"][:50] for c in wrong)
+
+
+class TestALessonNeverEndsOnAQuestionNobodyCanAnswer:
+    """⚠️ From a sitting, and it is the sharpest thing one has caught yet.
+
+    Every turn of a lesson ends by asking something, so however the conversation
+    stops there is one left hanging — and the written summary then answers it.
+    The sitting caught it at the worst moment the material allows: the tutor had
+    just asked what happens to a secant's gradient as the second point slides
+    in, which *is* the limit concept, and the summary appeared instead of a
+    reply. *"I was just about to understand something important."*
+
+    Under the Socratic style that is the monologue failure returning by another
+    door — the system asks the question and then answers it itself.
+    """
+
+    class Recording:
+        """A tutor that records how each turn was asked for."""
+
+        def __init__(self) -> None:
+            self.closings: list[bool] = []
+
+        def respond(self, *a, **kw):  # noqa: ANN001, ANN002, ANN003
+            raise AssertionError("not under test")
+
+        def explain(self, resource, style, exchanges=(), closing=False):  # noqa: ANN001
+            self.closings.append(closing)
+            return "and so it closes." if closing else "what do you think?"
+
+    def _talking(self, turns: int = 3) -> Config:
+        config = _config()
+        config.teaching.lesson_turns = turns
+        return config
+
+    def _lesson(self, calculus, learner, turns: int = 3):
+        session = build_session(
+            "L_end", 1, calculus, self._talking(turns), learner=learner
+        )
+        tutor = self.Recording()
+        session.tutor = tutor
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        return session, tutor
+
+    def test_the_last_turn_is_asked_to_close(self, calculus) -> None:
+        _, tutor = self._lesson(calculus, AlwaysWrong(says=["a", "b", "c"]))
+        assert tutor.closings[-1] is True
+        assert tutor.closings.count(True) == 1
+
+    def test_and_it_is_the_last_thing_before_the_summary(self, calculus) -> None:
+        session, _ = self._lesson(calculus, AlwaysWrong(says=["a", "b", "c"]))
+        turns = [
+            t for t in _turns_in(session.board) if t["concept_id"] == "power_rule"
+        ]
+        assert turns[-1]["level"] == "summary"
+        assert turns[-2]["text"] == "and so it closes."
+
+    def test_running_out_of_budget_closes_rather_than_cutting_off(
+        self, calculus
+    ) -> None:
+        # The sitting's case exactly: the learner is still talking and the guard
+        # stops the conversation. It must still be tied off.
+        _, tutor = self._lesson(calculus, AlwaysWrong(says=["a"] * 50), turns=2)
+        assert tutor.closings[-1] is True
+
+    def test_the_learner_stopping_also_closes(self, calculus) -> None:
+        # They said their piece and pressed enter. The question the tutor just
+        # asked is still hanging, and it is still owed an answer.
+        _, tutor = self._lesson(calculus, AlwaysWrong(says=["a"]))
+        assert tutor.closings[-1] is True
+
+    def test_declining_at_the_very_first_prompt_does_not(self, calculus) -> None:
+        # Nothing was engaged with, so a closing turn would be the system
+        # talking to itself. The summary is the right answer there, and it is
+        # what the one-shot lesson always did.
+        _, tutor = self._lesson(calculus, AlwaysWrong(says=[]))
+        assert True not in tutor.closings
+
+    def test_a_cohort_never_reaches_a_closing_turn(self, calculus) -> None:
+        # It cannot converse, so nothing is ever left hanging.
+        from agent_newton.config import SimulatorConfig
+        from agent_newton.core.simulator import SimulatedLearner, sample_profile
+
+        profile = sample_profile("L1", 1, calculus.misconceptions, SimulatorConfig())
+        _, tutor = self._lesson(
+            calculus, SimulatedLearner(profile, calculus, SimulatorConfig())
+        )
+        assert True not in tutor.closings
+
+    def test_the_closing_instruction_forbids_asking_anything_new(self) -> None:
+        # The rule, stated where the model reads it.
+        from agent_newton.core.agents.llm import _STYLE_CLOSING
+
+        assert "do not ask" in _STYLE_CLOSING.lower()
+        assert "hanging" in _STYLE_CLOSING.lower()
+
+    def test_and_it_is_checked_rather_than_hoped_for(self) -> None:
+        """⚠️ Because asking did not work.
+
+        Told to stop asking, the model asked anyway — the system prompt said
+        "say a little and then ask" on *every* turn, so the closing instruction
+        was unfollowable. That is the fourth time a global rule here has
+        outlived the case it was written for: `_TUTOR_SYSTEM` once demanded two
+        sentences while `WORKED_STEP` asked for the step to be worked through,
+        and `HintReply`'s field description carried the same demand one layer
+        down.
+
+        The conflict is fixed, and this is what makes the rule checkable: a
+        constraint a model can talk itself out of is not one.
+        """
+        import pydantic
+
+        from agent_newton.core.agents.schemas import ClosingReply
+
+        with pytest.raises(pydantic.ValidationError):
+            ClosingReply(text="So what happens as the point slides in?")
+
+    def test_a_closing_turn_may_still_contain_a_question(self) -> None:
+        # Only a *trailing* one is refused. Taking up what the learner asked is
+        # exactly what a closing turn is for.
+        from agent_newton.core.agents.schemas import ClosingReply
+
+        text = (
+            "You asked what happens as it slides in: the gradients settle on a "
+            "single value."
+        )
+        assert ClosingReply(text=text).text == text
+
+    def test_the_system_prompt_no_longer_demands_a_question(self) -> None:
+        # The cause, not the symptom. Whether a turn asks something belongs to
+        # the turn, not to a rule applied to every turn.
+        from agent_newton.core.agents.llm import _EXPLAIN_SYSTEM
+
+        assert "say a little and then ask" not in _EXPLAIN_SYSTEM.lower()
+
+
+class TestTheGuardIsNotALength:
+    """A bound a learner can reach while still engaged is an interruption."""
+
+    def test_the_demo_sets_it_generously(self) -> None:
+        # Not tuned. The learner ends a lesson; this only stops one running on
+        # unattended, so it should sit well above where anyone would stop.
+        demo = Config.from_yaml("experiments/configs/demo.yaml")
+        assert demo.teaching.lesson_turns >= 8
+
+    def test_the_learner_can_always_end_it_sooner(self, calculus) -> None:
+        learner = AlwaysWrong(says=["one thing"])
+        config = _config()
+        config.teaching.lesson_turns = 12
+        session = build_session("L_short", 1, calculus, config, learner=learner)
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        said = [u for u in session.board.state.reflections if u.kind == "lesson"]
+        assert len(said) == 1, "one reply, then they stopped, and it ended there"

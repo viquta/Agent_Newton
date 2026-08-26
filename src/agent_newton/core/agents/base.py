@@ -107,6 +107,7 @@ class Tutor(Protocol):
         resource: ConceptResource,
         style: TeachingStyle,
         exchanges: Sequence[tuple[str, str]] = (),
+        closing: bool = False,
     ) -> str:
         """The lesson a learner reads, in the account the rules chose.
 
@@ -124,6 +125,12 @@ class Tutor(Protocol):
         ``style`` comes from :func:`~agent_newton.core.pedagogy.policy.style_for`
         rather than from a prompt, like the support level and the move. A
         model-free tutor is free to ignore it, and the one the cohorts run does.
+
+        ``closing`` says this is the last turn: answer what is hanging and ask
+        nothing new. ⚠️ Without it a lesson always ended on a question the
+        learner had no way to reply to, and the written summary answered it for
+        them — at the exact moment a sitting reported being *"just about to
+        understand something important"*.
 
         ``exchanges`` is the conversation so far, oldest first, as
         ``(what the tutor said, what the learner said back)``. Empty on the

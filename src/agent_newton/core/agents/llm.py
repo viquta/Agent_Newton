@@ -23,12 +23,15 @@ import logging
 from typing import Mapping, Sequence
 
 from agent_newton.config import LabelSpace, ScaffoldingPolicy, ZPDConfig
+from pydantic import BaseModel
+
 from agent_newton.core.agents.base import Diagnosis, Hint, StateView
 from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
 from agent_newton.core.state import route
 from agent_newton.core.state.schema import Emphasis, Plan
 from agent_newton.core.agents.schemas import UNKNOWN, diagnosis_schema, plan_schema
 from agent_newton.core.agents.schemas import (
+    ClosingReply,
     ConfusionReply,
     HintReply,
     LessonReply,
@@ -388,6 +391,7 @@ class LLMTutor:
         resource: ConceptResource,
         style: TeachingStyle,
         exchanges: Sequence[tuple[str, str]] = (),
+        closing: bool = False,
     ) -> str:
         """Re-voice the authored lesson in the style the rules chose.
 
@@ -429,19 +433,29 @@ class LLMTutor:
         """
         authored = resource.lesson()
         if exchanges:
-            instruction = _STYLE_REPLY
             said = "\n".join(
                 f"You: {mine}\nThe student: {theirs}" for mine, theirs in exchanges
             )
             context = f"\n\nThe conversation so far:\n{said}"
         else:
-            instruction = _STYLE_OPENING[style]
             context = ""
+        schema: type[BaseModel] = LessonReply
+        if closing:
+            instruction = _STYLE_CLOSING
+            # A rule a model can talk itself out of is not one. This turn is
+            # refused if it ends on a question, and the repair loop shows the
+            # model its own reply and asks again — the same machinery that
+            # catches a turn stopping mid-sentence.
+            schema = ClosingReply
+        elif exchanges:
+            instruction = _STYLE_REPLY
+        else:
+            instruction = _STYLE_OPENING[style]
 
         prompt = f"{instruction}\n\nThe explanation to work from:\n{authored}{context}"
         try:
             reply = complete(
-                self._provider, prompt, LessonReply, system=_EXPLAIN_SYSTEM
+                self._provider, prompt, schema, system=_EXPLAIN_SYSTEM
             )
             text = reply.text
         except ProviderError:
@@ -501,6 +515,24 @@ _STYLE_OPENING = {
     ),
 }
 
+#: How it **ends**.
+#:
+#: ⚠️ Every other turn ends by asking something, so without this a lesson always
+#: stopped on a question nobody answered — and the written summary then answered
+#: it for the learner. A sitting caught it at the worst possible moment: the
+#: tutor had just asked *"what do you think happens to the gradient of that
+#: secant as it moves closer to the first one?"*, which is the limit concept
+#: itself, and the summary appeared instead of a reply. Their words: *"I was
+#: just about to understand something important."*
+#:
+#: Under the Socratic style that is the monologue failure returning by another
+#: door — the system asks the question and then answers it.
+_STYLE_CLOSING = (
+    "This is the last thing you will say. Answer the question you left hanging, "
+    "briefly, taking up whatever the student worked out. Then stop. Do not ask "
+    "anything new — they have no way to reply to it."
+)
+
 #: How it **continues**, once the student has said something back.
 _STYLE_REPLY = (
     "Reply to what the student just said. Take up what they got right, and put "
@@ -514,12 +546,24 @@ _EXPLAIN_SYSTEM = (
     "never have met. You are given an explanation that has already been written "
     "and checked; use it as the ground you are working from. Do not add "
     "mathematics that is not in it, do not correct it, and do not extend it.\n"
-    "This is a conversation. Say a little and then ask, so the student does some "
-    "of the thinking. Never deliver the whole explanation at once, and never "
-    "answer your own question in the same breath as asking it.\n"
+    "This is a conversation: the student does some of the thinking, so never "
+    "deliver the whole explanation at once and never answer your own question "
+    "in the same breath as asking it.\n"
+    "The instruction you are given says what this particular turn is for. "
+    "Follow it.\n"
     "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
     "Never use LaTeX or backslash commands."
 )
+# ⚠️ "Say a little and then ask" used to live in the line above, and it made the
+# closing instruction unfollowable: asked to stop asking, the model asked anyway,
+# because the system prompt told it to on every turn. Whether a turn asks
+# something belongs to the turn.
+#
+# That is the fourth time one instruction has contradicted another here.
+# `_TUTOR_SYSTEM` once demanded two sentences while `WORKED_STEP` asked for the
+# step to be worked through; `HintReply`'s field description carried the same
+# demand one layer further down. The pattern is always a global rule outliving
+# the case it was written for.
 
 
 _CONFUSION_SYSTEM = (

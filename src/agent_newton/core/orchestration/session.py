@@ -972,9 +972,15 @@ class Session:
         said = self.tutor.explain(resource, style)
         _say(said, level=style.label, opening=True)
 
-        # The conversation. Bounded, but the learner is what usually ends it —
-        # they say nothing, or they say they are done. Either way the summary
-        # below still runs, so declining to talk never costs them the lesson.
+        # The conversation. **The learner ends it** — they say nothing, or they
+        # say they are done. `lesson_turns` is a runaway guard, not a length:
+        # it exists so a conversation cannot go on forever unattended, and at a
+        # sensible value a person reaches it only if they want to.
+        #
+        # ⚠️ It used to be a hard stop at 3, and that was wrong in a way a
+        # sitting made vivid. Someone three turns in wrote *"I was just about to
+        # understand something important"* — the cap removed them mid-thought,
+        # from a conversation they were driving.
         exchanges: list[tuple[str, str]] = []
         for _ in range(self.config.teaching.lesson_turns):
             replied = self.learner.discuss(concept_id, said)
@@ -995,6 +1001,26 @@ class Session:
             exchanges.append((said, replied))
             said = self.tutor.explain(resource, style, exchanges)
             _say(said, level=style.label)
+
+        # ⚠️ A lesson must not end on a question nobody can answer.
+        #
+        # Every turn above ends by asking something, so however the conversation
+        # stops there is one left hanging — and the summary below then answers
+        # it for the learner. The same sitting caught it at the worst moment the
+        # material allows: the tutor had just asked what happens to a secant's
+        # gradient as the second point slides in, which *is* the limit concept,
+        # and the summary appeared instead of a reply. Under the Socratic style
+        # that is the monologue failure returning by another door — the system
+        # asks the question and then answers it.
+        #
+        # Only when something was actually said. A learner who declined at the
+        # first prompt has nothing hanging that they engaged with, and an extra
+        # turn there would be the system talking to itself.
+        if exchanges:
+            _say(
+                self.tutor.explain(resource, style, exchanges, closing=True),
+                level=style.label,
+            )
 
         # ⚠️ Always, however the conversation ended, and it is the authored text
         # rather than anything generated. The conversation is the model's and is

@@ -933,7 +933,7 @@ class TestAnUnreadableAnswerIsNotAnAttempt:
                     level=HintLevel.NUDGE,
                 )
 
-            def explain(self, resource, style, exchanges=()):  # noqa: ANN001
+            def explain(self, resource, style, exchanges=(), closing=False):  # noqa: ANN001
                 # Present so this still satisfies `Tutor`. This test is about
                 # what the tutor is told it has already said, and a lesson is
                 # not one of those turns.
