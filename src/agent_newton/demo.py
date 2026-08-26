@@ -245,6 +245,18 @@ class DemoObserver(Watching):
         #: The concept currently being talked about, so only the first turn of a
         #: lesson announces itself.
         self._in_lesson: str | None = None
+        #: Items this sitting has posed. Counted here because `item_started`
+        #: fires exactly once per giving, which is the thing `items_attempted`
+        #: means — and it is the only place that count survives a sitting the
+        #: person stopped part-way, since the session returns no outcome then.
+        #:
+        #: ⚠️ Not derivable from the audit log afterwards. `record_observation`
+        #: takes `attempt` but does not record it, so nothing in the log marks
+        #: where one giving ends and the next begins: distinct item ids
+        #: undercount badly (a concept is worked until mastered, so one id can
+        #: be twenty givings) and observation records overcount, since an item
+        #: takes up to three steps.
+        self.items_started = 0
 
     def board_panel(self, board: Blackboard) -> Panel:
         graph = self._domain.concepts
@@ -299,6 +311,7 @@ class DemoObserver(Watching):
         # the one place that knows which question is in front of the learner.
         self._working_concept = item.concept_id
         self._board = board
+        self.items_started += 1
         self._console.print()
         self._console.print(self.board_panel(board))
         self._remind(item)
@@ -1129,7 +1142,7 @@ def _across_sittings(  # noqa: ANN001
     return Panel(body, title="across your sittings", border_style="magenta")
 
 
-def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  # noqa: ANN001
+def _store(config: Config, domain: Domain, session, learner, outcome, observer=None, stopped: str = "") -> Path:  # noqa: ANN001
     """Write the sitting to disk. Called however the sitting ended.
 
     ``outcome`` is None when the person stopped part-way, in which case the
@@ -1170,14 +1183,30 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
             for r in session.board.audit_log
         ],
     }
+    # ⚠️ Written whichever way the sitting ended, and this is the fix.
+    #
+    # These two were inside the `outcome is not None` block below, so a sitting
+    # someone stopped part-way recorded neither — while the *database* recorded
+    # `interrupted` or `failed` for the same sitting, from the same function.
+    # One fact, two records of it, and only one of them had it.
+    #
+    # They belong out here because they are not outcome-derived. The demo knows
+    # how the sitting ended because it caught the exception, and the observer
+    # counted the items as they were posed. §7e's rule is that figures the
+    # session did not produce must be *absent* rather than zero — it is not that
+    # facts we hold should be dropped for tidiness.
+    record["stop_reason"] = outcome.stop_reason if outcome is not None else (stopped or None)
+    if outcome is not None:
+        record["items_attempted"] = outcome.items_attempted
+    elif observer is not None:
+        record["items_attempted"] = observer.items_started
+
     if outcome is not None:
         record.update(
             {
-                "stop_reason": outcome.stop_reason,
                 "goal": outcome.goal,
                 "goals_mastered": outcome.goals_mastered,
                 "distance_to_goal": outcome.distance_to_goal,
-                "items_attempted": outcome.items_attempted,
                 "pretest": {
                     "correct": outcome.pretest.correct,
                     "total": outcome.pretest.total,
@@ -1602,7 +1631,19 @@ def run_demo(
     # all: no transcript, no working, no reflections, no audit log. A sitting
     # that was stopped part-way is still the only data of its kind this project
     # has, and it is unrepeatable.
-    run_dir = _store(config, domain, session, learner, outcome)
+    # ⚠️ One expression, used for both records of this sitting. It was written
+    # out twice — once for the transcript, once for the store — and only the
+    # store's copy handled the no-outcome case, so an interrupted sitting had a
+    # `stop_reason` in the database and none on disk. Deriving it once is what
+    # stops the two disagreeing again.
+    stopped = (
+        outcome.stop_reason
+        if outcome is not None
+        else ("failed" if failed is not None else "interrupted")
+    )
+    run_dir = _store(
+        config, domain, session, learner, outcome, observer=observer, stopped=stopped
+    )
 
     # And into the store, so the next sitting can pick this learner up. Also on
     # every exit path: someone who stops half-way has still done the work, and
@@ -1616,11 +1657,7 @@ def run_demo(
             if isinstance(session.planner, Resumable)
             else None
         ),
-        stop_reason=(
-            outcome.stop_reason
-            if outcome
-            else ("failed" if failed is not None else "interrupted")
-        ),
+        stop_reason=stopped,
     )
     # Read *after* closing the session, so this sitting is part of the history
     # rather than the one thing missing from it.
