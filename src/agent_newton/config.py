@@ -434,21 +434,26 @@ class TeachingConfig(BaseModel):
     #: already did, so every measured result and every existing test is
     #: unaffected by this existing.
     #:
-    #: The learner ends a lesson — they say nothing, or they type the exit word.
-    #: This exists only so a conversation cannot run on unattended, which is why
-    #: it should be set generously rather than tuned.
+    #: **``None`` is unbounded, and that is what a person should have.** The
+    #: learner ends a lesson — they say nothing, or they type the exit word.
     #:
-    #: ⚠️ It was 3 and read as a length, and that was wrong in a way a sitting
-    #: made vivid: someone three exchanges in wrote *"I was just about to
-    #: understand something important"* and was removed from a conversation they
-    #: were driving. A cap a learner can reach while still engaged is not a
-    #: safety net, it is an interruption.
+    #: ⚠️ It was 3 and read as a length, then 12, and a sitting reached both. The
+    #: first removed someone who was *"just about to understand something
+    #: important"*; the second cut in mid-derivation, with the tutor having just
+    #: asked them to expand ``(x + h)^2``. A bound a learner can reach while
+    #: still engaged is an interruption, not a safety net.
+    #:
+    #: The runaway it was guarding against cannot happen. A turn requires a
+    #: reply and a reply requires someone to type one, so the conversation
+    #: already stops the moment nobody answers — which is the only bound that
+    #: was ever doing anything. A number is still accepted, for a front end that
+    #: wants a ceiling or a test that needs one.
     #:
     #: ⚠️ Inert for a cohort twice over. It is 0 in every experiment config, and
     #: `SimulatedLearner.discuss` returns None — so a simulated learner ends the
     #: conversation at its first turn whatever this says. The second is the
     #: guarantee worth having: an inability rather than a setting.
-    lesson_turns: int = Field(default=0, ge=0)
+    lesson_turns: int | None = Field(default=0, ge=0)
     #: Whether the learner's own words are read for "I do not know what this is".
     #:
     #: Off by default and off for every cohort. The trigger a sitting asked for:

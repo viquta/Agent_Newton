@@ -1007,6 +1007,56 @@ class TestALessonIsAConversation:
         assert levels == [s.label for s in TeachingStyle]
 
 
+class TestTheTutorMaySuggestButNeverDecides:
+    """The line a sitting drew.
+
+    *"I don't think that the llm should decide when to quit the dialogue, but it
+    could probably recommend the student to continue after it has noticed that
+    the student is getting the concept."*
+
+    It is the rule the rest of the tutor already follows: a model may say
+    things, it may not decide them. Whether a lesson continues is read off
+    nothing the model produces — the loop asks the learner every turn, and the
+    learner answers or does not.
+    """
+
+    def test_it_is_told_it_may_say_so(self) -> None:
+        from agent_newton.core.agents.llm import _STYLE_REPLY
+
+        assert "stop here or keep going" in _STYLE_REPLY
+
+    def test_and_told_the_decision_is_not_its_own(self) -> None:
+        from agent_newton.core.agents.llm import _STYLE_REPLY
+
+        assert "never end the conversation yourself" in _STYLE_REPLY
+
+    def test_nothing_reads_the_suggestion_back(self, calculus) -> None:
+        """The part that makes it a suggestion rather than a decision.
+
+        A tutor saying "you can stop here" must not stop anything. The learner
+        is asked exactly as often either way.
+        """
+
+        class Suggests:
+            def respond(self, *a, **kw):  # noqa: ANN001, ANN002, ANN003
+                raise AssertionError("not under test")
+
+            def explain(self, resource, style, exchanges=(), closing=False):  # noqa: ANN001
+                if closing:
+                    return "and that is the idea."
+                return "You have got it — you can stop here or keep going. Next?"
+
+        learner = AlwaysWrong(says=["a", "b", "c"])
+        config = _config()
+        config.teaching.lesson_turns = None
+        session = build_session("L_sugg", 1, calculus, config, learner=learner)
+        session.tutor = Suggests()
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        said = [u for u in session.board.state.reflections if u.kind == "lesson"]
+        assert len(said) == 3, "the suggestion must not have ended anything"
+
+
 class TestACohortCannotBeTalkedTo:
     """The guarantee worth having: an inability, not a setting.
 
@@ -1421,13 +1471,58 @@ class TestALessonNeverEndsOnAQuestionNobodyCanAnswer:
 
 
 class TestTheGuardIsNotALength:
-    """A bound a learner can reach while still engaged is an interruption."""
+    """A bound a learner can reach while still engaged is an interruption.
 
-    def test_the_demo_sets_it_generously(self) -> None:
-        # Not tuned. The learner ends a lesson; this only stops one running on
-        # unattended, so it should sit well above where anyone would stop.
+    It was 3, then 12, and a sitting reached both — the second time
+    mid-derivation, with the tutor having just asked them to expand
+    ``(x + h)^2``. The bound is gone for a person now, and the reason it can be
+    is that it was never the thing doing the bounding: a turn requires a reply
+    and a reply requires someone to type one.
+    """
+
+    def test_a_person_is_not_bounded_at_all(self) -> None:
         demo = Config.from_yaml("experiments/configs/demo.yaml")
-        assert demo.teaching.lesson_turns >= 8
+        assert demo.teaching.lesson_turns is None
+
+    def test_an_unbounded_lesson_still_ends_when_the_learner_does(
+        self, calculus
+    ) -> None:
+        """Which is why unbounded is safe rather than reckless.
+
+        The loop cannot advance without a reply. A learner who stops talking
+        stops the lesson, and a simulated one stops it at the first turn — so
+        "no bound" is bounded by the only thing that was ever bounding it.
+        """
+        learner = AlwaysWrong(says=["a", "b", "c"])
+        config = _config()
+        config.teaching.lesson_turns = None
+        session = build_session("L_free", 1, calculus, config, learner=learner)
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        said = [u for u in session.board.state.reflections if u.kind == "lesson"]
+        assert len(said) == 3, "it ran exactly as long as the learner talked"
+
+    def test_a_number_is_still_honoured_for_anything_that_wants_one(
+        self, calculus
+    ) -> None:
+        learner = AlwaysWrong(says=["a"] * 50)
+        config = _config()
+        config.teaching.lesson_turns = 2
+        session = build_session("L_capped", 1, calculus, config, learner=learner)
+        session.board.request_lesson("power_rule")
+        session._offer_lesson("power_rule")
+        said = [u for u in session.board.state.reflections if u.kind == "lesson"]
+        assert len(said) == 2
+
+    def test_a_cohort_is_still_pinned_to_one_turn(self) -> None:
+        # `None` must not leak into an experiment config: unbounded there would
+        # be a different run from every measured one. The scan checks `== 0`,
+        # which None fails.
+        for name in ("calculus", "smoke"):
+            assert (
+                Config.from_yaml(f"experiments/configs/{name}.yaml").teaching.lesson_turns
+                == 0
+            )
 
     def test_the_learner_can_always_end_it_sooner(self, calculus) -> None:
         learner = AlwaysWrong(says=["one thing"])

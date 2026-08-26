@@ -534,11 +534,26 @@ _STYLE_CLOSING = (
 )
 
 #: How it **continues**, once the student has said something back.
+#:
+#: The last line is the only place the tutor may say anything about *ending*,
+#: and it may only say it — the learner ends a lesson and nothing here does. A
+#: sitting drew that line: "I don't think that the llm should decide when to
+#: quit the dialogue, but it could probably recommend the student to continue
+#: after it has noticed that the student is getting the concept."
+#:
+#: It fits the rule the rest of the tutor already follows. A model may say
+#: things; it may not decide them. Whether a lesson continues is not read off
+#: this text by anything — the loop asks the learner, every turn, and the
+#: learner answers or does not.
 _STYLE_REPLY = (
     "Reply to what the student just said. Take up what they got right, and put "
     "the next small piece to them as a question they can answer. Two or three "
     "sentences, then the question. Do not deliver the whole explanation — they "
-    "will be given it in writing when you are done."
+    "will be given it in writing when you are done.\n"
+    "If their answers show they have got the idea, say so plainly and add that "
+    "they can stop here or keep going, as they prefer. Say it and then carry on "
+    "as normal — it is their decision, not yours, and you never end the "
+    "conversation yourself."
 )
 
 _EXPLAIN_SYSTEM = (

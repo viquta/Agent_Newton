@@ -977,14 +977,26 @@ class Session:
         # it exists so a conversation cannot go on forever unattended, and at a
         # sensible value a person reaches it only if they want to.
         #
-        # ⚠️ It used to be a hard stop at 3, and that was wrong in a way a
-        # sitting made vivid. Someone three turns in wrote *"I was just about to
-        # understand something important"* — the cap removed them mid-thought,
-        # from a conversation they were driving.
+        # ⚠️ It was a hard stop at 3, then at 12, and a sitting reached both.
+        # The first removed someone who was *"just about to understand something
+        # important"*; the second cut in mid-derivation, with the tutor having
+        # just asked them to expand (x + h)^2. A bound a learner can reach while
+        # still engaged is an interruption, not a safety net.
+        #
+        # `None` is unbounded and is what a person should have. The runaway this
+        # guarded against cannot occur: a turn requires a reply and a reply
+        # requires someone to type one, so the conversation already stops the
+        # moment nobody answers.
         exchanges: list[tuple[str, str]] = []
-        for _ in range(self.config.teaching.lesson_turns):
+        bound = self.config.teaching.lesson_turns
+        while bound is None or len(exchanges) < bound:
             replied = self.learner.discuss(concept_id, said)
             if not replied:
+                # The only thing that ends a conversation on its own, and
+                # it is enough: a turn cannot happen unless someone types
+                # a reply, so an unbounded lesson stops the moment the
+                # learner stops. That is why `None` is safe here, and why
+                # a number is optional rather than the mechanism.
                 break
             self.board.record_reflection(
                 replied,

@@ -149,10 +149,17 @@ teaching:
   # end it — a blank line or :done, whenever you have had enough. This number is
   # only so a conversation cannot run on unattended.
   #
-  # ⚠️ It was 3, and a sitting showed why that was wrong: three exchanges in,
-  # "I was just about to understand something important", and the cap took them
-  # out of a conversation they were driving. A bound a learner can reach while
-  # still engaged is an interruption, not a safety net. Set it generously.
+  # ⚠️ It was 3, then 12, and a sitting reached both. The first took someone out
+  # who was "just about to understand something important"; the second cut in
+  # mid-derivation, with the tutor having just asked them to expand (x + h)^2.
+  #
+  # `null` is unbounded, and that is what a person should have. The runaway this
+  # was guarding against cannot happen: a turn needs a reply and a reply needs
+  # someone to type one, so the conversation already stops the moment you stop.
+  # You end it, with a blank line or :done.
+  #
+  # The tutor may notice you have got it and say you can stop — but only say it.
+  # Nothing reads that back, and the loop asks you every turn regardless.
   #
   # It closes with the written account either way, so leaving early never costs
   # you the explanation. That account is the authored text: checked as plain
@@ -169,7 +176,7 @@ teaching:
   # starts outstaying its welcome, this is the dial. It must stay 0 for every
   # cohort — and a simulated learner cannot converse anyway, so a dialogue is
   # unreachable there whatever this says.
-  lesson_turns: 12
+  lesson_turns: null
   # On here and nowhere else. Reads what you write in the working and reflection
   # channels for "I do not know what this concept is", and offers the lesson
   # without your having to ask for it.
