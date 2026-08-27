@@ -1125,9 +1125,15 @@ class Session:
             #
             # Before the diagnosis, because the answer alone cannot separate a
             # method that was wrong from arithmetic that slipped, and an
-            # unreadable answer carries nothing whatever. The diagnostic is
-            # given the words in the same step it is asked to explain — whether
-            # it *reads* them is its own affair; see the Diagnostic protocol.
+            # unreadable answer carries nothing whatever. The words are on the
+            # board before the label is inferred, so the record of the step is
+            # complete whichever way the diagnosis goes.
+            #
+            # ⚠️ They are not passed to `diagnose`, which takes the answer and
+            # nothing else the learner wrote — see the Diagnostic protocol. The
+            # working reaches the *tutor*, through the view. An earlier version
+            # of this comment said the diagnostic "is given the words", and
+            # there is no parameter it could arrive in.
             #
             # The old ordering asked after the answer was recorded, which was
             # about a different risk — that the working could become a hint the
@@ -1165,6 +1171,11 @@ class Session:
                 # the capability that says so.
                 if isinstance(self.diagnostic, OracleAccess):
                     self.diagnostic.observe_ground_truth(step.fired)
+                # The same `item` and `response` the verifier was given above,
+                # and nothing the verifier produced — `result` is not passed.
+                # That the step was wrong is carried by this call sitting inside
+                # the branch, so the diagnostic never sees a verdict and has no
+                # way to ask for one.
                 diagnosis = self.diagnostic.diagnose(item, response, self.domain)
                 diagnoses.append((step.fired, diagnosis.misconception_id))
                 confirmed = confirmed or diagnosis.named

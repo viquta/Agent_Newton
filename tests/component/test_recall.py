@@ -514,3 +514,62 @@ class TestItIsOffForEveryCohort:
         # 0.7 from the sweep, chosen for precision: 80% precision at 36% recall,
         # and correctly silent when nothing is relevant.
         assert "@0.7" in built.label
+
+
+class TestADeadEmbedderDoesNotEndTheSitting:
+    """A sitting must survive a dead backend, and recall is not the exception.
+
+    ⚠️ The container found this rather than a test. `demo.yaml` sets
+    `recall.strategy: embedded`, `./newton up-models` pulled only the chat
+    model, and the reachability check looked at only that one — so a sitting
+    started, ran until the first tutor reply, and then raised out of
+    `_remembered` from *outside* the `try` that catches a dead chat model.
+
+    Falling back costs context and nothing else: `said_about` is the pre-recall
+    behaviour and what every measured result was produced under.
+    """
+
+    class Dead:
+        """A strategy whose backend is not there."""
+
+        label = "ollama/nomic-embed-text@0.7"
+
+        def about(self, utterances, concept_id, query, limit=3):  # noqa: ANN001, ARG002
+            from agent_newton.llm.base import ProviderError
+
+            raise ProviderError("ollama embed failed for nomic-embed-text")
+
+    def test_the_turn_is_still_written(self, calculus) -> None:
+        helper = TestTheTutorUsesIt()
+        tutor, _provider = helper._tutor(self.Dead())
+        view = helper._view(_said("i keep dropping the exponent", "power_rule"))
+        hint = helper._respond(tutor, view, calculus)
+        assert hint.text
+
+    def test_it_falls_back_to_said_about(self, calculus) -> None:
+        # Not merely "it did not raise": the words filed under *this* concept
+        # still reach the prompt, which is what makes the fallback a degradation
+        # rather than a silent loss of the channel.
+        helper = TestTheTutorUsesIt()
+        tutor, provider = helper._tutor(self.Dead())
+        view = helper._view(_said("i keep dropping the exponent", "power_rule"))
+        helper._respond(tutor, view, calculus)
+        assert "dropping the exponent" in provider.prompts[0]
+
+    def test_the_failure_is_counted(self, calculus) -> None:
+        # ⚠️ The point of the counter. A run that quietly stopped recalling and
+        # one where nothing happened to match are indistinguishable without it,
+        # and the first is a broken setup while the second is a normal sitting.
+        helper = TestTheTutorUsesIt()
+        tutor, _provider = helper._tutor(self.Dead())
+        view = helper._view(_said("i keep dropping the exponent", "power_rule"))
+        assert tutor.recall_failures == 0
+        helper._respond(tutor, view, calculus)
+        assert tutor.recall_failures == 1
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def calculus(cls):
+        from agent_newton.domains import registry
+
+        return registry.load_domain("calculus")

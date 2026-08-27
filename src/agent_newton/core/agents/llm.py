@@ -222,6 +222,10 @@ class LLMTutor:
         #: How the learner's own words are found. ``None`` reads the last two
         #: said about this concept, which is what every measured result used.
         self._recall = recall
+        #: Times recall was asked and could not answer, so a degraded sitting is
+        #: visible afterwards rather than looking like one where nothing matched.
+        #: Reported the way ``LLMDiagnostic.failures`` is.
+        self.recall_failures = 0
 
     def respond(
         self,
@@ -426,7 +430,30 @@ class LLMTutor:
         # were confused are in the same vocabulary as the question, not as the
         # algebra. The prompt is what carries that vocabulary.
         query = f"{' '.join(item.prompt.split())} {response}".strip()
-        return self._recall.about(view.reflections, item.concept_id, query)
+        try:
+            return self._recall.about(view.reflections, item.concept_id, query)
+        except ProviderError as exc:
+            # ⚠️ A sitting must survive a dead backend, which is the rule
+            # `respond` already applies to the hint itself one layer down. An
+            # embedder that is unreachable, or a model that was never pulled,
+            # used to raise from here — outside that `try` — and end the session
+            # several questions in, with the person given no idea why.
+            #
+            # Falling back costs context and nothing else: `said_about` is the
+            # pre-recall behaviour and what every measured result was produced
+            # under. Counted, because a run that quietly stopped recalling and
+            # one where nothing happened to match look identical otherwise.
+            self.recall_failures += 1
+            log.warning(
+                "recall unavailable for %s (%s); falling back to said_about",
+                item.concept_id,
+                exc,
+                extra={
+                    "event": "tutor.recall_failed",
+                    "concept_id": item.concept_id,
+                },
+            )
+            return view.said_about(item.concept_id)
 
     def explain(
         self,

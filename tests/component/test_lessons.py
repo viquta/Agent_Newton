@@ -1312,11 +1312,18 @@ class TestTheConfusionDetectorAgreesWithHandLabels:
 
     def test_it_is_calibrated_against_the_hand_labels(self, cases) -> None:
         """The real figure. Needs a model, so it skips without one."""
+        import os
         import urllib.error
         import urllib.request
 
+        # ⚠️ The same variable the ollama client reads, not a hard-coded
+        # localhost. In a container `localhost` is the container, so this
+        # skipped even with a reachable server — and a calibration test that
+        # silently does not run is worse than one that fails, because its figure
+        # is the one every judged rate has to be quoted beside.
+        host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
         try:
-            urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2)
+            urllib.request.urlopen(f"{host}/api/tags", timeout=2)
         except (urllib.error.URLError, OSError):
             pytest.skip("no model reachable; this measures one")
 
