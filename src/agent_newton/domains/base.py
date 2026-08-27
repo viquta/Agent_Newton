@@ -60,6 +60,9 @@ class Verdict(str, Enum):
     """
 
     CORRECT = "correct"
+    #: The only verdict the session diagnoses on. It is not sent anywhere: the
+    #: session holds the result and simply does not call the diagnostic unless
+    #: this is what came back, so the diagnostic never sees a verdict at all.
     INCORRECT = "incorrect"
     UNPARSEABLE = "unparseable"
 
