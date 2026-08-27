@@ -16,6 +16,10 @@ cd "$(dirname "$0")"
 IMAGE="agent-newton:local"
 SERVICE="newton"
 MODEL="${NEWTON_MODEL:-gemma4:12b}"
+# The embedder. A sitting with recall on needs it as well as the chat model, and
+# demo.yaml turns recall on — so up-models pulls both rather than leaving the
+# second to be discovered mid-session.
+EMBED_MODEL="${NEWTON_EMBED_MODEL:-nomic-embed-text}"
 
 if [ -t 1 ]; then BOLD=$'\033[1m'; DIM=$'\033[2m'; OFF=$'\033[0m'
 else BOLD=""; DIM=""; OFF=""; fi
@@ -93,6 +97,8 @@ case "${1:-help}" in
     compose --profile models up -d ollama
     echo "${BOLD}pulling $MODEL${OFF}${DIM} — several GB, once${OFF}"
     compose --profile models exec ollama ollama pull "$MODEL"
+    echo "${BOLD}pulling $EMBED_MODEL${OFF}${DIM} — small, and recall needs it${OFF}"
+    compose --profile models exec ollama ollama pull "$EMBED_MODEL"
     echo
     echo "Ollama is up. Model-backed verbs will use it:"
     echo "  ${DIM}./newton demo${OFF}"

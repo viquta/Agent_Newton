@@ -32,6 +32,13 @@ DIAGNOSTIC_SUMMARY="results/diagnostic_calculus_gemma4-12b_think-false_labels-co
 
 MODEL="${NEWTON_MODEL:-gemma4:12b}"
 
+# The second model, and it is easy to forget there is one. `recall` ranks the
+# learner's own words against what they just wrote, so a sitting with
+# `recall.strategy: embedded` needs an embedder as well as a chat model — and
+# demo.yaml turns it on. Kept in step with RecallConfig.model, which is where a
+# run states which embedder produced it.
+EMBED_MODEL="${NEWTON_EMBED_MODEL:-nomic-embed-text}"
+
 # Where a re-run's summary goes. Not over the stored one: a committed summary
 # names the run directories behind it, and rewriting it to name directories that
 # were never committed leaves a quotable number whose origin is not inspectable.
@@ -52,6 +59,13 @@ step() { printf '\n%s── %s %s\n' "$BOLD" "$*" "$OFF"; }
 # Runs before anything model-backed. A container that cannot reach Ollama
 # otherwise spends 120 s in the provider's timeout, three times over, before
 # saying so.
+# require_model <verb> [extra-model ...]
+#
+# ⚠️ The extra models are not a nicety. Before this, `demo` checked only $MODEL,
+# passed, started the sitting, and then died on the first tutor reply because
+# the embedder was missing — a failure the person met several questions in,
+# with no way to know what had happened. A command that needs two models has to
+# say so before it takes someone's time.
 require_model() {
   local host="${OLLAMA_HOST:-http://localhost:11434}"
   local tags
@@ -76,11 +90,14 @@ ${RED}no Ollama at ${host}${OFF}
 MSG
     exit 1
   fi
-  if ! printf '%s' "$tags" | grep -q "\"${MODEL%%:*}"; then
-    say "${YELLOW}${MODEL} is not pulled on ${host}${OFF}"
-    say "  ollama pull ${MODEL}${DIM}   (or, for the container: ./newton pull)${OFF}"
-    exit 1
-  fi
+  local wanted
+  for wanted in "$MODEL" "${@:2}"; do
+    if ! printf '%s' "$tags" | grep -q "\"${wanted%%:*}"; then
+      say "${YELLOW}${wanted} is not pulled on ${host}${OFF}"
+      say "  ollama pull ${wanted}${DIM}   (or, for the container: ./newton pull ${wanted})${OFF}"
+      exit 1
+    fi
+  done
 }
 
 # Run an experiment into RERUNS, then compare against the stored summary if
@@ -145,6 +162,9 @@ ${BOLD}Needs a model${OFF}  ${DIM}— host Ollama at \$OLLAMA_HOST, or ./newton 
                     ${DIM}a name resumes that learner; a new one starts fresh${OFF}
   ${CYAN}diagnostic${OFF}        score the diagnostic agent against injected labels
   ${CYAN}tutor${OFF}             score the tutor on the turns a learner would read
+  ${CYAN}lessons <learner>${OFF} score the lesson turns in that learner's stored sittings
+  ${CYAN}recall${OFF}            keyed against embedded, over the hand-labelled corpus
+                    ${DIM}needs ${EMBED_MODEL}, not ${MODEL}${OFF}
 
 ${BOLD}Inspect a session${OFF}
   ${CYAN}sitting [run]${OFF}     read a stored sitting back as prose ${DIM}(default: latest)${OFF}
@@ -312,7 +332,9 @@ case "$verb" in
 
   # --- model-backed -------------------------------------------------------
   demo)
-    require_model demo
+    # Both models: demo.yaml sets recall.strategy to embedded, so the tutor
+    # ranks the learner's history against what they just wrote.
+    require_model demo "$EMBED_MODEL"
     # A bare first argument is who is sitting down, the way `cohort` takes an
     # arm: `demo alice` rather than `demo --learner alice`. Anything starting
     # with a dash is a flag and passes straight through.
@@ -334,6 +356,20 @@ case "$verb" in
     require_model tutor
     reproduce "tutor_calculus_gemma4-12b_think-false" "" \
       agent-newton evaluate tutor --domain calculus --no-think "$@"
+    ;;
+  lessons)
+    require_model lessons
+    # Reads stored sittings rather than running one, so it needs results/
+    # mounted — which it is. A learner name is the one argument that matters.
+    exec agent-newton evaluate lessons "$@"
+    ;;
+  recall)
+    # ⚠️ The embedder, not the chat model. This compares the keyed strategy
+    # against the embedded one over a hand-labelled corpus; nothing here writes
+    # a hint, so $MODEL is irrelevant and demanding it would refuse a command
+    # that would have worked.
+    require_model recall "$EMBED_MODEL"
+    exec agent-newton evaluate recall "$@"
     ;;
 
   # --- inspect ------------------------------------------------------------

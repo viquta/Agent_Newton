@@ -25,6 +25,10 @@ services:
       NEWTON_N: "${NEWTON_N:-}"
       NEWTON_SEED: "${NEWTON_SEED:-}"
       NEWTON_MODEL: "${NEWTON_MODEL:-}"
+      # The embedder, which recall needs and which is a different model from the
+      # one that writes hints. Passed through like the rest, so overriding it on
+      # the host reaches the entrypoint rather than silently doing nothing.
+      NEWTON_EMBED_MODEL: "${NEWTON_EMBED_MODEL:-}"
       NEWTON_OUT: "${NEWTON_OUT:-}"
       # Only needed by a configuration naming a hosted provider; an Ollama run
       # uses neither. Empty unless the host has them set.
