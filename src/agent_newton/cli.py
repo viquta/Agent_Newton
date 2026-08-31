@@ -285,6 +285,9 @@ def evaluate_planner(
     config_path: Path = typer.Option(
         ..., "--config", help="Run config; the planner and arm it names are what is scored."
     ),
+    arm: str | None = typer.Option(
+        None, "--arm", help="Override the config's arm: coupled or decoupled."
+    ),
     out: Path | None = typer.Option(None, "--out", help="Output directory."),
 ) -> None:
     """Score a planner's choices against a policy holding the true profile.
@@ -305,6 +308,19 @@ def evaluate_planner(
     except Exception as exc:  # pydantic ValidationError or a YAML error
         console.print(f"[red]invalid config:[/red] {config_path}\n{exc}")
         raise typer.Exit(code=1)
+
+    # ⚠️ So one committed config can score both arms, the way `run_cohort.py`
+    # already does it. Without this the decoupled arm needs a second config file
+    # that differs by one line and must be kept in step — or a throwaway one,
+    # which is what happened: the stored summaries recorded a `config` path under
+    # a temporary directory that no longer exists, so the run behind a committed
+    # number could not be inspected. A summary naming a file nobody can open is
+    # the broken chain `results/README.md` is about.
+    if arm is not None:
+        if arm not in ("coupled", "decoupled"):
+            console.print(f"[red]--arm must be coupled or decoupled, not[/red] {arm!r}")
+            raise typer.Exit(code=1)
+        config = config.model_copy(update={"arm": arm})
 
     if config.uses_llm():
         console.print(

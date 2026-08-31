@@ -1,16 +1,16 @@
 {
-  "config": "/private/tmp/claude-501/-Users-victorhristov-Documents-GitHub-Agent-Newton/903453ea-dfcb-450e-9aa1-06da1a53ca95/scratchpad/pl_coupled.yaml",
+  "config": "experiments/configs/calculus.yaml",
   "domain": "calculus",
   "arm": "coupled",
   "planner": "goal_directed",
   "emphasis": "consolidate",
-  "decisions": 588,
-  "item_agreement": 0.7397959183673469,
-  "concept_agreement": 0.7397959183673469,
-  "mean_regret": 0.04233928183786523,
-  "mean_reference_value": 0.12012326927055557,
-  "regret_share": 0.35246528083167455,
-  "costly_disagreements": 32,
+  "decisions": 586,
+  "item_agreement": 0.7559726962457338,
+  "concept_agreement": 0.7559726962457338,
+  "mean_regret": 0.03372939093970761,
+  "mean_reference_value": 0.10452292157193076,
+  "regret_share": 0.3226985089246253,
+  "costly_disagreements": 27,
   "in_frontier_rate": 1.0,
-  "no_selection": 1
+  "no_selection": 4
 }
