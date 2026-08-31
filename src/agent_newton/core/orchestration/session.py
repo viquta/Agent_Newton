@@ -822,7 +822,10 @@ class Session:
         quote = self.confusion.confused(concept_id, text)
         if quote is None:
             return
-        self.board.request_lesson(concept_id, inferred=True)
+        # The quote goes with the request. Without it the audit log records that
+        # something fired and not what it read, which is the boolean the
+        # detector returns a string to avoid being.
+        self.board.request_lesson(concept_id, inferred=True, quote=quote)
 
     def _offer_lesson(self, concept_id: str) -> bool:
         """Explain the concept, if the learner keeps getting it wrong.

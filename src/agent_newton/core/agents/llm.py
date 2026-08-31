@@ -25,7 +25,12 @@ from typing import Mapping, Sequence
 from agent_newton.config import LabelSpace, ScaffoldingPolicy, ZPDConfig
 from pydantic import BaseModel
 
-from agent_newton.core.agents.base import Diagnosis, Hint, StateView
+from agent_newton.core.agents.base import Diagnosis, Hint, StateView #vh comment: i can see how with Hint, the method from respond from Tutor is being used, but how is the method explain being called here? Is it being called here at all?
+# answer: it is, from `session.py :: _offer_lesson` — three calls, one per kind
+# of turn: the opening, each reply, and the closing one. Nothing imports it here
+# because `explain` returns a plain `str`; only `respond` needs a name from
+# base.py, because it returns a `Hint`. An import list shows what a module needs
+# *spelled*, not what it implements.
 from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
 from agent_newton.core.state import route
 from agent_newton.core.state.schema import Emphasis, Plan
@@ -227,6 +232,22 @@ class LLMTutor:
         #: Reported the way ``LLMDiagnostic.failures`` is.
         self.recall_failures = 0
 
+    # answer: this is the one that runs. `Tutor` in base.py is a **Protocol** —
+    # its method bodies are literally `...` and are never executed. It declares
+    # the shape: "anything with a `respond` and an `explain` of these signatures
+    # is a Tutor". `LLMTutor` and `TemplateTutor` are the implementations.
+    #
+    # Note `class LLMTutor:` — it does **not** inherit from `Tutor`, and there is
+    # no base class to inherit. The match is structural: this is a Tutor because
+    # it has the two methods, not because of what it descends from. Swapping in a
+    # different implementation therefore needs no edit to base.py.
+    #
+    # On the return types: both agree. `respond` returns `Hint` in the Protocol
+    # and here; `explain` returns `str` in both. Two methods, two return types —
+    # a reply to a step is a structured decision the session records, a lesson
+    # turn is prose the learner reads.
+    #
+    # So: nothing in base.py "sits there unused". None of it runs at all.
     def respond(
         self,
         item: Item,
@@ -454,7 +475,10 @@ class LLMTutor:
                 },
             )
             return view.said_about(item.concept_id)
-
+    # answer: the same pair again — base.py declares `explain`, this implements
+    # it, and `TemplateTutor.explain` implements it differently by returning the
+    # authored text and ignoring style, exchanges and closing. Three definitions,
+    # one of which never executes.
     def explain(
         self,
         resource: ConceptResource,

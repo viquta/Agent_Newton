@@ -587,7 +587,9 @@ class Blackboard:
         )
         return self._requested
 
-    def request_lesson(self, concept_id: str, *, inferred: bool = False) -> None:
+    def request_lesson(
+        self, concept_id: str, *, inferred: bool = False, quote: str = ""
+    ) -> None:
         """The learner asked to have this concept explained.
 
         ``inferred`` says the learner did not ask in so many words — the system
@@ -624,6 +626,16 @@ class Blackboard:
             # the detector rather than about the learner — the same reading
             # `UNPARSEABLE` gets.
             inferred=inferred,
+            # ⚠️ The words that triggered an inference, and the whole reason
+            # `confused` returns a quote rather than a bool: a trigger whose
+            # evidence is a boolean cannot be argued with afterwards. The
+            # detector returned this and the session used to drop it, so the
+            # rationale was written in two docstrings and realised nowhere —
+            # a firing could be counted and never inspected.
+            #
+            # Empty for an explicit ask, which needs no evidence: the learner
+            # typing `:why` *is* the record.
+            **({"quote": quote} if quote else {}),
         )
 
     def take_lesson_request(self) -> tuple[str, bool] | None:

@@ -1131,6 +1131,44 @@ class TestReadingTheLearnersOwnWords:
         )
         assert session.board.take_lesson_request() == ("limits_of_sequences", True)
 
+    def test_the_words_that_fired_it_reach_the_audit_log(self, calculus) -> None:
+        # ⚠️ The reason `confused` returns a quote rather than a bool, and it
+        # went unrealised for a while: the session took the string, tested it
+        # for None and dropped it, so the log recorded that something fired and
+        # never what it read. A trigger whose evidence is a boolean cannot be
+        # argued with afterwards, which is the whole claim the string exists to
+        # support.
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.confusion = self.Reads()
+        said = "I factored the denominator. But I don't understand what a limit is."
+        session._note_if_confused("limits_of_sequences", said)
+
+        inferred = [
+            r for r in session.board.audit_log
+            if r.evidence.get("asked_for_a_lesson") and r.evidence.get("inferred")
+        ]
+        assert len(inferred) == 1
+        quote = inferred[0].evidence.get("quote", "")
+        assert quote, "the firing recorded no evidence at all"
+        assert quote in said, "the quote must be the learner's own words"
+
+    def test_an_explicit_ask_records_no_quote(self, calculus) -> None:
+        # Nothing was read, so there is nothing to quote: the learner typing
+        # `:why` *is* the record. An empty string here would be evidence that
+        # did not exist.
+        session = build_session(
+            "L_lost", 1, calculus, self._config_detecting(), learner=AlwaysWrong()
+        )
+        session.board.request_lesson("power_rule")
+        asked = [
+            r for r in session.board.audit_log
+            if r.evidence.get("asked_for_a_lesson")
+        ]
+        assert len(asked) == 1
+        assert "quote" not in asked[0].evidence
+
     def test_an_ordinary_wrong_answer_is_not_confusion(self, calculus) -> None:
         # The distinction the whole trigger rests on: someone attempting the
         # work and getting it wrong has met the concept and slipped, and those

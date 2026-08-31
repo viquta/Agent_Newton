@@ -8,6 +8,8 @@ responds to.
 The tutor is driven by the instructional rules rather than checked against them
 afterwards: it asks what move is required and makes it, so the error-first
 ordering holds by construction.
+
+vh comment: to do -->I need to see how the experiments are actually working after i understand the system.
 """
 
 from __future__ import annotations

@@ -113,6 +113,7 @@ class LessonReply(BaseModel):
 
     @field_validator("text")
     @classmethod
+    #i don't think this is used anywhere
     def _must_be_a_finished_thought(cls, text: str) -> str:
         """Reject a turn that stops mid-sentence.
 

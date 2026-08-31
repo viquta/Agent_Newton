@@ -1,4 +1,4 @@
-"""Anthropic and OpenAI backends.
+"""Anthropic and OpenAI backends. vh comment: HAVE NOT TESTED, cause I don't have the API keys. 
 
 Both SDKs are optional extras, so an offline install stays lean and a run that
 names neither never imports them. Import failure is reported as a missing
