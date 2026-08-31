@@ -818,6 +818,7 @@ def evaluate_lessons(
         help="Hand-labelled set the judge is calibrated against.",
     ),
     store_path: Path = typer.Option(Path("results/learners.db"), "--store"),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
 ) -> None:
     """Score a learner's lesson turns for faithfulness to what they said.
 
@@ -901,6 +902,63 @@ def evaluate_lessons(
         )
         for case_id in ungrounded[:10]:
             console.print(f"  {case_id}")
+
+    # ⚠️ Written, like every other evaluation here, because a figure with no
+    # artifact behind it is not a result. This one printed and stopped, so the
+    # groundedness rate lived in a terminal and in prose — and it is computed
+    # over `results/learners.db`, which is gitignored and per-machine, so a
+    # reader could not regenerate it either. The store stays untracked; what
+    # this fixes is that the number now has a file naming the sittings, the
+    # judge and the gold set it came from.
+    directory = out or Path("results") / f"lessons_{learner}_{arm}"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    with (directory / "turns.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["case_id", "concept_id", "grounded", "said", "reply"])
+        judged = dict(report.verdicts)
+        # ⚠️ The id is `concept_id#index` over the list `judge_lesson_turns` was
+        # handed — which is `answering`, not every exchange. Rebuilding it from
+        # the full list renumbers every case and the csv silently stops joining
+        # to the verdicts: 13 of 46 rows matched by coincidence, which looked
+        # like a partial run rather than a wrong key.
+        for index, exchange in enumerate(answering):
+            case_id = f"{exchange.concept_id}#{index}"
+            writer.writerow([
+                case_id, exchange.concept_id, judged.get(case_id, ""),
+                exchange.said, exchange.reply,
+            ])
+
+    summary = {
+        "learner": learner,
+        "arm": arm,
+        "store": str(store_path),
+        "turns_judged": len(report.verdicts),
+        "judge": {
+            "model": spec.label(),
+            "gold_set": str(gold),
+            "calibration_cases": len(report.scored),
+            # First, and for the reason `evaluate tutor` gives: the rate below is
+            # only as good as this, and a reader who takes one without the other
+            # has a number whose error is unknown.
+            "agreement_with_hand_labels": report.agreement,
+            "disagreements": [c for c, _, _ in report.disagreements()],
+            "grounded_rate": report.grounded_rate,
+            "unobtainable": report.unobtainable,
+        },
+        "ungrounded": ungrounded,
+    }
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    console.print(f"\nwritten to {directory}")
+
+    # ⚠️ The store is not committed, so this directory records a measurement
+    # whose inputs cannot be shipped with it. `results/README.md` makes human
+    # sittings the exception to the naming rule for exactly that reason: commit
+    # the sittings this read, or the summary names evidence nobody else has.
+    console.print(
+        "[dim]computed over a per-machine store — commit the sittings behind it "
+        "if this figure is going to be quoted[/dim]"
+    )
 
 
 @eval_app.command("recall")
