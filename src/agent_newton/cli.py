@@ -961,6 +961,144 @@ def evaluate_lessons(
     )
 
 
+@eval_app.command("confusion")
+def evaluate_confusion(
+    gold: Path = typer.Option(
+        Path("tests/fixtures/gold/calculus_confusion_cases.yaml"), "--gold"
+    ),
+    model: str = typer.Option("gemma4:12b", "--model"),
+    provider: str = typer.Option("ollama", "--provider"),
+    think: bool = typer.Option(False, "--think/--no-think"),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+) -> None:
+    """Score the confusion detector against hand labels.
+
+    The detector decides whether what a learner wrote says they do not know what
+    the concept *is*, as against showing a mistake in applying it — the third of
+    the three things that can buy a lesson, and the one place a model is
+    permitted to decide something. It had a gold set and a pytest gate but no
+    way to produce a figure anyone could store or cite, which is what this is.
+
+    ⚠️ The floor is printed beside the agreement and written into the summary.
+    The set is balanced, so answering "confused" to everything scores half; an
+    agreement figure without that number next to it says nothing. The model-free
+    detector is scored alongside for the same reason — it answers "no" to
+    everything and lands on the same half from the other side.
+
+    ⚠️ The two halves are reported apart. The `false` half is the hard one:
+    hedging, uncertainty about an answer and "this was confusing" all describe
+    someone who is doing the work and must not fire. Pooling the halves would
+    hide a detector that fires on everything.
+    """
+    from agent_newton.config import ModelSpec
+    from agent_newton.core.agents.tutor import NoConfusion
+    from agent_newton.core.evaluation.confusion import load_gold, score
+
+    if not gold.exists():
+        console.print(f"[red]no gold set at {gold}[/red]")
+        raise typer.Exit(code=1)
+
+    cases = load_gold(gold)
+
+    # Scored first and always: it needs no model, and it is what makes the
+    # measured figure readable. A detector that cannot beat this is not
+    # detecting anything.
+    reports = [score(cases, NoConfusion(), "model-free (says no to everything)")]
+
+    try:
+        from agent_newton.core.agents.llm import LLMConfusionDetector
+        from agent_newton.llm.factory import build_provider
+
+        detector = LLMConfusionDetector(
+            build_provider(
+                # A typer option is a `str`; `ModelSpec.provider` is a
+                # Literal. Same narrowing every other evaluation here does —
+                # the config validates the value, not the annotation.
+                ModelSpec(provider=provider, model=model, think=think),  # pyright: ignore[reportArgumentType]
+                Path(".cache/llm"),
+            )
+        )
+        label = f"{provider}/{model} (think={str(think).lower()})"
+        reports.append(score(cases, detector, label))
+    except Exception as exc:  # noqa: BLE001
+        # ⚠️ Stated rather than silent. This measures a model, so a run without
+        # one measures nothing — and a command that quietly reported only the
+        # floor would look like a result.
+        console.print(
+            f"[yellow]no model reachable ({type(exc).__name__}); "
+            f"the floor is all this run can report[/yellow]\n"
+        )
+
+    if not cases.balanced:
+        console.print(
+            "[yellow]⚠ the gold set is not balanced, so a constant answer no "
+            "longer scores half — read the floor, not the agreement[/yellow]\n"
+        )
+
+    directory = out or Path("results") / f"confusion_{gold.stem.split('_')[0]}"
+    directory.mkdir(parents=True, exist_ok=True)
+    summary = {
+        "gold": str(gold),
+        "cases": len(cases.cases),
+        "positives": cases.positives,
+        "negatives": cases.negatives,
+        "balanced": cases.balanced,
+        "floor": cases.floor,
+        # ⚠️ Recorded with the figure it qualifies. The verdict on a borderline
+        # phrasing turns on punctuation and every case here is punctuated, so
+        # this set does not vary the thing known to move the verdict. The
+        # fixture header carries the case that showed it.
+        "known_limitation": (
+            "Agreement is measured over a set in which every case is "
+            "punctuated; the detector's verdict on a borderline phrasing is "
+            "known to turn on punctuation. See the fixture header."
+        ),
+        "reports": [report.as_dict() for report in reports],
+    }
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    console.print(
+        f"[bold]{len(cases.cases)} case(s)[/bold] "
+        f"({cases.positives} confused / {cases.negatives} not) from {gold}\n"
+        f"writing to {directory}\n"
+    )
+
+    table = Table(box=None, padding=(0, 2))
+    table.add_column("detector")
+    table.add_column("agreement", justify="right")
+    table.add_column("floor", justify="right")
+    table.add_column("detected confusion", justify="right")
+    table.add_column("left work alone", justify="right")
+    for report in reports:
+        table.add_row(
+            report.label,
+            f"{report.agreement:.1%}",
+            f"{report.floor:.1%}",
+            f"{report.positives_agreed}/{report.positives}",
+            f"{report.negatives_agreed}/{report.negatives}",
+        )
+    console.print(table)
+
+    for report in reports:
+        if report.disagreements:
+            console.print(f"\n[yellow]{report.label} disagreed[/yellow]")
+            for d in report.disagreements:
+                # ⚠️ Not square brackets: rich reads those as markup and ate
+                # the label silently, so every disagreement printed unlabelled
+                # and the false positives were indistinguishable from the false
+                # negatives — which is the one distinction that matters here.
+                console.print(
+                    f"  {d.kind} — {d.concept_id}: {d.text.strip()[:90]}"
+                )
+                if d.got:
+                    console.print(f"      read as confusion: {d.got.strip()[:90]}")
+
+    console.print(
+        "\n[dim]⚠ Quote the agreement with the floor beside it. The set is "
+        "balanced so a constant answer scores the floor exactly.[/dim]"
+    )
+
+
 @eval_app.command("recall")
 def evaluate_recall(
     gold: Path = typer.Option(

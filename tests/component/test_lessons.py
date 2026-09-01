@@ -1302,10 +1302,16 @@ class TestTheConfusionDetectorAgreesWithHandLabels:
     """Calibration, on the same terms as the tutor judge's.
 
     A detector nobody measured is worse than none, because it looks like one.
-    The set is balanced 4/4, so answering "confused" to everything scores 50%
-    rather than well, and the `false` half is the hard one: hedging, uncertainty
+    The set is balanced — read the count off the fixture, not from here, since it
+    has grown once already — so answering "confused" to everything scores half
+    rather than well. The `false` half is the hard one: hedging, uncertainty
     about an answer, and "this was confusing" all describe someone who is doing
     the work.
+
+    ⚠️ This is the CI gate. `agent-newton evaluate confusion` is the same
+    measurement written down, and the two are not substitutes: a gate that skips
+    without a model still passes, and a stored figure is what a claim gets
+    quoted from.
 
     Skipped where no model is reachable — it is a measurement of a model, and a
     version of it that ran without one would be measuring nothing.
