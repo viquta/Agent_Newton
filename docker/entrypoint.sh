@@ -153,6 +153,7 @@ ${BOLD}Run an experiment${OFF}  ${DIM}— no model involved; summaries land in $
   ${CYAN}coverage${OFF}          misconception coverage against the item budget
   ${CYAN}power${OFF}             power analysis ${DIM}(the long one — minutes)${OFF}
   ${CYAN}calibrate${OFF}         mastery estimate against held-out performance
+  ${CYAN}planner [arm]${OFF}     planner choices against a reference holding the profile
   ${CYAN}sweep <knob>${OFF}      arbitration | prerequisites | headroom | doubt
   ${CYAN}figures${OFF}           redraw the figures from the stored summaries
   ${CYAN}all${OFF}               every model-free experiment above, in order
@@ -165,6 +166,8 @@ ${BOLD}Needs a model${OFF}  ${DIM}— host Ollama at \$OLLAMA_HOST, or ./newton 
   ${CYAN}lessons <learner>${OFF} score the lesson turns in that learner's stored sittings
   ${CYAN}recall${OFF}            keyed against embedded, over the hand-labelled corpus
                     ${DIM}needs ${EMBED_MODEL}, not ${MODEL}${OFF}
+  ${CYAN}confusion${OFF}         the confusion detector against hand labels
+                    ${DIM}agreement is printed with the floor a constant answer scores${OFF}
 
 ${BOLD}Inspect a session${OFF}
   ${CYAN}sitting [run]${OFF}     read a stored sitting back as prose ${DIM}(default: latest)${OFF}
@@ -356,6 +359,23 @@ case "$verb" in
     require_model tutor
     reproduce "tutor_calculus_gemma4-12b_think-false" "" \
       agent-newton evaluate tutor --domain calculus --no-think "$@"
+    ;;
+  planner)
+    # Per arm, from the committed config: the arm is what selects the planner,
+    # so scoring one config twice is what covers both. Stored under a directory
+    # per arm, so the comparison is against the right one.
+    arm="coupled"
+    case "${1:-}" in coupled|decoupled) arm="$1"; shift ;; esac
+    reproduce "planner_calculus_${arm}" "" \
+      agent-newton evaluate planner --config "$CALCULUS" --arm "$arm" "$@"
+    ;;
+  confusion)
+    # ⚠️ The chat model, and it decides something — this is the one component
+    # where a model's answer is taken as a fact rather than as prose. Scored
+    # against hand labels, with the floor a constant answer would reach printed
+    # beside the agreement.
+    require_model confusion
+    reproduce "confusion_calculus" "" agent-newton evaluate confusion "$@"
     ;;
   lessons)
     require_model lessons
