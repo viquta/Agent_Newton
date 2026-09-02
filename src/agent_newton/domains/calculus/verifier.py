@@ -101,6 +101,18 @@ def _time_limit(seconds: float) -> Iterator[None]:
 
     SIGALRM is only deliverable on the main thread; off it, this degrades to no
     timeout rather than raising, so a threaded caller still gets an answer.
+
+    ⚠️ **Not nestable.** The timer and the handler are process-global, so an
+    inner ``_time_limit`` overwrites the outer's deadline, and the inner's
+    ``finally`` disarms the timer the outer is still relying on — leaving the
+    outer block running unbounded, which is the one thing this exists to
+    prevent. The inner would also restore ``_fire`` as "the previous handler"
+    rather than whatever was installed before either.
+
+    There is one call site (`_equivalent`, around ``sympy.simplify``) and that
+    is what keeps it safe. A second timed stage must not wrap this one; give it
+    its own budget at the same level, or make the limit a parameter of a single
+    outermost call.
     """
     if threading.current_thread() is not threading.main_thread():
         yield
