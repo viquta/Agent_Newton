@@ -24,6 +24,13 @@ direct call between two agents would be a design error, so
 
 ## Components
 
+Each of the six decision-making parts has its own page under
+[`components/`](components/README.md) — what it is handed, how it works and what
+it produces. **This section is the map**: what exists, where it lives and how the
+pieces fit. Where a component has a page, the detail is there and not repeated
+here, so that there is one description of each mechanism rather than two.
+
+
 ### Shared learner state (`core/state/`)
 
 | Module | Holds |
@@ -128,6 +135,11 @@ can be asserted in tests and logged per decision:
 Prompts are parameterised by the loaded domain; none contain subject-specific
 text.
 
+One page each: [planner](components/planner.md) ·
+[tutor](components/tutor.md) · [diagnostic](components/diagnostic.md). The
+[confusion detector](components/confusion.md) sits beside them and is not an
+agent — [the index](components/README.md) says why.
+
 | Agent | Function | Invoked |
 |---|---|---|
 | `tutor` | Hints and step-level feedback at the level the scaffolding predicate selects | Every step |
@@ -171,18 +183,9 @@ learner model.
 
 ### Arbitration policy (`core/arbitration/`)
 
-Decides when new evidence may revise the plan.
-
-**Triggers** — a concept enters or leaves the frontier; a mastery estimate moves
-by more than `theta`; a misconception recurs `k_repeats` times within the rolling
-window.
-
-**Guardrails** — never demote below the prerequisite floor; rate-limit
-replanning to at most once per `min_items_between_replans`; require verifier
-confirmation, not the diagnostic agent's judgement alone, before any demotion.
-
-Every decision writes its triggering evidence to the audit log, so a replan can
-be reconstructed after the fact.
+Decides when new evidence may revise the plan — the triggers, the guardrails, the
+audit trail and how to read a threshold sweep are all on
+[components/arbitration.md](components/arbitration.md).
 
 **The policy reads the board, not the arm's view.** It is handed
 `board.state.mastery` and `board.frontier` in *both* configurations, so the
@@ -241,7 +244,9 @@ Each component is scored against something that is not another model's opinion.
 
 Supplied by the domain and called by the orchestrator after every step. Never a
 tool an agent elects to invoke — see
-[domain_interface.md](domain_interface.md).
+[domain_interface.md](domain_interface.md) for the boundary, and
+[components/verifier.md](components/verifier.md) for the three-stage comparison
+and the three-valued verdict.
 
 ### Simulated learner (`core/simulator/`)
 

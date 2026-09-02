@@ -23,14 +23,17 @@ ORDER = [
     "domain_interface",
     "learner_state",
     "pedagogy",
-    "arbitration_policy",
     "configuration",
     "docker",
 ]
 
 
 def available() -> list[Path]:
-    found = sorted(DOCS.glob("*.md"))
+    # ⚠️ Recursive: the component pages live in docs/components/, and a
+    # non-recursive glob listed docs/ while silently knowing nothing about a
+    # third of it — `arch <name>` would answer "no such doc" for a file that
+    # ships in the repository.
+    found = sorted(DOCS.rglob("*.md"))
     ranked = {name: index for index, name in enumerate(ORDER)}
     return sorted(found, key=lambda p: (ranked.get(p.stem, len(ORDER)), p.stem))
 
