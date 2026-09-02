@@ -1,12 +1,51 @@
 # Hand-labelled verifier cases for the calculus domain.
 #
-# `kind` is the hand label. It names both the verdict the case asserts and the
-# bucket the case is reported in:
+# One case is one response to one item, and the verdict a person says it
+# deserves. Four fields carry that, and two more are optional:
+#
+#   id                this case's own name. Referred to by the scorer's output
+#                     and by the tests, so it must be unique and should stay
+#                     stable — a renamed id silently orphans anything citing it.
+#                     `gv_` for gold-verifier, then the item family, then what
+#                     the response does: `gv_lim_unevaluated_quotient`.
+#   item_id           which bank item the response is answering. This is a real
+#                     id from domains/calculus/items/, not a label invented
+#                     here: the scorer looks the item up and hands the verifier
+#                     the *item*, so a case cannot drift away from the question
+#                     it belongs to. It is also what makes `expected` needless —
+#                     the right answer already lives on the item.
+#   response          what the learner is imagined to have written, verbatim.
+#   kind              the hand label. See below.
+#   note              optional prose: why this case is here, or what it probes.
+#                     For a reader, not for the scorer.
+#   known_limitation  optional. See below.
+#
+# `kind` does two jobs at once, which is why there are four values and not a
+# bare correct/incorrect flag. It names **the verdict the case asserts** and
+# **the bucket the case is reported in**, so the scorer can say not just how
+# often the verifier is right but how it is wrong:
 #
 #   canonical    the bank's own answer, verbatim              -> correct
 #   equivalent   correct, written differently                 -> correct
 #   wrong        a genuine mathematical error                 -> incorrect
 #   unreadable   nothing mathematically decidable             -> unparseable
+#
+# The two failure directions have very different consequences, and splitting
+# the buckets is what makes them separable:
+#
+#   a missed `equivalent`  is a **false negative** — a correct answer scored
+#                          wrong. It charges the learner with an error they did
+#                          not make, lowers the estimate and asks the diagnostic
+#                          to explain something that never happened. The scorer
+#                          further splits these by whether the verifier said
+#                          INCORRECT (reached the learner model) or UNPARSEABLE
+#                          (did not) — only the first does damage.
+#   an accepted `wrong`    is a **false accept** — an error scored correct. It
+#                          enters the learner model as evidence of knowing
+#                          something, and nothing downstream can recover it.
+#
+# `canonical` is the floor: if those ever fail, the verifier cannot recognise
+# the bank's own answers and nothing else in the set means anything.
 #
 # The set is deliberately weighted toward `equivalent`. Those are the cases a
 # string-matching verifier fails and an equivalence verifier must pass, and a
