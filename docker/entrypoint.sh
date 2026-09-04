@@ -154,6 +154,7 @@ ${BOLD}Run an experiment${OFF}  ${DIM}— no model involved; summaries land in $
   ${CYAN}power${OFF}             power analysis ${DIM}(the long one — minutes)${OFF}
   ${CYAN}calibrate${OFF}         mastery estimate against held-out performance
   ${CYAN}planner [arm]${OFF}     planner choices against a reference holding the profile
+  ${CYAN}replicate${OFF}         the paired design over ten fresh seeds — is the estimate stable?
   ${CYAN}sweep <knob>${OFF}      arbitration | prerequisites | headroom | doubt
   ${CYAN}figures${OFF}           redraw the figures from the stored summaries
   ${CYAN}all${OFF}               every model-free experiment above, in order
@@ -259,6 +260,13 @@ case "$verb" in
       --diagnostic-summary "$DIAGNOSTIC_SUMMARY" \
       --conditions "oracle,noised,noised@0.10,noised@0.25,noised@0.50" "$@"
     ;;
+  replicate)
+    # ⚠️ Ten pre-declared seeds, every one reported. A replication check on the
+    # primary outcome's *estimate* — not a further test of the hypothesis, and
+    # the count of seeds clearing correction is not its headline.
+    reproduce "replication_paired" "" python experiments/replicate_paired.py \
+      --config "$CALCULUS" --n "$N" --dose-matched "$@"
+    ;;
   ordering)
     reproduce "ordering_calculus" "" python experiments/falsify_ordering.py \
       --config "$CALCULUS" --n "$N" --seed "$SEED" "$@"
@@ -308,6 +316,9 @@ case "$verb" in
     step "paired comparison, n=$N"
     reproduce "paired_calculus" "" python experiments/run_paired.py \
       --config "$CALCULUS" --n "$N" --seed "$SEED" --dose-matched
+    step "replication over fresh seeds"
+    reproduce "replication_paired" "" python experiments/replicate_paired.py \
+      --config "$CALCULUS" --n "$N" --dose-matched
     step "ordering probe"
     reproduce "ordering_calculus" "" python experiments/falsify_ordering.py \
       --config "$CALCULUS" --n "$N" --seed "$SEED"

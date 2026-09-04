@@ -113,6 +113,7 @@ outside the container.
 | `paired` | the paired comparison, dose-matched |
 | `propagation` | diagnostic error propagated to outcomes, across conditions |
 | `ordering` | the ordering probe |
+| `replicate` | the paired design re-run over ten seeds fixed in advance. Reports the **median and spread** of the primary outcome's difference — a replication check on the estimate, not a further test of the hypothesis, so the number of seeds clearing correction is deliberately not its headline |
 | `coverage` | misconception coverage against the item budget |
 | `power` | power analysis — minutes, not seconds |
 | `calibrate` | mastery estimate against held-out performance |
