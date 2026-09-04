@@ -1,0 +1,33 @@
+{
+  "learner": "victor",
+  "arm": "coupled",
+  "store": "results/learners.db",
+  "turns_judged": 46,
+  "judge": {
+    "model": "ollama/gemma4:26b (think=false)",
+    "gold_set": "tests/fixtures/gold/calculus_lesson_grounding_cases.yaml",
+    "calibration_cases": 8,
+    "agreement_with_hand_labels": 1.0,
+    "disagreements": [],
+    "grounded_rate": 0.6521739130434783,
+    "unobtainable": 0
+  },
+  "ungrounded": [
+    "limit_concept#2",
+    "limit_concept#7",
+    "limit_concept#8",
+    "limit_concept#9",
+    "limit_concept#10",
+    "limit_concept#11",
+    "limit_concept#20",
+    "average_rate_of_change#21",
+    "average_rate_of_change#26",
+    "limits_of_sequences#29",
+    "limits_of_sequences#30",
+    "limits_of_sequences#31",
+    "limits_of_sequences#34",
+    "limits_of_sequences#37",
+    "limits_of_sequences#38",
+    "negative_fractional_exponents#45"
+  ]
+}

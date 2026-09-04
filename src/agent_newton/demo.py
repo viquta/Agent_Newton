@@ -44,6 +44,7 @@ from agent_newton.core.orchestration.session import (
 from agent_newton.core.simulator.human import HumanLearner
 from agent_newton.core.evaluation import outcomes
 from agent_newton.core.state import bkt, route
+from agent_newton.core.state.schema import TeachingStyle
 from agent_newton.core.state.store import Blackboard
 from agent_newton.domains import registry
 from agent_newton.manifest import RunManifest
@@ -61,6 +62,14 @@ from agent_newton.domains.base import (
 #: Where a mastery bar sits between "no idea" and "done".
 _BAR = 18
 
+#: One line each, for the chooser. Here rather than on the enum because the enum
+#: is shared state and this is a front end's wording.
+_STYLE_BLURB = {
+    TeachingStyle.PLAIN: "plainly — what it is, why it works, an example",
+    TeachingStyle.SOCRATIC: "as questions I answer as we go",
+    TeachingStyle.REAL_WORLD: "starting from where the idea is actually used",
+}
+
 QUIT = ":q"
 #: Ends training and goes straight to the post-test. Distinct from `:q`, which
 #: ends the sitting where it stands: someone who has had enough of the questions
@@ -70,6 +79,22 @@ END_TRAINING = ":e"
 #: Declines a prompt that would otherwise insist. A refusal that can be recorded
 #: is worth more than a field somebody filled with a full stop to get past it.
 DECLINE = ":s"
+#: Asks what the current concept actually *is*.
+#:
+#: The trigger the ideas note lists first, and the cheapest to honour correctly:
+#: someone saying "I do not know what this is" is better evidence of that than
+#: three wrong answers are. It costs no attempt and is answered once the current
+#: question is over, which is where a lesson belongs — between questions, with
+#: the next one still to come.
+EXPLAIN = ":why"
+#: Ends a lesson. The written summary follows either way, so leaving a
+#: conversation never costs the learner the explanation.
+#:
+#: Redundant with pressing enter, deliberately. Enter is the idiom every
+#: optional prompt here already uses and is what most people will do; this is
+#: for someone who would rather say so than guess. A stated affordance that
+#: works is worth more than a discovered one that also works.
+END_LESSON = ":done"
 
 
 def _bar(value: float, band) -> Text:
@@ -212,6 +237,26 @@ class DemoObserver(Watching):
         #: so clearing here makes "nothing was offered for this posing" the
         #: default rather than something that has to be signalled.
         self._offered: tuple[str, str] | None = None
+        #: Set at `item_started`, and what `:why` is about. None until the first
+        #: question, so asking before one has been posed is answered honestly
+        #: rather than with the last thing that happened to be on screen.
+        self._working_concept: str | None = None
+        self._board: Blackboard | None = None
+        #: The concept currently being talked about, so only the first turn of a
+        #: lesson announces itself.
+        self._in_lesson: str | None = None
+        #: Items this sitting has posed. Counted here because `item_started`
+        #: fires exactly once per giving, which is the thing `items_attempted`
+        #: means — and it is the only place that count survives a sitting the
+        #: person stopped part-way, since the session returns no outcome then.
+        #:
+        #: ⚠️ Not derivable from the audit log afterwards. `record_observation`
+        #: takes `attempt` but does not record it, so nothing in the log marks
+        #: where one giving ends and the next begins: distinct item ids
+        #: undercount badly (a concept is worked until mastered, so one id can
+        #: be twenty givings) and observation records overcount, since an item
+        #: takes up to three steps.
+        self.items_started = 0
 
     def board_panel(self, board: Blackboard) -> Panel:
         graph = self._domain.concepts
@@ -261,6 +306,12 @@ class DemoObserver(Watching):
         # A new posing of a question carries no support until the session says
         # so, and it says so straight after this returns.
         self._offered = None
+        # What `:why` would be about, and where to record the asking. Both are
+        # taken here rather than threaded through every prompt, because this is
+        # the one place that knows which question is in front of the learner.
+        self._working_concept = item.concept_id
+        self._board = board
+        self.items_started += 1
         self._console.print()
         self._console.print(self.board_panel(board))
         self._remind(item)
@@ -284,6 +335,28 @@ class DemoObserver(Watching):
         check.
         """
         self._offered = (item.id, resource.shown(support.shows_example))
+
+    @property
+    def working_concept(self) -> str | None:
+        """The concept the question on screen is about, if there is one.
+
+        None during the held-out banks and before the first question. A learner
+        asking what a concept is mid-test would be asking to be told the thing
+        the test is measuring, so there is deliberately nothing to answer with.
+        """
+        return None if self.testing else self._working_concept
+
+    @property
+    def board_for_requests(self) -> Blackboard:
+        """Where a stated request is recorded.
+
+        A front end may record what a person *said* — `record_request` already
+        does — and may not decide what is done about it. Asking for a lesson is
+        input; whether one is given, and how it is voiced, stays with the
+        session and the rules.
+        """
+        assert self._board is not None
+        return self._board
 
     def support_for(self, item: Item) -> str | None:
         """What was offered with this question, if anything was.
@@ -560,6 +633,62 @@ class DemoObserver(Watching):
             Panel(body, title=f"{label.lower()} result", border_style="yellow")
         )
 
+    def lesson_offered(self, concept_id: str, text: str) -> None:
+        """One turn of a lesson, or the written account that closes it.
+
+        Printed rather than held, unlike ``support_offered``. That one is
+        material shown *with* a question and belongs above it; this one is not
+        attached to a question at all — it arrives because the learner kept
+        getting the concept wrong, and the next question comes after it.
+
+        Its own border and its own title, because a learner should be able to
+        tell being taught from being corrected. Every other panel on this screen
+        is a response to something they just did.
+
+        The first turn of a lesson announces the concept; the rest do not, so a
+        conversation reads as a conversation rather than as the same heading
+        four times.
+        """
+        opening = self._in_lesson != concept_id
+        self._in_lesson = concept_id
+        self._console.print(
+            Panel(
+                Text(text),
+                title=(
+                    f"a moment on {_readable(concept_id)}" if opening else "tutor"
+                ),
+                subtitle=(
+                    f"say what you think, or {END_LESSON} when you have had enough"
+                ),
+                border_style="cyan",
+                padding=(1, 2),
+            )
+        )
+
+    def lesson_summary(self, concept_id: str, text: str) -> None:
+        """The authored account, which closes every lesson however it ended.
+
+        Marked as something to keep rather than something to answer. It is the
+        text a person wrote and the validator checked, and it is the only part
+        of a lesson that carries those guarantees — the conversation above it
+        was written by a model and is checked against nothing.
+        """
+        self._in_lesson = None
+        self._console.print(
+            Panel(
+                Text(text),
+                title=f"{_readable(concept_id)} — the short version",
+                subtitle="yours to keep; the questions carry on below",
+                border_style="cyan",
+                padding=(1, 2),
+            )
+        )
+
+    def lesson_reply_recorded(self, concept_id: str, text: str) -> None:
+        # Echoed back so a transcript reads as a conversation. The learner has
+        # just typed it, so this is for the record rather than for them.
+        self._console.print(Text(f"  you: {text}", style="dim"))
+
     def tutor_replied(self, item: Item, hint: Hint) -> None:
         self._console.print(
             Panel(
@@ -573,6 +702,65 @@ class DemoObserver(Watching):
 
 class Quit(Exception):
     """The person asked to stop."""
+
+
+def _ask_how_to_explain(console: Console, board, asked) -> None:  # noqa: ANN001
+    """Let the learner say how they would like things explained.
+
+    Asked beside "what shall we practise", and for the same reason: it is
+    something only the learner knows. Everything else on the blackboard is an
+    inference *about* them; this and the request are the learner talking.
+
+    Two people reached for this control independently — it is written in
+    `docs/pedagogy.md` as *"how much help do you want today, and in which
+    areas"*, and a learner at a keyboard asked to be told, per concept, how much
+    they already knew. That is the argument for offering it.
+
+    What it changes is stated plainly, because a control whose effect is
+    overstated is worse than none. The style decides how a lesson is **voiced**.
+    The content is the same under all three: written by a person, checked
+    against every question in every bank, and identical whichever is picked.
+    """
+    console.print()
+    table = Table(show_header=False, box=None, padding=(0, 1))
+    for number, style in enumerate(TeachingStyle, start=1):
+        table.add_row(
+            Text(f"{number:>2}", style="cyan"),
+            Text(_STYLE_BLURB[style]),
+        )
+    console.print(
+        Panel(
+            Group(
+                Text(
+                    "If a concept needs explaining, how would you like it "
+                    "put?\nThis changes the wording, never the mathematics.\n",
+                    style="dim",
+                ),
+                table,
+            ),
+            title="how shall I explain things",
+            border_style="magenta",
+        )
+    )
+    said = asked(
+        "  [magenta]a number[/magenta]  "
+        "[dim](enter to let the system vary it)[/dim]",
+        optional=True,
+    ).strip()
+    styles = list(TeachingStyle)
+    if said.isdigit() and 1 <= int(said) <= len(styles):
+        chosen = styles[int(said) - 1]
+        board.record_teaching_style(chosen)
+        console.print(f"  [dim]{_STYLE_BLURB[chosen]}[/dim]")
+        return
+    # Not a fallback so much as the better default. Left alone, a repeat lesson
+    # is told a *different* way — which is the point of having more than one, and
+    # is what a learner who did not understand the first account actually needs.
+    board.record_teaching_style(None)
+    console.print(
+        "  [dim]no preference — a concept explained twice will be put "
+        "differently the second time[/dim]"
+    )
 
 
 def _ask_what_to_practise(
@@ -954,7 +1142,7 @@ def _across_sittings(  # noqa: ANN001
     return Panel(body, title="across your sittings", border_style="magenta")
 
 
-def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  # noqa: ANN001
+def _store(config: Config, domain: Domain, session, learner, outcome, observer=None, stopped: str = "") -> Path:  # noqa: ANN001
     """Write the sitting to disk. Called however the sitting ended.
 
     ``outcome`` is None when the person stopped part-way, in which case the
@@ -995,14 +1183,30 @@ def _store(config: Config, domain: Domain, session, learner, outcome) -> Path:  
             for r in session.board.audit_log
         ],
     }
+    # ⚠️ Written whichever way the sitting ended, and this is the fix.
+    #
+    # These two were inside the `outcome is not None` block below, so a sitting
+    # someone stopped part-way recorded neither — while the *database* recorded
+    # `interrupted` or `failed` for the same sitting, from the same function.
+    # One fact, two records of it, and only one of them had it.
+    #
+    # They belong out here because they are not outcome-derived. The demo knows
+    # how the sitting ended because it caught the exception, and the observer
+    # counted the items as they were posed. §7e's rule is that figures the
+    # session did not produce must be *absent* rather than zero — it is not that
+    # facts we hold should be dropped for tidiness.
+    record["stop_reason"] = outcome.stop_reason if outcome is not None else (stopped or None)
+    if outcome is not None:
+        record["items_attempted"] = outcome.items_attempted
+    elif observer is not None:
+        record["items_attempted"] = observer.items_started
+
     if outcome is not None:
         record.update(
             {
-                "stop_reason": outcome.stop_reason,
                 "goal": outcome.goal,
                 "goals_mastered": outcome.goals_mastered,
                 "distance_to_goal": outcome.distance_to_goal,
-                "items_attempted": outcome.items_attempted,
                 "pretest": {
                     "correct": outcome.pretest.correct,
                     "total": outcome.pretest.total,
@@ -1166,6 +1370,31 @@ def run_demo(
                     )
                     continue
                 raise StopTraining
+            if said == END_LESSON:
+                # Only meaningful at the lesson prompt, and harmless elsewhere:
+                # it reads as an empty answer, which every prompt here already
+                # handles. Routed through this reader like every other control
+                # word, because `:q` once worked at one prompt out of three
+                # while the intro said it worked anywhere.
+                return ""
+            if said == EXPLAIN:
+                # Goes through this reader like the rest, for the reason above
+                # it: a control word that works at one prompt out of three is
+                # worse than not offering one. `:q` was exactly that, and typing
+                # it at the working prompt was silently recorded as prose.
+                working = observer.working_concept
+                if working is None:
+                    console.print(
+                        f"  [dim]{EXPLAIN} explains the concept you are working "
+                        f"on. There is not one just now.[/dim]"
+                    )
+                    continue
+                observer.board_for_requests.request_lesson(working)
+                console.print(
+                    f"  [dim]noted — you will get a moment on "
+                    f"{_readable(working)} after this question[/dim]"
+                )
+                continue
             if said == DECLINE:
                 return ""
             if said or not insist:
@@ -1187,10 +1416,28 @@ def run_demo(
         hint = (
             f"[dim]({QUIT} to stop)[/dim]"
             if observer.testing
+            # `:why` is offered here and not during a test. Asking what a
+            # concept is mid-test would be asking to be told the thing the test
+            # is measuring, and the reader answers accordingly.
             else f"[dim]({QUIT} to stop, {END_TRAINING} to end training and go "
-            f"to the post-test)[/dim]"
+            f"to the post-test, {EXPLAIN} if you want this explained)[/dim]"
         )
         return _asked(f"  your answer  {hint}")
+
+    def discuss(concept_id: str, prompt: str) -> str:
+        """The learner's side of a lesson.
+
+        Prose on the same terms as a reflection — never verified, never an
+        attempt, never an unmeasurable step. Optional, so a blank line ends the
+        conversation and the written summary follows either way: someone who is
+        not in the mood to talk still gets the explanation.
+        """
+        return _asked(
+            f"  [magenta]your turn[/magenta]  "
+            f"[dim](enter or {END_LESSON} to finish — you get the short version "
+            f"either way)[/dim]",
+            optional=True,
+        )
 
     def ask_reflection(item: Item, prompt: str) -> str:
         # Prose, not an answer. It never reaches the verifier and costs no
@@ -1264,6 +1511,7 @@ def run_demo(
     learner = HumanLearner(
         ask, learner_id=learner_id,
         ask_reflection=ask_reflection, ask_working=ask_working,
+        discuss=discuss,
     )
 
     gap = elapsed_days if elapsed_days is not None else _days_since(store, learner_id, config)
@@ -1334,6 +1582,11 @@ def run_demo(
     session.elapsed_days = 0.0
     try:
         _ask_what_to_practise(console, domain, session.board, config, _asked)
+        # Only where the run can actually explain anything. Offering a choice
+        # that does nothing is worse than not offering one — it tells the
+        # learner a control exists and then ignores it.
+        if config.teaching.explain_after > 0:
+            _ask_how_to_explain(console, session.board, _asked)
     except Quit:
         console.print("\n[dim]stopped before the pre-test[/dim]")
 
@@ -1378,7 +1631,19 @@ def run_demo(
     # all: no transcript, no working, no reflections, no audit log. A sitting
     # that was stopped part-way is still the only data of its kind this project
     # has, and it is unrepeatable.
-    run_dir = _store(config, domain, session, learner, outcome)
+    # ⚠️ One expression, used for both records of this sitting. It was written
+    # out twice — once for the transcript, once for the store — and only the
+    # store's copy handled the no-outcome case, so an interrupted sitting had a
+    # `stop_reason` in the database and none on disk. Deriving it once is what
+    # stops the two disagreeing again.
+    stopped = (
+        outcome.stop_reason
+        if outcome is not None
+        else ("failed" if failed is not None else "interrupted")
+    )
+    run_dir = _store(
+        config, domain, session, learner, outcome, observer=observer, stopped=stopped
+    )
 
     # And into the store, so the next sitting can pick this learner up. Also on
     # every exit path: someone who stops half-way has still done the work, and
@@ -1392,11 +1657,7 @@ def run_demo(
             if isinstance(session.planner, Resumable)
             else None
         ),
-        stop_reason=(
-            outcome.stop_reason
-            if outcome
-            else ("failed" if failed is not None else "interrupted")
-        ),
+        stop_reason=stopped,
     )
     # Read *after* closing the session, so this sitting is part of the history
     # rather than the one thing missing from it.

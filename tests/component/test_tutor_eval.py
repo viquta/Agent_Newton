@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 
+from pathlib import Path
+from agent_newton.core.state.schema import AuditRecord
 import pytest
 
 from agent_newton.config import ZPDConfig
@@ -576,3 +578,165 @@ class TestLevelsAreVisibleInTheText:
             turn_for(calculus, "b", level=HintLevel.NUDGE),
         ]
         assert evaluation.rank_levels(provider, calculus, same).pairs == []
+
+
+class TestGroundednessOverLessonTurns:
+    """The same question `evaluate tutor` asks of hints, over lessons.
+
+    A sitting is why it exists. A learner wrote ``x2 + h - 3^2 / x + h - x`` and
+    the tutor replied *"You've set up the calculation perfectly!"* — which is the
+    sitting-2 failure exactly ("your calculation is correct" to someone who had
+    multiplied), in the one part of the system that check had never been pointed
+    at.
+    """
+
+    GOLD = Path("tests/fixtures/gold/calculus_lesson_grounding_cases.yaml")
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def cases(cls):
+        import yaml
+
+        return yaml.safe_load(cls.GOLD.read_text())["cases"]
+
+    def test_the_set_is_balanced(self, cases) -> None:
+        # Or a judge that answers "grounded" to everything scores well by
+        # saying nothing — which is what one local model did on the hint set.
+        grounded = sum(1 for case in cases if case["grounded"])
+        assert grounded == len(cases) - grounded
+
+    def test_the_sitting_that_asked_for_this_is_in_it(self, cases) -> None:
+        [case] = [c for c in cases if c["id"] == "gl_praised_a_malformed_expression"]
+        assert case["grounded"] is False
+        assert "perfectly" in case["reply"]
+
+    def test_every_case_says_why_it_is_labelled_that_way(self, cases) -> None:
+        # Carried rather than left as a YAML comment, so a disagreement can be
+        # read against the reasoning that produced the label.
+        for case in cases:
+            assert case["note"].strip()
+
+    # -- reconstructing a conversation -------------------------------------
+
+    def _log(self, *records):
+        return list(records)
+
+    def _tutor(self, text: str, concept: str = "power_rule", level: str = "plain"):
+        return AuditRecord(
+            version=1,
+            cause="tutor",
+            summary="explain",
+            evidence={
+                "move": "explain",
+                "concept_id": concept,
+                "level": level,
+                "text": text,
+            },
+        )
+
+    def _said(self, text: str, concept: str = "power_rule"):
+        return AuditRecord(
+            version=1,
+            cause="annotation",
+            summary="said",
+            evidence={"reflection": text, "kind": "lesson", "concept_id": concept},
+        )
+
+    def test_each_turn_is_paired_with_what_came_before_it(self) -> None:
+        from agent_newton.core.evaluation.tutor import lesson_exchanges
+
+        exchanges = lesson_exchanges(
+            self._log(
+                self._tutor("what do you think?"),
+                self._said("a ratio"),
+                self._tutor("exactly, a ratio."),
+            )
+        )
+        assert [(e.said, e.reply) for e in exchanges] == [
+            ("", "what do you think?"),
+            ("a ratio", "exactly, a ratio."),
+        ]
+
+    def test_the_pairing_comes_from_the_log_rather_than_two_tables(self) -> None:
+        """Because the pairing *is* an ordering.
+
+        Who spoke when is a property of one sequence. Reading turns and
+        utterances out of their separate tables and zipping them would be
+        inventing that ordering rather than recovering it.
+        """
+        from agent_newton.core.evaluation.tutor import lesson_exchanges
+
+        exchanges = lesson_exchanges(
+            self._log(
+                self._said("said before anything was asked"),
+                self._tutor("first"),
+            )
+        )
+        assert exchanges[0].said == "said before anything was asked"
+
+    def test_the_written_summary_is_not_judged(self) -> None:
+        # It is authored content, not a claim about anyone. Judging it would
+        # score a person's prose as if a model had asserted it.
+        from agent_newton.core.evaluation.tutor import lesson_exchanges
+
+        exchanges = lesson_exchanges(
+            self._log(self._tutor("the authored account", level="summary"))
+        )
+        assert exchanges == []
+
+    def test_a_reply_is_not_carried_over_to_the_next_turn(self) -> None:
+        # Cleared once used, or a turn would be judged against something the
+        # learner said two turns ago and be marked ungrounded for it.
+        from agent_newton.core.evaluation.tutor import lesson_exchanges
+
+        exchanges = lesson_exchanges(
+            self._log(
+                self._tutor("q1"),
+                self._said("an answer"),
+                self._tutor("q2"),
+                self._tutor("q3"),
+            )
+        )
+        assert [e.said for e in exchanges] == ["", "an answer", ""]
+
+    def test_openings_are_excluded_from_judging(self) -> None:
+        """The same exclusion reflective prompts get, for the same reason.
+
+        An opening makes no claim about the learner's work — there is none yet —
+        so groundedness has nothing to bite on, and including it would dilute
+        the rate with cases that cannot fail.
+        """
+        from agent_newton.core.evaluation.tutor import (
+            JudgeReport,
+            judge_lesson_turns,
+            lesson_exchanges,
+        )
+
+        class NeverAsked:
+            label = "fake/judge"
+
+            def generate(self, prompt, schema, system):  # noqa: ANN001
+                raise AssertionError("an opening must not be judged")
+
+        exchanges = lesson_exchanges(self._log(self._tutor("what do you think?")))
+        report = judge_lesson_turns(NeverAsked(), exchanges, JudgeReport())
+        assert report.verdicts == []
+
+    # -- the question itself ------------------------------------------------
+
+    def test_the_question_is_asked_the_way_round_the_field_reads(self) -> None:
+        """⚠️ The defect that made the hint judge look worse than chance.
+
+        Asked the other way — "does the reply claim anything the work does not
+        show" — a model answering correctly fills `grounded` with the opposite
+        of what it means. It read as a judge performing below chance rather than
+        as a prompt that inverts it: 30% against 90% once fixed. Nothing but the
+        hand labels would have told them apart.
+        """
+        import inspect
+
+        from agent_newton.core.evaluation.tutor import judge_lesson_grounded
+
+        source = inspect.getsource(judge_lesson_grounded)
+        assert "Is every claim" in source
+        assert "supported by" in source

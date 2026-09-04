@@ -8,6 +8,8 @@ responds to.
 The tutor is driven by the instructional rules rather than checked against them
 afterwards: it asks what move is required and makes it, so the error-first
 ordering holds by construction.
+
+vh comment: to do -->I need to see how the experiments are actually working after i understand the system.
 """
 
 from __future__ import annotations
@@ -17,12 +19,30 @@ from typing import Sequence
 from agent_newton.core.agents.base import Diagnosis, Hint, StateView
 from agent_newton.core.pedagogy import (
     HintLevel,
+    TeachingStyle,
     TutorMove,
     hint_level,
     move_for,
 )
 from agent_newton.config import ScaffoldingPolicy, ZPDConfig
-from agent_newton.domains.base import Domain, Item
+from agent_newton.domains.base import ConceptResource, Domain, Item
+
+
+class NoConfusion:
+    """Reads nothing into anything. The model-free detector, and the default.
+
+    Every cohort runs this, and it is what makes the trigger cost nothing there
+    rather than merely be switched off: no provider is built, no call is made,
+    and the answer is the same on every string.
+
+    It is also the honest floor. A run with no model has no way to tell "I do
+    not understand this" from a wrong answer, and inventing a keyword list would
+    be a detector nobody measured — worse than none, because it would look like
+    one.
+    """
+
+    def confused(self, concept_id: str, text: str) -> str | None:  # noqa: ARG002
+        return None
 
 
 class TemplateTutor:
@@ -33,6 +53,32 @@ class TemplateTutor:
     ) -> None:
         self._band = band
         self._policy: ScaffoldingPolicy = policy
+
+    def explain(
+        self,
+        resource: ConceptResource,
+        style: TeachingStyle,
+        exchanges: Sequence[tuple[str, str]] = (),
+        closing: bool = False,
+    ) -> str:
+        """The lesson as authored. Every other argument is accepted and ignored.
+
+        Deliberate, and the same reasoning as ``respond`` ignoring ``response``:
+        the cohorts run this tutor, so its output must not vary with anything
+        the model-backed one gained. A lesson whose wording moved with the style
+        would make every measured number depend on something outside the
+        manipulation. There is a test asserting it cannot vary.
+
+        Ignoring the style is not a degraded lesson. ``PLAIN`` *is* the authored
+        text, and the authored text is the one thing every domain offering
+        resources is guaranteed to have.
+
+        Nor is ignoring the conversation. This tutor has nothing to say back
+        that it did not already say, so a dialogue driven by it would be the
+        same paragraph repeated — which is the failure the account ceiling was
+        added to prevent. It gives its one turn and the summary follows.
+        """
+        return resource.lesson()
 
     def respond(
         self,

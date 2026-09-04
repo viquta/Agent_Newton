@@ -97,6 +97,55 @@ def show(rows: list, title: str) -> None:
     print("  r    = rank-biserial; * = significant after Holm correction.")
 
 
+def spent_seeds(results_dir: Path) -> dict[int, set[str]]:
+    """Seeds any committed summary already reports, and which study used each.
+
+    ⚠️ The guard above it refuses only the *config's* seed, which is the one the
+    power analysis sized from. That leaves every other spent seed reachable —
+    the confirmatory seed included — and re-using one would silently report
+    learners a previous analysis has already read a result off. Profiles come
+    from ``(seed, learner_id)``, so "another study used it" and "the same
+    learners" are the same statement.
+
+    Reads the stored summaries rather than a hard-coded list, so a seed spent by
+    a study added later is refused without anyone remembering to write it down.
+
+    ⚠️ **Named study directories only** — the timestamped per-run directories are
+    skipped deliberately. A study's summary is the record that a result was read
+    off that seed; the run directories beside it are byproducts, and a
+    reproduction pass writes hundreds of them. Counting those would make the
+    guard refuse a seed because it was re-run rather than because a result was
+    reported from it, and would couple it to whatever litter happens to be on
+    disk.
+    """
+    spent: dict[int, set[str]] = {}
+    for path in sorted(results_dir.glob("*/*.json")):
+        if "reruns" in path.parts:
+            continue
+        # A run directory, not a study: 20260831T100502_smoke_coupled_….
+        name = path.parent.name
+        if len(name) > 15 and name[:8].isdigit() and name[8] == "T":
+            continue
+        try:
+            stored = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
+        if not isinstance(stored, dict):
+            continue
+        for field in ("seed", "baseline_seed", "pilot_seed"):
+            value = stored.get(field)
+            if isinstance(value, int):
+                spent.setdefault(value, set()).add(name)
+        # ⚠️ And the plural. A study that reports over many seeds spends every
+        # one of them, and reading only the singular field would leave those
+        # silently reusable — which is the failure this guard exists to prevent,
+        # arriving through the study that has the most seeds to spend.
+        for seed in stored.get("seeds") or ():
+            if isinstance(seed, int):
+                spent.setdefault(seed, set()).add(name)
+    return spent
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
@@ -115,6 +164,14 @@ def main() -> None:
             f"power analysis sized from. Learner profiles come from "
             f"(seed, learner_id), so this would report the same learners the "
             f"sample size was chosen on. Pick another."
+        )
+    spent = spent_seeds(config.paths.results_dir)
+    if args.seed in spent:
+        parser.error(
+            f"--seed {args.seed} has already been used by "
+            f"{', '.join(sorted(spent[args.seed]))}. Learner profiles come from "
+            f"(seed, learner_id), so this would re-report learners an existing "
+            f"analysis has already seen. Pick a seed no stored summary names."
         )
 
     metrics = {arm: cohort(config, arm, args.n, args.seed) for arm in ARMS}

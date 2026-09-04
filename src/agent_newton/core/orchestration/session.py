@@ -14,11 +14,12 @@ planner receives and therefore which planner can be used at all.
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Mapping, Protocol, runtime_checkable
 
 from agent_newton.config import Config
 from agent_newton.core.agents.base import (
+    ConfusionDetector,
     Diagnosis,
     Diagnostic,
     Hint,
@@ -28,7 +29,12 @@ from agent_newton.core.agents.base import (
     Tutor,
 )
 from agent_newton.core.agents.diagnostic import NoisedOracleDiagnostic, OracleDiagnostic
-from agent_newton.core.agents.llm import LLMDiagnostic, LLMPlanner, LLMTutor
+from agent_newton.core.agents.llm import (
+    LLMConfusionDetector,
+    LLMDiagnostic,
+    LLMPlanner,
+    LLMTutor,
+)
 from agent_newton.core.agents.planner import (
     FixedOrderPlanner,
     FrontierPlanner,
@@ -37,7 +43,7 @@ from agent_newton.core.agents.planner import (
     ReverseOrderPlanner,
     ShuffledPlanner,
 )
-from agent_newton.core.agents.tutor import TemplateTutor
+from agent_newton.core.agents.tutor import NoConfusion, TemplateTutor
 from agent_newton.core.arbitration.policy import ArbitrationPolicy
 from agent_newton.core.state import bkt, route
 from agent_newton.llm.factory import build_provider
@@ -47,10 +53,14 @@ from agent_newton.core.evaluation.outcomes import (
     administer,
     dose_by_concept,
 )
+from agent_newton.core.recall import EmbeddedRecall, KeyedRecall, Recall
 from agent_newton.core.pedagogy import (
     Support,
+    TeachingStyle,
     TutorMove,
     check_move,
+    should_explain,
+    style_for,
     support_at_presentation,
 )
 from agent_newton.core.simulator import (
@@ -149,6 +159,43 @@ class SessionObserver(Protocol):
         """
         ...
 
+    def lesson_offered(self, concept_id: str, text: str) -> None:
+        """The concept was explained, between items rather than during one.
+
+        Distinct from :meth:`support_offered`, which states the rule beside a
+        question, and from :meth:`tutor_replied`, which answers a step. This one
+        answers the possibility that the learner was never taught the thing at
+        all — which no reply to a failed attempt can address, because every one
+        of them presupposes the concept is there to be corrected.
+
+        Fires only when the run permits it, the error trace has reached the
+        threshold, and the domain carries a lesson for the concept. Silence
+        means "not taught", never "taught and empty".
+        """
+        ...
+
+    def lesson_summary(self, concept_id: str, text: str) -> None:
+        """The authored account, closing a lesson however it ended.
+
+        Its own hook rather than another :meth:`lesson_offered`, because it is a
+        different kind of thing: the conversation above it was written by a
+        model and is checked against nothing, and this is the text a person
+        wrote and the validator checked. A learner should be able to tell which
+        one is theirs to keep.
+        """
+        ...
+
+    def lesson_reply_recorded(self, concept_id: str, text: str) -> None:
+        """What the learner said back, while the concept was being explained.
+
+        The other half of :meth:`lesson_offered`. Distinct from
+        :meth:`reflection_recorded`, which answers a question about a *step* —
+        this one has no step and no question in front of it, and a front end
+        that showed them the same way would be telling the learner their remark
+        about a concept was a remark about whatever they last got wrong.
+        """
+        ...
+
     def tutor_replied(self, item: Item, hint: Hint) -> None: ...
 
     def reflection_recorded(self, item: Item, text: str) -> None: ...
@@ -207,6 +254,15 @@ class Watching:
     ) -> None:
         return None
 
+    def lesson_offered(self, concept_id: str, text: str) -> None:
+        return None
+
+    def lesson_summary(self, concept_id: str, text: str) -> None:
+        return None
+
+    def lesson_reply_recorded(self, concept_id: str, text: str) -> None:
+        return None
+
     def tutor_replied(self, item: Item, hint: Hint) -> None:
         return None
 
@@ -245,6 +301,9 @@ class Session:
     domain: Domain
     config: Config
     arbitration: ArbitrationPolicy
+    #: Reads the learner's own words for "I do not know what this is". The
+    #: model-free one says no to everything and is what every cohort runs.
+    confusion: ConfusionDetector = field(default_factory=NoConfusion)
     observer: SessionObserver | None = None
     #: Days since this learner's previous session. Drives decay; zero for a
     #: first sitting and for every single-session run, which is what keeps those
@@ -419,6 +478,11 @@ class Session:
                     item.concept_id, self.config.cohort.max_visits_per_concept
                 )
                 self._work_item(item, diagnoses, repetition=repetition)
+                # After the item, so the lesson lands between questions and the
+                # errors this item produced are already in the trace. Off for
+                # every cohort — `teaching.explain_after` is 0 there, and a scan
+                # over the config directory refuses anything else.
+                self._offer_lesson(item.concept_id)
         except StopTraining:
             # The learner said they had had enough. Not an error and not an
             # exhaustion: the material and the budget both had more to give, and
@@ -719,6 +783,270 @@ class Session:
         if self.observer is not None:
             self.observer.support_offered(item, support, resource)
 
+    def _confusions_about(self, concept_id: str) -> int:
+        """How often this learner has said they do not understand this concept.
+
+        Read from the audit log rather than counted as it happens, so it
+        describes the sitting rather than the detector's bookkeeping — the same
+        reason ``_cross_concept`` reads the error trace.
+        """
+        return sum(
+            1
+            for record in self.board.audit_log
+            if record.evidence.get("asked_for_a_lesson")
+            and record.evidence.get("inferred")
+            and record.evidence.get("concept_id") == concept_id
+        )
+
+    def _note_if_confused(self, concept_id: str, text: str) -> None:
+        """Read what the learner wrote, and act if it says they are lost.
+
+        The trigger a sitting asked for. Someone wrote *"I factored the
+        denominator with part of the nominator ... But I don't understand what a
+        limit is"* in the working channel and still had to type ``:why`` — for
+        something the system was already holding, in the channel that already
+        captures it.
+
+        It records a *request*, and nothing more. The decision to teach, which
+        account to give and when to stop are all still rules — this only says
+        the learner told us something, through the same path ``:why`` uses. What
+        separates the two is the ceiling: an explicit ask is honoured however
+        often it comes, and an inference is not, because a detector firing
+        repeatedly would cycle the same three accounts round and round.
+
+        ⚠️ Off unless the run says otherwise, and unreachable without a model.
+        The detector defaults to the one that reads nothing into anything.
+        """
+        if not self.config.teaching.detect_confusion:
+            return
+        quote = self.confusion.confused(concept_id, text)
+        if quote is None:
+            return
+        # The quote goes with the request. Without it the audit log records that
+        # something fired and not what it read, which is the boolean the
+        # detector returns a string to avoid being.
+        self.board.request_lesson(concept_id, inferred=True, quote=quote)
+
+    def _offer_lesson(self, concept_id: str) -> bool:
+        """Explain the concept, if the learner keeps getting it wrong.
+
+        The design note's sequence is ``3 failures -> teach -> offer it again ->
+        still failing -> waive the prerequisite and record the weakness``. The
+        dwelling cap was built as the third step with the first two missing, so
+        it treated the symptom: a learner who cannot do a concept is stepped
+        past it, when the honest reading may be that nobody ever told them what
+        it was.
+
+        Called **between items**, so a lesson arrives before the next attempt
+        rather than in the middle of one. A learner who has just been explained
+        the concept gets to try it with that in hand, which is the whole point
+        of the ordering.
+
+        ⚠️ Every input is arm-invariant, and that is deliberate rather than
+        incidental. The error trace and the audit log both live on the board,
+        which is shared; only the *view* differs between arms, and nothing here
+        reads a view. A trigger keyed on mastery or the frontier would fire at
+        different rates in the two arms and would be measuring the manipulation
+        rather than the learner — and it would look like a finding, not a fault.
+
+        Returns whether anything was taught, so the caller can count it.
+        """
+        after = self.config.teaching.explain_after
+        if after <= 0:
+            # Teaching is off for this run, and asking cannot conjure a lesson
+            # a run does not give. Structural rather than a matter of nobody
+            # calling it: every cohort passes through here.
+            return False
+
+        # A request bypasses the difficulty threshold. A learner saying "I do
+        # not know what this is" is better evidence of that than three wrong
+        # answers are, whether they said it in so many words or it was read out
+        # of their working. Taken rather than read, so it is answered once.
+        #
+        # ⚠️ Only an *explicit* ask also bypasses the account ceiling. A person
+        # asking again has decided they want it again; an inference firing
+        # repeatedly would re-teach the same three accounts round and round,
+        # which is the repetition the ceiling exists to stop.
+        pending = self.board.take_lesson_request()
+        asked = inferred = False
+        if pending is not None and pending[0] == concept_id:
+            asked, inferred = True, pending[1]
+
+        resource = self.domain.resource_for(concept_id)
+        if resource is None or not resource.teaches:
+            # Optional content, legitimately absent. `domain validate` warns
+            # about the gap; the loop simply has nothing to say here.
+            return False
+
+        errors = sum(
+            1
+            for event in self.board.state.error_trace
+            if event.concept_id == concept_id
+        )
+        # ⚠️ Openings, not turns. A lesson is a conversation now, so counting
+        # `move == explain` records would count every exchange as a fresh
+        # lesson: the ceiling would trip inside the first one and the rotation
+        # would skip accounts. `opening` marks the first turn of each lesson and
+        # is the only thing that means "a lesson happened".
+        taught = sum(
+            1
+            for record in self.board.audit_log
+            if record.cause == "tutor"
+            and record.evidence.get("move") == TutorMove.EXPLAIN.value
+            and record.evidence.get("concept_id") == concept_id
+            and record.evidence.get("opening")
+        )
+        # An inference still has to clear the ceiling; only the difficulty
+        # threshold gives way for it, and it gives way to 1 rather than to 0 —
+        # `should_explain` reads 0 as "teaching is off", which is a different
+        # statement and must not be reachable from a learner's remark.
+        if not asked and not should_explain(
+            errors,
+            taught,
+            after=after,
+            # Read off the repertoire rather than configured, so the ceiling
+            # cannot drift from the number of accounts that actually exist.
+            accounts_available=len(TeachingStyle),
+        ):
+            return False
+        if inferred and not should_explain(
+            # ⚠️ Counted over expressions of confusion, not over errors. Saying
+            # "I do not understand this" is what earns the first lesson, and
+            # saying it *again* after being taught is what earns the next one —
+            # a learner's own words are the currency here, and errors are a
+            # different signal that the threshold above already spends.
+            #
+            # Reading errors here instead made the second inferred lesson
+            # unreachable: a learner who says they are lost twice has zero new
+            # errors to show for it, which is exactly the case this trigger
+            # exists for.
+            self._confusions_about(concept_id),
+            taught,
+            after=1,
+            accounts_available=len(TeachingStyle),
+        ):
+            return False
+
+        # Which account to give, and the learner's own choice wins where they
+        # made one — see `style_for`. A learner who did not understand the plain
+        # account is unlikely to be helped by the plain account again, which is
+        # what the rotation is for.
+        style = style_for(taught, chosen=self.board.teaching_style)
+
+        def _say(text: str, *, level: str, opening: bool = False) -> None:
+            """Record one turn of the lesson, and show it.
+
+            The closing summary goes to its own hook. A front end should be able
+            to mark the account the learner keeps differently from the talking
+            that led to it — one is theirs to take away and the other was a
+            conversation.
+            """
+            self.board.record_turn(
+                # A lesson is about the concept, not about any one question, and
+                # there may not be a question in front of the learner when it
+                # arrives. Recorded against the concept so the record says what
+                # it means.
+                item_id="",
+                concept_id=concept_id,
+                move=TutorMove.EXPLAIN.value,
+                # The style stands where a hint records its support level. A
+                # lesson has no support level — it is not a quantity of the
+                # answer — and recording one would invite it to be read as a
+                # rung on the ladder, which is exactly what it is not.
+                level=level,
+                # ⚠️ Targets nothing, for the reason `_offer_support` gives and
+                # with more at stake here. `remediation_ratio` is the declared
+                # primary outcome and it counts what a hint aimed at; a target
+                # on a lesson would credit it with remediation it did not do. A
+                # lesson explains a concept — it does not correct a
+                # misconception, and it must never reach `receive_hint`.
+                targets=None,
+                text=text,
+                mastery=0.0,
+                prior_failures=errors,
+                opening=opening,
+            )
+            if self.observer is None:
+                return
+            if level == "summary":
+                self.observer.lesson_summary(concept_id, text)
+            else:
+                self.observer.lesson_offered(concept_id, text)
+
+        said = self.tutor.explain(resource, style)
+        _say(said, level=style.label, opening=True)
+
+        # The conversation. **The learner ends it** — they say nothing, or they
+        # say they are done. `lesson_turns` is a runaway guard, not a length:
+        # it exists so a conversation cannot go on forever unattended, and at a
+        # sensible value a person reaches it only if they want to.
+        #
+        # ⚠️ It was a hard stop at 3, then at 12, and a sitting reached both.
+        # The first removed someone who was *"just about to understand something
+        # important"*; the second cut in mid-derivation, with the tutor having
+        # just asked them to expand (x + h)^2. A bound a learner can reach while
+        # still engaged is an interruption, not a safety net.
+        #
+        # `None` is unbounded and is what a person should have. The runaway this
+        # guarded against cannot occur: a turn requires a reply and a reply
+        # requires someone to type one, so the conversation already stops the
+        # moment nobody answers.
+        exchanges: list[tuple[str, str]] = []
+        bound = self.config.teaching.lesson_turns
+        while bound is None or len(exchanges) < bound:
+            replied = self.learner.discuss(concept_id, said)
+            if not replied:
+                # The only thing that ends a conversation on its own, and
+                # it is enough: a turn cannot happen unless someone types
+                # a reply, so an unbounded lesson stops the moment the
+                # learner stops. That is why `None` is safe here, and why
+                # a number is optional rather than the mechanism.
+                break
+            self.board.record_reflection(
+                replied,
+                # Empty on purpose: a lesson is about a concept and there may be
+                # no question in front of the learner. `kind` is what stops this
+                # being read back to them later as a remark about some other
+                # question — see Utterance.
+                item_id="",
+                concept_id=concept_id,
+                kind="lesson",
+            )
+            if self.observer is not None:
+                self.observer.lesson_reply_recorded(concept_id, replied)
+            exchanges.append((said, replied))
+            said = self.tutor.explain(resource, style, exchanges)
+            _say(said, level=style.label)
+
+        # ⚠️ A lesson must not end on a question nobody can answer.
+        #
+        # Every turn above ends by asking something, so however the conversation
+        # stops there is one left hanging — and the summary below then answers
+        # it for the learner. The same sitting caught it at the worst moment the
+        # material allows: the tutor had just asked what happens to a secant's
+        # gradient as the second point slides in, which *is* the limit concept,
+        # and the summary appeared instead of a reply. Under the Socratic style
+        # that is the monologue failure returning by another door — the system
+        # asks the question and then answers it.
+        #
+        # Only when something was actually said. A learner who declined at the
+        # first prompt has nothing hanging that they engaged with, and an extra
+        # turn there would be the system talking to itself.
+        if exchanges:
+            _say(
+                self.tutor.explain(resource, style, exchanges, closing=True),
+                level=style.label,
+            )
+
+        # ⚠️ Always, however the conversation ended, and it is the authored text
+        # rather than anything generated. The conversation is the model's and is
+        # re-checked against nothing; this is what a person wrote and what
+        # `domain validate` has checked is plain text and does not answer any
+        # item on the concept at any draw. The guarantees belong to the thing
+        # the learner is left holding.
+        _say(resource.lesson(), level="summary")
+        return True
+
     def _work_item(
         self,
         item,
@@ -800,9 +1128,15 @@ class Session:
             #
             # Before the diagnosis, because the answer alone cannot separate a
             # method that was wrong from arithmetic that slipped, and an
-            # unreadable answer carries nothing whatever. The diagnostic is
-            # given the words in the same step it is asked to explain — whether
-            # it *reads* them is its own affair; see the Diagnostic protocol.
+            # unreadable answer carries nothing whatever. The words are on the
+            # board before the label is inferred, so the record of the step is
+            # complete whichever way the diagnosis goes.
+            #
+            # ⚠️ They are not passed to `diagnose`, which takes the answer and
+            # nothing else the learner wrote — see the Diagnostic protocol. The
+            # working reaches the *tutor*, through the view. An earlier version
+            # of this comment said the diagnostic "is given the words", and
+            # there is no parameter it could arrive in.
             #
             # The old ordering asked after the answer was recorded, which was
             # about a different risk — that the working could become a hint the
@@ -817,6 +1151,10 @@ class Session:
                     )
                     if self.observer is not None:
                         self.observer.working_recorded(item, shown)
+                    # The channel the sitting's remark arrived in. Read here
+                    # rather than at the end of the item so the lesson lands
+                    # before the next attempt rather than after it.
+                    self._note_if_confused(item.concept_id, shown)
                 else:
                     # Asked and declined. Recorded because a refusal is a fact
                     # about the sitting — a rising rate means the prompt has
@@ -836,6 +1174,11 @@ class Session:
                 # the capability that says so.
                 if isinstance(self.diagnostic, OracleAccess):
                     self.diagnostic.observe_ground_truth(step.fired)
+                # The same `item` and `response` the verifier was given above,
+                # and nothing the verifier produced — `result` is not passed.
+                # That the step was wrong is carried by this call sitting inside
+                # the branch, so the diagnostic never sees a verdict and has no
+                # way to ask for one.
                 diagnosis = self.diagnostic.diagnose(item, response, self.domain)
                 diagnoses.append((step.fired, diagnosis.misconception_id))
                 confirmed = confirmed or diagnosis.named
@@ -949,6 +1292,10 @@ class Session:
                     self.board.record_reflection(said, item.id, item.concept_id)
                     if self.observer is not None:
                         self.observer.reflection_recorded(item, said)
+                    # Both prose channels, because a learner says it in
+                    # whichever one they are standing in. A sitting had someone
+                    # ask what sin(x) was three times, in three channels.
+                    self._note_if_confused(item.concept_id, said)
 
             moves.append(hint.move)
             replies.append(hint.text)
@@ -988,6 +1335,29 @@ class Session:
             self.observer.item_finished(item, solved=False, reason="attempts_spent")
 
 
+def _recall_for(config: Config) -> Recall | None:
+    """How the tutor finds what this learner said before, if it does.
+
+    ``None`` is off and is the default: the tutor reads ``said_about``, which is
+    what every measured result was produced under.
+
+    Built here rather than in the tutor so that a run which does not want it
+    opens no embedding connection and embeds nothing — the same reason the
+    confusion detector is built only where it is asked for.
+    """
+    recall = config.teaching.recall
+    if not recall.enabled:
+        return None
+    if recall.strategy == "keyed":
+        return KeyedRecall()
+    from agent_newton.llm.embed import CachedEmbedder, OllamaEmbedder
+
+    return EmbeddedRecall(
+        CachedEmbedder(OllamaEmbedder(recall.model), config.paths.cache_dir.parent / "embed"),
+        recall.threshold,
+    )
+
+
 def build_session(
     learner_id: str,
     seed: int,
@@ -1020,6 +1390,12 @@ def build_session(
     agents = config.agents
     cache_dir = config.paths.cache_dir
 
+    # The detector reads the learner's words, so it needs the same kind of
+    # model the tutor does — and it is built only where the run asks for it, so
+    # a run that does not detect confusion opens no extra connection and makes
+    # no extra call. `NoConfusion` says no to everything, which is what every
+    # cohort gets.
+    confusion: ConfusionDetector = NoConfusion()
     if agents.tutor.impl == "template":
         tutor: Tutor = TemplateTutor(config.zpd, config.scaffolding.policy)
     else:
@@ -1027,7 +1403,12 @@ def build_session(
             build_provider(agents.tutor, cache_dir),
             config.zpd,
             config.scaffolding.policy,
+            recall=_recall_for(config),
         )
+        if config.teaching.detect_confusion:
+            confusion = LLMConfusionDetector(
+                build_provider(agents.tutor, cache_dir)
+            )
 
     if agents.diagnostic.impl == "oracle":
         diagnostic: Diagnostic = OracleDiagnostic()
@@ -1101,6 +1482,7 @@ def build_session(
         domain=domain,
         config=config,
         arbitration=ArbitrationPolicy(config.arbitration),
+        confusion=confusion,
         observer=observer,
         elapsed_days=elapsed_days,
         resumed=state is not None,

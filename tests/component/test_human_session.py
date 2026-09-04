@@ -933,6 +933,12 @@ class TestAnUnreadableAnswerIsNotAnAttempt:
                     level=HintLevel.NUDGE,
                 )
 
+            def explain(self, resource, style, exchanges=(), closing=False):  # noqa: ANN001
+                # Present so this still satisfies `Tutor`. This test is about
+                # what the tutor is told it has already said, and a lesson is
+                # not one of those turns.
+                return resource.lesson()
+
         class Nothing:
             def diagnose(self, item, response, domain):  # noqa: ANN001
                 return Diagnosis(None)
@@ -1817,3 +1823,119 @@ class TestWhatTheLearnerSawMatchesWhatWasRecorded:
                 f"{shown[item_id]} time(s) — the later posings re-rendered an "
                 f"offer the session had decided not to make"
             )
+
+
+class TestAnInterruptedSittingSaysHowItEnded:
+    """⚠️ It said so in the database and not on disk — one fact, two records.
+
+    `_store` wrote `stop_reason` inside `if outcome is not None`, and a sitting
+    someone stopped part-way has no outcome. The *store* handled that case, from
+    the same function, a few lines later: `"failed" if failed is not None else
+    "interrupted"`. So the database knew and the transcript did not, and three
+    committed sittings carry `stop_reason: null` because of it.
+
+    The rule the original followed is right and was applied too widely. §7e says
+    figures the session did not produce must be **absent rather than zero** — an
+    unfinished sitting has no pre/post gain, and a zero would say the opposite of
+    what it means. But how the sitting ended is not one of those figures. The
+    demo caught the exception; it knows.
+    """
+
+    def _transcript(self, tmp_path, outcome, observer=None, stopped=""):  # noqa: ANN001
+        import json
+
+        from agent_newton.demo import _store
+
+        config = human_config()
+        config.paths.results_dir = tmp_path
+        domain = registry.load_domain("toy_algebra")
+        session = build_session(
+            "human", config.seed, domain, config,
+            learner=HumanLearner(lambda item, attempt: "no idea"),
+        )
+        run_dir = _store(
+            config, domain, session, session.learner, outcome,
+            observer=observer, stopped=stopped,
+        )
+        return json.loads((run_dir / "transcript.json").read_text())
+
+    def test_a_stopped_sitting_records_that_it_was_interrupted(
+        self, tmp_path
+    ) -> None:
+        record = self._transcript(tmp_path, outcome=None, stopped="interrupted")
+        assert record["stop_reason"] == "interrupted"
+
+    def test_a_failed_sitting_is_told_apart_from_a_stopped_one(
+        self, tmp_path
+    ) -> None:
+        # §7r's distinction: a dead model backend is not somebody pressing :q,
+        # and a record that conflated them would make a service failure look
+        # like a person losing interest.
+        record = self._transcript(tmp_path, outcome=None, stopped="failed")
+        assert record["stop_reason"] == "failed"
+
+    def test_the_outcome_still_wins_when_there_is_one(self, tmp_path) -> None:
+        # A finished sitting's reason comes from the session, which is the only
+        # thing that can distinguish `budget_spent` from `every_goal_reached`.
+        from agent_newton.core.evaluation.outcomes import SessionOutcome, TestResult
+
+        outcome = SessionOutcome(
+            learner_id="human", arm="coupled",
+            pretest=TestResult(correct=0, total=0),
+            posttest=TestResult(correct=0, total=0),
+            items_attempted=7, items_to_exhaustion=None, remediation_ratio=None,
+            unmeasurable_steps=0, diagnoses=(), triggers={}, suppressed=0,
+            goal=None, goal_changes=0, goals_mastered=0,
+            stop_reason="every_goal_reached", cross_concept_diagnoses=0,
+            distance_to_goal=None,
+        )
+        record = self._transcript(tmp_path, outcome=outcome, stopped="ignored")
+        assert record["stop_reason"] == "every_goal_reached"
+        assert record["items_attempted"] == 7
+
+    def test_items_attempted_survives_an_interruption(self, tmp_path) -> None:
+        """⚠️ And it is counted by the observer, because nothing else can.
+
+        `record_observation` takes `attempt` and does not record it, so nothing
+        in the audit log marks where one giving ends and the next begins.
+        Distinct item ids undercount badly — a concept is worked until mastered,
+        so one id can be twenty givings — and observation records overcount,
+        since an item takes up to three steps. Checked against committed
+        sittings: `items_attempted` of 20 against 1 distinct id and 60
+        observation records.
+
+        `item_started` fires exactly once per giving, which is what the figure
+        means.
+        """
+        from rich.console import Console
+
+        from agent_newton.demo import DemoObserver
+
+        domain = registry.load_domain("toy_algebra")
+        observer = DemoObserver(Console(quiet=True), domain, human_config())
+        assert observer.items_started == 0
+        board = build_session(
+            "human", 1, domain, human_config(),
+            learner=HumanLearner(lambda item, attempt: "x"),
+        ).board
+        for item in domain.items.bank("practice")[:3]:
+            observer.item_started(item, board)
+        record = self._transcript(
+            tmp_path, outcome=None, observer=observer, stopped="interrupted"
+        )
+        assert record["items_attempted"] == 3
+
+    def test_the_two_records_of_one_sitting_cannot_disagree(self) -> None:
+        """The shape of the original defect, asserted as a property.
+
+        The reason it happened is that the expression was written twice — once
+        for the transcript, once for the store — and only one copy handled the
+        no-outcome case. It is derived once now and passed to both.
+        """
+        import inspect
+
+        from agent_newton import demo
+
+        source = inspect.getsource(demo.run_demo)
+        assert source.count('"failed" if failed is not None else "interrupted"') == 1
+        assert "stop_reason=stopped" in source

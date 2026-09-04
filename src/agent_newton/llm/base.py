@@ -37,6 +37,59 @@ class MalformedResponse(ProviderError):
     """The model replied, but not with something matching the schema."""
 
 
+class BudgetExhausted(MalformedResponse):
+    """The model spent its whole token budget without producing an answer.
+
+    A subclass of :class:`MalformedResponse` because that is what it is — no
+    reply came back that could be validated — but it is **not repaired**, and
+    the difference is measured rather than assumed.
+
+    ⚠️ The repair loop existed here on the reasoning that an exhausted budget
+    "yields a reply that fails schema validation, counted, visible, and over in
+    seconds". The first half is right and the last is not. One case measured at
+    three budgets, with the context window kept clear each time:
+
+    ========  =========  ==========
+    budget    seconds    answer
+    ========  =========  ==========
+    4096      547        none
+    8192      1114       none
+    16384     2301       none
+    ========  =========  ==========
+
+    The cost doubles exactly with the budget — ratios 2.04 and 2.06 — and the
+    outcome never changes. A model that deliberates without converging fills
+    whatever room it is given, so asking again cannot help: decoding is
+    deterministic, and the repair prompt is *longer*, leaving even less room
+    than the attempt that just failed. Three attempts turned a thirteen-minute
+    dead end into thirty-eight.
+
+    Same reasoning as :class:`ProviderTimeout`, one layer up. That one is
+    excluded from the transport retry; this is excluded from the repair loop.
+    """
+
+
+class ProviderTimeout(ProviderError):
+    """The call did not finish inside the time allowed.
+
+    Distinct from a plain :class:`ProviderError` for the same reason
+    :class:`MalformedResponse` is: it decides whether asking again is worth
+    anything. A dropped connection is worth retrying — the next attempt may find
+    the server. A timeout is not: decoding is deterministic at temperature zero,
+    so the identical question takes the identical time and fails the identical
+    way, and three attempts turn one wait into three.
+
+    That matters most where the wait is longest. A deliberating model given a
+    generous ``timeout`` is exactly the case where a silent triple retry is felt
+    as the system having hung.
+
+    It stays a ``ProviderError`` so every existing handler keeps working:
+    ``LLMDiagnostic`` counts it as a failure to infer, ``LLMTutor`` falls back to
+    a fixed hint, and the sitting survives a dead backend. Only the retry
+    predicate treats it specially.
+    """
+
+
 @dataclass(frozen=True, slots=True)
 class Completion:
     """One raw response, before schema validation."""
@@ -111,6 +164,13 @@ def complete(
             completion = provider.generate(current, schema, system)
             last_text = completion.text
             return schema.model_validate_json(_extract_json(completion.text))
+        except BudgetExhausted:
+            # Before the repair clause, deliberately: this *is* a malformed
+            # response and would be caught by it. Asking again cannot help — see
+            # the class. Raised on rather than counted here, so the caller
+            # records it exactly as it records every other failure to get an
+            # answer, and only the wasted attempts are gone.
+            raise
         except (ValidationError, MalformedResponse) as exc:
             # A provider may reject its own reply before this sees it — a
             # deliberation that never reached an answer produces no text to

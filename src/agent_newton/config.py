@@ -110,10 +110,54 @@ class ModelSpec(BaseModel):
     #: proportionally expensive. Recorded in the manifest, so a run states which
     #: it used.
     think: bool | None = None
+    #: Tokens this role may generate per call, deliberation included.
+    #:
+    #: ``None`` keeps the provider's own default, which is what every measured
+    #: run used. Raising it is what makes ``think: true`` possible at all — a
+    #: model that deliberates spends the budget before it answers, and one
+    #: observed diagnosis decoded 8,485 tokens without producing one.
+    max_tokens: int | None = Field(default=None, gt=0)
+    #: The context window: prompt, deliberation and answer *together*.
+    #:
+    #: Separate from :attr:`max_tokens` because they bound different things and
+    #: raising one without the other just moves the failure. ``None`` leaves the
+    #: server's default alone, which is what every run before this did — nothing
+    #: set it.
+    #:
+    #: ⚠️ It fails quietly. Ollama drops the oldest context rather than refusing,
+    #: so a prompt that does not fit yields a confident answer to a question the
+    #: model was shown only part of. The provider warns when a prompt approaches
+    #: it; there is nothing in a reply that would say so.
+    context_tokens: int | None = Field(default=None, gt=0)
+    #: Seconds to wait for one call before giving up.
+    #:
+    #: ``None`` keeps the provider's default. Deliberation needs more of this as
+    #: well as more tokens, which is why all three are here rather than only the
+    #: budget.
+    #:
+    #: Unlike the other two it is **not** part of the cache key: how long the
+    #: caller was willing to wait does not change what came back.
+    timeout_seconds: float | None = Field(default=None, gt=0)
 
     def label(self) -> str:
-        thinking = "" if self.think is None else f" (think={str(self.think).lower()})"
-        return f"{self.provider}/{self.model}{thinking}"
+        """What the manifest records about this role.
+
+        Every field that changes what the model does appears, so a run states
+        the configuration it was produced under rather than only the model name.
+        Each is omitted when unset, so a spec written before these existed
+        produces the string those runs recorded.
+        """
+        parts = []
+        if self.think is not None:
+            parts.append(f"think={str(self.think).lower()}")
+        if self.max_tokens is not None:
+            parts.append(f"max_tokens={self.max_tokens}")
+        if self.context_tokens is not None:
+            parts.append(f"num_ctx={self.context_tokens}")
+        if self.timeout_seconds is not None:
+            parts.append(f"timeout={self.timeout_seconds:g}s")
+        detail = f" ({', '.join(parts)})" if parts else ""
+        return f"{self.provider}/{self.model}{detail}"
 
 
 class TutorSpec(ModelSpec):
@@ -358,6 +402,125 @@ class ScaffoldingConfig(BaseModel):
     offer_at_presentation: bool = False
 
 
+class RecallConfig(BaseModel):
+    """Finding what a learner said before, when it bears on what they are doing.
+
+    Two strategies exist because which one this system should use was measured
+    rather than assumed — see ``core/recall/base.py``. Off is the default and
+    what every measured result was produced under.
+    """
+
+    #: ``off`` leaves the tutor reading ``view.said_about``: the last two things
+    #: said about this concept, and nothing from anywhere else.
+    strategy: Literal["off", "keyed", "embedded"] = "off"
+    #: Similarity below which a match is dropped, for ``embedded``.
+    #:
+    #: 0.7 from the sweep, and chosen for precision rather than recall: 80%
+    #: precision at 36% recall, correctly silent when nothing is relevant.
+    #: Lower finds more and hands the tutor more noise; the curve is in the
+    #: commit that measured it.
+    threshold: float = Field(default=0.7, ge=0.0, le=1.0)
+    #: The embedding model. In the strategy's label, so a run states it.
+    model: str = "nomic-embed-text"
+    #: Utterances handed to the tutor at most.
+    limit: int = Field(default=3, ge=1)
+
+    @property
+    def enabled(self) -> bool:
+        return self.strategy != "off"
+
+
+class TeachingConfig(BaseModel):
+    """Whether the system may explain a concept, and after how much difficulty.
+
+    Off by default, and off for every cohort, with a scan over the config
+    directory that refuses it and a test proving that scan can fail.
+
+    It stays off for the reason the design note gave in advance rather than
+    after a null result: a lesson targets a *concept*, and the simulated learner
+    improves only when a hint names a misconception it holds, so nothing here
+    can move a cohort number. That inertness is a property of today's simulator
+    rather than of the design, and a cohort quietly running with teaching on
+    would stop being the run every measured figure came from the moment that
+    changed.
+    """
+
+    #: Recorded errors on one concept before a lesson is offered. ``0`` is off.
+    #:
+    #: Counted from the error trace, which lives on the shared state and is
+    #: written identically in both arms — never from mastery, the frontier or a
+    #: hint level, any of which would fire at different rates per arm and would
+    #: be measuring the manipulation rather than the learner.
+    #:
+    #: Three is the number the design note proposed, and it is a threshold
+    #: rather than a discovery: below it a learner is being taught after a slip,
+    #: above it they spend the sitting failing something nobody explained.
+    explain_after: int = Field(default=0, ge=0)
+    #: A runaway guard on a lesson, **not** a length.
+    #:
+    #: ``0`` is one turn and the summary, which is what the one-shot lesson
+    #: already did, so every measured result and every existing test is
+    #: unaffected by this existing.
+    #:
+    #: **``None`` is unbounded, and that is what a person should have.** The
+    #: learner ends a lesson — they say nothing, or they type the exit word.
+    #:
+    #: ⚠️ It was 3 and read as a length, then 12, and a sitting reached both. The
+    #: first removed someone who was *"just about to understand something
+    #: important"*; the second cut in mid-derivation, with the tutor having just
+    #: asked them to expand ``(x + h)^2``. A bound a learner can reach while
+    #: still engaged is an interruption, not a safety net.
+    #:
+    #: The runaway it was guarding against cannot happen. A turn requires a
+    #: reply and a reply requires someone to type one, so the conversation
+    #: already stops the moment nobody answers — which is the only bound that
+    #: was ever doing anything. A number is still accepted, for a front end that
+    #: wants a ceiling or a test that needs one.
+    #:
+    #: ⚠️ Inert for a cohort twice over. It is 0 in every experiment config, and
+    #: `SimulatedLearner.discuss` returns None — so a simulated learner ends the
+    #: conversation at its first turn whatever this says. The second is the
+    #: guarantee worth having: an inability rather than a setting.
+    lesson_turns: int | None = Field(default=0, ge=0)
+    #: Whether the learner's own words are read for "I do not know what this is".
+    #:
+    #: Off by default and off for every cohort. The trigger a sitting asked for:
+    #: someone wrote *"I factored the denominator ... But I don't understand
+    #: what a limit is"* in the working channel and still had to type `:why`,
+    #: for something the system was already holding the evidence for.
+    #:
+    #: ⚠️ Requires a model-backed tutor, and that is the structural guard rather
+    #: than a limitation. A model-free run has no way to tell "I do not
+    #: understand this" from a wrong answer, and a keyword list would be a
+    #: detector nobody measured — which is worse than none, because it would
+    #: look like one. Cohorts run `tutor.impl: template`, so the detector cannot
+    #: exist there even if this were set.
+    #:
+    #: Doubly inert besides: a simulated learner writes nothing in either the
+    #: working or the reflection channel, so the text this reads is empty by
+    #: construction.
+    detect_confusion: bool = False
+    #: How the tutor finds what this learner said before, if it does.
+    #:
+    #: ``off`` is the default and what every measured result was produced under:
+    #: the tutor reads ``view.said_about``, which returns the last two things
+    #: said *about this concept* and nothing else.
+    #:
+    #: ``embedded`` ranks the learner's whole history against what they just
+    #: wrote. Measured over hand-labelled cases: at 0.7 it returns 80% precision
+    #: against the keyed reading's 10%, and — the part that matters for a tutor
+    #: prompt — it returns nothing when there is nothing worth returning. An
+    #: unrelated remark handed to a tutor as context is worse than silence,
+    #: because the tutor will try to use it.
+    #:
+    #: ⚠️ Whatever this says, recall happens **inside the coupled view**. The
+    #: learner's words are something they told us about themselves, and the
+    #: decoupled arm does without them — that is the manipulation, not an
+    #: oversight. Reaching the history any other way would hand one arm what the
+    #: other is defined by lacking.
+    recall: RecallConfig = Field(default_factory=lambda: RecallConfig())
+
+
 class DecayConfig(BaseModel):
     """How the learner model goes stale between sessions.
 
@@ -572,6 +735,7 @@ class Config(BaseModel):
         default_factory=lambda: ScaffoldingConfig()
     )
     arbitration: ArbitrationConfig = Field(default_factory=lambda: ArbitrationConfig())
+    teaching: TeachingConfig = Field(default_factory=lambda: TeachingConfig())
     decay: DecayConfig = Field(default_factory=lambda: DecayConfig())
     paths: PathsConfig = Field(default_factory=lambda: PathsConfig())
 
@@ -590,6 +754,25 @@ class Config(BaseModel):
                 f"zpd.theta_lower ({self.zpd.theta_lower}): a seeded concept at "
                 f"or above it would unlock its dependants, so a wrong pre-test "
                 f"answer would open the material that depends on it"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_confusion_needs_a_model(self) -> Config:
+        """Reading a learner's words for confusion needs something that can read.
+
+        Left unchecked this would look like it ran: the detector would be the
+        model-free one, it would answer "no" to everything, no lesson would ever
+        be triggered that way, and the run would report the feature as on. Every
+        number would be the kind that looks plausible and means nothing — the
+        same failure shape the human-diagnostic check exists to prevent.
+        """
+        if self.teaching.detect_confusion and self.agents.tutor.impl != "llm":
+            raise ValueError(
+                f"teaching.detect_confusion needs agents.tutor.impl='llm'. A "
+                f"'{self.agents.tutor.impl}' tutor has no model to read the "
+                f"learner's words with, so nothing would ever be detected and "
+                f"the run would look like the feature was working."
             )
         return self
 

@@ -23,19 +23,34 @@ import logging
 from typing import Mapping, Sequence
 
 from agent_newton.config import LabelSpace, ScaffoldingPolicy, ZPDConfig
-from agent_newton.core.agents.base import Diagnosis, Hint, StateView
+from pydantic import BaseModel
+
+from agent_newton.core.agents.base import Diagnosis, Hint, StateView #vh comment: i can see how with Hint, the method from respond from Tutor is being used, but how is the method explain being called here? Is it being called here at all?
+# answer: it is, from `session.py :: _offer_lesson` — three calls, one per kind
+# of turn: the opening, each reply, and the closing one. Nothing imports it here
+# because `explain` returns a plain `str`; only `respond` needs a name from
+# base.py, because it returns a `Hint`. An import list shows what a module needs
+# *spelled*, not what it implements.
 from agent_newton.core.agents.planner import GoalDirectedPlanner, _least_used
 from agent_newton.core.state import route
 from agent_newton.core.state.schema import Emphasis, Plan
 from agent_newton.core.agents.schemas import UNKNOWN, diagnosis_schema, plan_schema
-from agent_newton.core.agents.schemas import HintReply
+from agent_newton.core.agents.schemas import (
+    ClosingReply,
+    ConfusionReply,
+    HintReply,
+    LessonReply,
+)
 from agent_newton.core.pedagogy import (
     HintLevel,
+    TeachingStyle,
     TutorMove,
     hint_level,
     may_select,
     move_for,
 )
+from agent_newton.core.recall.base import Recall
+from agent_newton.core.state.schema import Utterance
 from agent_newton.core.state.views import FullStateView
 from agent_newton.llm.base import (
     LLMProvider,
@@ -43,7 +58,13 @@ from agent_newton.llm.base import (
     ProviderError,
     complete,
 )
-from agent_newton.domains.base import Domain, Item, Misconception
+from agent_newton.domains.base import (
+    PLAIN_TEXT_ONLY,
+    ConceptResource,
+    Domain,
+    Item,
+    Misconception,
+)
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +104,13 @@ _TUTOR_SYSTEM = (
 #: evaluation counts these apart from bad hints — a failure to produce a turn is
 #: not a wrongly-pitched one — and a literal in two places would drift.
 FALLBACK_HINT = "That step is not right yet — take another look at it."
+
+#: How much longer than the authored lesson a re-voiced one may run.
+#:
+#: Generous, because a Socratic account genuinely needs more words than a
+#: declarative one. It is here to catch a model that has stopped rephrasing and
+#: started composing, not to police style.
+_STYLED_LESSON_LIMIT = 3.0
 
 _PLANNER_SYSTEM = (
     "You choose what a student should work on next, given what they have shown "
@@ -191,11 +219,35 @@ class LLMTutor:
         provider: LLMProvider,
         band: ZPDConfig,
         policy: ScaffoldingPolicy = "banded",
+        recall: Recall | None = None,
     ) -> None:
         self._provider = provider
         self._band = band
         self._policy: ScaffoldingPolicy = policy
+        #: How the learner's own words are found. ``None`` reads the last two
+        #: said about this concept, which is what every measured result used.
+        self._recall = recall
+        #: Times recall was asked and could not answer, so a degraded sitting is
+        #: visible afterwards rather than looking like one where nothing matched.
+        #: Reported the way ``LLMDiagnostic.failures`` is.
+        self.recall_failures = 0
 
+    # answer: this is the one that runs. `Tutor` in base.py is a **Protocol** —
+    # its method bodies are literally `...` and are never executed. It declares
+    # the shape: "anything with a `respond` and an `explain` of these signatures
+    # is a Tutor". `LLMTutor` and `TemplateTutor` are the implementations.
+    #
+    # Note `class LLMTutor:` — it does **not** inherit from `Tutor`, and there is
+    # no base class to inherit. The match is structural: this is a Tutor because
+    # it has the two methods, not because of what it descends from. Swapping in a
+    # different implementation therefore needs no edit to base.py.
+    #
+    # On the return types: both agree. `respond` returns `Hint` in the Protocol
+    # and here; `explain` returns `str` in both. Two methods, two return types —
+    # a reply to a step is a structured decision the session records, a lesson
+    # turn is prose the learner reads.
+    #
+    # So: nothing in base.py "sits there unused". None of it runs at all.
     def respond(
         self,
         item: Item,
@@ -288,20 +340,45 @@ class LLMTutor:
         # u^4. Words from an earlier question are still worth having — they are
         # how the tutor knows what this learner keeps finding hard — but they
         # have to be marked as being about something else.
+        # ⚠️ Inside the `FullStateView` branch, and that is the whole of how the
+        # ablation survives this. The learner's words are something they told us
+        # about themselves, and the decoupled arm is *defined* by doing without
+        # them. Recall reaching the history by any other route — the session,
+        # the store — would hand one arm what the other lacks, and it would look
+        # like the coupling advantage growing rather than like a leak.
         said = ""
         if isinstance(view, FullStateView):
-            for utterance in view.said_about(item.concept_id):
-                when = (
-                    "on this question"
-                    if utterance.item_id == item.id
-                    else "on an earlier question, not the one above"
-                )
-                label = (
-                    f"The student showed this working {when}"
-                    if utterance.kind == "working"
-                    else f"The student said {when}, when asked what they were unsure of"
-                )
-                said += f"\n{label}: {utterance.text}"
+            for utterance in self._remembered(view, item, response):
+                # Two facts, and both have to survive: what kind of thing this
+                # was, and whether it was about the question in front of them.
+                # Deciding them in one chain lost the second whenever the first
+                # matched — a lesson remark from another concept came through
+                # labelled only as a lesson remark.
+                if utterance.kind == "lesson":
+                    kind = "said this while a concept was being explained to them"
+                elif utterance.kind == "working":
+                    kind = "showed this working"
+                else:
+                    kind = "said this when asked what they were unsure of"
+
+                if utterance.concept_id != item.concept_id:
+                    # ⚠️ Only reachable with recall on. Keyed reading could only
+                    # ever return remarks about the current concept, so nothing
+                    # had to say otherwise; recall reaches across, and an
+                    # unlabelled remark about limits arriving while the learner
+                    # works the power rule is §7i's leak one level out.
+                    about = (
+                        f", while working on {utterance.concept_id} rather than "
+                        f"the question above"
+                    )
+                elif utterance.kind == "lesson":
+                    about = ", not about the question above"
+                elif utterance.item_id == item.id:
+                    about = ", on this question"
+                else:
+                    about = ", on an earlier question, not the one above"
+
+                said += f"\nThe student {kind}{about}: {utterance.text}"
 
         # What this tutor has already said on this question, and an instruction
         # not to say it again. Two things needed it.
@@ -351,6 +428,347 @@ class LLMTutor:
             # nothing; only remediation carries a target.
             targets=diagnosis.misconception_id if move is TutorMove.REMEDIATE else None,
         )
+
+    def _remembered(
+        self, view: FullStateView, item: Item, response: str
+    ) -> Sequence[Utterance]:
+        """What this learner said that bears on the question in front of them.
+
+        Without a recall strategy this is ``view.said_about`` — the last two
+        things said about this concept — which is what every measured result was
+        produced under and stays the default.
+
+        With one, the whole history is ranked against what they just wrote. That
+        is the case the ideas note asks for: someone who asked what a gradient
+        was while working on limits has said something that bears on the power
+        rule, and keying on the concept cannot see it.
+        """
+        if self._recall is None:
+            return view.said_about(item.concept_id)
+        # ⚠️ The question *and* the answer, not the answer alone. A response is
+        # usually an expression — `5x^5` — and ranking prose against an
+        # expression matches almost nothing: the words a learner used when they
+        # were confused are in the same vocabulary as the question, not as the
+        # algebra. The prompt is what carries that vocabulary.
+        query = f"{' '.join(item.prompt.split())} {response}".strip()
+        try:
+            return self._recall.about(view.reflections, item.concept_id, query)
+        except ProviderError as exc:
+            # ⚠️ A sitting must survive a dead backend, which is the rule
+            # `respond` already applies to the hint itself one layer down. An
+            # embedder that is unreachable, or a model that was never pulled,
+            # used to raise from here — outside that `try` — and end the session
+            # several questions in, with the person given no idea why.
+            #
+            # Falling back costs context and nothing else: `said_about` is the
+            # pre-recall behaviour and what every measured result was produced
+            # under. Counted, because a run that quietly stopped recalling and
+            # one where nothing happened to match look identical otherwise.
+            self.recall_failures += 1
+            log.warning(
+                "recall unavailable for %s (%s); falling back to said_about",
+                item.concept_id,
+                exc,
+                extra={
+                    "event": "tutor.recall_failed",
+                    "concept_id": item.concept_id,
+                },
+            )
+            return view.said_about(item.concept_id)
+    # answer: the same pair again — base.py declares `explain`, this implements
+    # it, and `TemplateTutor.explain` implements it differently by returning the
+    # authored text and ignoring style, exchanges and closing. Three definitions,
+    # one of which never executes.
+    def explain(
+        self,
+        resource: ConceptResource,
+        style: TeachingStyle,
+        exchanges: Sequence[tuple[str, str]] = (),
+        closing: bool = False,
+    ) -> str:
+        """Re-voice the authored lesson in the style the rules chose.
+
+        **The model does not write the lesson.** It is handed text a person
+        wrote, that ``domain validate`` has already checked is plain text and
+        does not answer any item on the concept at any template draw, and it is
+        asked to say the same thing differently. That is deliberate: the
+        mathematics a learner is taught should not be generated fresh at a
+        keyboard, and the guarantees the content carries are guarantees about
+        *that* text.
+
+        A lesson is a conversation and this writes one side of it. With no
+        ``exchanges`` it opens — a little, and then a question the learner can
+        answer. With exchanges it replies to what they said and puts the next
+        piece to them. Neither turn delivers the whole account: the learner is
+        given that in writing when the conversation ends, and it is the authored
+        text rather than anything generated here.
+
+        Two guards on what comes back, and a fallback to the authored text if
+        either trips:
+
+        * **Plain text.** The LaTeX ban is the sitting-2 defect — a reply
+          arrives as JSON, ``\\f`` parses to a form feed, and a learner read
+          ``rac{f(b) - f(a)}{b - a}`` without being able to tell it meant a
+          division. Checked against the same pattern the content is checked
+          against, so a fix to one is a fix to both.
+        * **Length.** A re-voicing that runs to several times the original has
+          stopped re-voicing and started writing, which is the thing this is
+          built not to do.
+
+        ⚠️ What is *not* guaranteed: that a generated turn avoids answering an
+        item. The authored example is checked against every item and every draw;
+        a model talking around it could in principle arrive at an item's
+        numbers. Re-checking every turn against every form of every item on the
+        concept is affordable and is not done here. The honest statement is that
+        the **summary** carries the guarantee, because the summary is the
+        authored text, and the conversation inherits it only as far as "do not
+        add mathematics that is not in it" is obeyed.
+        """
+        authored = resource.lesson()
+        if exchanges:
+            said = "\n".join(
+                f"You: {mine}\nThe student: {theirs}" for mine, theirs in exchanges
+            )
+            context = f"\n\nThe conversation so far:\n{said}"
+        else:
+            context = ""
+        schema: type[BaseModel] = LessonReply
+        if closing:
+            instruction = _STYLE_CLOSING
+            # A rule a model can talk itself out of is not one. This turn is
+            # refused if it ends on a question, and the repair loop shows the
+            # model its own reply and asks again — the same machinery that
+            # catches a turn stopping mid-sentence.
+            schema = ClosingReply
+        elif exchanges:
+            instruction = _STYLE_REPLY
+        else:
+            instruction = _STYLE_OPENING[style]
+
+        prompt = f"{instruction}\n\nThe explanation to work from:\n{authored}{context}"
+        try:
+            reply = complete(
+                self._provider, prompt, schema, system=_EXPLAIN_SYSTEM
+            )
+            text = reply.text
+        except ProviderError:
+            # A sitting must survive a dead backend, and the authored lesson is
+            # a complete lesson rather than a degraded one — the style was the
+            # only thing lost.
+            return authored
+
+        if PLAIN_TEXT_ONLY.search(text):
+            log.warning(
+                "styled lesson for %s came back with a backslash command; "
+                "using the authored text",
+                resource.concept_id,
+                extra={"event": "tutor.lesson_rejected", "reason": "not_plain_text"},
+            )
+            return authored
+        # Measured against the authored account, which a single conversational
+        # turn should come in well under rather than near. It is here to catch a
+        # model that has abandoned the conversation and delivered the lecture,
+        # which is the failure this design exists to avoid.
+        if len(text) > _STYLED_LESSON_LIMIT * len(authored):
+            log.warning(
+                "styled lesson for %s ran to %d characters against an authored "
+                "%d; using the authored text",
+                resource.concept_id,
+                len(text),
+                len(authored),
+                extra={"event": "tutor.lesson_rejected", "reason": "over_length"},
+            )
+            return authored
+        return text
+
+
+#: How each style **opens** a lesson.
+#:
+#: ⚠️ These used to say how to *voice* a finished account, and the Socratic one
+#: said to answer each question "yourself in a line before asking the next". The
+#: model did exactly that and produced a monologue shaped like a dialogue — a
+#: learner watched it ask and answer its own questions and said so: *"I really
+#: thought that would be more of a dialogue between me and the Tutor."* The
+#: clause that caused it is gone, and every style now ends by putting something
+#: to the learner that they can actually reply to.
+_STYLE_OPENING = {
+    TeachingStyle.PLAIN: (
+        "Say plainly what this concept is, in two or three sentences. Then ask "
+        "the student one short question to find out where they are with it."
+    ),
+    TeachingStyle.SOCRATIC: (
+        "Do not explain it yet. Ask the student one short question that starts "
+        "them towards the idea — something they can have a go at from what they "
+        "already know. One question only, and then stop."
+    ),
+    TeachingStyle.REAL_WORLD: (
+        "Open with one concrete situation where this idea is actually used, in "
+        "two or three sentences. Then ask the student one short question "
+        "connecting that situation to the mathematics."
+    ),
+}
+
+#: How it **ends**.
+#:
+#: ⚠️ Every other turn ends by asking something, so without this a lesson always
+#: stopped on a question nobody answered — and the written summary then answered
+#: it for the learner. A sitting caught it at the worst possible moment: the
+#: tutor had just asked *"what do you think happens to the gradient of that
+#: secant as it moves closer to the first one?"*, which is the limit concept
+#: itself, and the summary appeared instead of a reply. Their words: *"I was
+#: just about to understand something important."*
+#:
+#: Under the Socratic style that is the monologue failure returning by another
+#: door — the system asks the question and then answers it.
+_STYLE_CLOSING = (
+    "This is the last thing you will say. Answer the question you left hanging, "
+    "briefly, taking up whatever the student worked out. Then stop. Do not ask "
+    "anything new — they have no way to reply to it."
+)
+
+#: How it **continues**, once the student has said something back.
+#:
+#: The last line is the only place the tutor may say anything about *ending*,
+#: and it may only say it — the learner ends a lesson and nothing here does. A
+#: sitting drew that line: "I don't think that the llm should decide when to
+#: quit the dialogue, but it could probably recommend the student to continue
+#: after it has noticed that the student is getting the concept."
+#:
+#: It fits the rule the rest of the tutor already follows. A model may say
+#: things; it may not decide them. Whether a lesson continues is not read off
+#: this text by anything — the loop asks the learner, every turn, and the
+#: learner answers or does not.
+_STYLE_REPLY = (
+    "Reply to what the student just said. If they got something right, say what "
+    "*they* said rather than a fuller version of it — do not put words in their "
+    "mouth, and do not call something right that is unclear or wrong. If they "
+    "said they do not know, that is fine and needs no compliment; take the next "
+    "small step yourself and put it to them as a question they can answer.\n"
+    "Two or three sentences, then the question. Do not deliver the whole "
+    "explanation — they will be given it in writing when you are done.\n"
+    "If their own words show they have got the idea, say so plainly and add that "
+    "they can stop here or keep going, as they prefer. Say it and then carry on "
+    "as normal — it is their decision, not yours, and you never end the "
+    "conversation yourself."
+)
+
+_EXPLAIN_SYSTEM = (
+    "You are a mathematics tutor talking a student through a concept they may "
+    "never have met. You are given an explanation that has already been written "
+    "and checked; use it as the ground you are working from. Do not add "
+    "mathematics that is not in it, do not correct it, and do not extend it.\n"
+    "This is a conversation: the student does some of the thinking, so never "
+    "deliver the whole explanation at once and never answer your own question "
+    "in the same breath as asking it.\n"
+    "Describe only what the student actually wrote. Do not tell them what they "
+    "understand, what they meant, or which part they got right unless their own "
+    "words show it. Affirming something they did not say is worse than saying "
+    "nothing: it tells them they have arrived somewhere they have not.\n"
+    "The instruction you are given says what this particular turn is for. "
+    "Follow it.\n"
+    "Write mathematics in plain text — (f(b) - f(a)) / (b - a), x^2, sqrt(x). "
+    "Never use LaTeX or backslash commands."
+)
+# ⚠️ The "describe only what they wrote" rule is not new here. It is `_TUTOR_SYSTEM`'s,
+# word for word in intent, and it was never carried across to lessons — the same
+# omission as the groundedness check itself, which ran over hints and not over
+# lessons. Measured before it was carried across: 69.0% of lesson turns kept to
+# what the learner said, against a hint side the rule had governed all along.
+#
+# The failure it addresses is the softer half of what a sitting caught. "You've
+# set up the calculation perfectly!" on a malformed expression is the loud form;
+# the common one is "You're right that the specific number doesn't change how the
+# function behaves" to someone who wrote "It's just a constant. What does it do?"
+# — an affirmation that puts a more specific claim in the learner's mouth than
+# they made.
+#
+# ⚠️ "Say a little and then ask" used to live in the line below, and it made the
+# closing instruction unfollowable: asked to stop asking, the model asked anyway,
+# because the system prompt told it to on every turn. Whether a turn asks
+# something belongs to the turn.
+#
+# That is the fourth time one instruction has contradicted another here.
+# `_TUTOR_SYSTEM` once demanded two sentences while `WORKED_STEP` asked for the
+# step to be worked through; `HintReply`'s field description carried the same
+# demand one layer further down. The pattern is always a global rule outliving
+# the case it was written for.
+
+
+_CONFUSION_SYSTEM = (
+    "You are reading one thing a mathematics student wrote, to answer a single "
+    "question about it: do they say they do not know what the concept IS?\n\n"
+    "True means they are telling you the idea itself is missing — they do not "
+    "know what the thing is or what it means, so there is nothing for them to "
+    "apply.\n"
+    "False means anything else, and this is the harder half:\n"
+    "  - attempting the work and getting it wrong -> false\n"
+    "  - using a wrong method confidently -> false\n"
+    "  - not being sure their answer is right -> false\n"
+    "  - hedging: 'I think', 'not totally sure', 'maybe' -> false\n"
+    "  - saying a step was hard, or that they found it confusing -> false\n\n"
+    "Someone who describes a method, even a wrong one, has met the concept. "
+    "Being unsure of an answer is not the same as not knowing what the question "
+    "is about, and a student who says both is doing the work.\n"
+    "If it is true, copy the words that say so, exactly."
+)
+
+
+class LLMConfusionDetector:
+    """Asks a model whether the learner said they do not understand the concept.
+
+    Narrow on purpose. It decides nothing instructional: whether a lesson
+    happens, which account it takes and when it stops are all still rules. What
+    it produces is one fact about one string, written to the board like any
+    other observation.
+
+    ``detections`` and ``checks`` are reported per run. That is not
+    bookkeeping — a detector that fires on ordinary mistakes would teach a
+    learner who was doing fine, and the only thing that would show it is the
+    rate. It is the same reading `UNPARSEABLE` gets: a rising number is a fact
+    about the instrument, not about the learner.
+    """
+
+    def __init__(self, provider: LLMProvider) -> None:
+        self._provider = provider
+        self.checks = 0
+        self.detections = 0
+
+    @property
+    def rate(self) -> float:
+        return self.detections / self.checks if self.checks else 0.0
+
+    def confused(self, concept_id: str, text: str) -> str | None:
+        if not text.strip():
+            return None
+        self.checks += 1
+        prompt = (
+            f"The student is working on: {concept_id}\n"
+            f"They wrote:\n{text}\n\n"
+            f"Do they say they do not know what this concept is?"
+        )
+        try:
+            reply = complete(
+                self._provider, prompt, ConfusionReply, system=_CONFUSION_SYSTEM
+            )
+        except ProviderError:
+            # Not knowing is not the same as "no", but it has to become one
+            # somewhere: a sitting must survive a dead backend, and the fallback
+            # here costs a lesson that would have been offered rather than
+            # giving one that should not have been. The failure is logged so the
+            # rate stays honest.
+            log.warning(
+                "confusion detector produced nothing usable for %s",
+                concept_id,
+                extra={"event": "confusion.failed", "concept_id": concept_id},
+            )
+            return None
+        if not reply.confused:
+            return None
+        self.detections += 1
+        # The quote, when there is one, so the audit log records *what* was read
+        # that way. Falling back to the text itself rather than to True keeps
+        # the evidence readable either way.
+        return reply.quote.strip() or text.strip()
 
 
 class LLMPlanner:

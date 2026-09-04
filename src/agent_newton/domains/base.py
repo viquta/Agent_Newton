@@ -60,6 +60,9 @@ class Verdict(str, Enum):
     """
 
     CORRECT = "correct"
+    #: The only verdict the session diagnoses on. It is not sent anywhere: the
+    #: session holds the result and simply does not call the diagnostic unless
+    #: this is what came back, so the diagnostic never sees a verdict at all.
     INCORRECT = "incorrect"
     UNPARSEABLE = "unparseable"
 
@@ -124,6 +127,44 @@ class ConceptResource:
     example_answer: str
     source: str = ""
 
+    # -- the lesson -------------------------------------------------------
+    #
+    # Two optional fields rather than a separate protocol, because everything a
+    # lesson needs around it already exists here: one entry per concept, the
+    # plain-text rule, the example validated against every item and every
+    # template draw, a content hash and a column in the store. A second
+    # structure would have duplicated all of it to hold two strings.
+    #
+    # What they add is a *kind* of support the artifact had none of. ``formula``
+    # and ``worked_example`` state what to do; these state what the thing is and
+    # why it behaves that way. Every instructional move before this was a reply
+    # to a failed step, so a learner who had never met a concept and one who
+    # held a misconception about it were answered identically — and a sitting
+    # recorded the cost: someone asked what sin(x) was three times, in three
+    # channels, and was told about the product rule each time, because that was
+    # all there was to tell them.
+
+    #: What the concept *is*, in plain words, before any rule for using it.
+    #: Empty means this concept has no lesson, which is an ordinary state:
+    #: ``domain validate`` warns so nobody is surprised, and never refuses.
+    what_it_means: str = ""
+    #: Why it behaves the way it does. Separate from :attr:`what_it_means`
+    #: because they answer different questions and a learner can need one
+    #: without the other — and because a definition that runs straight into a
+    #: justification reads as one long paragraph nobody finishes.
+    why_it_works: str = ""
+
+    @property
+    def teaches(self) -> bool:
+        """Whether this concept has a lesson, as opposed to only a rule.
+
+        Keyed on :attr:`what_it_means` alone. A concept can be explained
+        without a reason being offered for it, and some genuinely cannot be
+        given one at this level; a justification with nothing to justify is the
+        combination that makes no sense.
+        """
+        return bool(self.what_it_means.strip())
+
     def shown(self, with_example: bool) -> str:
         """The text a learner reads, at one of the two depths.
 
@@ -146,6 +187,29 @@ class ConceptResource:
             f"An example — not your question, and the numbers are different:\n"
             f"{self.worked_example}"
         )
+
+    def lesson(self) -> str:
+        """The text of the lesson, composed here for the same reason as above.
+
+        The session records what was taught and the front end displays it, and
+        those must not be able to disagree.
+
+        Reuses ``worked_example`` rather than carrying one of its own. It is
+        already checked not to answer any item on the concept, at any template
+        draw, so a lesson built on it inherits that guarantee instead of needing
+        a second one — and a learner meeting the same worked example beside the
+        question and inside the lesson is being shown a consistent thing, not a
+        repetitive one.
+        """
+        parts = [self.what_it_means.strip()]
+        if self.why_it_works.strip():
+            parts.append(self.why_it_works.strip())
+        parts.append(self.formula.strip())
+        parts.append(
+            f"An example — not your question, and the numbers are different:\n"
+            f"{self.worked_example}"
+        )
+        return "\n\n".join(part for part in parts if part)
 
 
 @runtime_checkable

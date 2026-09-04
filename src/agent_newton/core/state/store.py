@@ -29,6 +29,7 @@ from agent_newton.core.state.schema import (
     ErrorEvent,
     LearnerState,
     Plan,
+    TeachingStyle,
     Utterance,
 )
 from agent_newton.core.state.views import FullStateView, ItemCorrectnessView
@@ -60,6 +61,16 @@ class Blackboard:
         #: standing instruction, and a request that outlived the sitting it was
         #: made in would steer routing nobody had asked for.
         self._requested: frozenset[str] = frozenset()
+        #: The account of a concept the learner asked for, if they asked. None
+        #: leaves it to the rule. Learner *input* rather than learner *model*,
+        #: on the same footing as `requested` and `Emphasis` — a thing a person
+        #: said about themselves, not an inference about what they know, so both
+        #: arms could be handed it fairly. Empty for every cohort; nothing but
+        #: the demo sets it.
+        self._teaching_style: TeachingStyle | None = None
+        #: A concept the learner asked to have explained, not yet answered.
+        #: Session-scoped like the rest of what a person says in a sitting.
+        self._pending_lesson: tuple[str, bool] | None = None
         #: Concepts answered correctly at least once in *this* sitting. Used to
         #: end a review: reopening a concept is a check on the estimate that
         #: closed it, and one demonstration is the check. Without this a
@@ -129,6 +140,11 @@ class Blackboard:
     def requested(self) -> frozenset[str]:
         """Concepts the learner asked for. Empty unless a front end asked."""
         return self._requested
+
+    @property
+    def teaching_style(self) -> TeachingStyle | None:
+        """How the learner asked to have things explained, if they said."""
+        return self._teaching_style
 
     @property
     def reviewing(self) -> frozenset[str]:
@@ -526,7 +542,7 @@ class Blackboard:
         text: str,
         item_id: str,
         concept_id: str,
-        kind: Literal["reflection", "working"] = "reflection",
+        kind: Literal["reflection", "working", "lesson"] = "reflection",
     ) -> None:
         """Record what the learner said, in words.
 
@@ -571,6 +587,90 @@ class Blackboard:
         )
         return self._requested
 
+    def request_lesson(
+        self, concept_id: str, *, inferred: bool = False, quote: str = ""
+    ) -> None:
+        """The learner asked to have this concept explained.
+
+        ``inferred`` says the learner did not ask in so many words — the system
+        read it out of something they wrote. ⚠️ The two are kept apart because
+        they earn different things. Both skip the difficulty threshold, since
+        "I do not know what this is" is better evidence than three wrong answers
+        either way. Only an explicit ask also skips the account ceiling: a
+        person asking again has decided they want it again, while an inference
+        firing repeatedly would re-teach the same three accounts round and round
+        — which is the repetition the ceiling was added to stop, arriving
+        through a door that bypasses it.
+
+        Learner *input*, like ``record_request`` and the teaching style — a
+        thing a person said, not an inference about what they know. What is done
+        with it is the session's decision, and the threshold it bypasses is the
+        one about *difficulty*, never the one about whether the run teaches at
+        all: a run with teaching off has no lesson to give and asking cannot
+        conjure one.
+
+        It is the trigger the ideas note lists first, and the cheapest to honour
+        correctly, because a learner saying "I do not know what this is" is
+        better evidence of that than three wrong answers are.
+        """
+        self._pending_lesson = (concept_id, inferred)
+        self._bump(
+            "annotation",
+            f"the learner said they do not understand {concept_id}"
+            if inferred
+            else f"the learner asked what {concept_id} is",
+            concept_id=concept_id,
+            asked_for_a_lesson=True,
+            # Counted separately so the detector's rate is visible. A rising
+            # one means it is firing on ordinary mistakes, which is a fact about
+            # the detector rather than about the learner — the same reading
+            # `UNPARSEABLE` gets.
+            inferred=inferred,
+            # ⚠️ The words that triggered an inference, and the whole reason
+            # `confused` returns a quote rather than a bool: a trigger whose
+            # evidence is a boolean cannot be argued with afterwards. The
+            # detector returned this and the session used to drop it, so the
+            # rationale was written in two docstrings and realised nowhere —
+            # a firing could be counted and never inspected.
+            #
+            # Empty for an explicit ask, which needs no evidence: the learner
+            # typing `:why` *is* the record.
+            **({"quote": quote} if quote else {}),
+        )
+
+    def take_lesson_request(self) -> tuple[str, bool] | None:
+        """``(concept, whether it was inferred)``, and clear it.
+
+        None when nothing was asked. Taken rather than read, because a request
+        is answered once. Left standing it would re-teach the same concept every
+        time the loop came round, which is the failure the throttle in
+        ``should_explain`` exists to prevent arriving through the other door.
+        """
+        asked, self._pending_lesson = self._pending_lesson, None
+        return asked
+
+    def record_teaching_style(self, style: TeachingStyle | None) -> None:
+        """How the learner would like concepts explained to them.
+
+        Recorded through the same path as everything else, so a sitting can be
+        read back against what the person actually asked for. It changes how a
+        lesson is voiced and never what it says: the content is authored,
+        validated, and the same under every style.
+
+        This is the control both `docs/pedagogy.md` and a learner at the
+        keyboard asked for independently — "how much help do you want today, and
+        in which areas", and a confidence check when a concept opens. Two people
+        reaching for the same control is the argument for having it.
+        """
+        self._teaching_style = style
+        self._bump(
+            "annotation",
+            f"the learner asked to be taught {style.label}"
+            if style is not None
+            else "the learner left the teaching style to the system",
+            teaching_style=None if style is None else style.value,
+        )
+
     def note_visit(self, concept_id: str, cap: int | None) -> bool:
         """Count one working of this concept. Returns whether it just became a weakness.
 
@@ -608,6 +708,7 @@ class Blackboard:
         text: str,
         mastery: float = 0.0,
         prior_failures: int = 0,
+        opening: bool = False,
     ) -> None:
         """Record what the tutor said, and under which rules it said it.
 
@@ -640,6 +741,12 @@ class Blackboard:
             mastery=mastery,
             prior_failures=prior_failures,
             text=text,
+            # ⚠️ Marks the first turn of a lesson, and only ever that. A lesson
+            # is a conversation, so anything asking "how many lessons has this
+            # learner had on this concept" has to count openings — counting
+            # turns would count every exchange as a fresh lesson and trip the
+            # account ceiling inside the first one.
+            opening=opening,
         )
 
     def record_plan(self, plan: Plan, **evidence: Any) -> Plan:

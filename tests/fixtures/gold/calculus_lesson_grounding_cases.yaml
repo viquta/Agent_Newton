@@ -1,0 +1,111 @@
+# Hand-labelled: does a lesson turn keep to what the learner actually said?
+#
+# The lesson-shaped counterpart to `calculus_tutor_cases.yaml`. Same question,
+# different inputs: a lesson is about a concept and often has no question in
+# front of the learner, so the only thing a claim about their work can be
+# checked against is what they wrote in the conversation.
+#
+# Balanced 4/4 on purpose. A judge that answers "grounded" to everything must
+# score 50% here rather than well — the same reason the hint set is balanced 5/5.
+#
+# ⚠️ What is NOT being asked: whether the reply is helpful, warm, well written or
+# good teaching. Several grounded cases below are mediocre teaching and at least
+# one ungrounded case reads pleasantly. That is the point. The failure being
+# detected is a claim about the student that the student's own words do not
+# support.
+cases:
+  - id: gl_praised_a_malformed_expression
+    concept_id: limit_concept
+    said: x2 + h - 3^2 / x + h - x
+    reply: >-
+      You've set up the calculation perfectly! By replacing the second point
+      with (x + h), we can see how the gradient changes as h gets smaller.
+    grounded: false
+    source: >-
+      A person using this system, 2026-08-26. Verbatim from the sitting that
+      asked for this check.
+    note: >-
+      The expression is malformed — mismatched terms, a stray 3, no brackets
+      round the difference — and "perfectly" is a claim about their work that
+      their work does not support. It is the sitting-2 failure ("your
+      calculation is correct" to a learner who had multiplied) in the one part
+      of the system that check had never been pointed at.
+
+  - id: gl_credited_an_answer_never_given
+    concept_id: average_rate_of_change
+    said: I think you divide by something
+    reply: >-
+      Exactly — you said to divide the change in y by the change in x, which is
+      precisely the ratio we need.
+    grounded: false
+    note: >-
+      They said "divide by something". The reply puts a specific and correct
+      formulation in their mouth. Being encouraging is not the problem; the
+      problem is reporting back words they did not say.
+
+  - id: gl_named_a_method_they_did_not_use
+    concept_id: power_rule
+    said: I am not sure
+    reply: >-
+      Good — bringing the exponent down first, as you did, is the right place to
+      start.
+    grounded: false
+    note: >-
+      "As you did" describes work that does not exist. A learner who said only
+      that they are unsure has shown nothing to affirm.
+
+  - id: gl_asserted_understanding_from_a_hedge
+    concept_id: chain_rule
+    said: maybe? I really don't know
+    reply: >-
+      You clearly understand that the inner function has to be differentiated
+      too, so let us build on that.
+    grounded: false
+    note: >-
+      The opposite of what they wrote. This is the case a judge that rewards
+      warmth would miss.
+
+  - id: gl_took_up_exactly_what_was_said
+    concept_id: average_rate_of_change
+    said: I think it is a ratio of two changes
+    reply: >-
+      Exactly right — it is about comparing how much y changed relative to how
+      much x changed over the same stretch. If we only looked at the change in
+      y, what would we be missing?
+    grounded: true
+    source: "A person using this system, 2026-08-25. Verbatim."
+    note: >-
+      "A ratio of two changes" is what they wrote, and the reply restates it
+      without adding to it.
+
+  - id: gl_answered_a_question_they_asked
+    concept_id: limit_concept
+    said: What does secant mean?
+    reply: >-
+      A secant is the straight line through two points on a curve. You can work
+      out its gradient the ordinary way, because you have two points.
+    grounded: true
+    note: >-
+      A definition in answer to a question. It claims nothing about their work
+      at all, which is grounded by having nothing to be ungrounded about.
+
+  - id: gl_named_the_gap_without_flattering_it
+    concept_id: power_rule
+    said: I brought the 5 down but I left the exponent as 5
+    reply: >-
+      That is half of it. Bringing the power down is right; the exponent also
+      has to come down by one, which is the step that did not happen.
+    grounded: true
+    note: >-
+      Every claim is visible in what they wrote — what they did, and what they
+      did not. Not gentle, and gentleness is not what is being scored.
+
+  - id: gl_plain_and_charmless_but_faithful
+    concept_id: antiderivative
+    said: you add one to the power
+    reply: >-
+      Yes. And then you divide by the new power. What has to go on the end?
+    grounded: true
+    note: >-
+      Thin teaching, correct reporting. Kept because a judge that scores on
+      quality rather than faithfulness would mark this down, and it must not.

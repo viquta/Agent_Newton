@@ -3,11 +3,36 @@
 #
 #   ./newton dev test
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm newton test
+#
+# ⚠️ Mounting the tree is not on its own enough, and for a long time this file
+# said it was. The image installs the package **non-editably** (see the
+# Dockerfile's `uv sync --no-editable`), so a built copy sits in the venv's
+# site-packages — and site-packages wins over the mounted `/app/src` on
+# `sys.path`. Every `./newton dev <verb>` therefore ran the code baked into the
+# image and ignored the working tree.
+#
+# That produced a false green: a run reported agreement with the stored numbers
+# while executing the previous commit, and only an unchanged config hash gave it
+# away. PYTHONPATH is what makes the mount mean what this comment claims — it
+# puts the mounted source ahead of site-packages, so `import agent_newton`
+# resolves to the tree. The console script is a shim that imports the package,
+# so it follows.
 
 services:
   newton:
+    environment:
+      # The whole of the fix above. Without it the mount below is decoration.
+      PYTHONPATH: /app/src
     volumes:
       - .:/app
       # Keep the image's environment rather than the host's .venv, which is
       # built for a different platform.
       - /app/.venv
+      # ⚠️ The dispatcher and its helper live outside /app, so mounting the tree
+      # does not reach them: `./newton dev <verb>` ran the image's entrypoint
+      # and a verb added on a branch came back as "No such command". PYTHONPATH
+      # above fixes the package; these fix the script that calls it. Without
+      # both, "run against the working tree" is only half true — which is the
+      # sentence this file already had to have corrected once.
+      - ./docker/entrypoint.sh:/usr/local/bin/newton:ro
+      - ./docker/render_doc.py:/usr/local/lib/newton/render_doc.py:ro

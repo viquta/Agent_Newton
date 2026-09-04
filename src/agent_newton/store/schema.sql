@@ -74,12 +74,66 @@ CREATE TABLE IF NOT EXISTS event (
     version    INTEGER NOT NULL,
     cause      TEXT    NOT NULL,
     summary    TEXT    NOT NULL,
-    evidence   TEXT    NOT NULL
+    -- The whole evidence dict, as JSON. Authoritative, and never dropped: an
+    -- audit record may carry anything, and a schema that only kept the columns
+    -- someone thought of would quietly lose the rest.
+    evidence   TEXT    NOT NULL,
+    -- The two keys almost every cause carries, lifted out so the table can be
+    -- read. Reading `evidence` meant parsing JSON to answer "what happened on
+    -- the chain rule", which is the question this table exists for. NULL where
+    -- the record genuinely has no such key -- decay names a concept, an item
+    -- budget names neither.
+    concept_id TEXT,
+    item_id    TEXT
+);
+
+-- What the system said back, projected out of the `tutor` cause.
+--
+-- The same shape as `utterance`, and for the same reason: the record of a
+-- sitting is what a defect gets found in, and one that has to be un-JSONed
+-- first does not get read. The scaffolding collapse in a human sitting was
+-- found by asking which levels a learner had ever been given, and answering
+-- that took a wrapper around the tutor; it is a SELECT now.
+--
+-- `evidence` on the event row remains authoritative. Where the two disagree,
+-- this one is the projection.
+CREATE TABLE IF NOT EXISTS turn (
+    turn_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id     INTEGER NOT NULL REFERENCES session(session_id),
+    -- The state version this was recorded at. ⚠️ Not decoration: it is the only
+    -- thing that orders a turn against an *utterance*, and a lesson is a
+    -- conversation between the two. Their own ids order each table internally
+    -- and say nothing across the pair, so reconstructing who spoke when meant
+    -- reading `event` and un-JSONing it -- which is the thing these tables exist
+    -- to avoid. Unique per record, because every mutation bumps it.
+    version        INTEGER,
+    item_id        TEXT    NOT NULL,
+    concept_id     TEXT    NOT NULL,
+    -- hint / reflect / remediate / present / explain.
+    move           TEXT    NOT NULL,
+    -- The support level for a hint, the style for a lesson, the depth for
+    -- material shown beside a question. One column because they answer the
+    -- same question -- "which of the things this move can be was it" -- and
+    -- three columns would have been three mostly-NULL ones.
+    level          TEXT    NOT NULL,
+    -- The misconception a remediation aimed at. NULL for every other move, and
+    -- that is load-bearing rather than incidental: `remediation_ratio` counts
+    -- what a hint aimed at, so a target on a lesson or a reflection would
+    -- credit it with remediation it did not do.
+    targets        TEXT,
+    text           TEXT    NOT NULL,
+    -- The two inputs the level was chosen from. Stored because the level alone
+    -- could not be argued with: two sittings ran entirely at `worked_step` and
+    -- the transcripts could say only that.
+    mastery        REAL    NOT NULL DEFAULT 0,
+    prior_failures INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS utterance (
     utterance_id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id   INTEGER NOT NULL REFERENCES session(session_id),
+    -- Orders this against `turn`. See the note there.
+    version      INTEGER,
     kind         TEXT    NOT NULL,
     item_id      TEXT    NOT NULL,
     concept_id   TEXT    NOT NULL,
@@ -95,6 +149,12 @@ CREATE TABLE IF NOT EXISTS profile (
 );
 
 CREATE INDEX IF NOT EXISTS event_by_session     ON event(session_id);
+CREATE INDEX IF NOT EXISTS turn_by_concept      ON turn(concept_id, move);
 CREATE INDEX IF NOT EXISTS event_by_cause       ON event(session_id, cause);
+-- ⚠️ Indexes on `version` are NOT here. This file is executed in full on
+-- every open and *before* the migration that adds that column, so an index
+-- naming it raises on any store an earlier schema created. That is the
+-- second time: `event_by_concept` was moved for the same reason. Anything
+-- indexing a migrated column belongs in `_migrate`.
 CREATE INDEX IF NOT EXISTS utterance_by_concept ON utterance(concept_id);
 CREATE INDEX IF NOT EXISTS session_by_learner   ON session(learner_id, arm, seq);

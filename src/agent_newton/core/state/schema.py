@@ -71,6 +71,35 @@ class Emphasis(str, Enum):
     ADVANCE = "advance"
 
 
+class TeachingStyle(str, Enum):
+    """How a concept is explained, as opposed to how much is given away.
+
+    A second axis on the lesson, and it is not a scale: none of these is *more*
+    support than another. They are different accounts of the same content, and
+    which one lands is a fact about the learner that nothing in the state
+    records.
+
+    Beside :class:`Emphasis` rather than in ``core/pedagogy`` because it is the
+    same kind of thing — something a learner states about themselves, carried on
+    the shared layer for any agent to read. The *rule* that picks one lives in
+    ``core/pedagogy`` with the other instructional rules; this is only the
+    vocabulary. Keeping it here also keeps the dependency pointing one way:
+    pedagogy reads state, and state does not read pedagogy.
+    """
+
+    #: The lesson as written: what it means, why it works, the rule, an example.
+    #: Needs no model, so a model-free run still teaches.
+    PLAIN = "plain"
+    #: The same content, led by questions the learner answers for themselves.
+    SOCRATIC = "socratic"
+    #: The same content, anchored to where the idea is actually used.
+    REAL_WORLD = "real_world"
+
+    @property
+    def label(self) -> str:
+        return self.value
+
+
 class ErrorEvent(BaseModel):
     """One incorrect step, as it enters the rolling trace."""
 
@@ -89,10 +118,21 @@ class ErrorEvent(BaseModel):
 class Utterance(BaseModel):
     """Something the learner said in words, and what it was about.
 
-    Two kinds, both prose and neither evidence: a ``reflection`` answers a
-    question the tutor asked, and ``working`` is the steps the learner took,
-    volunteered unprompted. Kept apart because the tutor should address them
-    differently — one is a reply, the other is a record of reasoning.
+    Three kinds, all prose and none evidence: a ``reflection`` answers a
+    question the tutor asked about a step, ``working`` is the steps the learner
+    took, volunteered unprompted, and ``lesson`` is what they said while the
+    concept was being explained to them. Kept apart because the tutor should
+    address them differently — one is a reply, one is a record of reasoning, and
+    one is half of a conversation.
+
+    ⚠️ ``lesson`` is not cosmetic. A lesson is about a *concept* and there may be
+    no question in front of the learner while it happens, so its utterances
+    carry an empty ``item_id`` — and ``LLMTutor.respond`` labels an utterance
+    "on an earlier question, not the one above" whenever the id does not match.
+    Without a kind of its own, what a learner said while being taught would be
+    read back to them as a remark about some other question. That is the
+    sitting-3 defect at one level finer, caught before it shipped rather than
+    after.
 
     ``concept_id`` is here because it was once dropped. Only the text reached
     the state, so the tutor was handed whatever had been said most recently
@@ -103,7 +143,7 @@ class Utterance(BaseModel):
     text: str
     item_id: str
     concept_id: str
-    kind: Literal["reflection", "working"] = "reflection"
+    kind: Literal["reflection", "working", "lesson"] = "reflection"
 
 
 class AuditRecord(BaseModel):

@@ -285,6 +285,9 @@ def evaluate_planner(
     config_path: Path = typer.Option(
         ..., "--config", help="Run config; the planner and arm it names are what is scored."
     ),
+    arm: str | None = typer.Option(
+        None, "--arm", help="Override the config's arm: coupled or decoupled."
+    ),
     out: Path | None = typer.Option(None, "--out", help="Output directory."),
 ) -> None:
     """Score a planner's choices against a policy holding the true profile.
@@ -305,6 +308,19 @@ def evaluate_planner(
     except Exception as exc:  # pydantic ValidationError or a YAML error
         console.print(f"[red]invalid config:[/red] {config_path}\n{exc}")
         raise typer.Exit(code=1)
+
+    # ⚠️ So one committed config can score both arms, the way `run_cohort.py`
+    # already does it. Without this the decoupled arm needs a second config file
+    # that differs by one line and must be kept in step — or a throwaway one,
+    # which is what happened: the stored summaries recorded a `config` path under
+    # a temporary directory that no longer exists, so the run behind a committed
+    # number could not be inspected. A summary naming a file nobody can open is
+    # the broken chain `results/README.md` is about.
+    if arm is not None:
+        if arm not in ("coupled", "decoupled"):
+            console.print(f"[red]--arm must be coupled or decoupled, not[/red] {arm!r}")
+            raise typer.Exit(code=1)
+        config = config.model_copy(update={"arm": arm})
 
     if config.uses_llm():
         console.print(
@@ -399,6 +415,27 @@ def evaluate_diagnostic(
     limit: int | None = typer.Option(None, "--limit", help="Stop after N cases."),
     out: Path | None = typer.Option(None, "--out", help="Output directory."),
     dry_run: bool = typer.Option(False, "--dry-run", help="List the cases and exit."),
+    max_tokens: int | None = typer.Option(
+        None,
+        "--max-tokens",
+        help="Tokens the model may generate per call, deliberation included. "
+        "Unset keeps the provider default (1024). Raise it with --think, or a "
+        "reasoning model spends the budget before it answers.",
+    ),
+    context_tokens: int | None = typer.Option(
+        None,
+        "--context-tokens",
+        help="Context window: prompt, deliberation and answer together. Unset "
+        "leaves the server's own. Raise it alongside --max-tokens -- Ollama "
+        "truncates silently rather than refusing, so a prompt that does not fit "
+        "produces a confident answer to a question it only partly saw.",
+    ),
+    timeout_seconds: float | None = typer.Option(
+        None,
+        "--timeout",
+        help="Seconds allowed for one call. Unset keeps the provider default "
+        "(120). Deliberation needs wall-clock as well as tokens.",
+    ),
     label_space: str = typer.Option(
         "concept",
         "--label-space",
@@ -437,7 +474,14 @@ def evaluate_diagnostic(
         console.print(f"[red]unknown label space {label_space!r}[/red]")
         raise typer.Exit(code=1)
 
-    spec = ModelSpec(provider=provider, model=model, think=think)  # pyright: ignore[reportArgumentType]
+    spec = ModelSpec(
+        provider=provider,  # pyright: ignore[reportArgumentType]
+        model=model,
+        think=think,
+        max_tokens=max_tokens,
+        context_tokens=context_tokens,
+        timeout_seconds=timeout_seconds,
+    )
     agent = LLMDiagnostic(
         build_provider(spec, Path(".cache/llm")),
         label_space=label_space,  # pyright: ignore[reportArgumentType]
@@ -449,6 +493,14 @@ def evaluate_diagnostic(
     # the same kind of thing: a narrower one is an easier task, so the two
     # figures must not land in the same directory either.
     suffix = "" if think is None else f"_think-{str(think).lower()}"
+    # The call limits join it for the same reason. A budget that lets a model
+    # finish deliberating and one that cuts it off mid-thought are two different
+    # measurements of the same model, and landing them in one directory would
+    # overwrite the first with the second.
+    if max_tokens is not None:
+        suffix += f"_predict-{max_tokens}"
+    if context_tokens is not None:
+        suffix += f"_ctx-{context_tokens}"
     suffix += f"_labels-{label_space}"
     directory = (
         out
@@ -531,6 +583,27 @@ def evaluate_tutor(
     model: str = typer.Option("gemma4:12b", "--model", help="Model writing the hints."),
     provider: str = typer.Option("ollama", "--provider"),
     think: bool | None = typer.Option(None, "--think/--no-think"),
+    max_tokens: int | None = typer.Option(
+        None,
+        "--max-tokens",
+        help="Tokens the model may generate per call, deliberation included. "
+        "Unset keeps the provider default (1024). Raise it with --think, or a "
+        "reasoning model spends the budget before it answers.",
+    ),
+    context_tokens: int | None = typer.Option(
+        None,
+        "--context-tokens",
+        help="Context window: prompt, deliberation and answer together. Unset "
+        "leaves the server's own. Raise it alongside --max-tokens -- Ollama "
+        "truncates silently rather than refusing, so a prompt that does not fit "
+        "produces a confident answer to a question it only partly saw.",
+    ),
+    timeout_seconds: float | None = typer.Option(
+        None,
+        "--timeout",
+        help="Seconds allowed for one call. Unset keeps the provider default "
+        "(120). Deliberation needs wall-clock as well as tokens.",
+    ),
     judge_model: str | None = typer.Option(
         None,
         "--judge-model",
@@ -596,10 +669,21 @@ def evaluate_tutor(
         raise typer.Exit(code=1)
 
     cache = Path(".cache/llm")
-    spec = ModelSpec(provider=provider, model=model, think=think)  # pyright: ignore[reportArgumentType]
+    spec = ModelSpec(
+        provider=provider,  # pyright: ignore[reportArgumentType]
+        model=model,
+        think=think,
+        max_tokens=max_tokens,
+        context_tokens=context_tokens,
+        timeout_seconds=timeout_seconds,
+    )
     agent = LLMTutor(build_provider(spec, cache), band)
 
     suffix = "" if think is None else f"_think-{str(think).lower()}"
+    if max_tokens is not None:
+        suffix += f"_predict-{max_tokens}"
+    if context_tokens is not None:
+        suffix += f"_ctx-{context_tokens}"
     directory = (
         out or Path("results") / f"tutor_{domain_name}_{model.replace(':', '-')}{suffix}"
     )
@@ -714,6 +798,386 @@ def evaluate_tutor(
             f"\n[red]{len(report.failures())} turn(s) broke a stated rule[/red] — "
             f"see turns.csv"
         )
+
+
+@eval_app.command("lessons")
+def evaluate_lessons(
+    learner: str = typer.Option(..., "--learner", help="Whose sittings to read."),
+    arm: str = typer.Option("coupled", "--arm"),
+    judge_model: str = typer.Option(
+        "gemma4:26b",
+        "--judge-model",
+        help="The model doing the judging. Should differ from the one that "
+        "wrote the turns: a model grading its own replies measures its taste, "
+        "not its faithfulness.",
+    ),
+    provider: str = typer.Option("ollama", "--provider"),
+    gold: Path = typer.Option(
+        Path("tests/fixtures/gold/calculus_lesson_grounding_cases.yaml"),
+        "--gold",
+        help="Hand-labelled set the judge is calibrated against.",
+    ),
+    store_path: Path = typer.Option(Path("results/learners.db"), "--store"),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+) -> None:
+    """Score a learner's lesson turns for faithfulness to what they said.
+
+    The same question `evaluate tutor` asks of hints, over the part of the
+    system it was never pointed at. A sitting is why: a learner wrote
+    `x2 + h - 3^2 / x + h - x` and the tutor replied "You've set up the
+    calculation perfectly!" — which is a claim about their work that their work
+    does not support.
+
+    ⚠️ The agreement figure is not decoration. It measures the *judge*, and a
+    verdict rate quoted without it states a number whose error is unknown. Read
+    the disagreements before the rate.
+    """
+    import yaml
+
+    from agent_newton.core.evaluation.tutor import (
+        JudgeReport,
+        LessonExchange,
+        judge_lesson_grounded,
+        judge_lesson_turns,
+        lesson_exchanges,
+    )
+    from agent_newton.llm.factory import build_provider
+    from agent_newton.store import LearnerStore
+
+    spec = ModelSpec(provider=provider, model=judge_model, think=False)  # pyright: ignore[reportArgumentType]
+    judge = build_provider(spec, Path(".cache/llm"))
+
+    report = JudgeReport()
+    for case in yaml.safe_load(gold.read_text())["cases"]:
+        report.calibration.append(
+            (
+                case["id"],
+                bool(case["grounded"]),
+                judge_lesson_grounded(
+                    judge,
+                    LessonExchange(
+                        case["concept_id"],
+                        " ".join(str(case["said"]).split()),
+                        " ".join(str(case["reply"]).split()),
+                    ),
+                ),
+            )
+        )
+
+    with LearnerStore(store_path) as store:
+        exchanges = lesson_exchanges(store.audit(learner, arm))
+    answering = [e for e in exchanges if e.said.strip()]
+    if not answering:
+        console.print(
+            f"[yellow]{learner} has no lesson turns answering anything. "
+            f"Openings are not judged — there is nothing to be faithful to "
+            f"yet.[/yellow]"
+        )
+        raise typer.Exit()
+
+    console.print(
+        f"[bold]{len(answering)} lesson turn(s)[/bold] from {learner}, judged by "
+        f"{provider}/{judge_model}\n"
+    )
+    judge_lesson_turns(judge, answering, report)
+
+    table = Table(show_header=False, box=None, padding=(0, 1))
+    table.add_row("turns judged", str(len(report.verdicts)))
+    table.add_row("grounded", f"{report.grounded_rate:.1%}")
+    table.add_row("unobtainable", str(report.unobtainable))
+    table.add_row("judge agreement", f"{report.agreement:.1%} of {len(report.scored)}")
+    console.print(table)
+
+    if report.disagreements():
+        console.print("\n[yellow]the judge read these differently to the hand "
+                      "labels — read them before the rate above[/yellow]")
+        for case_id, hand, judged in report.disagreements():
+            console.print(f"  {case_id}: hand={hand} judge={judged}")
+
+    ungrounded = [i for i, j in report.verdicts if j is False]
+    if ungrounded:
+        console.print(
+            f"\n[yellow]{len(ungrounded)} turn(s) claimed more than the learner "
+            f"showed[/yellow]"
+        )
+        for case_id in ungrounded[:10]:
+            console.print(f"  {case_id}")
+
+    # ⚠️ Written, like every other evaluation here, because a figure with no
+    # artifact behind it is not a result. This one printed and stopped, so the
+    # groundedness rate lived in a terminal and in prose — and it is computed
+    # over `results/learners.db`, which is gitignored and per-machine, so a
+    # reader could not regenerate it either. The store stays untracked; what
+    # this fixes is that the number now has a file naming the sittings, the
+    # judge and the gold set it came from.
+    directory = out or Path("results") / f"lessons_{learner}_{arm}"
+    directory.mkdir(parents=True, exist_ok=True)
+
+    with (directory / "turns.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["case_id", "concept_id", "grounded", "said", "reply"])
+        judged = dict(report.verdicts)
+        # ⚠️ The id is `concept_id#index` over the list `judge_lesson_turns` was
+        # handed — which is `answering`, not every exchange. Rebuilding it from
+        # the full list renumbers every case and the csv silently stops joining
+        # to the verdicts: 13 of 46 rows matched by coincidence, which looked
+        # like a partial run rather than a wrong key.
+        for index, exchange in enumerate(answering):
+            case_id = f"{exchange.concept_id}#{index}"
+            writer.writerow([
+                case_id, exchange.concept_id, judged.get(case_id, ""),
+                exchange.said, exchange.reply,
+            ])
+
+    summary = {
+        "learner": learner,
+        "arm": arm,
+        "store": str(store_path),
+        "turns_judged": len(report.verdicts),
+        "judge": {
+            "model": spec.label(),
+            "gold_set": str(gold),
+            "calibration_cases": len(report.scored),
+            # First, and for the reason `evaluate tutor` gives: the rate below is
+            # only as good as this, and a reader who takes one without the other
+            # has a number whose error is unknown.
+            "agreement_with_hand_labels": report.agreement,
+            "disagreements": [c for c, _, _ in report.disagreements()],
+            "grounded_rate": report.grounded_rate,
+            "unobtainable": report.unobtainable,
+        },
+        "ungrounded": ungrounded,
+    }
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    console.print(f"\nwritten to {directory}")
+
+    # ⚠️ The store is not committed, so this directory records a measurement
+    # whose inputs cannot be shipped with it. `results/README.md` makes human
+    # sittings the exception to the naming rule for exactly that reason: commit
+    # the sittings this read, or the summary names evidence nobody else has.
+    console.print(
+        "[dim]computed over a per-machine store — commit the sittings behind it "
+        "if this figure is going to be quoted[/dim]"
+    )
+
+
+@eval_app.command("confusion")
+def evaluate_confusion(
+    gold: Path = typer.Option(
+        Path("tests/fixtures/gold/calculus_confusion_cases.yaml"), "--gold"
+    ),
+    model: str = typer.Option("gemma4:12b", "--model"),
+    provider: str = typer.Option("ollama", "--provider"),
+    think: bool = typer.Option(False, "--think/--no-think"),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
+) -> None:
+    """Score the confusion detector against hand labels.
+
+    The detector decides whether what a learner wrote says they do not know what
+    the concept *is*, as against showing a mistake in applying it — the third of
+    the three things that can buy a lesson, and the one place a model is
+    permitted to decide something. It had a gold set and a pytest gate but no
+    way to produce a figure anyone could store or cite, which is what this is.
+
+    ⚠️ The floor is printed beside the agreement and written into the summary.
+    The set is balanced, so answering "confused" to everything scores half; an
+    agreement figure without that number next to it says nothing. The model-free
+    detector is scored alongside for the same reason — it answers "no" to
+    everything and lands on the same half from the other side.
+
+    ⚠️ The two halves are reported apart. The `false` half is the hard one:
+    hedging, uncertainty about an answer and "this was confusing" all describe
+    someone who is doing the work and must not fire. Pooling the halves would
+    hide a detector that fires on everything.
+    """
+    from agent_newton.config import ModelSpec
+    from agent_newton.core.agents.tutor import NoConfusion
+    from agent_newton.core.evaluation.confusion import load_gold, score
+
+    if not gold.exists():
+        console.print(f"[red]no gold set at {gold}[/red]")
+        raise typer.Exit(code=1)
+
+    cases = load_gold(gold)
+
+    # Scored first and always: it needs no model, and it is what makes the
+    # measured figure readable. A detector that cannot beat this is not
+    # detecting anything.
+    reports = [score(cases, NoConfusion(), "model-free (says no to everything)")]
+
+    try:
+        from agent_newton.core.agents.llm import LLMConfusionDetector
+        from agent_newton.llm.factory import build_provider
+
+        detector = LLMConfusionDetector(
+            build_provider(
+                # A typer option is a `str`; `ModelSpec.provider` is a
+                # Literal. Same narrowing every other evaluation here does —
+                # the config validates the value, not the annotation.
+                ModelSpec(provider=provider, model=model, think=think),  # pyright: ignore[reportArgumentType]
+                Path(".cache/llm"),
+            )
+        )
+        label = f"{provider}/{model} (think={str(think).lower()})"
+        reports.append(score(cases, detector, label))
+    except Exception as exc:  # noqa: BLE001
+        # ⚠️ Stated rather than silent. This measures a model, so a run without
+        # one measures nothing — and a command that quietly reported only the
+        # floor would look like a result.
+        console.print(
+            f"[yellow]no model reachable ({type(exc).__name__}); "
+            f"the floor is all this run can report[/yellow]\n"
+        )
+
+    if not cases.balanced:
+        console.print(
+            "[yellow]⚠ the gold set is not balanced, so a constant answer no "
+            "longer scores half — read the floor, not the agreement[/yellow]\n"
+        )
+
+    directory = out or Path("results") / f"confusion_{gold.stem.split('_')[0]}"
+    directory.mkdir(parents=True, exist_ok=True)
+    summary = {
+        "gold": str(gold),
+        "cases": len(cases.cases),
+        "positives": cases.positives,
+        "negatives": cases.negatives,
+        "balanced": cases.balanced,
+        "floor": cases.floor,
+        # ⚠️ Recorded with the figure it qualifies. The verdict on a borderline
+        # phrasing turns on punctuation and every case here is punctuated, so
+        # this set does not vary the thing known to move the verdict. The
+        # fixture header carries the case that showed it.
+        "known_limitation": (
+            "Agreement is measured over a set in which every case is "
+            "punctuated; the detector's verdict on a borderline phrasing is "
+            "known to turn on punctuation. See the fixture header."
+        ),
+        "reports": [report.as_dict() for report in reports],
+    }
+    (directory / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+
+    console.print(
+        f"[bold]{len(cases.cases)} case(s)[/bold] "
+        f"({cases.positives} confused / {cases.negatives} not) from {gold}\n"
+        f"writing to {directory}\n"
+    )
+
+    table = Table(box=None, padding=(0, 2))
+    table.add_column("detector")
+    table.add_column("agreement", justify="right")
+    table.add_column("floor", justify="right")
+    table.add_column("detected confusion", justify="right")
+    table.add_column("left work alone", justify="right")
+    for report in reports:
+        table.add_row(
+            report.label,
+            f"{report.agreement:.1%}",
+            f"{report.floor:.1%}",
+            f"{report.positives_agreed}/{report.positives}",
+            f"{report.negatives_agreed}/{report.negatives}",
+        )
+    console.print(table)
+
+    for report in reports:
+        if report.disagreements:
+            console.print(f"\n[yellow]{report.label} disagreed[/yellow]")
+            for d in report.disagreements:
+                # ⚠️ Not square brackets: rich reads those as markup and ate
+                # the label silently, so every disagreement printed unlabelled
+                # and the false positives were indistinguishable from the false
+                # negatives — which is the one distinction that matters here.
+                console.print(
+                    f"  {d.kind} — {d.concept_id}: {d.text.strip()[:90]}"
+                )
+                if d.got:
+                    console.print(f"      read as confusion: {d.got.strip()[:90]}")
+
+    console.print(
+        "\n[dim]⚠ Quote the agreement with the floor beside it. The set is "
+        "balanced so a constant answer scores the floor exactly.[/dim]"
+    )
+
+
+@eval_app.command("recall")
+def evaluate_recall(
+    gold: Path = typer.Option(
+        Path("tests/fixtures/gold/calculus_recall_cases.yaml"), "--gold"
+    ),
+    embed_model: str = typer.Option("nomic-embed-text", "--embed-model"),
+    threshold: float = typer.Option(
+        0.5,
+        "--threshold",
+        help="Similarity below which a match is dropped. Higher returns less "
+        "and means it more; a strategy that always fills its quota looks good "
+        "on recall and bad on precision.",
+    ),
+    limit: int = typer.Option(3, "--limit", help="Utterances returned per query."),
+) -> None:
+    """Compare recall strategies on hand-labelled cases.
+
+    Two are built, so that which one this system should use is measured rather
+    than argued about. `bonus_lesson_idea.md` closed retrieval for *lesson
+    content* and that argument stands — fifteen lessons keyed by concept id is a
+    dict lookup. This is the other case the same note names as the one that
+    would earn an index: a corpus nobody keyed, queried in the learner's own
+    words.
+
+    ⚠️ Precision and recall are reported apart and never averaged. An unrelated
+    remark handed to a tutor as context is worse than silence, because the tutor
+    will try to use it.
+    """
+    from agent_newton.core.evaluation.recall import load_gold, score
+    from agent_newton.core.recall import EmbeddedRecall, KeyedRecall
+    from agent_newton.llm.embed import CachedEmbedder, OllamaEmbedder
+
+    from agent_newton.core.recall import Recall
+
+    cases = load_gold(gold)
+    strategies: list[Recall] = [KeyedRecall()]
+    try:
+        embedder = CachedEmbedder(
+            OllamaEmbedder(embed_model), Path(".cache/embed")
+        )
+        embedder.embed(["probe"])
+        strategies.append(EmbeddedRecall(embedder, threshold))
+    except Exception as exc:  # noqa: BLE001
+        console.print(
+            f"[yellow]no embedding model reachable ({type(exc).__name__}); "
+            f"scoring the keyed strategy only[/yellow]\n"
+        )
+
+    console.print(
+        f"[bold]{len(cases.cases)} case(s)[/bold] over {len(cases.corpus)} stored "
+        f"utterances\n"
+    )
+    table = Table(box=None, padding=(0, 2))
+    table.add_column("strategy")
+    table.add_column("precision", justify="right")
+    table.add_column("recall", justify="right")
+    table.add_column("noise", justify="right")
+    table.add_column("right to say nothing", justify="right")
+
+    reports = []
+    for strategy in strategies:
+        report = score(cases, strategy, limit)
+        reports.append(report)
+        table.add_row(
+            report.label,
+            f"{report.precision:.1%}",
+            f"{report.recall:.1%}",
+            str(report.noise),
+            f"{report.returned_nothing_correctly}/"
+            f"{sum(1 for c in cases.cases if not c.relevant)}",
+        )
+    console.print(table)
+
+    for report in reports:
+        missed = report.missed()
+        if missed:
+            console.print(f"\n[yellow]{report.label} missed[/yellow]")
+            for case_id, want in missed:
+                console.print(f"  {case_id}: {', '.join(sorted(want))}")
 
 
 @app.command("sitting")

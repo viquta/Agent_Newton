@@ -1,0 +1,82 @@
+{
+  "gold": "tests/fixtures/gold/calculus_confusion_cases.yaml",
+  "cases": 12,
+  "positives": 6,
+  "negatives": 6,
+  "balanced": true,
+  "floor": 0.5,
+  "known_limitation": "Agreement is measured over a set in which every case is punctuated; the detector's verdict on a borderline phrasing is known to turn on punctuation. See the fixture header.",
+  "reports": [
+    {
+      "detector": "model-free (says no to everything)",
+      "cases": 12,
+      "agreed": 6,
+      "agreement": 0.5,
+      "floor": 0.5,
+      "beats_the_floor": false,
+      "balanced": true,
+      "detected_confusion": 0.0,
+      "left_work_alone": 1.0,
+      "positives": 6,
+      "negatives": 6,
+      "disagreements": [
+        {
+          "concept_id": "limits_of_sequences",
+          "text": "I factored the denominator with part of the nominator (x^2 - 9) = (x+3)(x-3). But I don't understand what a limit is.",
+          "expected": true,
+          "got": null,
+          "kind": "false negative"
+        },
+        {
+          "concept_id": "product_rule",
+          "text": "idk what any of this means",
+          "expected": true,
+          "got": null,
+          "kind": "false negative"
+        },
+        {
+          "concept_id": "chain_rule",
+          "text": "what even is a derivative",
+          "expected": true,
+          "got": null,
+          "kind": "false negative"
+        },
+        {
+          "concept_id": "limit_concept",
+          "text": "I have no idea what P and Q are supposed to be here",
+          "expected": true,
+          "got": null,
+          "kind": "false negative"
+        },
+        {
+          "concept_id": "average_rate_of_change",
+          "text": "I don't understand what average rate of change is",
+          "expected": true,
+          "got": null,
+          "kind": "false negative"
+        },
+        {
+          "concept_id": "limit_concept",
+          "text": "I just guessed. I don't understand what a tangent is, what a limit of a gradient is.",
+          "expected": true,
+          "got": null,
+          "kind": "false negative"
+        }
+      ]
+    },
+    {
+      "detector": "ollama/gemma4:12b (think=false)",
+      "cases": 12,
+      "agreed": 12,
+      "agreement": 1.0,
+      "floor": 0.5,
+      "beats_the_floor": true,
+      "balanced": true,
+      "detected_confusion": 1.0,
+      "left_work_alone": 1.0,
+      "positives": 6,
+      "negatives": 6,
+      "disagreements": []
+    }
+  ]
+}

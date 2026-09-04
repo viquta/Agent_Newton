@@ -121,6 +121,110 @@ zpd:
   theta_lower: 0.70
   theta_upper: 0.90
 
+# On here and nowhere else. After three recorded errors on one concept the
+# system explains what the concept *is*, rather than commenting on another
+# failed attempt at it.
+#
+# The gap it closes: every other instructional move is a reply to a step, so a
+# learner who has never met a concept and one who holds a misconception about it
+# were answered identically. A sitting recorded the cost — someone asked what
+# sin(x) was three times, in three channels, and was told about the product rule
+# each time, because that was all there was to tell them.
+#
+# Three is a threshold rather than a measurement. Below it a learner is taught
+# after a slip; above it they spend a sitting failing something nobody explained.
+# Judge it from a sitting.
+#
+# `:why` asks for one directly and bypasses the count — someone saying they do
+# not know what this is, is better evidence of that than three wrong answers.
+#
+# It must stay 0 for every cohort. Nothing here can move a cohort number today
+# (a lesson targets a concept, and the simulated learner improves only through
+# `receive_hint`), but that is a fact about this simulator rather than about the
+# design, and a scan over this directory refuses anything else.
+teaching:
+  explain_after: 3
+  # A lesson is a conversation, not a wall of text. The tutor says a little and
+  # asks; you answer; it takes up what you said and asks the next thing. **You**
+  # end it — a blank line or :done, whenever you have had enough. This number is
+  # only so a conversation cannot run on unattended.
+  #
+  # ⚠️ It was 3, then 12, and a sitting reached both. The first took someone out
+  # who was "just about to understand something important"; the second cut in
+  # mid-derivation, with the tutor having just asked them to expand (x + h)^2.
+  #
+  # `null` is unbounded, and that is what a person should have. The runaway this
+  # was guarding against cannot happen: a turn needs a reply and a reply needs
+  # someone to type one, so the conversation already stops the moment you stop.
+  # You end it, with a blank line or :done.
+  #
+  # The tutor may notice you have got it and say you can stop — but only say it.
+  # Nothing reads that back, and the loop asks you every turn regardless.
+  #
+  # It closes with the written account either way, so leaving early never costs
+  # you the explanation. That account is the authored text: checked as plain
+  # text, and checked not to answer any question in any bank at any draw. The
+  # conversation above it is the model's and is checked against nothing, which
+  # is why the thing you keep is the one a person wrote.
+  #
+  # The first version of this was one shot and read as a monologue — the model
+  # asked questions and answered them itself, because the instruction told it
+  # to. A sitting said so: "I really thought that would be more of a dialogue
+  # between me and the Tutor."
+  #
+  # ⚠️ Costs up to four model calls per lesson at 15-27s each. If the talking
+  # starts outstaying its welcome, this is the dial. It must stay 0 for every
+  # cohort — and a simulated learner cannot converse anyway, so a dialogue is
+  # unreachable there whatever this says.
+  lesson_turns: null
+  # On here and nowhere else. Reads what you write in the working and reflection
+  # channels for "I do not know what this concept is", and offers the lesson
+  # without your having to ask for it.
+  #
+  # A sitting is what asked for this. Someone wrote "I factored the denominator
+  # with part of the nominator (x^2 - 9) = (x+3)(x-3). But I don't understand
+  # what a limit is" — and then still had to type :why, for something the system
+  # was already holding, in the channel that already captures it.
+  #
+  # ⚠️ It decides nothing instructional. It records that you said something, on
+  # the same path :why uses; whether a lesson happens, which account it takes
+  # and when it stops are all still rules. The one difference from asking
+  # outright is the ceiling: asking again is always honoured, and an inference
+  # is not, or a detector firing repeatedly would cycle the same three accounts
+  # round and round.
+  #
+  # It needs a model-backed tutor to read with, and the config refuses it
+  # otherwise rather than running with a detector that says no to everything and
+  # reporting the feature as on. Cohorts run `tutor.impl: template`, so it
+  # cannot exist there — and a simulated learner writes nothing in either
+  # channel, so there would be nothing to read either way.
+  detect_confusion: true
+  # On here and nowhere else. The tutor finds what you said before by *meaning*
+  # rather than by which concept it was filed under — so a question you asked
+  # about gradients while working on limits comes back when gradients turn up
+  # again under the power rule. Keying on the concept cannot see that; as far as
+  # a key is concerned you never said it.
+  #
+  # Measured over hand-labelled cases before being switched on. At 0.7 it
+  # returns 80% precision against the keyed reading's 10%, and — the part that
+  # matters for a tutor prompt — it returns nothing when there is nothing worth
+  # returning. An unrelated remark handed to a tutor as context is worse than
+  # silence, because the tutor will try to use it. Lower finds more and hands
+  # over more noise; the whole curve is in the commit that measured it.
+  #
+  # ⚠️ It searches the corpus *exactly* rather than through an index, which is
+  # what keeps it deterministic: same history, same question, same ranking. The
+  # objection recorded against retrieval was to approximate search, and this is
+  # not that.
+  #
+  # ⚠️ Recall happens inside the coupled view, where the learner's words live.
+  # The decoupled arm is defined by doing without them, so reaching the history
+  # any other way would hand one arm what the other lacks. Off for every cohort
+  # regardless, with a scan.
+  recall:
+    strategy: embedded
+    threshold: 0.7
+
 # On here and nowhere else, both of them.
 #
 # `banded_plus` reads every cut point off the band above. Above theta_upper

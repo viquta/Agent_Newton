@@ -44,10 +44,15 @@ class HumanLearner:
         #: Takes the item, the response just given, and whether the session is
         #: insisting — the front end decides how hard to press.
         ask_working: Callable[[Item, str, bool], str] | None = None,
+        #: Takes the concept being explained and what the tutor just said.
+        #: Absent for a front end that cannot hold a conversation, which then
+        #: gets the opening turn and the summary.
+        discuss: Callable[[str, str], str] | None = None,
     ) -> None:
         self._ask = ask
         self._ask_reflection = ask_reflection
         self._ask_working = ask_working
+        self._discuss = discuss
         self._learner_id = learner_id
         self._on_hint = on_hint
         #: Every response given, in order. The demo shows it back at the end;
@@ -76,6 +81,19 @@ class HumanLearner:
         if self._ask_reflection is None:
             return None
         said = self._ask_reflection(item, prompt).strip()
+        return said or None
+
+    def discuss(self, concept_id: str, prompt: str) -> str | None:
+        """Take the person's side of a lesson, in their own words.
+
+        Prose on the same terms as a reflection: never verified, never an
+        attempt, never an unmeasurable step. Saying nothing ends the
+        conversation and the written summary follows either way, so declining
+        to talk never costs the learner the lesson.
+        """
+        if self._discuss is None:
+            return None
+        said = self._discuss(concept_id, prompt).strip()
         return said or None
 
     def show_working(

@@ -31,6 +31,18 @@ resources:
       Cancel (x - 1): x + 1.
       Substitute x = 1: 1 + 1 = 2.
     example_answer: "2"
+    what_it_means: >-
+      A limit asks what a value settles towards as x gets close to a
+      number. It is not asking what happens at that number, and this is
+      one of the places where the two genuinely differ.
+    why_it_works: >-
+      At x = a the expression really is undefined: top and bottom are
+      both zero, and 0/0 says nothing at all. But every x near a gives a
+      perfectly good value, and those values home in on something.
+      Factoring and cancelling removes the (x - a) that was zero on both
+      sides, leaving an expression that agrees with the original
+      everywhere except at a itself. That is enough, because the limit
+      never asks about a.
     source: "Standard rule; wording written for this system."
 
   - concept_id: average_rate_of_change
@@ -44,6 +56,17 @@ resources:
       The change in x is 4 - 2 = 2.
       The rate is 12 / 2 = 6.
     example_answer: "6"
+    what_it_means: >-
+      An average rate of change answers one question: over this stretch,
+      how fast did y change compared with x? It is a ratio, not a
+      difference.
+    why_it_works: >-
+      Two numbers go into it — how much y changed, and how much x
+      changed over the same stretch. Dividing is what turns 'y went up
+      by a lot' into 'y went up by this much per step of x', and that is
+      the only form you can compare between stretches of different
+      widths. Stopping at the change in y measures the climb without
+      saying how long you took over it.
     source: "Standard rule; wording written for this system."
 
   - concept_id: limit_concept
@@ -59,6 +82,17 @@ resources:
       As h shrinks towards 0 that approaches 3.
       The tangent's gradient is 3.
     example_answer: "3"
+    what_it_means: >-
+      The gradient of a curve at a single point. A gradient normally
+      needs two points, so at first this looks like it is asking for
+      something impossible.
+    why_it_works: >-
+      Take a second point nearby and you get a secant, whose gradient
+      you can work out the ordinary way. Slide that second point in
+      towards the first and the secant gradients settle towards a
+      number. No finite separation gives it exactly — a secant is always
+      a secant — but the value they approach is perfectly well defined,
+      and that limit is what 'the gradient at a point' means.
     source: "Standard rule; wording written for this system."
 
   - concept_id: instantaneous_rate_of_change
@@ -71,6 +105,17 @@ resources:
       Differentiate: dy/dx = 2x.
       Substitute x = 1: 2 times 1 = 2.
     example_answer: "2"
+    what_it_means: >-
+      How fast something is changing at one moment, rather than on
+      average over a stretch. The speedometer reading rather than the
+      journey's average speed.
+    why_it_works: >-
+      The derivative is a function: it gives the rate at every point, so
+      it has to be found first and asked about the particular point
+      second. Substituting the point before differentiating turns the
+      expression into a constant, and a constant does not change — so
+      that mistake produces zero every time, which is exactly why it is
+      easy to miss.
     source: "Standard rule; wording written for this system."
 
   - concept_id: derivative_from_first_principles
@@ -85,6 +130,16 @@ resources:
       Subtract x^3: 3x^2 h + 3x h^2 + h^3.
       Divide by h: 3x^2 + 3x h + h^2.
     example_answer: "3*x**2 + 3*x*h + h**2"
+    what_it_means: >-
+      Working a derivative out from the definition, instead of applying
+      a rule. It is where the rules come from.
+    why_it_works: >-
+      The quotient (f(x + h) - f(x))/h is the gradient of a secant
+      across a gap of h, so letting h shrink towards zero is the tangent
+      idea again. Expanding f(x + h) in full is what makes the
+      cancellation visible: the f(x) terms go, every surviving term
+      still carries an h, and dividing by h leaves exactly one term with
+      no h left in it. That survivor is the derivative.
     source: "Standard rule; wording written for this system."
 
   - concept_id: power_rule
@@ -98,6 +153,16 @@ resources:
       Reduce the exponent by one: 10 - 1 = 9.
       The derivative is 10 x^9.
     example_answer: "10*x**9"
+    what_it_means: >-
+      A shortcut for differentiating x raised to a power, which is most
+      of what you will meet.
+    why_it_works: >-
+      Differentiating asks how fast the output grows as x grows. A
+      higher power grows faster, and the rule records exactly how much
+      faster: the old power drops down in front as a multiplier, and the
+      power itself goes down by one. Two things have to happen, and
+      doing only one is the usual slip — bringing the power down but
+      leaving the exponent where it was.
     source: "Standard rule; wording written for this system."
 
   - concept_id: negative_fractional_exponents
@@ -112,6 +177,15 @@ resources:
       Bring the -1 down and reduce the exponent by one: -1 x^(-2).
       Back under the line: -1/x^2.
     example_answer: "-1/x**2"
+    what_it_means: >-
+      The power rule is not only for whole positive powers. Dividing by
+      a power of x, and taking roots, are both powers too once they are
+      written that way.
+    why_it_works: >-
+      k / x^n and k x^(-n) are the same thing, so the same rule applies
+      with nothing added. What catches people is the direction: reducing
+      a negative exponent by one makes it more negative, not less. Going
+      from -2 to -3 is a decrease, even though the digit got bigger.
     source: "Standard rule; wording written for this system."
 
   - concept_id: polynomial_differentiation
@@ -127,6 +201,16 @@ resources:
       The -7 is a constant, so it gives 0 and drops out.
       Adding: 8x^3 + 1.
     example_answer: "8*x**3 + 1"
+    what_it_means: >-
+      Differentiating a whole polynomial rather than a single power, by
+      taking it one term at a time.
+    why_it_works: >-
+      Differentiation splits over addition — the rate of change of a sum
+      is the sum of the rates of change — so each term can be done on
+      its own and the results added. The constant term is the case worth
+      watching: it does not change as x changes, so its rate of change
+      is zero and it disappears altogether rather than being carried
+      along.
     source: "Standard rule; wording written for this system."
 
   - concept_id: antiderivative
@@ -141,6 +225,18 @@ resources:
       Divide by the new exponent, 2: 2 x^2 / 2 = x^2.
       Add the constant: x^2 + C.
     example_answer: "x**2 + C"
+    what_it_means: >-
+      Running differentiation backwards: given a derivative, find an
+      expression it could have come from.
+    why_it_works: >-
+      The answer is never a single expression, and that is the whole
+      reason this has its own name. Differentiating removes any constant
+      term, because a constant does not change as x changes — so x^2,
+      x^2 + 1 and x^2 - 40 all have the same derivative, and running
+      backwards cannot tell you which one you started from. The + C is a
+      stand-in for a constant you cannot recover. It is not decoration:
+      leaving it off claims you know something the question cannot tell
+      you.
     source: "Standard rule; wording written for this system."
 
   - concept_id: stationary_points
@@ -154,6 +250,17 @@ resources:
       A product is zero when a factor is, so 2x = 0 or x + 5 = 0.
       The solutions are x = 0 and x = -5.
     example_answer: "0, -5"
+    what_it_means: >-
+      The points where a curve momentarily stops rising or falling — the
+      tops of hills, the bottoms of valleys, and a few places that are
+      neither.
+    why_it_works: >-
+      The derivative is the gradient, and at the instant a curve turns,
+      the gradient is zero. So the question becomes: where is the
+      derivative zero? That is an equation to solve, and it wants
+      factoring rather than dividing through by x. Dividing by x quietly
+      assumes x is not zero, and x = 0 is often one of the answers you
+      were looking for.
     source: "Standard rule; wording written for this system."
 
   - concept_id: product_rule
@@ -169,6 +276,18 @@ resources:
       Second piece, u v': (x + 5) times 2x.
       Add them: (x^2 + 1) + (x + 5) 2x.
     example_answer: "(x**2 + 1) + (x + 5)*2*x"
+    what_it_means: >-
+      How to differentiate two expressions multiplied together. You
+      cannot differentiate each one and multiply the results, and it is
+      worth seeing why that fails before seeing what to do instead.
+    why_it_works: >-
+      When x moves, both factors move, and each one's movement is scaled
+      by the size of the other. Multiplying two derivatives throws that
+      scaling away entirely. The rule keeps both effects: differentiate
+      the first and leave the second alone, then leave the first alone
+      and differentiate the second, then add. You do not have to
+      multiply the result out — the sum of those two pieces is the
+      answer.
     source: "Standard rule; wording written for this system."
 
   - concept_id: chain_rule
@@ -183,6 +302,18 @@ resources:
       Derivative of the inside, x^2 + 3: that is 2x.
       Multiply the two: 5 (x^2 + 3)^4 times 2x = 10x (x^2 + 3)^4.
     example_answer: "10*x*(x**2 + 3)**4"
+    what_it_means: >-
+      How to differentiate a function with another function inside it,
+      like (3x + 1)^4 — a fourth power on the outside, and something in
+      x on the inside.
+    why_it_works: >-
+      Two rates are at work. The outside changes with respect to the
+      inside, and the inside changes with respect to x, so the two
+      multiply. If the inside moves three times as fast as x does, the
+      whole thing moves three times as fast as it would if the inside
+      were just x. Forgetting that second factor is the usual slip, and
+      it hides well: it is invisible whenever the inside happens to have
+      a derivative of 1.
     source: "Standard rule; wording written for this system."
 
   - concept_id: quotient_rule
@@ -199,6 +330,16 @@ resources:
       Second term, u v': x times 2x, and it is subtracted.
       Over v^2: ((x^2 + 1) - x times 2x) / (x^2 + 1)^2.
     example_answer: "((x**2 + 1) - x*2*x)/(x**2 + 1)**2"
+    what_it_means: >-
+      How to differentiate one expression divided by another.
+    why_it_works: >-
+      Order matters here, unlike the product rule, and that is most of
+      the difficulty. It is not a new idea though: write u/v as u times
+      v^(-1) and apply the product and chain rules, and you get u'
+      v^(-1) - u v' v^(-2). Put that over a common denominator and it is
+      exactly (u'v - uv')/v^2. The minus sign and the v^2 are not extra
+      things to memorise — they are what the power rule does to a
+      negative exponent.
     source: "Standard rule; wording written for this system."
 
   - concept_id: implicit_differentiation
@@ -212,6 +353,19 @@ resources:
       Move the x term across: 2y dy/dx = -4x.
       Divide by 2y: dy/dx = -4x/(2y), which simplifies to -2x/y.
     example_answer: "-2*x/y"
+    what_it_means: >-
+      Finding dy/dx when the equation does not give y on its own — like
+      x^2 + y^2 = 25, where writing y as a formula in x is awkward or
+      impossible.
+    why_it_works: >-
+      You do not need y on its own. Differentiate both sides with
+      respect to x and treat y as a function of x that you simply have
+      not written down. Every term in y then differentiates by the chain
+      rule: the inside is y, and the derivative of the inside with
+      respect to x is dy/dx. That is where the extra dy/dx comes from —
+      not a new rule, just the chain rule applied to something unnamed.
+      Then collect the dy/dx terms and solve for it like any other
+      unknown.
     source: "Standard rule; wording written for this system."
 
   - concept_id: integration_by_substitution
@@ -226,4 +380,14 @@ resources:
       The integral becomes (1/5) times the integral of u^2 du = u^3/15.
       Substitute back: (5x + 2)^3/15.
     example_answer: "(5*x + 2)**3/15"
+    what_it_means: >-
+      Reversing the chain rule. Where the chain rule left an extra
+      factor behind, this is how you account for it going the other way.
+    why_it_works: >-
+      Naming the inside function u is only half the job. The integral is
+      with respect to x, and after the substitution it has to be with
+      respect to u — so dx has to be converted too. From u = ax + b you
+      get du = a dx, so dx is du/a, and that 1/a stays in the answer.
+      Dropping it is the common error, and it is easy to make because
+      the substitution otherwise looks finished.
     source: "Standard rule; wording written for this system."

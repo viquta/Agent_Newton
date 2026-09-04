@@ -113,9 +113,11 @@ outside the container.
 | `paired` | the paired comparison, dose-matched |
 | `propagation` | diagnostic error propagated to outcomes, across conditions |
 | `ordering` | the ordering probe |
+| `replicate` | the paired design re-run over ten seeds fixed in advance. Reports the **median and spread** of the primary outcome's difference — a replication check on the estimate, not a further test of the hypothesis, so the number of seeds clearing correction is deliberately not its headline |
 | `coverage` | misconception coverage against the item budget |
 | `power` | power analysis — minutes, not seconds |
 | `calibrate` | mastery estimate against held-out performance |
+| `planner [arm]` | planner choices against a reference policy holding the profile — `coupled` or `decoupled`, since the arm is what selects the planner |
 | `sweep <knob>` | `arbitration`, `prerequisites`, `headroom` or `doubt` |
 | `figures` | redraw from the stored summaries, into `results/figures` — a tracked location, so the PNGs it writes are new files git will offer to commit |
 | `all` | every one of the above, in order |
@@ -126,8 +128,8 @@ outside the container.
 `NEWTON_N` and `NEWTON_SEED` change both for a quicker look, at the cost of not
 reproducing those numbers.
 
-The three model-backed evaluations are redirected the same way, and compared
-against the stored directory for the model and flags they default to.
+The model-backed evaluations are redirected the same way, and compared against
+the stored directory for the model and flags they default to.
 
 ### Needs a model
 
@@ -136,6 +138,9 @@ against the stored directory for the model and flags they default to.
 | `demo [name]` | work through a session yourself, with the shared state visible. A name says who is sitting down — the same one resumes that learner, a new one starts fresh. Equivalent to `--learner <name>` |
 | `diagnostic` | score the diagnostic agent against the injected labels |
 | `tutor` | score the tutor on the turns a learner would read |
+| `confusion` | the confusion detector against hand labels. The agreement is printed with the **floor** a constant answer would score, because the set is balanced and the figure means nothing without it |
+| `lessons <learner>` | score the lesson turns in that learner's stored sittings. ⚠️ Reads `results/learners.db`, which is not committed — so unlike the others this cannot be reproduced from a clone |
+| `recall` | keyed against embedded recall, over the hand-labelled corpus. ⚠️ Needs the **embedder**, not the chat model: it writes no hints, so demanding the tutor's model would refuse a command that would have worked |
 
 ### Inspect a session
 
