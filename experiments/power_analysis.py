@@ -25,6 +25,12 @@ Resampling with replacement from a pilot pool stands in for drawing fresh
 cohorts. That holds because learners are independent draws — the profile is
 sampled from `(seed, learner_id)` alone — and it costs one pilot run rather than
 hundreds of cohorts.
+
+Two rejection rates are reported at every size. `power_sign_test` counts
+rejections at `ALPHA` on that outcome by itself. `power_sign_test_holm` counts
+them under the rule `run_paired` actually applies, which corrects the four
+outcomes' sign-test p-values as one family — so it is the rate for the analysis
+as run, and it is never the higher of the two.
 """
 
 from __future__ import annotations
@@ -44,6 +50,7 @@ from agent_newton.config import Config  # noqa: E402
 from agent_newton.core.evaluation.statistics import (  # noqa: E402
     ALPHA,
     bootstrap_ci,
+    holm_bonferroni,
     paired_differences,
     rank_biserial,
     sign_test,
@@ -57,6 +64,11 @@ OUTCOMES = ("remediation", "gain", "goals_mastered", "distance_to_goal")
 SIZES = (20, 30, 40, 60, 80, 120, 160, 200)
 
 TARGET_POWER = 0.80
+
+#: Entropy for the second generator, used by the Holm pass. The curve from
+#: ``power_at`` is reproduced value for value against the stored summary, so the
+#: joint resample has to draw from a stream of its own rather than shift it.
+HOLM_STREAM = 1
 
 
 def power_at(
@@ -73,6 +85,34 @@ def power_at(
         "power_wilcoxon": float((rank < ALPHA).mean()),
         "mean_discordant_pairs": float((samples != 0).sum(axis=1).mean()),
     }
+
+
+def holm_power_at(
+    differences: dict[str, np.ndarray],
+    size: int,
+    replicates: int,
+    rng: np.random.Generator,
+) -> dict[str, float]:
+    """Rejection rate per outcome under the Holm-adjusted rule.
+
+    ``power_at`` counts rejections one outcome at a time. The confirmatory
+    analysis does not decide that way: ``run_paired`` corrects the four outcomes'
+    sign-test p-values as one family, and a rejection there has to clear the
+    adjusted threshold. Measuring that needs the four p-values from the *same*
+    resampled cohort, which is why one index matrix is drawn here and applied to
+    every outcome rather than each outcome resampling for itself.
+    """
+    outcomes = list(differences)
+    pool = differences[outcomes[0]].size
+    picks = rng.integers(0, pool, size=(replicates, size))
+    resampled = {outcome: differences[outcome][picks] for outcome in outcomes}
+    rejected = {outcome: 0 for outcome in outcomes}
+    for replicate in range(replicates):
+        raw = [sign_test(resampled[outcome][replicate]) for outcome in outcomes]
+        for outcome, adjusted in zip(outcomes, holm_bonferroni(raw)):
+            if adjusted < ALPHA:
+                rejected[outcome] += 1
+    return {outcome: rejected[outcome] / replicates for outcome in outcomes}
 
 
 def main() -> None:
@@ -117,20 +157,36 @@ def main() -> None:
         "outcomes": {},
     }
 
+    differences = {
+        outcome: paired_differences(arms["coupled"], arms["decoupled"], outcome)
+        for outcome in OUTCOMES
+    }
+
+    # The correction couples the outcomes, so this pass resamples them together
+    # and runs once for all four. Its own generator: see ``HOLM_STREAM``.
+    holm_rng = np.random.default_rng([config.seed, HOLM_STREAM])
+    holm_curve = {
+        n: holm_power_at(differences, n, args.replicates, holm_rng) for n in sizes
+    }
+
     for outcome in OUTCOMES:
-        differences = paired_differences(arms["coupled"], arms["decoupled"], outcome)
-        curve = [power_at(differences, n, args.replicates, rng) for n in sizes]
+        pilot = differences[outcome]
+        curve = [power_at(pilot, n, args.replicates, rng) for n in sizes]
+        for row in curve:
+            row["power_sign_test_holm"] = holm_curve[row["n_learners"]][outcome]
         sufficient = [row for row in curve if row["power_sign_test"] >= TARGET_POWER]
+        corrected = [row for row in curve if row["power_sign_test_holm"] >= TARGET_POWER]
         report["outcomes"][outcome] = {
-            "pilot_mean_difference": float(differences.mean()),
-            "pilot_ci95": bootstrap_ci(differences, rng, args.replicates),
-            "pilot_discordant": int((differences != 0).sum()),
-            "pilot_favouring_coupled": int((differences > 0).sum()),
-            "pilot_favouring_decoupled": int((differences < 0).sum()),
-            "rank_biserial": rank_biserial(differences),
-            "sign_test_p": sign_test(differences),
-            "wilcoxon_p": wilcoxon(differences),
+            "pilot_mean_difference": float(pilot.mean()),
+            "pilot_ci95": bootstrap_ci(pilot, rng, args.replicates),
+            "pilot_discordant": int((pilot != 0).sum()),
+            "pilot_favouring_coupled": int((pilot > 0).sum()),
+            "pilot_favouring_decoupled": int((pilot < 0).sum()),
+            "rank_biserial": rank_biserial(pilot),
+            "sign_test_p": sign_test(pilot),
+            "wilcoxon_p": wilcoxon(pilot),
             "required_n": sufficient[0]["n_learners"] if sufficient else None,
+            "required_n_holm": corrected[0]["n_learners"] if corrected else None,
             "curve": curve,
         }
 
@@ -152,15 +208,19 @@ def main() -> None:
             f"{entry['pilot_favouring_decoupled']} decoupled), "
             f"rank-biserial {entry['rank_biserial']:+.3f}"
         )
-        required = entry["required_n"]
+        for label, key in (("sign test", "required_n"), ("Holm", "required_n_holm")):
+            required = entry[key]
+            print(
+                f"  N for {TARGET_POWER:.0%} power ({label}): "
+                + (f"{required}" if required else f"more than {max(sizes)}")
+            )
         print(
-            f"  N for {TARGET_POWER:.0%} power (sign test): "
-            + (f"{required}" if required else f"more than {max(sizes)}")
+            f"  {'N':>6} {'sign':>7} {'holm':>7} {'wilcoxon':>9} {'discordant':>11}"
         )
-        print(f"  {'N':>6} {'sign':>7} {'wilcoxon':>9} {'discordant':>11}")
         for row in entry["curve"]:
             print(
                 f"  {row['n_learners']:>6} {row['power_sign_test']:>7.2f} "
+                f"{row['power_sign_test_holm']:>7.2f} "
                 f"{row['power_wilcoxon']:>9.2f} {row['mean_discordant_pairs']:>11.1f}"
             )
 
