@@ -27,7 +27,7 @@ learner model.
 An agent here is a *decision-making component, identified by the Protocol role it
 fulfils, that acts only on what it is handed and coordinates only through shared
 state.* Note what that does **not** say: nothing about using a model. Most of
-these never call one.
+these never call one. vh_note: the confusion component is not classified as an agent and yet has a model which decides a thing. Need to clear up this confusion.
 
 ⚠️ **The three agents are constrained by three different mechanisms**, which is
 worth knowing before someone opens a file expecting a fourth:
