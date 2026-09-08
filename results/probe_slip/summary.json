@@ -1,0 +1,89 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260926,
+  "max_visits_per_concept": 3,
+  "standing": "exploratory",
+  "points": [
+    {
+      "slip_rate": 0.0,
+      "run_id": "20260908T125715_calculus_slip0.0_coupled_38f284c3",
+      "concept_set_aside": 116,
+      "per_learner": 0.725,
+      "unlabelled_errors": 0,
+      "mean_remediation": 0.5200130003556916,
+      "mean_items": 44.71875,
+      "replans_by_trigger": {
+        "concept_set_aside": 116,
+        "frontier_crossed": 2191,
+        "mastery_delta": 2255,
+        "misconception_repeat": 34,
+        "no_plan": 160
+      }
+    },
+    {
+      "slip_rate": 0.05,
+      "run_id": "20260908T125718_calculus_slip0.05_coupled_76cff70b",
+      "concept_set_aside": 242,
+      "per_learner": 1.5125,
+      "unlabelled_errors": 354,
+      "mean_remediation": 0.5204204511559567,
+      "mean_items": 44.5625,
+      "replans_by_trigger": {
+        "concept_set_aside": 242,
+        "frontier_crossed": 2145,
+        "mastery_delta": 2137,
+        "misconception_repeat": 37,
+        "no_plan": 160
+      }
+    },
+    {
+      "slip_rate": 0.1,
+      "run_id": "20260908T125721_calculus_slip0.1_coupled_84b91be0",
+      "concept_set_aside": 317,
+      "per_learner": 1.98125,
+      "unlabelled_errors": 700,
+      "mean_remediation": 0.5208340771871357,
+      "mean_items": 44.43125,
+      "replans_by_trigger": {
+        "concept_set_aside": 317,
+        "frontier_crossed": 2135,
+        "mastery_delta": 2036,
+        "misconception_repeat": 38,
+        "no_plan": 160
+      }
+    },
+    {
+      "slip_rate": 0.2,
+      "run_id": "20260908T125724_calculus_slip0.2_coupled_9368a74b",
+      "concept_set_aside": 477,
+      "per_learner": 2.98125,
+      "unlabelled_errors": 1538,
+      "mean_remediation": 0.5235765050189232,
+      "mean_items": 44.39375,
+      "replans_by_trigger": {
+        "concept_set_aside": 477,
+        "frontier_crossed": 2083,
+        "mastery_delta": 1878,
+        "misconception_repeat": 55,
+        "no_plan": 160
+      }
+    },
+    {
+      "slip_rate": 0.4,
+      "run_id": "20260908T125727_calculus_slip0.4_coupled_34f320f5",
+      "concept_set_aside": 748,
+      "per_learner": 4.675,
+      "unlabelled_errors": 3820,
+      "mean_remediation": 0.5044345859366408,
+      "mean_items": 44.875,
+      "replans_by_trigger": {
+        "concept_set_aside": 748,
+        "frontier_crossed": 1826,
+        "mastery_delta": 1723,
+        "misconception_repeat": 134,
+        "no_plan": 160
+      }
+    }
+  ]
+}

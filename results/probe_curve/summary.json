@@ -1,0 +1,129 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260927,
+  "outcome": "remediation",
+  "standing": "exploratory",
+  "points": [
+    {
+      "curve": "exponential",
+      "remediation_factor": 0.35,
+      "arms": {
+        "coupled": "20260908T125755_calculus_exponential0.35_paired_exponential0.35_coupled_5b04508d",
+        "decoupled": "20260908T125758_calculus_exponential0.35_paired_exponential0.35_decoupled_daf5b546"
+      },
+      "mean_remediation": {
+        "coupled": 0.6266887364922866,
+        "decoupled": 0.6017008713470802
+      },
+      "mean_difference": 0.024987865145206508,
+      "ties": 147,
+      "favouring_coupled": 12,
+      "favouring_decoupled": 1,
+      "rank_biserial": 0.8461538461538463,
+      "sign_p": 0.00341796875,
+      "holm_p": 0.0068359375,
+      "significant": true
+    },
+    {
+      "curve": "exponential",
+      "remediation_factor": 0.55,
+      "arms": {
+        "coupled": "20260908T125801_calculus_exponential0.55_paired_exponential0.55_coupled_d2ceb0b9",
+        "decoupled": "20260908T125803_calculus_exponential0.55_paired_exponential0.55_decoupled_9beb95a1"
+      },
+      "mean_remediation": {
+        "coupled": 0.5102270902722621,
+        "decoupled": 0.49180879033817837
+      },
+      "mean_difference": 0.018418299934083747,
+      "ties": 145,
+      "favouring_coupled": 12,
+      "favouring_decoupled": 3,
+      "rank_biserial": 0.6000000000000001,
+      "sign_p": 0.03515625,
+      "holm_p": 0.0703125,
+      "significant": false
+    },
+    {
+      "curve": "exponential",
+      "remediation_factor": 0.75,
+      "arms": {
+        "coupled": "20260908T125806_calculus_exponential0.75_paired_exponential0.75_coupled_83b87d60",
+        "decoupled": "20260908T125809_calculus_exponential0.75_paired_exponential0.75_decoupled_94f05841"
+      },
+      "mean_remediation": {
+        "coupled": 0.3739004925145035,
+        "decoupled": 0.3636179283895875
+      },
+      "mean_difference": 0.010282564124915993,
+      "ties": 143,
+      "favouring_coupled": 12,
+      "favouring_decoupled": 5,
+      "rank_biserial": 0.41176470588235303,
+      "sign_p": 0.143463134765625,
+      "holm_p": 0.28692626953125,
+      "significant": false
+    },
+    {
+      "curve": "linear",
+      "remediation_factor": 0.35,
+      "arms": {
+        "coupled": "20260908T125811_calculus_linear0.35_paired_linear0.35_coupled_5523c769",
+        "decoupled": "20260908T125814_calculus_linear0.35_paired_linear0.35_decoupled_83f03b8d"
+      },
+      "mean_remediation": {
+        "coupled": 0.6583415202192079,
+        "decoupled": 0.6322112079588444
+      },
+      "mean_difference": 0.026130312260363366,
+      "ties": 147,
+      "favouring_coupled": 12,
+      "favouring_decoupled": 1,
+      "rank_biserial": 0.8461538461538463,
+      "sign_p": 0.00341796875,
+      "holm_p": 0.0068359375,
+      "significant": true
+    },
+    {
+      "curve": "linear",
+      "remediation_factor": 0.55,
+      "arms": {
+        "coupled": "20260908T125816_calculus_linear0.55_paired_linear0.55_coupled_58cf8cdf",
+        "decoupled": "20260908T125819_calculus_linear0.55_paired_linear0.55_decoupled_afc5aca8"
+      },
+      "mean_remediation": {
+        "coupled": 0.5957607483006292,
+        "decoupled": 0.5744449433582914
+      },
+      "mean_difference": 0.021315804942337813,
+      "ties": 146,
+      "favouring_coupled": 12,
+      "favouring_decoupled": 2,
+      "rank_biserial": 0.7142857142857142,
+      "sign_p": 0.012939453125,
+      "holm_p": 0.02587890625,
+      "significant": true
+    },
+    {
+      "curve": "linear",
+      "remediation_factor": 0.75,
+      "arms": {
+        "coupled": "20260908T125821_calculus_linear0.75_paired_linear0.75_coupled_dc7f7b24",
+        "decoupled": "20260908T125824_calculus_linear0.75_paired_linear0.75_decoupled_9ff32175"
+      },
+      "mean_remediation": {
+        "coupled": 0.4309197233059379,
+        "decoupled": 0.4168068380300995
+      },
+      "mean_difference": 0.014112885275838424,
+      "ties": 144,
+      "favouring_coupled": 12,
+      "favouring_decoupled": 4,
+      "rank_biserial": 0.5,
+      "sign_p": 0.076812744140625,
+      "holm_p": 0.15362548828125,
+      "significant": false
+    }
+  ]
+}
