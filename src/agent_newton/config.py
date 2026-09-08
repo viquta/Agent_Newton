@@ -597,9 +597,30 @@ class DecayConfig(BaseModel):
     #: disables decay entirely.
     half_life_days: float | None = Field(default=None, gt=0.0)
 
+    #: Practice items between applications of that same decay *within* one
+    #: session. None is today, and today the belief ages only across a gap.
+    #:
+    #: The gap it closes: a learner who forgets within a session leaves the
+    #: model believing what was true earlier, and it has no way to find out. The
+    #: coupled arm then routes on an estimate that is stale by construction,
+    #: while an arm that never reads the estimate cannot be misled by it — so a
+    #: comparison between them would be measuring the belief model rather than
+    #: the routing. This is what makes that testable rather than arguable.
+    #:
+    #: Each application ages the belief by one day, so ``half_life_days`` sets
+    #: the strength: at 1.0 the posterior closes half the distance to the prior
+    #: every period, which is the same shape ``simulator.forgetting_rate`` gives
+    #: the learner. Matching the two is how the model is kept as stale as the
+    #: learner, and no staler.
+    within_session_period: int | None = Field(default=None, ge=1)
+
     @property
     def enabled(self) -> bool:
         return self.half_life_days is not None
+
+    @property
+    def ages_within_a_session(self) -> bool:
+        return self.enabled and self.within_session_period is not None
 
 
 class ArbitrationConfig(BaseModel):

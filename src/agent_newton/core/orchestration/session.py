@@ -486,6 +486,15 @@ class Session:
                 progress = self.learner.remediation_ratio()
                 if progress is not None:
                     trajectory.append((progress, solved))
+
+                # The belief ages on its own beat, if it ages at all. Off by
+                # default, so a run that does not ask for it is the run that was
+                # measured. `apply_decay` is the same call a gap between
+                # sittings makes; only the cadence differs.
+                period = self.config.decay.within_session_period
+                if self.config.decay.ages_within_a_session and period is not None:
+                    if len(trajectory) % period == 0:
+                        self.board.apply_decay(1.0)
                 # After the item, so the lesson lands between questions and the
                 # errors this item produced are already in the trace. Off for
                 # every cohort — `teaching.explain_after` is 0 there, and a scan

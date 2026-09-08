@@ -1,0 +1,25 @@
+{
+  "run_id": "20260908T123231_calculus_forgetting_and_decay_paired_forgetting_and_decay_coupled_31b0d5cd",
+  "run_name": "calculus_forgetting_and_decay_paired_forgetting_and_decay",
+  "created_at": "2026-09-08T12:32:31+00:00",
+  "git_sha": "c89570a53bd9e68c880d2443efeb7e4ce7987277",
+  "git_dirty": true,
+  "config_hash": "31b0d5cd3432a7f3",
+  "arm": "coupled",
+  "domain": "calculus",
+  "seed": 20260922,
+  "catalogue_hash": "ca5038117b556a2d",
+  "item_bank_hash": "587deac28ed7ca79",
+  "concept_graph_hash": "0d8b6ce2179205c4",
+  "resources_hash": "a14478cdda1097e2",
+  "models": {
+    "tutor": "<template>",
+    "diagnostic": "<oracle>",
+    "planner": "<goal_directed>",
+    "simulator_surface": "<symbolic>"
+  },
+  "uses_llm": false,
+  "decay_half_life_days": 1.0,
+  "python_version": "3.14.5",
+  "platform": "macOS-15.7.9-arm64-arm-64bit-Mach-O"
+}
