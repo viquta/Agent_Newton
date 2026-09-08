@@ -217,6 +217,20 @@ class SessionOutcome:
     #: comparison of how far the arms got, since what ended the session was not
     #: the tutoring.
     stop_reason: str = "budget_spent"
+    #: One entry per practice item worked, in order: how much of the learner's
+    #: misconception mass remains, and whether they got the item right.
+    #:
+    #: Ground truth, and it stays here. It is derived from the profile, so it
+    #: must never reach the board — a trajectory an agent could read is the
+    #: learner model driving the learner, which is what ``solidity`` warns
+    #: against and ``test_no_back_channel`` exists for.
+    #:
+    #: Two series rather than one, because they answer different questions and a
+    #: mechanism can move either alone. ``remaining`` is what the learner still
+    #: holds and is moved by teaching and by forgetting; ``correct`` is what was
+    #: observed and is moved by those *and* by a slip, which changes no belief at
+    #: all. A figure drawn from ``remaining`` alone cannot see slipping happen.
+    trajectory: tuple[tuple[float, bool], ...] = ()
 
     @property
     def gain(self) -> float:

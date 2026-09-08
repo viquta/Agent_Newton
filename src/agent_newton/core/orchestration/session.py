@@ -358,6 +358,7 @@ class Session:
         lifetime = self.board.state.items_given
         given: Counter[str] = Counter()
         diagnoses: list[tuple[str | None, str | None]] = []
+        trajectory: list[tuple[float, bool]] = []
         exhausted: int | None = None
         #: Why training stopped. Overwritten by any of the early exits; if none
         #: fires, the budget is what ended it. Recorded because the three are
@@ -477,7 +478,14 @@ class Session:
                 set_aside = self.board.note_visit(
                     item.concept_id, self.config.cohort.max_visits_per_concept
                 )
-                self._work_item(item, diagnoses, repetition=repetition)
+                solved = self._work_item(item, diagnoses, repetition=repetition)
+                # Ground truth, kept off the board. `remediation_ratio` is None
+                # for a person, who has no profile to measure a reduction
+                # against — so a person's trajectory is empty rather than a run
+                # of zeroes that would read as no progress.
+                progress = self.learner.remediation_ratio()
+                if progress is not None:
+                    trajectory.append((progress, solved))
                 # After the item, so the lesson lands between questions and the
                 # errors this item produced are already in the trace. Off for
                 # every cohort — `teaching.explain_after` is 0 there, and a scan
@@ -538,6 +546,7 @@ class Session:
             remediation_ratio=self.learner.remediation_ratio(),
             unmeasurable_steps=self.board.unmeasurable,
             diagnoses=tuple(diagnoses),
+            trajectory=tuple(trajectory),
             triggers=self._trigger_counts(),
             suppressed=self.arbitration.suppressed,
             goal=self.board.plan.goal if self.board.plan else None,
@@ -1053,7 +1062,8 @@ class Session:
         diagnoses: list[tuple[str | None, str | None]],
         *,
         repetition: int = 0,
-    ) -> None:
+    ) -> bool:
+        """Work one item to its end. Returns whether the learner solved it."""
         moves: list[TutorMove] = []
         #: What the tutor has already said on this item. Handed back to it so it
         #: does not repeat itself; see the Tutor protocol.
@@ -1211,7 +1221,7 @@ class Session:
                         self.observer.working_recorded(item, guessed)
                 if self.observer is not None:
                     self.observer.item_finished(item, solved=True, reason="solved")
-                return
+                return True
 
             # Readable failures *before* this one. Read before the counter
             # moves, because the tutor is only ever called after a failure — a
@@ -1325,7 +1335,7 @@ class Session:
                     self.observer.item_finished(
                         item, solved=False, reason="unreadable"
                     )
-                return
+                return False
 
         # The attempts ran out. Said explicitly, because it previously looked
         # exactly like nothing happening — the next question simply appeared,
@@ -1333,6 +1343,7 @@ class Session:
         # right. Nothing about the loop changes here; it is a report.
         if self.observer is not None:
             self.observer.item_finished(item, solved=False, reason="attempts_spent")
+        return False
 
 
 def _recall_for(config: Config) -> Recall | None:

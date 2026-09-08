@@ -1,0 +1,2541 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260920,
+  "alpha": 0.05,
+  "primary_outcome": "remediation",
+  "standing": "exploratory",
+  "categories": {
+    "basic": {
+      "dials": {},
+      "arms": {
+        "coupled": "20260908T121832_calculus_basic_paired_basic_coupled_352d9aae",
+        "decoupled": "20260908T121835_calculus_basic_paired_basic_decoupled_3ee581bf"
+      },
+      "mean_items": {
+        "coupled": 44.7,
+        "decoupled": 32.4625
+      },
+      "unlabelled_errors": {
+        "coupled": 0,
+        "decoupled": 0
+      },
+      "outcomes": [
+        {
+          "outcome": "remediation",
+          "mean_difference": 0.019113340768748648,
+          "ci95": [
+            0.005764094626260491,
+            0.03334726077300117
+          ],
+          "ties": 146,
+          "favouring_coupled": 11,
+          "favouring_decoupled": 3,
+          "rank_biserial": 0.5714285714285714,
+          "sign_p": 0.057373046875,
+          "holm_p": 0.11474609375,
+          "significant": false
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": 0.0012499999999999998,
+          "ci95": [
+            -0.0008333333333333332,
+            0.0033333333333333327
+          ],
+          "ties": 153,
+          "favouring_coupled": 5,
+          "favouring_decoupled": 2,
+          "rank_biserial": 0.4285714285714286,
+          "sign_p": 0.453125,
+          "holm_p": 0.453125,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.7375,
+          "ci95": [
+            3.6125,
+            3.85625
+          ],
+          "ties": 0,
+          "favouring_coupled": 160,
+          "favouring_decoupled": 0,
+          "rank_biserial": 1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.9875,
+          "ci95": [
+            -6.15,
+            -5.818593750000001
+          ],
+          "ties": 0,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 160,
+          "rank_biserial": -1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ],
+      "paths": {
+        "coupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.019351407081026797,
+            "accuracy": 0.975
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.023178378968044522,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.02792263129396629,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.037598286460724425,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.037598286460724425,
+            "accuracy": 1.0
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.03890312800019688,
+            "accuracy": 1.0
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.05224844120296378,
+            "accuracy": 0.975
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.058075082414016065,
+            "accuracy": 1.0
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.058075082414016065,
+            "accuracy": 1.0
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.07937178104310101,
+            "accuracy": 0.975
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.08740041877235406,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.09380037714748575,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.1181951083816449,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.12297220576722274,
+            "accuracy": 1.0
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.12772211787711565,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.1442532274475759,
+            "accuracy": 0.975
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.1542887750561141,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.1577312386825263,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.17266715940068378,
+            "accuracy": 0.975
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.1791576951296829,
+            "accuracy": 1.0
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.18796997887806488,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.20278711610452346,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.2100071246036153,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.22164380928924157,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.23463171141231182,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.24533612804192914,
+            "accuracy": 0.975
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.25072043000724176,
+            "accuracy": 1.0
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.2755849386628775,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.28401482280978246,
+            "accuracy": 0.975
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.29096551435673723,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 31,
+            "learners": 160,
+            "remediation": 0.3431580047969466,
+            "accuracy": 0.9
+          },
+          {
+            "item": 32,
+            "learners": 160,
+            "remediation": 0.36082407258481963,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 33,
+            "learners": 160,
+            "remediation": 0.37455201676158756,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 34,
+            "learners": 160,
+            "remediation": 0.3928821745599454,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 35,
+            "learners": 160,
+            "remediation": 0.41375121894080386,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 36,
+            "learners": 160,
+            "remediation": 0.42082158056223296,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 37,
+            "learners": 160,
+            "remediation": 0.4394346456715085,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 38,
+            "learners": 160,
+            "remediation": 0.45655070314151425,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 39,
+            "learners": 160,
+            "remediation": 0.4659061027368921,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 40,
+            "learners": 160,
+            "remediation": 0.48793294514193863,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 41,
+            "learners": 160,
+            "remediation": 0.501241876758338,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 42,
+            "learners": 160,
+            "remediation": 0.5196057385085074,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 43,
+            "learners": 160,
+            "remediation": 0.536449712098367,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 44,
+            "learners": 151,
+            "remediation": 0.5585399136943409,
+            "accuracy": 0.9801324503311258
+          },
+          {
+            "item": 45,
+            "learners": 121,
+            "remediation": 0.5826258096065852,
+            "accuracy": 1.0
+          }
+        ],
+        "decoupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.009675655166758135,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.009675655166758135,
+            "accuracy": 1.0
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.029027062247784934,
+            "accuracy": 0.975
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.03285403413480266,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.04748786862074772,
+            "accuracy": 0.975
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.0547423295510436,
+            "accuracy": 1.0
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.07455625893439419,
+            "accuracy": 0.975
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.0795649102895229,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.10394768635019705,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.11431943287459631,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.12911319926197895,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.14315890059670114,
+            "accuracy": 0.975
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.16105312648843748,
+            "accuracy": 0.975
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.16828578343610917,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.19036696491757094,
+            "accuracy": 0.975
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.20065120290911492,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.2210093404304477,
+            "accuracy": 0.975
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.235296343564037,
+            "accuracy": 0.975
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.2572780317987523,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.27316148683902775,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.28940937133667527,
+            "accuracy": 0.975
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.3145546957131493,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.33162334326995213,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.34964693600677493,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.3867808417231734,
+            "accuracy": 0.95
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.42658482512133195,
+            "accuracy": 0.925
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.44189491049370017,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.4652682749590588,
+            "accuracy": 0.95
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.4976178553551862,
+            "accuracy": 0.95
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.5157965190859664,
+            "accuracy": 0.975
+          },
+          {
+            "item": 31,
+            "learners": 144,
+            "remediation": 0.5578167166118049,
+            "accuracy": 0.9791666666666666
+          },
+          {
+            "item": 32,
+            "learners": 112,
+            "remediation": 0.5774413242168182,
+            "accuracy": 1.0
+          },
+          {
+            "item": 33,
+            "learners": 68,
+            "remediation": 0.6275430876011056,
+            "accuracy": 0.9852941176470589
+          },
+          {
+            "item": 34,
+            "learners": 39,
+            "remediation": 0.6448635151052299,
+            "accuracy": 1.0
+          },
+          {
+            "item": 35,
+            "learners": 18,
+            "remediation": 0.6784464245836903,
+            "accuracy": 1.0
+          },
+          {
+            "item": 36,
+            "learners": 9,
+            "remediation": 0.6828089065726373,
+            "accuracy": 1.0
+          },
+          {
+            "item": 37,
+            "learners": 3,
+            "remediation": 0.7623874270034579,
+            "accuracy": 1.0
+          },
+          {
+            "item": 38,
+            "learners": 1,
+            "remediation": 0.833625,
+            "accuracy": 1.0
+          }
+        ]
+      },
+      "dose_matched": {
+        "budget": 32,
+        "run_id": "20260908T121838_calculus_basic_paired_basic_dosematched_coupled_4be9a3a2",
+        "mean_items": 32.0,
+        "outcomes": [
+          {
+            "outcome": "remediation",
+            "mean_difference": -0.17536558716386752,
+            "ties": 67,
+            "favouring_coupled": 6,
+            "favouring_decoupled": 87,
+            "sign_p": 1.6504649136152465e-19,
+            "holm_p": 3.300929827230493e-19,
+            "significant": true
+          },
+          {
+            "outcome": "gain",
+            "mean_difference": -0.01833333333333333,
+            "ties": 117,
+            "favouring_coupled": 2,
+            "favouring_decoupled": 41,
+            "sign_p": 2.1532287064474076e-10,
+            "holm_p": 2.1532287064474076e-10,
+            "significant": true
+          },
+          {
+            "outcome": "goals_mastered",
+            "mean_difference": 1.45,
+            "ties": 17,
+            "favouring_coupled": 143,
+            "favouring_decoupled": 0,
+            "sign_p": 1.793662034335766e-43,
+            "holm_p": 5.3809861030072976e-43,
+            "significant": true
+          },
+          {
+            "outcome": "distance_to_goal",
+            "mean_difference": -5.29375,
+            "ties": 0,
+            "favouring_coupled": 0,
+            "favouring_decoupled": 160,
+            "sign_p": 1.3684555315672042e-48,
+            "holm_p": 5.473822126268817e-48,
+            "significant": true
+          }
+        ]
+      }
+    },
+    "linear": {
+      "dials": {
+        "remediation_curve": "linear"
+      },
+      "arms": {
+        "coupled": "20260908T121840_calculus_linear_paired_linear_coupled_8a1a87be",
+        "decoupled": "20260908T121843_calculus_linear_paired_linear_decoupled_2aaecbcb"
+      },
+      "mean_items": {
+        "coupled": 44.68125,
+        "decoupled": 32.18125
+      },
+      "unlabelled_errors": {
+        "coupled": 0,
+        "decoupled": 0
+      },
+      "outcomes": [
+        {
+          "outcome": "remediation",
+          "mean_difference": 0.023288426569231732,
+          "ci95": [
+            0.006471792299670066,
+            0.042474045292357855
+          ],
+          "ties": 147,
+          "favouring_coupled": 11,
+          "favouring_decoupled": 2,
+          "rank_biserial": 0.6923076923076923,
+          "sign_p": 0.0224609375,
+          "holm_p": 0.044921875,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": 0.0012499999999999998,
+          "ci95": [
+            -0.0008333333333333332,
+            0.0033333333333333327
+          ],
+          "ties": 153,
+          "favouring_coupled": 5,
+          "favouring_decoupled": 2,
+          "rank_biserial": 0.4285714285714286,
+          "sign_p": 0.453125,
+          "holm_p": 0.453125,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.7875,
+          "ci95": [
+            3.6625,
+            3.9125
+          ],
+          "ties": 0,
+          "favouring_coupled": 160,
+          "favouring_decoupled": 0,
+          "rank_biserial": 1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -6.1,
+          "ci95": [
+            -6.24375,
+            -5.95
+          ],
+          "ties": 0,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 160,
+          "rank_biserial": -1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ],
+      "paths": {
+        "coupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.0220889655266565,
+            "accuracy": 0.975
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.026731389232877923,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.03206439000755776,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.04292522709068194,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.04292522709068194,
+            "accuracy": 1.0
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.0442300686301544,
+            "accuracy": 1.0
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.06016129464253097,
+            "accuracy": 0.975
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.06598793585358326,
+            "accuracy": 1.0
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.06598793585358326,
+            "accuracy": 1.0
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.08972906525891583,
+            "accuracy": 0.975
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.10094460827651638,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.107930379252889,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.13581027229838022,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.14176760856700968,
+            "accuracy": 1.0
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.14595489524956864,
+            "accuracy": 1.0
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.16491162561829914,
+            "accuracy": 0.975
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.178207449411732,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.18178579591198876,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.19882126776017744,
+            "accuracy": 0.975
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.20588451276234668,
+            "accuracy": 1.0
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.21598245381081357,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.2328033959133363,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.24268946937597446,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.254228734813885,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.27037696064771005,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.2833495005729445,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.2878522509990814,
+            "accuracy": 1.0
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.3191286153221598,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.3316680363113603,
+            "accuracy": 0.975
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.33786065284576744,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 31,
+            "learners": 160,
+            "remediation": 0.3994925441126842,
+            "accuracy": 0.9
+          },
+          {
+            "item": 32,
+            "learners": 160,
+            "remediation": 0.4210851651100816,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 33,
+            "learners": 160,
+            "remediation": 0.4397565627619168,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 34,
+            "learners": 160,
+            "remediation": 0.45963116309088986,
+            "accuracy": 0.975
+          },
+          {
+            "item": 35,
+            "learners": 160,
+            "remediation": 0.483263838918871,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 36,
+            "learners": 160,
+            "remediation": 0.4906422295481182,
+            "accuracy": 1.0
+          },
+          {
+            "item": 37,
+            "learners": 160,
+            "remediation": 0.5175167048463433,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 38,
+            "learners": 160,
+            "remediation": 0.5368681018750733,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 39,
+            "learners": 160,
+            "remediation": 0.5460469397278965,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 40,
+            "learners": 160,
+            "remediation": 0.5717299565377763,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 41,
+            "learners": 160,
+            "remediation": 0.5874158582584876,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 42,
+            "learners": 160,
+            "remediation": 0.6048207781057284,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 43,
+            "learners": 160,
+            "remediation": 0.6273056808101477,
+            "accuracy": 0.975
+          },
+          {
+            "item": 44,
+            "learners": 151,
+            "remediation": 0.6550912072840435,
+            "accuracy": 0.9867549668874173
+          },
+          {
+            "item": 45,
+            "learners": 118,
+            "remediation": 0.6883804777763202,
+            "accuracy": 1.0
+          }
+        ],
+        "decoupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.010860837083124183,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.010860837083124183,
+            "accuracy": 1.0
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.032949802609780685,
+            "accuracy": 0.975
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.037592226316002106,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.05481197361155684,
+            "accuracy": 0.975
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.06206643454185271,
+            "accuracy": 1.0
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.08432479470145096,
+            "accuracy": 0.975
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.09121309971335527,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.11937040466698379,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.13244498491225315,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.14745053618579415,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.1646657932079526,
+            "accuracy": 0.975
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.18463132492185616,
+            "accuracy": 0.975
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.1933569369733704,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.21769092101541462,
+            "accuracy": 0.975
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.23055728241193335,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.25434297044066034,
+            "accuracy": 0.975
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.2701212112257422,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.2944730479498686,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.31292964800235545,
+            "accuracy": 0.975
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.34024602864590414,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.36455433877146665,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.387655777158374,
+            "accuracy": 0.975
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.40444053385979417,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.4482628702084055,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.4966409660471404,
+            "accuracy": 0.93125
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.5183766210195436,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.5490970611753616,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.5817616692781657,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.6015144181578056,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 31,
+            "learners": 144,
+            "remediation": 0.6529932295868384,
+            "accuracy": 0.9791666666666666
+          },
+          {
+            "item": 32,
+            "learners": 108,
+            "remediation": 0.6836913107369388,
+            "accuracy": 1.0
+          },
+          {
+            "item": 33,
+            "learners": 58,
+            "remediation": 0.7385662547695234,
+            "accuracy": 0.9827586206896551
+          },
+          {
+            "item": 34,
+            "learners": 25,
+            "remediation": 0.7349862435018512,
+            "accuracy": 1.0
+          },
+          {
+            "item": 35,
+            "learners": 11,
+            "remediation": 0.7392357780759542,
+            "accuracy": 1.0
+          },
+          {
+            "item": 36,
+            "learners": 3,
+            "remediation": 0.7635905321140665,
+            "accuracy": 1.0
+          }
+        ]
+      },
+      "dose_matched": {
+        "budget": 32,
+        "run_id": "20260908T121845_calculus_linear_paired_linear_dosematched_coupled_0b6d226e",
+        "mean_items": 32.0,
+        "outcomes": [
+          {
+            "outcome": "remediation",
+            "mean_difference": -0.2018842478826953,
+            "ties": 69,
+            "favouring_coupled": 6,
+            "favouring_decoupled": 85,
+            "sign_p": 5.782725134355011e-19,
+            "holm_p": 1.1565450268710023e-18,
+            "significant": true
+          },
+          {
+            "outcome": "gain",
+            "mean_difference": -0.021249999999999998,
+            "ties": 110,
+            "favouring_coupled": 2,
+            "favouring_decoupled": 48,
+            "sign_p": 2.2666313270747196e-12,
+            "holm_p": 2.2666313270747196e-12,
+            "significant": true
+          },
+          {
+            "outcome": "goals_mastered",
+            "mean_difference": 1.45,
+            "ties": 17,
+            "favouring_coupled": 143,
+            "favouring_decoupled": 0,
+            "sign_p": 1.793662034335766e-43,
+            "holm_p": 5.3809861030072976e-43,
+            "significant": true
+          },
+          {
+            "outcome": "distance_to_goal",
+            "mean_difference": -5.3125,
+            "ties": 0,
+            "favouring_coupled": 0,
+            "favouring_decoupled": 160,
+            "sign_p": 1.3684555315672042e-48,
+            "holm_p": 5.473822126268817e-48,
+            "significant": true
+          }
+        ]
+      }
+    },
+    "forgetful": {
+      "dials": {
+        "forgetting_rate": 0.5,
+        "forgetting_period": 10
+      },
+      "arms": {
+        "coupled": "20260908T121848_calculus_forgetful_paired_forgetful_coupled_bb5fde32",
+        "decoupled": "20260908T121851_calculus_forgetful_paired_forgetful_decoupled_a01abd2f"
+      },
+      "mean_items": {
+        "coupled": 44.75,
+        "decoupled": 32.7375
+      },
+      "unlabelled_errors": {
+        "coupled": 0,
+        "decoupled": 0
+      },
+      "outcomes": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.016906452966352948,
+          "ci95": [
+            -0.02392218507999801,
+            -0.009766036189080536
+          ],
+          "ties": 20,
+          "favouring_coupled": 36,
+          "favouring_decoupled": 104,
+          "rank_biserial": -0.48571428571428577,
+          "sign_p": 7.600909757854836e-09,
+          "holm_p": 1.5201819515709672e-08,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.0033333333333333327,
+          "ci95": [
+            -0.006666666666666665,
+            -0.0004166666666666666
+          ],
+          "ties": 146,
+          "favouring_coupled": 3,
+          "favouring_decoupled": 11,
+          "rank_biserial": -0.5714285714285714,
+          "sign_p": 0.057373046875,
+          "holm_p": 0.057373046875,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.65,
+          "ci95": [
+            3.53125,
+            3.775
+          ],
+          "ties": 0,
+          "favouring_coupled": 160,
+          "favouring_decoupled": 0,
+          "rank_biserial": 1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.86875,
+          "ci95": [
+            -6.04375,
+            -5.70625
+          ],
+          "ties": 0,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 160,
+          "rank_biserial": -1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ],
+      "paths": {
+        "coupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.019351407081026797,
+            "accuracy": 0.975
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.0204296424904413,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.02043531748687336,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.030110972653631496,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.03118842850914626,
+            "accuracy": 1.0
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.03249327004861872,
+            "accuracy": 1.0
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.044952288918623476,
+            "accuracy": 0.975
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.04918228659107175,
+            "accuracy": 1.0
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.04732059961556788,
+            "accuracy": 1.0
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.06921137698556366,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.07099530564113847,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.07260411694249874,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.0707173980587606,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.07959926170066536,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.08072067429442684,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.09747160584538163,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.10676838121012378,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.10930496188570146,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.11633631787251461,
+            "accuracy": 0.975
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.11177320808859041,
+            "accuracy": 1.0
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.10100763391712297,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.10410625884858024,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.0923398994610098,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.10451850191322495,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.11667845104220882,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.12379169730011434,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.12381578908285391,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.14828914664081985,
+            "accuracy": 0.9375
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.1417788556315493,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.13853589747456313,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 31,
+            "learners": 160,
+            "remediation": 0.16623144904476833,
+            "accuracy": 0.9
+          },
+          {
+            "item": 32,
+            "learners": 160,
+            "remediation": 0.17180398425590415,
+            "accuracy": 0.975
+          },
+          {
+            "item": 33,
+            "learners": 160,
+            "remediation": 0.1601713243891596,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 34,
+            "learners": 160,
+            "remediation": 0.17940962177447556,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 35,
+            "learners": 160,
+            "remediation": 0.2023965848235653,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 36,
+            "learners": 160,
+            "remediation": 0.20261793384766774,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 37,
+            "learners": 160,
+            "remediation": 0.21144820373721784,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 38,
+            "learners": 160,
+            "remediation": 0.2116261086350979,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 39,
+            "learners": 160,
+            "remediation": 0.20129917790913746,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 40,
+            "learners": 160,
+            "remediation": 0.1933572811933221,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 41,
+            "learners": 160,
+            "remediation": 0.17792079509068492,
+            "accuracy": 0.975
+          },
+          {
+            "item": 42,
+            "learners": 160,
+            "remediation": 0.18616705838650033,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 43,
+            "learners": 160,
+            "remediation": 0.1972109056275123,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 44,
+            "learners": 152,
+            "remediation": 0.21454454548208254,
+            "accuracy": 0.9802631578947368
+          },
+          {
+            "item": 45,
+            "learners": 128,
+            "remediation": 0.2317843507828227,
+            "accuracy": 0.984375
+          }
+        ],
+        "decoupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.009675655166758135,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.009675655166758135,
+            "accuracy": 1.0
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.02196613433566767,
+            "accuracy": 0.95
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.02683994040028977,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.04202632965287623,
+            "accuracy": 0.975
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.049280790583172106,
+            "accuracy": 1.0
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.06909471996652271,
+            "accuracy": 0.975
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.07471119107201787,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.09793980690433009,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.10727651162852017,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.10390596225202439,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.11056520966385026,
+            "accuracy": 0.975
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.10121551922930598,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.11150547104327051,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.12912412481203311,
+            "accuracy": 0.975
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.13940836280357707,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.15535247871610652,
+            "accuracy": 0.975
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.17008533194221623,
+            "accuracy": 0.975
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.17365599442868632,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.16891018998624274,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.1645664617964012,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.17344260143157592,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.16886768114304862,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.18680727830075555,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.21524639439987028,
+            "accuracy": 0.95
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.24756681418810497,
+            "accuracy": 0.925
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.25246431640028544,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.2643563311305733,
+            "accuracy": 0.95
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.262712090442497,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.2524754516742891,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 31,
+            "learners": 146,
+            "remediation": 0.23414881332350648,
+            "accuracy": 0.9657534246575342
+          },
+          {
+            "item": 32,
+            "learners": 116,
+            "remediation": 0.25349455247273744,
+            "accuracy": 0.9913793103448276
+          },
+          {
+            "item": 33,
+            "learners": 72,
+            "remediation": 0.2874635797999635,
+            "accuracy": 0.9861111111111112
+          },
+          {
+            "item": 34,
+            "learners": 47,
+            "remediation": 0.30478260065294827,
+            "accuracy": 0.9787234042553191
+          },
+          {
+            "item": 35,
+            "learners": 32,
+            "remediation": 0.28360118846529153,
+            "accuracy": 1.0
+          },
+          {
+            "item": 36,
+            "learners": 15,
+            "remediation": 0.22074935118758932,
+            "accuracy": 1.0
+          },
+          {
+            "item": 37,
+            "learners": 6,
+            "remediation": 0.2557341423003473,
+            "accuracy": 1.0
+          },
+          {
+            "item": 38,
+            "learners": 3,
+            "remediation": 0.3109876601341582,
+            "accuracy": 1.0
+          },
+          {
+            "item": 39,
+            "learners": 1,
+            "remediation": 0.29348988740722026,
+            "accuracy": 1.0
+          }
+        ]
+      },
+      "dose_matched": {
+        "budget": 32,
+        "run_id": "20260908T121853_calculus_forgetful_paired_forgetful_dosematched_coupled_fb551162",
+        "mean_items": 32.0,
+        "outcomes": [
+          {
+            "outcome": "remediation",
+            "mean_difference": -0.015963179677634314,
+            "ties": 14,
+            "favouring_coupled": 58,
+            "favouring_decoupled": 88,
+            "sign_p": 0.01609891910209908,
+            "holm_p": 0.01609891910209908,
+            "significant": true
+          },
+          {
+            "outcome": "gain",
+            "mean_difference": -0.005416666666666665,
+            "ties": 143,
+            "favouring_coupled": 2,
+            "favouring_decoupled": 15,
+            "sign_p": 0.002349853515625,
+            "holm_p": 0.00469970703125,
+            "significant": true
+          },
+          {
+            "outcome": "goals_mastered",
+            "mean_difference": 1.40625,
+            "ties": 17,
+            "favouring_coupled": 143,
+            "favouring_decoupled": 0,
+            "sign_p": 1.793662034335766e-43,
+            "holm_p": 5.3809861030072976e-43,
+            "significant": true
+          },
+          {
+            "outcome": "distance_to_goal",
+            "mean_difference": -5.275,
+            "ties": 0,
+            "favouring_coupled": 0,
+            "favouring_decoupled": 160,
+            "sign_p": 1.3684555315672042e-48,
+            "holm_p": 5.473822126268817e-48,
+            "significant": true
+          }
+        ]
+      }
+    },
+    "slipper": {
+      "dials": {
+        "slip_rate": 0.1
+      },
+      "arms": {
+        "coupled": "20260908T121855_calculus_slipper_paired_slipper_coupled_ade0fd16",
+        "decoupled": "20260908T121858_calculus_slipper_paired_slipper_decoupled_4ec58d54"
+      },
+      "mean_items": {
+        "coupled": 44.40625,
+        "decoupled": 33.825
+      },
+      "unlabelled_errors": {
+        "coupled": 631,
+        "decoupled": 475
+      },
+      "outcomes": [
+        {
+          "outcome": "remediation",
+          "mean_difference": 0.011134468280478472,
+          "ci95": [
+            -0.00308730738971866,
+            0.02671339883003124
+          ],
+          "ties": 142,
+          "favouring_coupled": 11,
+          "favouring_decoupled": 7,
+          "rank_biserial": 0.22222222222222232,
+          "sign_p": 0.480682373046875,
+          "holm_p": 0.96136474609375,
+          "significant": false
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": 0.0004166666666666666,
+          "ci95": [
+            -0.002083333333333333,
+            0.002927083333333276
+          ],
+          "ties": 151,
+          "favouring_coupled": 5,
+          "favouring_decoupled": 4,
+          "rank_biserial": 0.11111111111111116,
+          "sign_p": 1.0,
+          "holm_p": 1.0,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 2.93125,
+          "ci95": [
+            2.78125,
+            3.075
+          ],
+          "ties": 2,
+          "favouring_coupled": 158,
+          "favouring_decoupled": 0,
+          "rank_biserial": 1.0,
+          "sign_p": 5.473822126268817e-48,
+          "holm_p": 1.642146637880645e-47,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.19375,
+          "ci95": [
+            -5.3875,
+            -5.00625
+          ],
+          "ties": 0,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 160,
+          "rank_biserial": -1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ],
+      "paths": {
+        "coupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.019351407081026797,
+            "accuracy": 0.975
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.023178378968044522,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.029187781108719706,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.037598286460724425,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.037598286460724425,
+            "accuracy": 1.0
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.0412748767825603,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.05224844120296378,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.058075082414016065,
+            "accuracy": 1.0
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.06019351481264958,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.07660952391192337,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.08765040508374641,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.09528478389462919,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.1131612958382255,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.12603320760649084,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.1342031535131009,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.1433737164323075,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.15164690657280838,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.1597652947385549,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.17095845225727416,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.17920923378252035,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.18909150029966176,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.20157544367822666,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.21192345798587012,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.22664985525773904,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.23511847479175577,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.2453894829439577,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.2568154263912701,
+            "accuracy": 0.975
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.267941948661671,
+            "accuracy": 0.975
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.2895050606728271,
+            "accuracy": 0.95
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.3201906802637787,
+            "accuracy": 0.94375
+          },
+          {
+            "item": 31,
+            "learners": 160,
+            "remediation": 0.35174912050066975,
+            "accuracy": 0.9375
+          },
+          {
+            "item": 32,
+            "learners": 160,
+            "remediation": 0.367070257798375,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 33,
+            "learners": 160,
+            "remediation": 0.37712156809606645,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 34,
+            "learners": 160,
+            "remediation": 0.3954238886438086,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 35,
+            "learners": 160,
+            "remediation": 0.4121723685775464,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 36,
+            "learners": 160,
+            "remediation": 0.4249857660498259,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 37,
+            "learners": 160,
+            "remediation": 0.4433434884842181,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 38,
+            "learners": 160,
+            "remediation": 0.45344521943279104,
+            "accuracy": 0.975
+          },
+          {
+            "item": 39,
+            "learners": 160,
+            "remediation": 0.4717802739834296,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 40,
+            "learners": 160,
+            "remediation": 0.4902980907226272,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 41,
+            "learners": 160,
+            "remediation": 0.5034926188805527,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 42,
+            "learners": 157,
+            "remediation": 0.5173953902438007,
+            "accuracy": 0.9808917197452229
+          },
+          {
+            "item": 43,
+            "learners": 146,
+            "remediation": 0.5353069701991127,
+            "accuracy": 0.9657534246575342
+          },
+          {
+            "item": 44,
+            "learners": 134,
+            "remediation": 0.555573357231425,
+            "accuracy": 0.9850746268656716
+          },
+          {
+            "item": 45,
+            "learners": 108,
+            "remediation": 0.5690400910885035,
+            "accuracy": 0.9907407407407407
+          }
+        ],
+        "decoupled": [
+          {
+            "item": 1,
+            "learners": 160,
+            "remediation": 0.009675655166758135,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 2,
+            "learners": 160,
+            "remediation": 0.009675655166758135,
+            "accuracy": 1.0
+          },
+          {
+            "item": 3,
+            "learners": 160,
+            "remediation": 0.029027062247784934,
+            "accuracy": 0.975
+          },
+          {
+            "item": 4,
+            "learners": 160,
+            "remediation": 0.03285403413480266,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 5,
+            "learners": 160,
+            "remediation": 0.04583944416872181,
+            "accuracy": 0.975
+          },
+          {
+            "item": 6,
+            "learners": 160,
+            "remediation": 0.0547423295510436,
+            "accuracy": 1.0
+          },
+          {
+            "item": 7,
+            "learners": 160,
+            "remediation": 0.07249093920447755,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 8,
+            "learners": 160,
+            "remediation": 0.07614990379037542,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 9,
+            "learners": 160,
+            "remediation": 0.10020858341893449,
+            "accuracy": 0.9625
+          },
+          {
+            "item": 10,
+            "learners": 160,
+            "remediation": 0.11077350586720733,
+            "accuracy": 0.9875
+          },
+          {
+            "item": 11,
+            "learners": 160,
+            "remediation": 0.12723174956341993,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 12,
+            "learners": 160,
+            "remediation": 0.1395101465539359,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 13,
+            "learners": 160,
+            "remediation": 0.1542132025767643,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 14,
+            "learners": 160,
+            "remediation": 0.16078245276975764,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 15,
+            "learners": 160,
+            "remediation": 0.17788751054593321,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 16,
+            "learners": 160,
+            "remediation": 0.19200520292844533,
+            "accuracy": 0.975
+          },
+          {
+            "item": 17,
+            "learners": 160,
+            "remediation": 0.2120777377757855,
+            "accuracy": 0.975
+          },
+          {
+            "item": 18,
+            "learners": 160,
+            "remediation": 0.2242417362606131,
+            "accuracy": 0.99375
+          },
+          {
+            "item": 19,
+            "learners": 160,
+            "remediation": 0.24619758431759314,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 20,
+            "learners": 160,
+            "remediation": 0.2566329214726795,
+            "accuracy": 0.98125
+          },
+          {
+            "item": 21,
+            "learners": 160,
+            "remediation": 0.2719239370192573,
+            "accuracy": 0.975
+          },
+          {
+            "item": 22,
+            "learners": 160,
+            "remediation": 0.2918349007319078,
+            "accuracy": 0.95625
+          },
+          {
+            "item": 23,
+            "learners": 160,
+            "remediation": 0.3194848683598967,
+            "accuracy": 0.95
+          },
+          {
+            "item": 24,
+            "learners": 160,
+            "remediation": 0.33218279171105414,
+            "accuracy": 0.975
+          },
+          {
+            "item": 25,
+            "learners": 160,
+            "remediation": 0.3599904090662876,
+            "accuracy": 0.975
+          },
+          {
+            "item": 26,
+            "learners": 160,
+            "remediation": 0.3899604431462367,
+            "accuracy": 0.93125
+          },
+          {
+            "item": 27,
+            "learners": 160,
+            "remediation": 0.4160982468735752,
+            "accuracy": 0.975
+          },
+          {
+            "item": 28,
+            "learners": 160,
+            "remediation": 0.4484597237296287,
+            "accuracy": 0.925
+          },
+          {
+            "item": 29,
+            "learners": 160,
+            "remediation": 0.46539374495101987,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 30,
+            "learners": 160,
+            "remediation": 0.48312425603316633,
+            "accuracy": 0.96875
+          },
+          {
+            "item": 31,
+            "learners": 152,
+            "remediation": 0.5234639351997771,
+            "accuracy": 0.9276315789473685
+          },
+          {
+            "item": 32,
+            "learners": 135,
+            "remediation": 0.5469445032491873,
+            "accuracy": 0.9851851851851852
+          },
+          {
+            "item": 33,
+            "learners": 120,
+            "remediation": 0.5688300238459116,
+            "accuracy": 0.9833333333333333
+          },
+          {
+            "item": 34,
+            "learners": 86,
+            "remediation": 0.5814856317401479,
+            "accuracy": 1.0
+          },
+          {
+            "item": 35,
+            "learners": 57,
+            "remediation": 0.6081665434526066,
+            "accuracy": 1.0
+          },
+          {
+            "item": 36,
+            "learners": 32,
+            "remediation": 0.6298709504758451,
+            "accuracy": 1.0
+          },
+          {
+            "item": 37,
+            "learners": 17,
+            "remediation": 0.6912944657770628,
+            "accuracy": 1.0
+          },
+          {
+            "item": 38,
+            "learners": 8,
+            "remediation": 0.682392654112146,
+            "accuracy": 1.0
+          },
+          {
+            "item": 39,
+            "learners": 3,
+            "remediation": 0.6793528317177211,
+            "accuracy": 1.0
+          },
+          {
+            "item": 40,
+            "learners": 1,
+            "remediation": 0.6444913621515085,
+            "accuracy": 1.0
+          },
+          {
+            "item": 41,
+            "learners": 1,
+            "remediation": 0.6444913621515085,
+            "accuracy": 1.0
+          }
+        ]
+      },
+      "dose_matched": {
+        "budget": 33,
+        "run_id": "20260908T121901_calculus_slipper_paired_slipper_dosematched_coupled_5db26a80",
+        "mean_items": 33.0,
+        "outcomes": [
+          {
+            "outcome": "remediation",
+            "mean_difference": -0.16214329305756514,
+            "ties": 73,
+            "favouring_coupled": 6,
+            "favouring_decoupled": 81,
+            "sign_p": 7.034485519207362e-18,
+            "holm_p": 1.4068971038414723e-17,
+            "significant": true
+          },
+          {
+            "outcome": "gain",
+            "mean_difference": -0.016666666666666666,
+            "ties": 121,
+            "favouring_coupled": 2,
+            "favouring_decoupled": 37,
+            "sign_p": 2.841261448338628e-09,
+            "holm_p": 2.841261448338628e-09,
+            "significant": true
+          },
+          {
+            "outcome": "goals_mastered",
+            "mean_difference": 1.0375,
+            "ties": 28,
+            "favouring_coupled": 119,
+            "favouring_decoupled": 13,
+            "sign_p": 1.3255152635342784e-22,
+            "holm_p": 3.976545790602835e-22,
+            "significant": true
+          },
+          {
+            "outcome": "distance_to_goal",
+            "mean_difference": -4.28125,
+            "ties": 0,
+            "favouring_coupled": 0,
+            "favouring_decoupled": 160,
+            "sign_p": 1.3684555315672042e-48,
+            "holm_p": 5.473822126268817e-48,
+            "significant": true
+          }
+        ]
+      }
+    }
+  }
+}

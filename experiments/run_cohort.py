@@ -107,6 +107,7 @@ def run(config: Config) -> dict:
         ),
         "diagnostic_accuracy": _diagnostic_accuracy(outcomes),
         "unlabelled_errors": _unlabelled_errors(outcomes),
+        "mean_trajectory": _mean_trajectory(outcomes),
         "replans_by_trigger": _triggers(outcomes),
         "suppressed_triggers": sum(o.suppressed for o in outcomes),
         "per_learner": [
@@ -171,6 +172,40 @@ def _diagnostic_accuracy(outcomes) -> float | None:
     if not pairs:
         return None
     return sum(1 for injected, inferred in pairs if injected == inferred) / len(pairs)
+
+
+def _mean_trajectory(outcomes) -> list[dict]:
+    """The cohort's learning path: two series against practice items worked.
+
+    Averaged over the learners who reached each position, so a cohort whose
+    sessions ended at different lengths does not report a tail computed from
+    whoever happened to run longest as though it were the cohort's.
+
+    Two series, because a mechanism can move either alone. ``remediation`` is
+    ground truth — what the learner still holds — and ``accuracy`` is what was
+    observed. Teaching and forgetting move both; an error on a step no
+    misconception produced moves only the second, so a path drawn from
+    ``remediation`` alone cannot see one happen.
+
+    Cohort-level rather than per-learner: the per-learner paths are what this is
+    averaged from, and storing 160 of them would put tens of thousands of numbers
+    into every run's metrics for a figure that plots the mean.
+    """
+    paths = [o.trajectory for o in outcomes if o.trajectory]
+    if not paths:
+        return []
+    series = []
+    for index in range(max(len(path) for path in paths)):
+        reached = [path[index] for path in paths if index > -1 and len(path) > index]
+        series.append(
+            {
+                "item": index + 1,
+                "learners": len(reached),
+                "remediation": sum(point[0] for point in reached) / len(reached),
+                "accuracy": sum(1 for point in reached if point[1]) / len(reached),
+            }
+        )
+    return series
 
 
 def _unlabelled_errors(outcomes) -> int:
