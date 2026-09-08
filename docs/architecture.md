@@ -202,10 +202,24 @@ stays out of the trigger counts a threshold analysis reads.
 ### The session loop (`core/orchestration/`)
 
 `session.py` is the only thing that moves information between agents, and the
-single file to read first for control flow. Each step: the planner selects, the
-learner answers, the verifier grades, the diagnostic labels an incorrect step,
-the board updates, the arbitration policy decides whether the plan may reopen,
-and the tutor replies at the level the scaffolding predicate chose.
+single file to read first for control flow. It is two nested loops.
+
+Per item, the arbitration policy decides whether the plan may reopen; the planner
+is consulted only when it does, first for the goal and then for the item.
+Otherwise the next item comes off the concept already being worked. Support may
+then be shown with the question, before any answer.
+
+Per step within the item, the learner answers, the verifier grades, a step that
+was not correct is asked for its working before any label is inferred, an
+incorrect step is diagnosed, and the observation is recorded. A correct step ends
+the item, so the tutor is never reached. Otherwise the tutor replies at the level
+the scaffolding predicate chose and the loop takes another step.
+
+No agent holds the board. Each is called with the values it is given — the
+planner and tutor with `board.view()`, the arbitration policy with copies of
+three state fields, the diagnostic with the answer and not the verifier's verdict
+— and each returns a value the session writes. No agent writes to the board at
+all, and every write the loop makes is a `self.board.*` call in this file.
 
 `SessionObserver` is how a session is watched without being altered — the demo's
 live panel is one, and a run's `events.jsonl` another. Nothing an observer does
