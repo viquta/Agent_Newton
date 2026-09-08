@@ -1,0 +1,259 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260921,
+  "forgetting_period": 10,
+  "conditions": {
+    "massed": null,
+    "spaced": 1
+  },
+  "standing": "exploratory",
+  "note": "massed minus spaced, both in the coupled arm",
+  "points": [
+    {
+      "forgetting_rate": 0.0,
+      "run_ids": {
+        "massed": "20260908T122701_calculus_spacing_paired_massed_0.0_coupled_f54f6fc4",
+        "spaced": "20260908T122704_calculus_spacing_paired_spaced_0.0_coupled_04ae538e"
+      },
+      "mean_items": {
+        "massed": 44.7125,
+        "spaced": 44.4875
+      },
+      "mean_goals_mastered": {
+        "massed": 4.50625,
+        "spaced": 4.5625
+      },
+      "outcomes": {
+        "remediation": {
+          "mean_difference": -0.0013658665751778106,
+          "sign_p": 1.0,
+          "ties": 159,
+          "favouring_massed": 0,
+          "favouring_spaced": 1,
+          "rank_biserial": -1.0
+        },
+        "gain": {
+          "mean_difference": -0.0004166666666666666,
+          "sign_p": 1.0,
+          "ties": 159,
+          "favouring_massed": 0,
+          "favouring_spaced": 1,
+          "rank_biserial": -1.0
+        },
+        "goals_mastered": {
+          "mean_difference": -0.05625,
+          "sign_p": 0.00390625,
+          "ties": 151,
+          "favouring_massed": 0,
+          "favouring_spaced": 9,
+          "rank_biserial": -1.0
+        },
+        "distance_to_goal": {
+          "mean_difference": -0.0125,
+          "sign_p": 0.8238029479980469,
+          "ties": 140,
+          "favouring_massed": 9,
+          "favouring_spaced": 11,
+          "rank_biserial": -0.09999999999999998
+        }
+      }
+    },
+    {
+      "forgetting_rate": 0.25,
+      "run_ids": {
+        "massed": "20260908T122707_calculus_spacing_paired_massed_0.25_coupled_09c7d695",
+        "spaced": "20260908T122710_calculus_spacing_paired_spaced_0.25_coupled_52c0067c"
+      },
+      "mean_items": {
+        "massed": 44.71875,
+        "spaced": 44.48125
+      },
+      "mean_goals_mastered": {
+        "massed": 4.45625,
+        "spaced": 4.53125
+      },
+      "outcomes": {
+        "remediation": {
+          "mean_difference": 0.00573262136485092,
+          "sign_p": 7.25436661612308e-07,
+          "ties": 66,
+          "favouring_massed": 71,
+          "favouring_spaced": 23,
+          "rank_biserial": 0.5106382978723405
+        },
+        "gain": {
+          "mean_difference": 0.0012499999999999998,
+          "sign_p": 0.453125,
+          "ties": 153,
+          "favouring_massed": 5,
+          "favouring_spaced": 2,
+          "rank_biserial": 0.4285714285714286
+        },
+        "goals_mastered": {
+          "mean_difference": -0.075,
+          "sign_p": 0.007537841796875,
+          "ties": 142,
+          "favouring_massed": 3,
+          "favouring_spaced": 15,
+          "rank_biserial": -0.6666666666666667
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.00625,
+          "sign_p": 1.0,
+          "ties": 131,
+          "favouring_massed": 15,
+          "favouring_spaced": 14,
+          "rank_biserial": 0.034482758620689724
+        }
+      }
+    },
+    {
+      "forgetting_rate": 0.5,
+      "run_ids": {
+        "massed": "20260908T122713_calculus_spacing_paired_massed_0.5_coupled_4bf80c5e",
+        "spaced": "20260908T122716_calculus_spacing_paired_spaced_0.5_coupled_fe832432"
+      },
+      "mean_items": {
+        "massed": 44.74375,
+        "spaced": 44.53125
+      },
+      "mean_goals_mastered": {
+        "massed": 4.43125,
+        "spaced": 4.5125
+      },
+      "outcomes": {
+        "remediation": {
+          "mean_difference": 0.003549724133968697,
+          "sign_p": 4.69241261264223e-06,
+          "ties": 60,
+          "favouring_massed": 73,
+          "favouring_spaced": 27,
+          "rank_biserial": 0.45999999999999996
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "sign_p": 1.0,
+          "ties": 158,
+          "favouring_massed": 1,
+          "favouring_spaced": 1,
+          "rank_biserial": 0.0
+        },
+        "goals_mastered": {
+          "mean_difference": -0.08125,
+          "sign_p": 0.007197380065917969,
+          "ties": 139,
+          "favouring_massed": 4,
+          "favouring_spaced": 17,
+          "rank_biserial": -0.6190476190476191
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.00625,
+          "sign_p": 1.0,
+          "ties": 127,
+          "favouring_massed": 17,
+          "favouring_spaced": 16,
+          "rank_biserial": 0.030303030303030276
+        }
+      }
+    },
+    {
+      "forgetting_rate": 0.75,
+      "run_ids": {
+        "massed": "20260908T122719_calculus_spacing_paired_massed_0.75_coupled_e20946e9",
+        "spaced": "20260908T122722_calculus_spacing_paired_spaced_0.75_coupled_7eca6d7a"
+      },
+      "mean_items": {
+        "massed": 44.75,
+        "spaced": 44.54375
+      },
+      "mean_goals_mastered": {
+        "massed": 4.4,
+        "spaced": 4.5
+      },
+      "outcomes": {
+        "remediation": {
+          "mean_difference": 0.0010368746419544897,
+          "sign_p": 2.736780589985052e-06,
+          "ties": 56,
+          "favouring_massed": 76,
+          "favouring_spaced": 28,
+          "rank_biserial": 0.46153846153846145
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "sign_p": 1.0,
+          "ties": 160,
+          "favouring_massed": 0,
+          "favouring_spaced": 0,
+          "rank_biserial": 0.0
+        },
+        "goals_mastered": {
+          "mean_difference": -0.1,
+          "sign_p": 0.0004024505615234375,
+          "ties": 140,
+          "favouring_massed": 2,
+          "favouring_spaced": 18,
+          "rank_biserial": -0.8
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.00625,
+          "sign_p": 0.8679394004284404,
+          "ties": 124,
+          "favouring_massed": 19,
+          "favouring_spaced": 17,
+          "rank_biserial": 0.05555555555555558
+        }
+      }
+    },
+    {
+      "forgetting_rate": 1.0,
+      "run_ids": {
+        "massed": "20260908T122725_calculus_spacing_paired_massed_1.0_coupled_65fdf36d",
+        "spaced": "20260908T122727_calculus_spacing_paired_spaced_1.0_coupled_a2be2a28"
+      },
+      "mean_items": {
+        "massed": 44.775,
+        "spaced": 44.6125
+      },
+      "mean_goals_mastered": {
+        "massed": 4.3625,
+        "spaced": 4.45625
+      },
+      "outcomes": {
+        "remediation": {
+          "mean_difference": -1.3877787807814458e-18,
+          "sign_p": 1.0,
+          "ties": 159,
+          "favouring_massed": 0,
+          "favouring_spaced": 1,
+          "rank_biserial": -1.0
+        },
+        "gain": {
+          "mean_difference": 0.0,
+          "sign_p": 1.0,
+          "ties": 160,
+          "favouring_massed": 0,
+          "favouring_spaced": 0,
+          "rank_biserial": 0.0
+        },
+        "goals_mastered": {
+          "mean_difference": -0.09375,
+          "sign_p": 0.005924612283706665,
+          "ties": 133,
+          "favouring_massed": 6,
+          "favouring_spaced": 21,
+          "rank_biserial": -0.5555555555555556
+        },
+        "distance_to_goal": {
+          "mean_difference": 0.00625,
+          "sign_p": 0.8776143287523154,
+          "ties": 118,
+          "favouring_massed": 22,
+          "favouring_spaced": 20,
+          "rank_biserial": 0.04761904761904767
+        }
+      }
+    }
+  ]
+}
