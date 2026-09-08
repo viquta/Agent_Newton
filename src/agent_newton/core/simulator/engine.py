@@ -191,6 +191,10 @@ class SimulatedLearner:
         many times the item has been given before. Both enter the draw, so
         neither a retry nor a later revisit repeats an earlier outcome.
         """
+        # Before the step, so the step reflects what was just lost rather than
+        # reporting it one turn late.
+        self._maybe_forget()
+
         applicable = sorted(m for m in item.probes if self._profile.holds(m))
 
         for misconception_id in applicable:
@@ -217,7 +221,70 @@ class SimulatedLearner:
 
             return SimulatedStep(response=wrong, fired=misconception_id, correct=False)
 
+        slipped = self._slip(item, repetition, attempt)
+        if slipped is not None:
+            return slipped
+
         return SimulatedStep(response=item.answer, fired=None, correct=True)
+
+    def _maybe_forget(self) -> None:
+        """Advance the learner's clock, and give ground back on the beat.
+
+        The clock advances whatever the dials say, because it costs nothing and
+        a counter that only runs when a feature is on is a counter that reads
+        differently depending on the feature.
+        """
+        self._profile.t += 1
+        period = self._config.forgetting_period
+        if period <= 0 or self._config.forgetting_rate <= 0.0:
+            return
+        if self._profile.t % period == 0:
+            self._profile.forget(self._config.forgetting_rate)
+
+    def _slip(self, item: Item, repetition: int, attempt: int) -> SimulatedStep | None:
+        """A wrong step that no misconception of theirs produced, or ``None``.
+
+        Reached only when nothing the learner holds has fired, so a slip is
+        error on a step they would otherwise have got right — which is what
+        ``BKTConfig.p_slip`` already assumes of them and the generator could not
+        produce.
+
+        ⚠️ **The response comes from a misconception they do not hold, and the
+        step carries no injected label.** Both halves matter. A plausible wrong
+        answer is needed or the verifier has nothing to mark wrong; drawing it
+        from one they *do* hold would be indistinguishable from that bug firing
+        and would corrupt the ground truth the diagnostic is scored against.
+        ``SimulatedStep.label`` already reads a step like this as
+        ``unlabelled-error``.
+
+        The draw is keyed like every other, so both arms slip on the same step.
+        """
+        rate = self._config.slip_rate
+        if rate <= 0.0:
+            return None
+        if _roll(
+            self._profile.seed,
+            self._profile.learner_id,
+            item.id,
+            repetition,
+            attempt,
+            "__slip__",
+        ) >= rate:
+            return None
+
+        for misconception_id in sorted(
+            m for m in item.probes if not self._profile.holds(m)
+        ):
+            rule = self._domain.buggy_rule(misconception_id)
+            if rule is None:
+                continue
+            wrong = rule.apply(item)
+            if wrong is None:
+                continue
+            return SimulatedStep(response=wrong, fired=None, correct=False)
+        # Nothing on this item can produce a wrong answer that is not already
+        # theirs. The slip is spent rather than borrowed from a held one.
+        return None
 
     def reflect(self, item: Item, prompt: str) -> str | None:  # noqa: ARG002
         """A simulated learner has nothing to say.
@@ -270,7 +337,9 @@ class SimulatedLearner:
         if targeted_misconception is None:
             return False
         return self._profile.remediate(
-            targeted_misconception, self._efficacy(targeted_misconception)
+            targeted_misconception,
+            self._efficacy(targeted_misconception),
+            self._config.remediation_curve,
         )
 
     def _efficacy(self, misconception_id: str) -> float:

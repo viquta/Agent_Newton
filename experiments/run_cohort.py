@@ -106,6 +106,7 @@ def run(config: Config) -> dict:
             o.distance_to_goal for o in outcomes if o.distance_to_goal is not None
         ),
         "diagnostic_accuracy": _diagnostic_accuracy(outcomes),
+        "unlabelled_errors": _unlabelled_errors(outcomes),
         "replans_by_trigger": _triggers(outcomes),
         "suppressed_triggers": sum(o.suppressed for o in outcomes),
         "per_learner": [
@@ -150,11 +151,35 @@ def _diagnostic_accuracy(outcomes) -> float | None:
     None when nothing was diagnosed. Meaningless for an oracle by construction,
     which is the point of reporting it: it should read 1.0 there, and anything
     else means the ground-truth channel is wired wrongly.
+
+    ⚠️ **Steps with no injected label are counted, not scored** — see
+    :func:`_unlabelled_errors`. A step no misconception produced is not a
+    measurement of the diagnostic: there is no right answer for it to have
+    given, so scoring it would charge the diagnostic for the absence of a
+    question. This is the same distinction ``UNPARSEABLE`` draws on the other
+    side of the loop, where a step the verifier could not read updates no
+    estimate but is still counted.
+
+    Today this changes nothing, because a simulated step with no label is a step
+    the learner got right and so is never diagnosed. It binds once a learner can
+    err without holding a bug, and it already applies to a human, who has no
+    injected label on any step at all.
     """
-    pairs = [pair for o in outcomes for pair in o.diagnoses]
+    pairs = [
+        pair for o in outcomes for pair in o.diagnoses if pair[0] is not None
+    ]
     if not pairs:
         return None
     return sum(1 for injected, inferred in pairs if injected == inferred) / len(pairs)
+
+
+def _unlabelled_errors(outcomes) -> int:
+    """Diagnosed steps that carried no injected label, and so were not scored.
+
+    Reported beside the accuracy rather than folded into it, so a rate that
+    excludes them cannot quietly hide how many there were.
+    """
+    return sum(1 for o in outcomes for pair in o.diagnoses if pair[0] is None)
 
 
 def main() -> None:
