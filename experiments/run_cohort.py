@@ -13,6 +13,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from typing import Callable
 
 from agent_newton.config import Config
 from agent_newton.core.orchestration.session import build_session
@@ -29,7 +30,19 @@ def learner_ids(config: Config) -> list[str]:
     return [f"L{n:04d}" for n in range(config.cohort.n_learners)]
 
 
-def run(config: Config) -> dict:
+def run(config: Config, per_learner: Callable[[str, Config], Config] | None = None) -> dict:
+    """One cohort. ``per_learner`` may vary the config learner by learner.
+
+    ⚠️ **None is today**, and the hook exists for one thing: a cohort whose
+    learners are not all the same kind. It must be a pure function of the learner
+    id, or the two arms stop being the same population and the pairing the whole
+    comparison rests on is gone.
+
+    It cannot change what a learner *is* — ``sample_profile`` draws from
+    ``misconceptions_per_learner`` and ``p_fire_range`` alone, and a mixed cohort
+    that moved those would draw different people rather than the same people
+    behaving differently.
+    """
     domain = registry.load_domain(config.domain)
     run_id, run_dir = new_run_dir(config)
     setup_logging(run_dir)
@@ -49,7 +62,8 @@ def run(config: Config) -> dict:
 
     outcomes = []
     for learner_id in learner_ids(config):
-        session = build_session(learner_id, config.seed, domain, config)
+        settings = config if per_learner is None else per_learner(learner_id, config)
+        session = build_session(learner_id, config.seed, domain, settings)
         outcome = session.run()
         outcomes.append(outcome)
         log_event(
