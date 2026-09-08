@@ -1,4 +1,8 @@
-"""A human-in-the-loop session, with the blackboard visible while it runs.
+"""
+The demo is the front-end observer for the real session.
+
+
+A human-in-the-loop session, with the blackboard visible while it runs.
 
     uv run agent-newton demo --config experiments/configs/demo.yaml
 
@@ -35,7 +39,11 @@ from rich.table import Table
 from rich.text import Text
 
 from agent_newton.config import Config
-from agent_newton.core.agents.base import Diagnosis, Hint, Resumable
+from agent_newton.core.agents.base import Diagnosis, Hint, Resumable 
+    #vh_note: why do i need these from base.py?
+    #   demo hooks into session events that carry these objects, 
+    #   so it needs their types to render them and to make the 
+    #   snapshot decision correctly.
 from agent_newton.core.orchestration.session import (
     StopTraining,
     Watching,

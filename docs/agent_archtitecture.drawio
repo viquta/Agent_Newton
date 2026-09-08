@@ -1,0 +1,90 @@
+<mxfile host="65bd71144e">
+    <diagram id="JwlikoVSioMY8vlKte19" name="Page-1">
+        <mxGraphModel dx="1527" dy="1694" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="5" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="6">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="8">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="10">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="12">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="15" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="14">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="17" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="16">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="19" value="" style="edgeStyle=none;html=1;" edge="1" parent="1" source="2" target="18">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="src/agent_newton/core" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="100" y="25" width="160" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="/agents" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="370" y="80" width="160" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="arbitration" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="-40" y="370" width="160" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="8" value="/evaluation" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="70" y="460" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="/orchestration" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="-190" y="190" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="/pedagogy" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="-210" y="110" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" value="/recal" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="-180" y="40" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="16" value="/simulator" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="-210" y="430" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="18" value="/state" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="-90" y="520" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <object placeholders="1" c4Name="base.py" c4Type="Component" c4Technology="The protocol definitions (abstract interfaces) for every agent role. And 2 dataclasses (diagnosis and Hint) which are concrete obj that flow out of agents during a session" c4Description="It&#39;s a pure type declarations file — it never executes. It defines the contracts that bind the whole architecture together without depending on any implementation." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="20">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+                        <mxGeometry x="630" y="355" width="240" height="120" as="geometry"/>
+                    </mxCell>
+                </object>
+                <object placeholders="1" c4Name="demo.py" c4Type="Component" c4Technology="rich, json, and other custom modules (see file)" c4Description="The demo is the front-end observer for the real session — it hooks into session events that carry these objects, so it needs their types to render them and to make the snapshot decision correctly." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="21">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+                        <mxGeometry x="1220" y="180" width="240" height="120" as="geometry"/>
+                    </mxCell>
+                </object>
+                <mxCell id="24" style="edgeStyle=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="21" target="20">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="25" value="imports from base.py:&amp;nbsp;&lt;span style=&quot;font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; white-space: pre; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: rgb(38, 127, 153);&quot;&gt;Diagnosis&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; white-space: pre; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212));&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; white-space: pre; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: rgb(38, 127, 153);&quot;&gt;Hint (classes)&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; white-space: pre; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212));&quot;&gt;,and &lt;/span&gt;&lt;span style=&quot;font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; white-space: pre; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212)); color: rgb(38, 127, 153);&quot;&gt;Resumable (a protocol)&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; white-space: pre; background-color: light-dark(#ffffff, var(--ge-dark-color, #121212));&quot;&gt; &lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="24">
+                    <mxGeometry x="-0.1764" y="-2" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="26" style="edgeStyle=none;html=1;entryX=0.529;entryY=0.025;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="4" target="20">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="27" value="&lt;font style=&quot;font-size: 10px;&quot;&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; text-align: start; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt;gets the Protocol for what it means &lt;/span&gt;&lt;em style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; text-align: start; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt;to be&lt;/em&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; text-align: start; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt; an agent in this system&lt;/span&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="26">
+                    <mxGeometry x="-0.2773" y="1" relative="1" as="geometry">
+                        <mxPoint x="1" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="28" value="Goal of this drawio: every explanation will live here, and I will be the one who writes (vh)&lt;div&gt;I could use parts of these for making diagrams later when writing the thesis.&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="-205" y="-77" width="490" height="40" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

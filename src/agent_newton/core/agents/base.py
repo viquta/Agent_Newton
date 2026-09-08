@@ -1,15 +1,24 @@
 """Agent interfaces.
 
+
+What is base.py's role?
+    It's a pure type declarations file — it never executes. It holds two things:
+    The Protocol definitions (abstract interfaces) for every agent role: Tutor, Diagnostic, ConfusionDetector, Resumable, OracleAccess, Planner.
+    Two dataclasses — Diagnosis and Hint — which are the concrete objects that flow out of agents and through the session.
+    It defines the contracts that bind the whole architecture together without depending on any implementation.
+
+
 Every role has a model-backed implementation and at least one model-free
-counterpart. Those counterparts are run conditions, not test doubles: the oracle
+counterpart (vh_note: why?). Those counterparts are run conditions, not test doubles: the oracle
 and noised-oracle diagnostics are the comparison conditions the error-propagation
 analysis needs, and a fully model-free configuration runs the whole pipeline
 without inference.
 
 Agents never call one another. Each receives a view of the shared state and
-returns a decision; the session writes the consequences back.
+returns a decision; the session writes the consequences back. vh_note: why is this explanation relevant here in this file?
 
 vh comment: note to self: base.py never executes, it just has type declarations 
+vh_comment: why is Diagnosis, Hint, Resumable used in the demo.py?
 """
 
 from __future__ import annotations
