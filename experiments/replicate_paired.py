@@ -3,12 +3,22 @@
     uv run python experiments/replicate_paired.py \
         --config experiments/configs/calculus.yaml --n 160
 
-The declared primary outcome reads +0.0259 on the confirmatory seed, while the
-pilot puts the same effect at less than half that and gives N = 160 a power of
-0.26. An estimate more than twice the pilot's, obtained at a quarter of the power
-it was sized for, is the winner's-curse signature: where power is low, the
-estimates that clear significance are the ones that overshot. As it stands the
-significant result cannot be told apart from a favourable draw.
+**Why this exists.** The declared primary outcome reads +0.0259 on the
+confirmatory seed, while the pilot puts the same effect at less than half that
+and gives N = 160 far less power than it was sized for. An estimate more than
+twice the pilot's, obtained well below the intended power, is the winner's-curse
+signature: where power is low, the estimates that clear significance are the ones
+that overshot. On that reading the significant result could not be told apart
+from a favourable draw, and a single run cannot settle it about itself.
+
+⚠️ **It has since run, and that reading did not survive it.** Across the ten
+seeds the estimate is stable — median +0.0236, sd 0.0061 — and the confirmatory
+seed is an ordinary member of the set rather than an overshoot, while the *pilot*
+is the low outlier, roughly two standard deviations below their mean. So the
+pessimism in the power figure was inherited from one pilot pool's own draw rather
+than measured from the design. The figures are in
+``results/replication_paired/summary.json``; the paragraph above is kept because
+it is the reasoning this check was built to test, not a live claim.
 
 **This is a replication check on an estimate, not a new test of the hypothesis.**
 It cannot make the primary powered — ten runs of an underpowered design is still
@@ -25,9 +35,11 @@ Three commitments, all declared here rather than decided afterwards:
    outcome.
 2. **The pre-registered quantity is the median and spread of the framing-A
    remediation difference** — deliberately *not* a count of how many seeds clear
-   correction. "k of 10 were significant" would re-import the very lottery this
-   exists to characterise: at 143 ties out of 160, significance at 0.26 power is
-   close to a coin toss, while the point estimate behaves.
+   correction. That choice was fixed before the run and stands whatever the count
+   turns out to be: at 143 ties out of 160 the sign test rests on a handful of
+   pairs, so the count is the noisier of the two readings even when it comes out
+   high, while the point estimate behaves. ``seeds_clearing_correction`` is
+   reported for completeness and is not the headline.
 3. **The prediction was written down first**, in the private handover, before
    this file had been run once.
 
