@@ -46,7 +46,7 @@ class MisconceptionProfile:
     #: Steps this learner has taken, advanced by the engine. The only clock the
     #: generator has: everything else about a step is a function of the profile
     #: and a seeded roll, with no notion of when it happened.
-    t: int = 0
+    t: int = 0 #clock field
 
     def __post_init__(self) -> None:
         if not self.initial:
@@ -61,7 +61,8 @@ class MisconceptionProfile:
     def remediate(
         self, misconception_id: str, factor: float, curve: str = "exponential"
     ) -> bool:
-        """Weaken one misconception. Returns whether it applied.
+        """
+        Weaken one misconception. Returns whether it applied.
 
         This is the only route by which a learner improves, and it is why
         diagnostic accuracy has consequences: a hint aimed at a misconception
@@ -77,6 +78,17 @@ class MisconceptionProfile:
         differ about, and separate only afterwards. That is deliberate: it makes
         the shape the whole difference between them, rather than the shape and a
         different first step.
+        vh_comment: for example:
+        hint	| exponential	| linear
+         1	    | 0.44000	    | 0.44000
+         2	    | 0.24200	    | 0.08000
+         3	    | 0.13310	    | 0.00000
+         n      | never zero	| hits zero 
+
+        They agree exactly at hint 1 
+            — because when firing == initial, initial × f and initial − (1−f)×initial are the same number. 
+        After that they part. 
+        Exponential is 3.3e-11 at hint 40, never zero; linear hits zero at hint 3 and the max(0.0, …) holds it there. 
         """
         if misconception_id not in self.firing:
             return False
@@ -105,13 +117,19 @@ class MisconceptionProfile:
         * **Only what was taught can be forgotten.** An untouched misconception
           is already at ``initial`` and has no gap to give back, so "forgets some
           of it" falls out of the arithmetic rather than needing its own draw.
+          vh_comment: sawtooth
+
         """
         if rate <= 0.0:
             return False
         moved = False
         for misconception_id, current in self.firing.items():
-            start = self.initial.get(misconception_id, current)
-            gap = start - current
+            start = self.initial.get(misconception_id, current) # how likely it was BEFORE any teaching
+                                                        #current is how likely it is NOW, after teaching
+            gap = start - current # how much teaching has achieved so far
+                    #start --> how likely it was before you taught anything
+                    #Teaching pushes current down. Forgetting pushes it back up toward start.
+                    #So gap is literally "the ground teaching has gained."
             if gap > 0.0:
                 self.firing[misconception_id] = current + rate * gap
                 moved = True
