@@ -1,0 +1,337 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260925,
+  "kinds": {
+    "basic": {},
+    "linear": {
+      "remediation_curve": "linear"
+    },
+    "forgetful": {
+      "forgetting_rate": 0.5,
+      "forgetting_period": 10
+    },
+    "slipper": {
+      "slip_rate": 0.1
+    }
+  },
+  "standing": "exploratory \u2014 face validity, not a result",
+  "arms": {
+    "coupled": "20260908T125219_calculus_mixed_coupled_57b56a7c",
+    "decoupled": "20260908T125223_calculus_mixed_decoupled_f3ce1269"
+  },
+  "dose_matched_run_id": "20260908T125225_calculus_mixed_dose_coupled_052568b0",
+  "dose_matched_budget": 32,
+  "mean_items": {
+    "coupled": 44.59375,
+    "decoupled": 32.48125
+  },
+  "assignment": {
+    "basic": 34,
+    "linear": 38,
+    "forgetful": 53,
+    "slipper": 35
+  },
+  "cohort_framing_a": [
+    {
+      "outcome": "remediation",
+      "mean_difference": 0.012097841057180597,
+      "n_pairs": 160,
+      "ties": 104,
+      "favouring_coupled": 15,
+      "favouring_decoupled": 41,
+      "rank_biserial": -0.4642857142857143,
+      "sign_p": 0.0006855641563783821,
+      "holm_p": 0.0013711283127567642,
+      "significant": true
+    },
+    {
+      "outcome": "gain",
+      "mean_difference": 0.0004166666666666666,
+      "n_pairs": 160,
+      "ties": 155,
+      "favouring_coupled": 3,
+      "favouring_decoupled": 2,
+      "rank_biserial": 0.19999999999999996,
+      "sign_p": 1.0,
+      "holm_p": 1.0,
+      "significant": false
+    },
+    {
+      "outcome": "goals_mastered",
+      "mean_difference": 3.65625,
+      "n_pairs": 160,
+      "ties": 0,
+      "favouring_coupled": 160,
+      "favouring_decoupled": 0,
+      "rank_biserial": 1.0,
+      "sign_p": 1.3684555315672042e-48,
+      "holm_p": 5.473822126268817e-48,
+      "significant": true
+    },
+    {
+      "outcome": "distance_to_goal",
+      "mean_difference": -5.71875,
+      "n_pairs": 160,
+      "ties": 0,
+      "favouring_coupled": 0,
+      "favouring_decoupled": 160,
+      "rank_biserial": -1.0,
+      "sign_p": 1.3684555315672042e-48,
+      "holm_p": 5.473822126268817e-48,
+      "significant": true
+    }
+  ],
+  "cohort_framing_b": [
+    {
+      "outcome": "remediation",
+      "mean_difference": -0.08144455225604011,
+      "n_pairs": 160,
+      "ties": 72,
+      "favouring_coupled": 22,
+      "favouring_decoupled": 66,
+      "rank_biserial": -0.5,
+      "sign_p": 2.8793907495367242e-06,
+      "holm_p": 5.7587814990734485e-06,
+      "significant": true
+    },
+    {
+      "outcome": "gain",
+      "mean_difference": -0.010416666666666666,
+      "n_pairs": 160,
+      "ties": 126,
+      "favouring_coupled": 5,
+      "favouring_decoupled": 29,
+      "rank_biserial": -0.7058823529411764,
+      "sign_p": 3.8558151572942734e-05,
+      "holm_p": 3.8558151572942734e-05,
+      "significant": true
+    },
+    {
+      "outcome": "goals_mastered",
+      "mean_difference": 1.43125,
+      "n_pairs": 160,
+      "ties": 20,
+      "favouring_coupled": 135,
+      "favouring_decoupled": 5,
+      "rank_biserial": 0.9285714285714286,
+      "sign_p": 6.209695184944958e-34,
+      "holm_p": 1.8629085554834874e-33,
+      "significant": true
+    },
+    {
+      "outcome": "distance_to_goal",
+      "mean_difference": -4.9125,
+      "n_pairs": 160,
+      "ties": 0,
+      "favouring_coupled": 0,
+      "favouring_decoupled": 160,
+      "rank_biserial": -1.0,
+      "sign_p": 1.3684555315672042e-48,
+      "holm_p": 5.473822126268817e-48,
+      "significant": true
+    }
+  ],
+  "by_kind": {
+    "basic": [
+      {
+        "outcome": "remediation",
+        "mean_difference": 0.006383613229395189,
+        "n_pairs": 34,
+        "ties": 33,
+        "favouring_coupled": 1,
+        "favouring_decoupled": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 1.0,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      {
+        "outcome": "gain",
+        "mean_difference": 0.0,
+        "n_pairs": 34,
+        "ties": 34,
+        "favouring_coupled": 0,
+        "favouring_decoupled": 0,
+        "rank_biserial": 0.0,
+        "sign_p": 1.0,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      {
+        "outcome": "goals_mastered",
+        "mean_difference": 4.0,
+        "n_pairs": 34,
+        "ties": 0,
+        "favouring_coupled": 34,
+        "favouring_decoupled": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 1.1641532182693481e-10,
+        "holm_p": 4.656612873077393e-10,
+        "significant": true
+      },
+      {
+        "outcome": "distance_to_goal",
+        "mean_difference": -5.647058823529412,
+        "n_pairs": 34,
+        "ties": 0,
+        "favouring_coupled": 0,
+        "favouring_decoupled": 34,
+        "rank_biserial": -1.0,
+        "sign_p": 1.1641532182693481e-10,
+        "holm_p": 4.656612873077393e-10,
+        "significant": true
+      }
+    ],
+    "linear": [
+      {
+        "outcome": "remediation",
+        "mean_difference": 0.05589275309165702,
+        "n_pairs": 38,
+        "ties": 32,
+        "favouring_coupled": 6,
+        "favouring_decoupled": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 0.03125,
+        "holm_p": 0.0625,
+        "significant": false
+      },
+      {
+        "outcome": "gain",
+        "mean_difference": 0.0035087719298245606,
+        "n_pairs": 38,
+        "ties": 36,
+        "favouring_coupled": 2,
+        "favouring_decoupled": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 0.5,
+        "holm_p": 0.5,
+        "significant": false
+      },
+      {
+        "outcome": "goals_mastered",
+        "mean_difference": 3.973684210526316,
+        "n_pairs": 38,
+        "ties": 0,
+        "favouring_coupled": 38,
+        "favouring_decoupled": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 7.275957614183426e-12,
+        "holm_p": 2.9103830456733704e-11,
+        "significant": true
+      },
+      {
+        "outcome": "distance_to_goal",
+        "mean_difference": -6.078947368421052,
+        "n_pairs": 38,
+        "ties": 0,
+        "favouring_coupled": 0,
+        "favouring_decoupled": 38,
+        "rank_biserial": -1.0,
+        "sign_p": 7.275957614183426e-12,
+        "holm_p": 2.9103830456733704e-11,
+        "significant": true
+      }
+    ],
+    "forgetful": [
+      {
+        "outcome": "remediation",
+        "mean_difference": -0.018540868449750083,
+        "n_pairs": 53,
+        "ties": 8,
+        "favouring_coupled": 5,
+        "favouring_decoupled": 40,
+        "rank_biserial": -0.7777777777777778,
+        "sign_p": 7.878384167270269e-08,
+        "holm_p": 1.5756768334540538e-07,
+        "significant": true
+      },
+      {
+        "outcome": "gain",
+        "mean_difference": -0.0012578616352201255,
+        "n_pairs": 53,
+        "ties": 52,
+        "favouring_coupled": 0,
+        "favouring_decoupled": 1,
+        "rank_biserial": -1.0,
+        "sign_p": 1.0,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      {
+        "outcome": "goals_mastered",
+        "mean_difference": 3.830188679245283,
+        "n_pairs": 53,
+        "ties": 0,
+        "favouring_coupled": 53,
+        "favouring_decoupled": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 2.220446049250313e-16,
+        "holm_p": 8.881784197001252e-16,
+        "significant": true
+      },
+      {
+        "outcome": "distance_to_goal",
+        "mean_difference": -5.6415094339622645,
+        "n_pairs": 53,
+        "ties": 0,
+        "favouring_coupled": 0,
+        "favouring_decoupled": 53,
+        "rank_biserial": -1.0,
+        "sign_p": 2.220446049250313e-16,
+        "holm_p": 8.881784197001252e-16,
+        "significant": true
+      }
+    ],
+    "slipper": [
+      {
+        "outcome": "remediation",
+        "mean_difference": 0.016495803705807055,
+        "n_pairs": 35,
+        "ties": 31,
+        "favouring_coupled": 3,
+        "favouring_decoupled": 1,
+        "rank_biserial": 0.5,
+        "sign_p": 0.625,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      {
+        "outcome": "gain",
+        "mean_difference": 0.0,
+        "n_pairs": 35,
+        "ties": 33,
+        "favouring_coupled": 1,
+        "favouring_decoupled": 1,
+        "rank_biserial": 0.0,
+        "sign_p": 1.0,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      {
+        "outcome": "goals_mastered",
+        "mean_difference": 2.7142857142857144,
+        "n_pairs": 35,
+        "ties": 0,
+        "favouring_coupled": 35,
+        "favouring_decoupled": 0,
+        "rank_biserial": 1.0,
+        "sign_p": 5.820766091346741e-11,
+        "holm_p": 2.3283064365386963e-10,
+        "significant": true
+      },
+      {
+        "outcome": "distance_to_goal",
+        "mean_difference": -5.514285714285714,
+        "n_pairs": 35,
+        "ties": 0,
+        "favouring_coupled": 0,
+        "favouring_decoupled": 35,
+        "rank_biserial": -1.0,
+        "sign_p": 5.820766091346741e-11,
+        "holm_p": 2.3283064365386963e-10,
+        "significant": true
+      }
+    ]
+  }
+}

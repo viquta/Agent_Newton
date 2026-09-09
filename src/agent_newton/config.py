@@ -28,6 +28,7 @@ from agent_newton.core.state.schema import Emphasis
 Provider = Literal["ollama", "anthropic", "openai"]
 Arm = Literal["coupled", "decoupled"]
 SurfaceMode = Literal["symbolic", "llm"]
+RemediationCurve = Literal["exponential", "linear"]
 #: Who answers. ``human`` puts a person in the same loop the cohorts run.
 LearnerKind = Literal["simulated", "human"]
 
@@ -273,6 +274,64 @@ class SimulatorConfig(BaseModel):
     #: the claim the ZPD band operationalises on the planning side and nothing
     #: represented on the learning side.
     prerequisite_dependence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    #: How much of what a hint achieved is given back at a forgetting event, in
+    #: [0, 1]. **Zero is today**, and zero must reproduce every measured number
+    #: exactly — same contract as ``prerequisite_dependence``, same test.
+    #:
+    #: The gap it closes: a step is a function of the profile and a seeded roll,
+    #: so nothing in the generator depends on *when* anything happened. Only a
+    #: human can currently forget, which leaves any study of timing without a
+    #: subject. A policy about *when* to reconsider a plan has nothing to act on
+    #: in a learner who never changes except by being taught.
+    #:
+    #: At an event a misconception moves back toward what it started at:
+    #: ``firing += rate * (initial - firing)``. That is the form
+    #: ``state/decay.py :: relax`` already uses for belief, applied to the
+    #: learner instead. It can never exceed ``initial``, so ``remediation_ratio``
+    #: stays in [0, 1] and the primary outcome keeps its range.
+    #:
+    #: Only what was taught can be forgotten — an untouched misconception has no
+    #: gap to give back — so "forgets some of it" falls out rather than needing
+    #: its own draw.
+    #:
+    #: ⚠️ **Symmetric between the arms by construction.** Events are keyed on the
+    #: learner, not on the schedule, so both arms meet the identical forgetting
+    #: pattern. Neither can cause or avoid it; they can only respond, and whether
+    #: either does is the measurement rather than the design.
+    forgetting_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    #: Steps between forgetting events. Zero is off, and off is today.
+    #: Separate from the rate so "how often" and "how much" can be moved
+    #: independently — a learner who forgets a little often is not the same as
+    #: one who forgets a lot rarely, and the two would otherwise be confounded.
+    forgetting_period: int = Field(default=0, ge=0)
+
+    #: Chance a learner errs on a step no misconception of theirs produced, in
+    #: [0, 1]. **Zero is today.**
+    #:
+    #: The gap it closes: ``BKTConfig.p_slip`` says the *belief* model already
+    #: accounts for careless error, while the generator cannot produce one — a
+    #: simulated learner is wrong only when a bug fires. It also gives
+    #: ``cohort.max_visits_per_concept`` a subject, since without it no learner
+    #: can be stuck on a concept they have been taught.
+    #:
+    #: The response is drawn from a buggy rule for a misconception the learner
+    #: does **not** hold, and the step carries no injected label. Drawing from
+    #: one they hold would be indistinguishable from that bug firing and would
+    #: corrupt the ground truth the diagnostic is scored against.
+    slip_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    #: How a correct hint reduces a firing probability. ``exponential`` is
+    #: today: ``p *= remediation_factor``, so each hint takes a constant
+    #: *fraction* and the probability approaches zero without reaching it.
+    #: ``linear`` subtracts a constant instead, so each hint takes the same
+    #: *amount* and a misconception can be finished off.
+    #:
+    #: Which of the two describes practice is a long-running question in the
+    #: learning-curve literature, and the artifact has no way to prefer one. It
+    #: is here so a result can be shown to survive the choice, or shown not to.
+    remediation_curve: RemediationCurve = "exponential"
 
 
 class BKTConfig(BaseModel):
@@ -538,9 +597,30 @@ class DecayConfig(BaseModel):
     #: disables decay entirely.
     half_life_days: float | None = Field(default=None, gt=0.0)
 
+    #: Practice items between applications of that same decay *within* one
+    #: session. None is today, and today the belief ages only across a gap.
+    #:
+    #: The gap it closes: a learner who forgets within a session leaves the
+    #: model believing what was true earlier, and it has no way to find out. The
+    #: coupled arm then routes on an estimate that is stale by construction,
+    #: while an arm that never reads the estimate cannot be misled by it — so a
+    #: comparison between them would be measuring the belief model rather than
+    #: the routing. This is what makes that testable rather than arguable.
+    #:
+    #: Each application ages the belief by one day, so ``half_life_days`` sets
+    #: the strength: at 1.0 the posterior closes half the distance to the prior
+    #: every period, which is the same shape ``simulator.forgetting_rate`` gives
+    #: the learner. Matching the two is how the model is kept as stale as the
+    #: learner, and no staler.
+    within_session_period: int | None = Field(default=None, ge=1)
+
     @property
     def enabled(self) -> bool:
         return self.half_life_days is not None
+
+    @property
+    def ages_within_a_session(self) -> bool:
+        return self.enabled and self.within_session_period is not None
 
 
 class ArbitrationConfig(BaseModel):

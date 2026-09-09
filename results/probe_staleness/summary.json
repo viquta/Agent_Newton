@@ -1,0 +1,299 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260922,
+  "forgetting": {
+    "forgetting_rate": 0.5,
+    "forgetting_period": 10
+  },
+  "decay": {
+    "half_life_days": 1.0,
+    "within_session_period": 10
+  },
+  "standing": "exploratory",
+  "note": "coupled minus decoupled, per condition",
+  "conditions": {
+    "forgetting_only": {
+      "simulator": {
+        "forgetting_rate": 0.5,
+        "forgetting_period": 10
+      },
+      "decay": {},
+      "arms": {
+        "coupled": "20260908T123223_calculus_forgetting_only_paired_forgetting_only_coupled_2dd5d499",
+        "decoupled": "20260908T123226_calculus_forgetting_only_paired_forgetting_only_decoupled_e9359266"
+      },
+      "dose_matched_run_id": "20260908T123229_calculus_forgetting_only_paired_forgetting_only_dosematched_coupled_2147a910",
+      "dose_matched_budget": 32,
+      "mean_items": {
+        "coupled": 44.7875,
+        "decoupled": 32.725
+      },
+      "framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.0168008471327227,
+          "ties": 19,
+          "favouring_coupled": 36,
+          "favouring_decoupled": 105,
+          "rank_biserial": -0.4893617021276596,
+          "sign_p": 5.079870071859821e-09,
+          "holm_p": 1.0159740143719641e-08,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.002916666666666666,
+          "ties": 147,
+          "favouring_coupled": 3,
+          "favouring_decoupled": 10,
+          "rank_biserial": -0.5384615384615384,
+          "sign_p": 0.09228515625,
+          "holm_p": 0.09228515625,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.63125,
+          "ties": 0,
+          "favouring_coupled": 160,
+          "favouring_decoupled": 0,
+          "rank_biserial": 1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.76875,
+          "ties": 0,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 160,
+          "rank_biserial": -1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ],
+      "framing_b": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.012919361812024919,
+          "sign_p": 0.24488359344375704,
+          "holm_p": 0.47576904296875,
+          "significant": false
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.0024999999999999996,
+          "sign_p": 0.237884521484375,
+          "holm_p": 0.47576904296875,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 1.41875,
+          "sign_p": 4.484155085839415e-44,
+          "holm_p": 1.3452465257518244e-43,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.2125,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ]
+    },
+    "forgetting_and_decay": {
+      "simulator": {
+        "forgetting_rate": 0.5,
+        "forgetting_period": 10
+      },
+      "decay": {
+        "half_life_days": 1.0,
+        "within_session_period": 10
+      },
+      "arms": {
+        "coupled": "20260908T123231_calculus_forgetting_and_decay_paired_forgetting_and_decay_coupled_31b0d5cd",
+        "decoupled": "20260908T123233_calculus_forgetting_and_decay_paired_forgetting_and_decay_decoupled_97beda5f"
+      },
+      "dose_matched_run_id": "20260908T123236_calculus_forgetting_and_decay_paired_forgetting_and_decay_dosematched_coupled_16356cb5",
+      "dose_matched_budget": 32,
+      "mean_items": {
+        "coupled": 45.0,
+        "decoupled": 32.725
+      },
+      "framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.0479975042464532,
+          "ties": 3,
+          "favouring_coupled": 30,
+          "favouring_decoupled": 127,
+          "rank_biserial": -0.6178343949044586,
+          "sign_p": 2.09110444002391e-15,
+          "holm_p": 6.27331332007173e-15,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.002916666666666666,
+          "ties": 128,
+          "favouring_coupled": 13,
+          "favouring_decoupled": 19,
+          "rank_biserial": -0.1875,
+          "sign_p": 0.37708558747544885,
+          "holm_p": 0.37708558747544885,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": -0.18125,
+          "ties": 131,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 29,
+          "rank_biserial": -1.0,
+          "sign_p": 3.725290298461914e-09,
+          "holm_p": 7.450580596923828e-09,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -1.975,
+          "ties": 0,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 160,
+          "rank_biserial": -1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ],
+      "framing_b": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.03955279213408382,
+          "sign_p": 1.7261206373939249e-09,
+          "holm_p": 5.178361912181774e-09,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": 0.0,
+          "sign_p": 1.0,
+          "holm_p": 1.0,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": -0.18125,
+          "sign_p": 3.725290298461914e-09,
+          "holm_p": 7.450580596923828e-09,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -0.925,
+          "sign_p": 5.605193857299268e-45,
+          "holm_p": 2.2420775429197073e-44,
+          "significant": true
+        }
+      ]
+    },
+    "decay_only": {
+      "simulator": {},
+      "decay": {
+        "half_life_days": 1.0,
+        "within_session_period": 10
+      },
+      "arms": {
+        "coupled": "20260908T123237_calculus_decay_only_paired_decay_only_coupled_91073a1a",
+        "decoupled": "20260908T123240_calculus_decay_only_paired_decay_only_decoupled_e991e314"
+      },
+      "dose_matched_run_id": "20260908T123242_calculus_decay_only_paired_decay_only_dosematched_coupled_a9960f78",
+      "dose_matched_budget": 32,
+      "mean_items": {
+        "coupled": 45.0,
+        "decoupled": 32.40625
+      },
+      "framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.30189074382516967,
+          "ties": 9,
+          "favouring_coupled": 19,
+          "favouring_decoupled": 132,
+          "rank_biserial": -0.7483443708609272,
+          "sign_p": 5.175862923123505e-22,
+          "holm_p": 1.5527588769370515e-21,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.03166666666666666,
+          "ties": 80,
+          "favouring_coupled": 8,
+          "favouring_decoupled": 72,
+          "rank_biserial": -0.8,
+          "sign_p": 5.375095844566712e-14,
+          "holm_p": 1.0750191689133424e-13,
+          "significant": true
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": -0.15625,
+          "ties": 135,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 25,
+          "rank_biserial": -1.0,
+          "sign_p": 5.960464477539063e-08,
+          "holm_p": 5.960464477539063e-08,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -2.0,
+          "ties": 0,
+          "favouring_coupled": 0,
+          "favouring_decoupled": 160,
+          "rank_biserial": -1.0,
+          "sign_p": 1.3684555315672042e-48,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ],
+      "framing_b": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.3142365206785439,
+          "sign_p": 2.829047199141368e-27,
+          "holm_p": 8.487141597424104e-27,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.032499999999999994,
+          "sign_p": 1.647020623262653e-14,
+          "holm_p": 3.294041246525306e-14,
+          "significant": true
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": -0.15625,
+          "sign_p": 5.960464477539063e-08,
+          "holm_p": 5.960464477539063e-08,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -0.98125,
+          "sign_p": 1.0947644252537633e-47,
+          "holm_p": 4.3790577010150533e-47,
+          "significant": true
+        }
+      ]
+    }
+  }
+}

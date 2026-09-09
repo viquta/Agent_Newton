@@ -1,0 +1,370 @@
+{
+  "config": "experiments/configs/calculus.yaml",
+  "n_learners": 160,
+  "seed": 20260924,
+  "period": 10,
+  "outcome": "remediation",
+  "standing": "exploratory",
+  "zero_check": {
+    "dial_absent": 0.027257031024031386,
+    "dial_at_zero": 0.027257031024031386,
+    "drift": 0.0,
+    "tolerance": 1e-12
+  },
+  "points": [
+    {
+      "forgetting_rate": 0.0,
+      "arms": {
+        "coupled": "20260908T124648_calculus_zero_paired_zero_coupled_3d489ef7",
+        "decoupled": "20260908T124651_calculus_zero_paired_zero_decoupled_44312f5d"
+      },
+      "dose_matched_run_id": "20260908T124653_calculus_zero_paired_zero_dose_coupled_dcb31d2d",
+      "dose_matched_budget": 32,
+      "mean_remediation": {
+        "coupled": 0.521398244240332,
+        "decoupled": 0.49414121321630056
+      },
+      "mean_items": {
+        "coupled": 44.6625,
+        "decoupled": 32.19375
+      },
+      "framing_a": {
+        "mean_difference": 0.027257031024031386,
+        "ties": 136,
+        "favouring_coupled": 21,
+        "favouring_decoupled": 3,
+        "rank_biserial": 0.75,
+        "sign_p": 0.0002771615982055664,
+        "holm_p": 0.0005543231964111328,
+        "significant": true
+      },
+      "framing_b": {
+        "mean_difference": -0.12043396817082201,
+        "sign_p": 3.485851300097458e-10,
+        "holm_p": 6.971702600194916e-10,
+        "significant": true
+      },
+      "all_outcomes_framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": 0.027257031024031386,
+          "holm_p": 0.0005543231964111328,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": 0.003749999999999999,
+          "holm_p": 0.01171875,
+          "significant": true
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.78125,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -6.01875,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ]
+    },
+    {
+      "forgetting_rate": 0.1,
+      "arms": {
+        "coupled": "20260908T124656_calculus_r0.1_paired_r0.1_coupled_e1ac481b",
+        "decoupled": "20260908T124658_calculus_r0.1_paired_r0.1_decoupled_a4125856"
+      },
+      "dose_matched_run_id": "20260908T124701_calculus_r0.1_paired_r0.1_dose_coupled_5f3fdb7b",
+      "dose_matched_budget": 32,
+      "mean_remediation": {
+        "coupled": 0.34997731217114453,
+        "decoupled": 0.3549187533934474
+      },
+      "mean_items": {
+        "coupled": 44.675,
+        "decoupled": 32.24375
+      },
+      "framing_a": {
+        "mean_difference": -0.00494144122230294,
+        "ties": 25,
+        "favouring_coupled": 37,
+        "favouring_decoupled": 98,
+        "rank_biserial": -0.45185185185185184,
+        "sign_p": 1.5020945707319435e-07,
+        "holm_p": 3.004189141463887e-07,
+        "significant": true
+      },
+      "framing_b": {
+        "mean_difference": -0.07952409169203054,
+        "sign_p": 0.548502361486737,
+        "holm_p": 0.548502361486737,
+        "significant": false
+      },
+      "all_outcomes_framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.00494144122230294,
+          "holm_p": 3.004189141463887e-07,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.0024999999999999996,
+          "holm_p": 0.26317596435546875,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.775,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -6.0125,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ]
+    },
+    {
+      "forgetting_rate": 0.25,
+      "arms": {
+        "coupled": "20260908T124703_calculus_r0.25_paired_r0.25_coupled_a5d78b4a",
+        "decoupled": "20260908T124706_calculus_r0.25_paired_r0.25_decoupled_7be7c3fa"
+      },
+      "dose_matched_run_id": "20260908T124708_calculus_r0.25_paired_r0.25_dose_coupled_c799e428",
+      "dose_matched_budget": 32,
+      "mean_remediation": {
+        "coupled": 0.18776403954442883,
+        "decoupled": 0.2078633909945889
+      },
+      "mean_items": {
+        "coupled": 44.68125,
+        "decoupled": 32.3375
+      },
+      "framing_a": {
+        "mean_difference": -0.020099351450160046,
+        "ties": 21,
+        "favouring_coupled": 40,
+        "favouring_decoupled": 99,
+        "rank_biserial": -0.4244604316546763,
+        "sign_p": 5.955419961683035e-07,
+        "holm_p": 1.191083992336607e-06,
+        "significant": true
+      },
+      "framing_b": {
+        "mean_difference": -0.03984329109023499,
+        "sign_p": 0.34911516637678036,
+        "holm_p": 0.34911516637678036,
+        "significant": false
+      },
+      "all_outcomes_framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.020099351450160046,
+          "holm_p": 1.191083992336607e-06,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.002916666666666666,
+          "holm_p": 0.143463134765625,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.75625,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.9875,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ]
+    },
+    {
+      "forgetting_rate": 0.5,
+      "arms": {
+        "coupled": "20260908T124710_calculus_r0.5_paired_r0.5_coupled_cf606151",
+        "decoupled": "20260908T124713_calculus_r0.5_paired_r0.5_decoupled_13d439ef"
+      },
+      "dose_matched_run_id": "20260908T124716_calculus_r0.5_paired_r0.5_dose_coupled_f1b60b35",
+      "dose_matched_budget": 32,
+      "mean_remediation": {
+        "coupled": 0.05838572641360249,
+        "decoupled": 0.07002060108539708
+      },
+      "mean_items": {
+        "coupled": 44.68125,
+        "decoupled": 32.5125
+      },
+      "framing_a": {
+        "mean_difference": -0.011634874671794589,
+        "ties": 21,
+        "favouring_coupled": 41,
+        "favouring_decoupled": 98,
+        "rank_biserial": -0.41007194244604317,
+        "sign_p": 1.470616773975367e-06,
+        "holm_p": 2.941233547950734e-06,
+        "significant": true
+      },
+      "framing_b": {
+        "mean_difference": -0.0069287525614270375,
+        "sign_p": 0.6109736899560239,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      "all_outcomes_framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.011634874671794589,
+          "holm_p": 2.941233547950734e-06,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": -0.0008333333333333332,
+          "holm_p": 1.0,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.75,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.9625,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ]
+    },
+    {
+      "forgetting_rate": 0.75,
+      "arms": {
+        "coupled": "20260908T124718_calculus_r0.75_paired_r0.75_coupled_e74208e7",
+        "decoupled": "20260908T124721_calculus_r0.75_paired_r0.75_decoupled_9525cfda"
+      },
+      "dose_matched_run_id": "20260908T124723_calculus_r0.75_paired_r0.75_dose_coupled_46b8919e",
+      "dose_matched_budget": 32,
+      "mean_remediation": {
+        "coupled": 0.012710448099082417,
+        "decoupled": 0.01365470928229424
+      },
+      "mean_items": {
+        "coupled": 44.6875,
+        "decoupled": 32.63125
+      },
+      "framing_a": {
+        "mean_difference": -0.0009442611832118219,
+        "ties": 18,
+        "favouring_coupled": 43,
+        "favouring_decoupled": 99,
+        "rank_biserial": -0.3943661971830986,
+        "sign_p": 2.957904719976903e-06,
+        "holm_p": 5.915809439953806e-06,
+        "significant": true
+      },
+      "framing_b": {
+        "mean_difference": 0.003400050946107619,
+        "sign_p": 0.3156248974433412,
+        "holm_p": 0.6312497948866824,
+        "significant": false
+      },
+      "all_outcomes_framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -0.0009442611832118219,
+          "holm_p": 5.915809439953806e-06,
+          "significant": true
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": 0.0004166666666666666,
+          "holm_p": 1.0,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.70625,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.91875,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ]
+    },
+    {
+      "forgetting_rate": 1.0,
+      "arms": {
+        "coupled": "20260908T124725_calculus_r1.0_paired_r1.0_coupled_c8db9f9c",
+        "decoupled": "20260908T124728_calculus_r1.0_paired_r1.0_decoupled_f749618c"
+      },
+      "dose_matched_run_id": "20260908T124731_calculus_r1.0_paired_r1.0_dose_coupled_1afc026f",
+      "dose_matched_budget": 32,
+      "mean_remediation": {
+        "coupled": -2.7755575615628915e-18,
+        "decoupled": -1.3877787807814458e-18
+      },
+      "mean_items": {
+        "coupled": 44.70625,
+        "decoupled": 32.7125
+      },
+      "framing_a": {
+        "mean_difference": -1.3877787807814458e-18,
+        "ties": 157,
+        "favouring_coupled": 1,
+        "favouring_decoupled": 2,
+        "rank_biserial": -0.33333333333333337,
+        "sign_p": 1.0,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      "framing_b": {
+        "mean_difference": 1.3877787807814458e-18,
+        "sign_p": 1.0,
+        "holm_p": 1.0,
+        "significant": false
+      },
+      "all_outcomes_framing_a": [
+        {
+          "outcome": "remediation",
+          "mean_difference": -1.3877787807814458e-18,
+          "holm_p": 1.0,
+          "significant": false
+        },
+        {
+          "outcome": "gain",
+          "mean_difference": 0.0,
+          "holm_p": 1.0,
+          "significant": false
+        },
+        {
+          "outcome": "goals_mastered",
+          "mean_difference": 3.65625,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        },
+        {
+          "outcome": "distance_to_goal",
+          "mean_difference": -5.85625,
+          "holm_p": 5.473822126268817e-48,
+          "significant": true
+        }
+      ]
+    }
+  ]
+}

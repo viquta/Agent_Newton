@@ -21,13 +21,29 @@ and what coordinates them. These are the detail behind it.
 governs how often the planner is consulted. **The verifier is not** — it lives in
 `domains/`, takes `(item, response)`, and is the ground truth every other
 measurement inherits. **The confusion detector is not** — it classifies one
-string, the way the verifier classifies one answer, and holds no view of the
-learner model.
+string, holds no view of the learner model, and decides nothing *instructional*:
+its output sets `pending_lesson` for the rules to read.
 
-An agent here is a *decision-making component, identified by the Protocol role it
-fulfils, that acts only on what it is handed and coordinates only through shared
-state.* Note what that does **not** say: nothing about using a model. Most of
-these never call one. vh_note: the confusion component is not classified as an agent and yet has a model which decides a thing. Need to clear up this confusion.
+An agent here is a component that makes an **instructional** decision — what to
+teach, how to teach it, or what a learner got wrong — identified by the Protocol
+role it fulfils, acting only on what it is handed and coordinating only through
+shared state. Note what that does **not** say: nothing about using a model. Most
+of these never call one.
+
+**The checkable form of it is `AgentsConfig`, which has exactly three fields** —
+`tutor`, `diagnostic`, `planner`. Anything not selectable there is not one, and
+counting Protocols in `core/agents/base.py` will give a different answer, because
+that file also declares `Resumable` and `OracleAccess`, which are *capabilities*
+a role may additionally implement rather than roles in their own right.
+
+⚠️ **"Instructional" is the load-bearing word, and dropping it causes exactly one
+confusion.** The confusion detector *is* model-backed and it *does* decide
+something — whether a string expresses not understanding. What it does not decide
+is anything instructional: whether a lesson happens, which account it takes and
+when it stops are all rules, and its output only sets `pending_lesson` for those
+rules to read. `LLMConfusionDetector`'s own docstring is the precise statement.
+The verifier is different again — it decides nothing at all, symbolically
+computing an equivalence.
 
 ⚠️ **The three agents are constrained by three different mechanisms**, which is
 worth knowing before someone opens a file expecting a fourth:

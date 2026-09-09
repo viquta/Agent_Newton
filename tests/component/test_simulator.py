@@ -311,3 +311,207 @@ class TestABandTheEstimateCannotCross:
         for _ in range(200):
             highest = bkt.observe(highest, True, params)
         assert highest < 1.0
+
+
+# --------------------------------------------------------------- learner types
+
+#: The three dials off. Identical to CONFIG, and named so a test asserting
+#: "off is today" says what it is asserting.
+OFF = SimulatorConfig(misconceptions_per_learner=2, p_fire_range=(0.6, 0.9))
+
+
+class TestOffIsToday:
+    """Every dial defaults off, and off must be the behaviour that was measured.
+
+    The stored results were produced under this configuration. A dial whose zero
+    is not the identity would move every one of them without anything saying so.
+    """
+
+    def test_the_defaults_are_all_off(self) -> None:
+        blank = SimulatorConfig()
+        assert blank.forgetting_rate == 0.0
+        assert blank.forgetting_period == 0
+        assert blank.slip_rate == 0.0
+        assert blank.remediation_curve == "exponential"
+
+    def test_answering_is_unchanged_with_the_dials_off(self, toy) -> None:
+        item = toy.items.all()[0]
+        subject = learner(toy, config=OFF)
+        steps = [
+            subject.answer(item, attempt=a, repetition=r)
+            for r in range(3)
+            for a in range(3)
+        ]
+        again = learner(toy, config=OFF)
+        assert steps == [
+            again.answer(item, attempt=a, repetition=r)
+            for r in range(3)
+            for a in range(3)
+        ]
+
+    def test_remediation_is_unchanged_with_the_dials_off(self, toy) -> None:
+        subject = learner(toy, config=ALWAYS)
+        target = sorted(subject.profile.firing)[0]
+        before = subject.profile.probability(target)
+        subject.receive_hint(target)
+        # The exponential default: a constant share of what was there.
+        assert subject.profile.probability(target) == pytest.approx(
+            before * ALWAYS.remediation_factor
+        )
+
+
+class TestForgetting:
+    def test_a_rate_of_zero_moves_nothing(self, toy) -> None:
+        subject = learner(toy, config=ALWAYS)
+        subject.receive_hint(sorted(subject.profile.firing)[0])
+        before = subject.profile.snapshot()
+        assert not subject.profile.forget(0.0)
+        assert subject.profile.snapshot() == before
+
+    def test_only_what_was_taught_can_be_forgotten(self, toy) -> None:
+        # An untouched misconception sits at its initial value and has no ground
+        # to give back, which is what makes "forgets some of it" fall out.
+        subject = learner(toy, config=ALWAYS)
+        before = subject.profile.snapshot()
+        assert not subject.profile.forget(1.0)
+        assert subject.profile.snapshot() == before
+
+    def test_a_full_rate_returns_the_learner_to_where_they_began(self, toy) -> None:
+        subject = learner(toy, config=ALWAYS)
+        for target in sorted(subject.profile.firing):
+            subject.receive_hint(target)
+        assert subject.profile.forget(1.0)
+        assert subject.profile.snapshot() == pytest.approx(
+            dict(subject.profile.initial)
+        )
+
+    def test_it_never_pushes_past_where_they_began(self, toy) -> None:
+        # The ceiling is what keeps remediation_ratio inside [0, 1], and the
+        # declared primary outcome is computed from that ratio.
+        subject = learner(toy, config=ALWAYS)
+        target = sorted(subject.profile.firing)[0]
+        subject.receive_hint(target)
+        for _ in range(20):
+            subject.profile.forget(1.0)
+        for misconception_id, value in subject.profile.snapshot().items():
+            assert value <= subject.profile.initial[misconception_id] + 1e-12
+        assert 0.0 <= (subject.profile.remediation_ratio() or 0.0) <= 1.0
+
+    def test_it_fires_on_the_beat_and_not_between(self, toy) -> None:
+        config = SimulatorConfig(
+            misconceptions_per_learner=4,
+            p_fire_range=(1.0, 1.0),
+            forgetting_rate=1.0,
+            forgetting_period=3,
+        )
+        subject = learner(toy, config=config)
+        target = sorted(subject.profile.firing)[0]
+        subject.receive_hint(target)
+        taught = subject.profile.probability(target)
+        item = toy.items.all()[0]
+
+        subject.answer(item)  # t = 1
+        assert subject.profile.probability(target) == pytest.approx(taught)
+        subject.answer(item)  # t = 2
+        assert subject.profile.probability(target) == pytest.approx(taught)
+        subject.answer(item)  # t = 3, the beat
+        assert subject.profile.probability(target) == pytest.approx(
+            subject.profile.initial[target]
+        )
+
+    def test_the_clock_runs_whether_or_not_the_dial_is_on(self, toy) -> None:
+        subject = learner(toy, config=OFF)
+        item = toy.items.all()[0]
+        subject.answer(item)
+        subject.answer(item)
+        assert subject.profile.t == 2
+
+
+class TestTheRemediationCurve:
+    def test_the_two_shapes_agree_on_the_first_hint(self, toy) -> None:
+        # Nothing has happened yet for them to differ about, so the shape is the
+        # whole difference rather than the shape and a different first step.
+        exponential = learner(toy, config=ALWAYS)
+        linear = learner(
+            toy,
+            config=SimulatorConfig(
+                misconceptions_per_learner=4,
+                p_fire_range=(1.0, 1.0),
+                remediation_curve="linear",
+            ),
+        )
+        target = sorted(exponential.profile.firing)[0]
+        exponential.receive_hint(target)
+        linear.receive_hint(target)
+        assert exponential.profile.probability(target) == pytest.approx(
+            linear.profile.probability(target)
+        )
+
+    def test_linear_reaches_zero_and_exponential_does_not(self, toy) -> None:
+        linear = learner(
+            toy,
+            config=SimulatorConfig(
+                misconceptions_per_learner=4,
+                p_fire_range=(1.0, 1.0),
+                remediation_curve="linear",
+            ),
+        )
+        exponential = learner(toy, config=ALWAYS)
+        target = sorted(linear.profile.firing)[0]
+        for _ in range(10):
+            linear.receive_hint(target)
+            exponential.receive_hint(target)
+        assert linear.profile.probability(target) == 0.0
+        assert exponential.profile.probability(target) > 0.0
+
+    def test_linear_never_goes_below_zero(self, toy) -> None:
+        profile = sample_profile("L1", 7, toy.misconceptions, ALWAYS)
+        target = sorted(profile.firing)[0]
+        for _ in range(50):
+            profile.remediate(target, 0.55, "linear")
+        assert profile.probability(target) == 0.0
+
+
+class TestSlipping:
+    #: Holds nothing, so every wrong answer must have come from a slip.
+    NOTHING_HELD = SimulatorConfig(
+        misconceptions_per_learner=0, p_fire_range=(1.0, 1.0), slip_rate=1.0
+    )
+
+    def test_a_rate_of_zero_never_slips(self, toy) -> None:
+        subject = learner(
+            toy,
+            config=SimulatorConfig(
+                misconceptions_per_learner=0, p_fire_range=(1.0, 1.0)
+            ),
+        )
+        item = toy.items.all()[0]
+        assert all(
+            subject.answer(item, attempt=a).correct for a in range(10)
+        )
+
+    def test_a_slip_carries_no_injected_label(self, toy) -> None:
+        # The label is the diagnostic's ground truth. A slip is not a bug, so
+        # there is nothing for it to have named.
+        subject = learner(toy, config=self.NOTHING_HELD)
+        item = next(i for i in toy.items.all() if i.probes)
+        step = subject.answer(item)
+        assert not step.correct
+        assert step.fired is None
+        assert step.label == "unlabelled-error"
+
+    def test_a_slip_is_wrong_in_a_way_the_learner_does_not_hold(self, toy) -> None:
+        subject = learner(toy, config=self.NOTHING_HELD)
+        item = next(i for i in toy.items.all() if i.probes)
+        step = subject.answer(item)
+        assert step.response != item.answer
+
+    def test_both_arms_slip_on_the_same_step(self, toy) -> None:
+        # Common random numbers: the arms must differ by their tutoring, not by
+        # their slip streams.
+        first = learner(toy, config=self.NOTHING_HELD)
+        second = learner(toy, config=self.NOTHING_HELD)
+        item = next(i for i in toy.items.all() if i.probes)
+        assert [first.answer(item, attempt=a) for a in range(6)] == [
+            second.answer(item, attempt=a) for a in range(6)
+        ]

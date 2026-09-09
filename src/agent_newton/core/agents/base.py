@@ -206,7 +206,13 @@ class Tutor(Protocol):
 
 
 @runtime_checkable
-class Diagnostic(Protocol): #vh comment: see in my private notes for revision of diagnostic agent (maybe I'll post them in docs later)
+class Diagnostic(Protocol):
+    # ⚠️ A revision of this role is noted privately and is not reflected here.
+    # Until it lands, this Protocol is what the code does: `diagnose` receives
+    # the item, the response and the domain — and *not* the verifier's verdict.
+    # That the step was wrong is carried by the call sitting inside the
+    # `INCORRECT` branch in `session.py`, so a diagnostic can never ask for a
+    # verdict, and a model-backed one must never satisfy `OracleAccess`.
 
     """Classifies an incorrect step into the domain's misconception catalogue."""
     # returns a Diagnosis obj
@@ -250,7 +256,20 @@ class ConfusionDetector(Protocol): #vh comment: i need to check where this is us
 
 
 @runtime_checkable
-class Resumable(Protocol): #vh comment: i need to check where this is used... 
+class Resumable(Protocol):
+    # Used in two places, and only for the decoupled planner. `build_session`
+    # (`session.py`) restores a stored walk position with
+    # `isinstance(planner, Resumable)` before calling `restore`; `demo.py` calls
+    # `snapshot()` under the same guard when a sitting ends.
+    #
+    # Only `FixedOrderPlanner` implements it, and the asymmetry is the
+    # architecture showing through rather than an oversight: its position in the
+    # syllabus walk is the only progress signal it has, so that position must
+    # live inside the agent. `GoalDirectedPlanner` stores nothing, because
+    # everything it routes from is already on the board and the board persists.
+    #
+    # A capability, not a role — see `docs/components/README.md`. Declaring it
+    # keeps private planner state explicit instead of incidental.
     # answer: `FixedOrderPlanner` alone. `demo.py` snapshots it at the end of a
     # sitting and `session.py` restores it at the start. The ablation shows up
     # even here: the decoupled planner's position in the syllabus walk is its

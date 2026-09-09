@@ -13,6 +13,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from typing import Callable
 
 from agent_newton.config import Config
 from agent_newton.core.orchestration.session import build_session
@@ -29,7 +30,19 @@ def learner_ids(config: Config) -> list[str]:
     return [f"L{n:04d}" for n in range(config.cohort.n_learners)]
 
 
-def run(config: Config) -> dict:
+def run(config: Config, per_learner: Callable[[str, Config], Config] | None = None) -> dict:
+    """One cohort. ``per_learner`` may vary the config learner by learner.
+
+    ⚠️ **None is today**, and the hook exists for one thing: a cohort whose
+    learners are not all the same kind. It must be a pure function of the learner
+    id, or the two arms stop being the same population and the pairing the whole
+    comparison rests on is gone.
+
+    It cannot change what a learner *is* — ``sample_profile`` draws from
+    ``misconceptions_per_learner`` and ``p_fire_range`` alone, and a mixed cohort
+    that moved those would draw different people rather than the same people
+    behaving differently.
+    """
     domain = registry.load_domain(config.domain)
     run_id, run_dir = new_run_dir(config)
     setup_logging(run_dir)
@@ -49,7 +62,8 @@ def run(config: Config) -> dict:
 
     outcomes = []
     for learner_id in learner_ids(config):
-        session = build_session(learner_id, config.seed, domain, config)
+        settings = config if per_learner is None else per_learner(learner_id, config)
+        session = build_session(learner_id, config.seed, domain, settings)
         outcome = session.run()
         outcomes.append(outcome)
         log_event(
@@ -106,6 +120,8 @@ def run(config: Config) -> dict:
             o.distance_to_goal for o in outcomes if o.distance_to_goal is not None
         ),
         "diagnostic_accuracy": _diagnostic_accuracy(outcomes),
+        "unlabelled_errors": _unlabelled_errors(outcomes),
+        "mean_trajectory": _mean_trajectory(outcomes),
         "replans_by_trigger": _triggers(outcomes),
         "suppressed_triggers": sum(o.suppressed for o in outcomes),
         "per_learner": [
@@ -150,11 +166,69 @@ def _diagnostic_accuracy(outcomes) -> float | None:
     None when nothing was diagnosed. Meaningless for an oracle by construction,
     which is the point of reporting it: it should read 1.0 there, and anything
     else means the ground-truth channel is wired wrongly.
+
+    ⚠️ **Steps with no injected label are counted, not scored** — see
+    :func:`_unlabelled_errors`. A step no misconception produced is not a
+    measurement of the diagnostic: there is no right answer for it to have
+    given, so scoring it would charge the diagnostic for the absence of a
+    question. This is the same distinction ``UNPARSEABLE`` draws on the other
+    side of the loop, where a step the verifier could not read updates no
+    estimate but is still counted.
+
+    Today this changes nothing, because a simulated step with no label is a step
+    the learner got right and so is never diagnosed. It binds once a learner can
+    err without holding a bug, and it already applies to a human, who has no
+    injected label on any step at all.
     """
-    pairs = [pair for o in outcomes for pair in o.diagnoses]
+    pairs = [
+        pair for o in outcomes for pair in o.diagnoses if pair[0] is not None
+    ]
     if not pairs:
         return None
     return sum(1 for injected, inferred in pairs if injected == inferred) / len(pairs)
+
+
+def _mean_trajectory(outcomes) -> list[dict]:
+    """The cohort's learning path: two series against practice items worked.
+
+    Averaged over the learners who reached each position, so a cohort whose
+    sessions ended at different lengths does not report a tail computed from
+    whoever happened to run longest as though it were the cohort's.
+
+    Two series, because a mechanism can move either alone. ``remediation`` is
+    ground truth — what the learner still holds — and ``accuracy`` is what was
+    observed. Teaching and forgetting move both; an error on a step no
+    misconception produced moves only the second, so a path drawn from
+    ``remediation`` alone cannot see one happen.
+
+    Cohort-level rather than per-learner: the per-learner paths are what this is
+    averaged from, and storing 160 of them would put tens of thousands of numbers
+    into every run's metrics for a figure that plots the mean.
+    """
+    paths = [o.trajectory for o in outcomes if o.trajectory]
+    if not paths:
+        return []
+    series = []
+    for index in range(max(len(path) for path in paths)):
+        reached = [path[index] for path in paths if index > -1 and len(path) > index]
+        series.append(
+            {
+                "item": index + 1,
+                "learners": len(reached),
+                "remediation": sum(point[0] for point in reached) / len(reached),
+                "accuracy": sum(1 for point in reached if point[1]) / len(reached),
+            }
+        )
+    return series
+
+
+def _unlabelled_errors(outcomes) -> int:
+    """Diagnosed steps that carried no injected label, and so were not scored.
+
+    Reported beside the accuracy rather than folded into it, so a rate that
+    excludes them cannot quietly hide how many there were.
+    """
+    return sum(1 for o in outcomes for pair in o.diagnoses if pair[0] is None)
 
 
 def main() -> None:

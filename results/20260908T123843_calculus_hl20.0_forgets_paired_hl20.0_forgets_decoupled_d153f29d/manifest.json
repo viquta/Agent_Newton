@@ -1,0 +1,25 @@
+{
+  "run_id": "20260908T123843_calculus_hl20.0_forgets_paired_hl20.0_forgets_decoupled_d153f29d",
+  "run_name": "calculus_hl20.0_forgets_paired_hl20.0_forgets",
+  "created_at": "2026-09-08T12:38:43+00:00",
+  "git_sha": "800cc5bfdb4e33f5418be8e8f147729cd7a82baa",
+  "git_dirty": true,
+  "config_hash": "d153f29d65240dd8",
+  "arm": "decoupled",
+  "domain": "calculus",
+  "seed": 20260923,
+  "catalogue_hash": "ca5038117b556a2d",
+  "item_bank_hash": "587deac28ed7ca79",
+  "concept_graph_hash": "0d8b6ce2179205c4",
+  "resources_hash": "a14478cdda1097e2",
+  "models": {
+    "tutor": "<template>",
+    "diagnostic": "<oracle>",
+    "planner": "<goal_directed>",
+    "simulator_surface": "<symbolic>"
+  },
+  "uses_llm": false,
+  "decay_half_life_days": 20.0,
+  "python_version": "3.14.5",
+  "platform": "macOS-15.7.9-arm64-arm-64bit-Mach-O"
+}
