@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="JwlikoVSioMY8vlKte19" name="Page-1">
-        <mxGraphModel dx="1507" dy="1694" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1636" dy="1722" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -25,44 +25,46 @@
                 <mxCell id="17" value="" style="edgeStyle=none;html=1;" parent="1" source="2" target="16" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="19" value="" style="edgeStyle=none;html=1;" parent="1" source="2" target="18" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="19" value="" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="2" target="18" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="-291.9999999999998" y="499.5" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="2" value="src/agent_newton/core" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="100" y="25" width="160" height="90" as="geometry"/>
+                    <mxGeometry x="-280" y="109.5" width="160" height="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="4" value="/agents" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="370" y="80" width="160" height="90" as="geometry"/>
+                    <mxGeometry x="630" y="-220" width="160" height="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="6" value="arbitration" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-40" y="370" width="160" height="90" as="geometry"/>
+                    <mxGeometry x="-310" y="349.5" width="160" height="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="8" value="/evaluation" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="70" y="460" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-200" y="439.5" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="10" value="/orchestration" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-190" y="190" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-460" y="169.5" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="12" value="/pedagogy" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-210" y="110" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-480" y="89.5" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="14" value="/recal" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-180" y="40" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-450" y="19.5" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="16" value="/simulator" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-210" y="430" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-480" y="409.5" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="18" value="/state" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-90" y="520" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-370" y="540" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <object placeholders="1" c4Name="base.py" c4Type="Component" c4Technology="The protocol definitions (abstract interfaces) for every agent role. And 2 dataclasses (diagnosis and Hint) which are concrete obj that flow out of agents during a session" c4Description="It&#39;s a pure type declarations file — it never executes. It defines the contracts that bind the whole architecture together without depending on any implementation." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="20">
+                <object placeholders="1" c4Name="base.py" c4Type="Component" c4Technology="The protocol definitions (abstract interfaces) for every agent role." c4Description="It&#39;s a pure type declarations file — it never executes. It defines the contracts that bind the whole architecture together without depending on any implementation." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="20">
                     <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-                        <mxGeometry x="630" y="355" width="240" height="120" as="geometry"/>
+                        <mxGeometry x="910" y="-20" width="240" height="120" as="geometry"/>
                     </mxCell>
                 </object>
                 <object placeholders="1" c4Name="demo.py" c4Type="Component" c4Technology="rich, json, and other custom modules (see file)" c4Description="The demo is the front-end observer for the real session — it hooks into session events that carry these objects, so it needs their types to render them and to make the snapshot decision correctly." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="21">
                     <mxCell style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
-                        <mxGeometry x="1220" y="180" width="240" height="120" as="geometry"/>
+                        <mxGeometry x="1640" y="320" width="240" height="120" as="geometry"/>
                     </mxCell>
                 </object>
                 <mxCell id="26" style="edgeStyle=none;html=1;entryX=0.529;entryY=0.025;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="4" target="20" edge="1">
@@ -76,38 +78,149 @@
                 <mxCell id="28" value="Goal of this drawio: every explanation will live here, and I will be the one who writes (vh)&lt;div&gt;I could use parts of these for making diagrams later when writing the thesis.&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
                     <mxGeometry x="-205" y="-77" width="490" height="40" as="geometry"/>
                 </mxCell>
-                <object placeholders="1" c4Name="diagnostic.py" c4Type="Component" c4Technology="uses the Diagnosis class from agents/base, and the Domain, Item from /domains/base" c4Description="role/responsibility: for some reason, this is the diagnostic agent but i don&#39;t understand why it&#39;s called &quot;noisedoraclediagnostic&quot; and it is a class. Is it called in the experiments?" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="29">
-                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
-                        <mxGeometry x="830" y="-37" width="240" height="120" as="geometry"/>
+                <object placeholders="1" c4Name="diagnostic.py" c4Type="Component" c4Technology="class: OracleDiagnostic, class: NoisedOracleDiagnostic" c4Description="its classes are strucutral impl of the Diagnostic Protocol that is declared in base.py. It (essentailly) has 1 job: when a learner&#39;s step is graded INCORRECT, look at (item, response, domain) and return a Diagnosis" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="29">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
+                        <mxGeometry x="830" y="230" width="240" height="120" as="geometry"/>
                     </mxCell>
                 </object>
-                <mxCell id="32" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="21" target="20">
+                <mxCell id="32" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="21" target="20" edge="1">
                     <mxGeometry width="60" height="60" relative="1" as="geometry">
                         <mxPoint x="890" y="300" as="sourcePoint"/>
                         <mxPoint x="950" y="240" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="33" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;imports from base.py: &lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(38, 127, 153);&quot;&gt;Diagnosis&lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(0, 0, 0);&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(38, 127, 153);&quot;&gt;Hint (classes)&lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(0, 0, 0);&quot;&gt;,and &lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(38, 127, 153);&quot;&gt;Resumable (a protocol)&lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(0, 0, 0);&quot;&gt; &lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="32">
+                <mxCell id="33" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;imports from base.py: &lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(38, 127, 153);&quot;&gt;Diagnosis&lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(0, 0, 0);&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(38, 127, 153);&quot;&gt;Hint (classes)&lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(0, 0, 0);&quot;&gt;,and &lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(38, 127, 153);&quot;&gt;Resumable (a protocol)&lt;/span&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre; font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-size: 12px; color: rgb(0, 0, 0);&quot;&gt; &lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="32" vertex="1" connectable="0">
                     <mxGeometry x="-0.2046" y="-2" relative="1" as="geometry">
                         <mxPoint as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="34" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;entryX=0.725;entryY=-0.033;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="29" target="20">
+                <mxCell id="34" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;exitX=0.642;exitY=0.025;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="29" target="20" edge="1">
                     <mxGeometry width="60" height="60" relative="1" as="geometry">
-                        <mxPoint x="890" y="300" as="sourcePoint"/>
-                        <mxPoint x="950" y="240" as="targetPoint"/>
+                        <mxPoint x="996" y="563.96" as="sourcePoint"/>
+                        <mxPoint x="1140" y="109.99999999999997" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="35" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;imports form base.py: Diagnosis (class)&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="34">
+                <mxCell id="35" value="&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;imports form /agents/base.py: Diagnosis (class)&lt;/span&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="34" vertex="1" connectable="0">
                     <mxGeometry x="-0.4776" y="-2" relative="1" as="geometry">
+                        <mxPoint x="31" y="-92" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="36" value="Be sure to read (again) the documentattion for pydantic, because base.py seems like a very central architectual file. (And I got two of them)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
+                    <mxGeometry x="1265" y="-170" width="150" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="37" style="edgeStyle=none;html=1;entryX=0.833;entryY=1.042;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="36" target="20" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="38" value="&lt;strong style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt;It&#39;s the Python idiom for structural interfaces.&lt;/strong&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt; Since &lt;/span&gt;&lt;a style=&quot;color: rgb(0, 106, 177); text-decoration: rgb(0, 106, 177); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot; href=&quot;vscode-webview://1q730l46t7o39gf7ps30ohjk9nl1rn52809c5ikjajgtkg38e0it/src/agent_newton/core/agents/base.py&quot;&gt;base.py&lt;/a&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt; uses &lt;/span&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em; white-space: pre-wrap;&quot;&gt;Protocol&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt;/&lt;/span&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em; white-space: pre-wrap;&quot;&gt;runtime_checkable&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt; rather than ABCs, you&#39;re doing structural typing — an implementation doesn&#39;t need to inherit from anything, it just needs the right methods. Collecting those contracts in one module (rather than scattering one per implementation file) is the standard way to make the contract itself discoverable, and it&#39;s what makes &lt;/span&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em; white-space: pre-wrap;&quot;&gt;isinstance(planner, Resumable)&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt; in &lt;/span&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em; white-space: pre-wrap;&quot;&gt;session.py&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt; meaningful — one canonical definition, checked at runtime.&lt;/span&gt;" style="shape=note;size=20;whiteSpace=wrap;html=1;align=left;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="1530" y="-200" width="320" height="265" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" style="edgeStyle=none;html=1;entryX=0;entryY=0;entryDx=150;entryDy=100;entryPerimeter=0;" edge="1" parent="1" source="38" target="36">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" style="edgeStyle=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="4" target="29">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="47" value="&lt;blockquote style=&quot;background: none 0% 0% / auto repeat scroll padding-box border-box rgb(242, 242, 242); border-color: rgba(0, 122, 204, 0.5); unicode-bidi: plaintext; color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; text-align: start; white-space: normal;&quot;&gt;&lt;p style=&quot;white-space: pre-wrap; margin-top: 0.1em; margin-bottom: 0.2em; unicode-bidi: plaintext;&quot;&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;structurally implements &lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word;&quot;&gt;Diagnostic&lt;/code&gt; — and &lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word;&quot;&gt;OracleAccess&lt;/code&gt;, for the two oracle classes&lt;/font&gt;&lt;/p&gt;&lt;div style=&quot;font-size: 13px;&quot;&gt;&lt;br&gt;&lt;/div&gt;&lt;/blockquote&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="40">
+                    <mxGeometry x="-0.0463" y="-1" relative="1" as="geometry">
                         <mxPoint as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="36" value="Be sure to read (again) the documentattion for pydantic, because base.py seems like a very central architectual file. (And I got two of them)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-                    <mxGeometry x="875" y="520" width="150" height="170" as="geometry"/>
+                <mxCell id="41" value="in llm.py the LLMDiagnostic is the actual agent. This also holds for LLMTutor, and LLMPlanner.&lt;div&gt;why?&amp;nbsp;&lt;br&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; white-space: pre-wrap; background-color: rgb(243, 243, 243);&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;so a study can swap an &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;arm&#39;s agent by config and &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;hold everything else &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;constant.&lt;/span&gt;&lt;/div&gt;" style="shape=note;strokeWidth=2;fontSize=14;size=20;whiteSpace=wrap;html=1;fillColor=#F9FFD8;strokeColor=#d6b656;fontColor=#666600;align=left;" vertex="1" parent="1">
+                    <mxGeometry x="720" y="409.5" width="200" height="170" as="geometry"/>
                 </mxCell>
-                <mxCell id="37" style="edgeStyle=none;html=1;entryX=0.833;entryY=1.042;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="36" target="20">
+                <mxCell id="43" value="This component is called in the experiments:&amp;nbsp;&lt;div&gt;&lt;font color=&quot;#666600&quot;&gt;- Live session&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#666600&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;(see session.py&lt;/font&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; background-color: rgb(243, 243, 243);&quot;&gt;(&lt;/span&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em;&quot;&gt;agents.diagnostic.impl&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; background-color: rgb(243, 243, 243);&quot;&gt;), &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;and&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: rgba(0, 0, 0, 0.1); color: rgb(163, 21, 21); font-family: monospace; font-size: 11.7px;&quot;&gt;self.diagnostic.diagnose(...)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#666600&quot;&gt;- Offline evaluation&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#666600&quot;&gt;&lt;font color=&quot;#666600&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;(see&amp;nbsp;&lt;/font&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em;&quot;&gt;core/evaluation/diagnostic.py&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; background-color: rgb(243, 243, 243);&quot;&gt; scores any &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;/span&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em;&quot;&gt;Diagnostic&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; background-color: rgb(243, 243, 243);&quot;&gt; (typically the LLM one) against every &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;/span&gt;&lt;code style=&quot;font-family: monospace; color: rgb(163, 21, 21); background-color: rgba(0, 0, 0, 0.1); padding: 2px 4px; border-radius: 3px; word-break: break-word; font-size: 0.9em;&quot;&gt;(item, misconception)&lt;/code&gt;&lt;span style=&quot;color: rgb(97, 97, 97); font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; background-color: rgb(243, 243, 243);&quot;&gt; pair the item bank can &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;produce, independent of session dynamics — that&#39;s &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;where the &quot;confusion matrix&quot; the module docstring &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;mentions comes from.&lt;/span&gt;&lt;font color=&quot;#666600&quot;&gt;&lt;br&gt;&lt;/font&gt;&lt;/font&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="shape=note;strokeWidth=2;fontSize=14;size=20;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#666600;align=left;" vertex="1" parent="1">
+                    <mxGeometry x="1020" y="450" width="380" height="220" as="geometry"/>
+                </mxCell>
+                <mxCell id="44" style="edgeStyle=none;html=1;entryX=0.913;entryY=1.025;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="43" target="29">
                     <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <object placeholders="1" c4Name="llm.py" c4Type="Component" c4Technology="consumes shema from agents/schemas.py, enforced via llm/base.py::complete" c4Description="This is the file containing the model-backed versions of the agents." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="45">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+                        <mxGeometry x="430" y="210" width="240" height="120" as="geometry"/>
+                    </mxCell>
+                </object>
+                <mxCell id="49" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="4" target="45">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="50" value="LLMConfusionDetector" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                    <mxGeometry x="270" y="420.5" width="140" height="79" as="geometry"/>
+                </mxCell>
+                <mxCell id="51" value="&amp;lt;&amp;lt;ConfusionDetector&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="50">
+                    <mxGeometry y="29" width="140" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="52" value="def confused() --&amp;gt; str" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="50">
+                    <mxGeometry y="54" width="140" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="53" value="" style="endArrow=none;html=1;exitX=0.452;exitY=-0.006;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="50" target="45">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="430" y="270" as="sourcePoint"/>
+                        <mxPoint x="480" y="220" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="54" value="LLMPlanner" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="291" width="140" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="55" value="&amp;lt;&amp;lt;Planner&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="54">
+                    <mxGeometry y="29" width="140" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="56" value="def plan() --&amp;gt; Plan obj&lt;div&gt;def select() --&amp;gt; Item obj&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="54">
+                    <mxGeometry y="54" width="140" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="60" value="LLMTutor" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="440" width="140" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="61" value="&amp;lt;&amp;lt;Tutor&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="60">
+                    <mxGeometry y="29" width="140" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="62" value="def respond() --&amp;gt; Hint obj&lt;div&gt;def explain()--&amp;gt;str&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="60">
+                    <mxGeometry y="54" width="140" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="63" value="" style="endArrow=none;html=1;exitX=0.843;exitY=0.006;exitDx=0;exitDy=0;exitPerimeter=0;entryX=-0.012;entryY=0.552;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="54" target="45">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="343" y="430" as="sourcePoint"/>
+                        <mxPoint x="460" y="360" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="64" value="" style="endArrow=none;html=1;exitX=0.462;exitY=0.009;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.44;entryY=1.02;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="60" target="45">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="343" y="430" as="sourcePoint"/>
+                        <mxPoint x="460" y="360" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="57" value="LLMDiagnostic" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="151" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="58" value="&amp;lt;&amp;lt;Diagnostic&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="57">
+                    <mxGeometry y="29" width="190" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="59" value="def diagnose() --&amp;gt; Diagnosis obj" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="57">
+                    <mxGeometry y="54" width="190" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="65" value="" style="endArrow=none;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="57" target="45">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="343" y="430" as="sourcePoint"/>
+                        <mxPoint x="460" y="360" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <object placeholders="1" c4Name="schemas.py" c4Type="Component" c4Technology="e.g." c4Description="role/responsibility." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="66">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+                        <mxGeometry x="540" y="750" width="240" height="120" as="geometry"/>
+                    </mxCell>
+                </object>
+                <mxCell id="67" style="edgeStyle=none;html=1;entryX=0.549;entryY=0.008;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="4" target="66">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="68" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;exitX=0.609;exitY=0.992;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.428;entryY=-0.031;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="45" target="66">
+                    <mxGeometry width="60" height="60" relative="1" as="geometry">
+                        <mxPoint x="580" y="460" as="sourcePoint"/>
+                        <mxPoint x="640" y="400" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="69" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=-0.01;entryY=0.657;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="45" target="20">
+                    <mxGeometry width="60" height="60" relative="1" as="geometry">
+                        <mxPoint x="910" y="160" as="sourcePoint"/>
+                        <mxPoint x="970" y="100" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
             </root>
         </mxGraphModel>

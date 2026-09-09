@@ -24,7 +24,11 @@ from agent_newton.domains.base import Domain, Item
 
 
 class OracleDiagnostic:
-    """Reads the injected label. Perfect by construction."""
+    """Reads the injected label. Perfect by construction.
+    vh_explanation: —-> cheats: it doesn't look at the response at all, 
+      it just returns whatever ground-truth label the simulator 
+      injected when it generated the wrong answer. Upper bound.
+    """
 
     def __init__(self) -> None:
         self._label: str | None = None
@@ -38,6 +42,9 @@ class OracleDiagnostic:
 
 class NoisedOracleDiagnostic:
     """The injected label, corrupted at a fixed rate.
+    
+    vh_explanation: --> also a cheat, but here it is wrong at a controlled rate
+
 
     Corruption is deterministic in ``(seed, item, response, label, occurrence)``
     rather than drawn from a running generator, so a learner meeting the same
@@ -65,10 +72,11 @@ class NoisedOracleDiagnostic:
     and dilutes itself. Measured over a 20-learner calculus cohort: nominal 0.10
     realises 0.906 accuracy against a target of 0.900, nominal 0.25 realises
     0.856 against 0.750, nominal 0.50 realises 0.600 against 0.500 — the gap
-    widening with the rate, as the feedback predicts.
+    widening with the rate, as the feedback predicts. (vh_comment: need to check these nr...)
 
     So compare conditions on the **realised** accuracy the run reports, never on
     the nominal rate it was configured with.
+    ps: "Nominal rate" is the configured error rate I pass into NoisedOracleDiagnostic(noise_rate=...) — e.g. 0.10 means "be wrong 10% of the time by design."
     """
 
     def __init__(self, noise_rate: float, seed: int = 0) -> None:
