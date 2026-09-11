@@ -21,10 +21,9 @@ from run_paired import record
 from agent_newton.config import Config
 from agent_newton.core.evaluation.statistics import ALPHA
 
-#: Every quantity §8 declares the analysis will report, plus the identity of the
-#: outcome and the two p-values kept apart. A framing stored without one of
-#: these cannot be put in a table beside another framing, which is what the
-#: methodology asks for.
+#: Every quantity the analysis declares it will report, plus the identity of
+#: the outcome and the two p-values kept apart. A framing stored without one of
+#: these cannot be put in a table beside another framing.
 DECLARED = frozenset(
     {
         "outcome",
