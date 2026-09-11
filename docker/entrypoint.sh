@@ -249,8 +249,10 @@ case "$verb" in
     exec python experiments/run_cohort.py --config "$CALCULUS" --arm "$arm" "$@"
     ;;
   paired)
+    # The verb reproduces the stored study at its own seed, so the seed is by
+    # definition already spent; it writes under results/reruns/ only.
     reproduce "paired_calculus" "" python experiments/run_paired.py \
-      --config "$CALCULUS" --n "$N" --seed "$SEED" --dose-matched "$@"
+      --config "$CALCULUS" --n "$N" --seed "$SEED" --dose-matched --allow-spent-seed "$@"
     ;;
   propagation)
     # The model-backed condition is left out of the default set, so the stored
@@ -315,7 +317,7 @@ case "$verb" in
     reproduce "coverage_calculus" "" python experiments/measure_coverage.py --config "$CALCULUS"
     step "paired comparison, n=$N"
     reproduce "paired_calculus" "" python experiments/run_paired.py \
-      --config "$CALCULUS" --n "$N" --seed "$SEED" --dose-matched
+      --config "$CALCULUS" --n "$N" --seed "$SEED" --dose-matched --allow-spent-seed
     step "replication over fresh seeds"
     reproduce "replication_paired" "" python experiments/replicate_paired.py \
       --config "$CALCULUS" --n "$N" --dose-matched

@@ -78,14 +78,26 @@ def sign_test(differences: np.ndarray) -> float:
 
 
 def wilcoxon(differences: np.ndarray) -> float:
-    """Two-sided Wilcoxon signed-rank. 1.0 when every pair is tied."""
-    if not np.any(differences != 0):
+    """Two-sided Wilcoxon signed-rank on the discordant pairs. 1.0 when every
+    pair is tied.
+
+    Ties are removed *here*, before scipy sees the array, and not only through
+    ``zero_method="wilcox"``. scipy chooses how it computes the p-value from the
+    length of the array it is handed: the exact distribution up to 50 values, an
+    enumeration up to 13 when magnitudes tie, and the normal approximation
+    beyond either. Handing it the full cohort — 160 pairs, most of them zero —
+    made it read the pair count rather than the discordant count and take the
+    approximation every time, including at 7 discordant pairs.
+
+    ⚠️ Until 2026-09-11 that is what this function did. Every ``wilcoxon_p`` and
+    ``power_wilcoxon`` recorded before then is from the normal approximation;
+    the sign test, the effect size and the Holm column never touched this path.
+    """
+    discordant = differences[differences != 0]
+    if discordant.size == 0:
         return 1.0
-    try:
-        outcome = stats.wilcoxon(differences, zero_method="wilcox")
-        return float(outcome.pvalue)  # pyright: ignore[reportAttributeAccessIssue]
-    except ValueError:  # pragma: no cover - guarded by the check above
-        return 1.0
+    outcome = stats.wilcoxon(discordant, zero_method="wilcox")
+    return float(outcome.pvalue)  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def sign_effect_size(differences: np.ndarray) -> float:

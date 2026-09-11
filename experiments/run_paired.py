@@ -185,6 +185,12 @@ def main() -> None:
         "--seed", type=int, required=True, help="Must differ from the config's."
     )
     parser.add_argument("--dose-matched", action="store_true")
+    parser.add_argument(
+        "--allow-spent-seed",
+        action="store_true",
+        help="Re-run at a seed a stored study already reports from, to reproduce "
+        "or re-record that study. Refused otherwise.",
+    )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
 
@@ -197,12 +203,22 @@ def main() -> None:
             f"sample size was chosen on. Pick another."
         )
     spent = spent_seeds(config.paths.results_dir)
-    if args.seed in spent:
+    if args.seed in spent and args.allow_spent_seed:
+        # The container verbs reproduce the stored study at its own seed and
+        # write only under results/reruns/, and re-recording the study after a
+        # change to the analysis has to run the same learners by definition.
+        # Either is stated on the command line rather than let through quietly.
+        print(
+            f"seed {args.seed} is already reported by "
+            f"{', '.join(sorted(spent[args.seed]))}; running anyway (--allow-spent-seed)"
+        )
+    elif args.seed in spent:
         parser.error(
             f"--seed {args.seed} has already been used by "
             f"{', '.join(sorted(spent[args.seed]))}. Learner profiles come from "
             f"(seed, learner_id), so this would re-report learners an existing "
-            f"analysis has already seen. Pick a seed no stored summary names."
+            f"analysis has already seen. Pick a seed no stored summary names, or "
+            f"pass --allow-spent-seed to reproduce or re-record that study."
         )
 
     metrics = {arm: cohort(config, arm, args.n, args.seed) for arm in ARMS}
