@@ -45,7 +45,15 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from run_paired import ARMS, OUTCOMES, analyse, by_learner, cohort, spent_seeds  # noqa: E402
+from run_paired import (  # noqa: E402
+    ARMS,
+    OUTCOMES,
+    analyse,
+    by_learner,
+    cohort,
+    record,
+    spent_seeds,
+)
 
 from agent_newton.config import Config  # noqa: E402
 from agent_newton.core.evaluation.statistics import ALPHA  # noqa: E402
@@ -132,21 +140,7 @@ def main() -> None:
             "unlabelled_errors": {
                 arm: metrics[arm]["unlabelled_errors"] for arm in ARMS
             },
-            "outcomes": [
-                {
-                    "outcome": result.outcome,
-                    "mean_difference": result.mean_difference,
-                    "ci95": list(result.ci95),
-                    "ties": result.ties,
-                    "favouring_coupled": result.favouring_first,
-                    "favouring_decoupled": result.favouring_second,
-                    "rank_biserial": result.rank_biserial,
-                    "sign_p": result.sign_p,
-                    "holm_p": adjusted,
-                    "significant": adjusted < ALPHA,
-                }
-                for result, adjusted in rows
-            ],
+            "outcomes": [record(result, adjusted) for result, adjusted in rows],
             "paths": {arm: paths(metrics[arm]) for arm in ARMS},
         }
 
@@ -166,19 +160,7 @@ def main() -> None:
             "budget": budget,
             "run_id": matched["run_id"],
             "mean_items": matched["mean_items"],
-            "outcomes": [
-                {
-                    "outcome": result.outcome,
-                    "mean_difference": result.mean_difference,
-                    "ties": result.ties,
-                    "favouring_coupled": result.favouring_first,
-                    "favouring_decoupled": result.favouring_second,
-                    "sign_p": result.sign_p,
-                    "holm_p": adjusted,
-                    "significant": adjusted < ALPHA,
-                }
-                for result, adjusted in matched_rows
-            ],
+            "outcomes": [record(result, adjusted) for result, adjusted in matched_rows],
         }
 
         primary = report["categories"][category]["outcomes"][0]

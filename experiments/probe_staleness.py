@@ -141,7 +141,7 @@ def main() -> None:
                     "ties": r.ties,
                     "favouring_coupled": r.favouring_first,
                     "favouring_decoupled": r.favouring_second,
-                    "rank_biserial": r.rank_biserial,
+                    "sign_effect_size": r.sign_effect_size,
                     "sign_p": r.sign_p,
                     "holm_p": adjusted,
                     "significant": adjusted < ALPHA,

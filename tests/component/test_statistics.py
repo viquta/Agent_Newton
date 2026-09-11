@@ -24,7 +24,7 @@ from agent_newton.core.evaluation.statistics import (
     compare,
     holm_bonferroni,
     paired_differences,
-    rank_biserial,
+    sign_effect_size,
     sign_test,
     wilcoxon,
 )
@@ -73,23 +73,23 @@ class TestWilcoxon:
         assert wilcoxon(lopsided) < wilcoxon(balanced)
 
 
-class TestRankBiserial:
+class TestTheSignEffectSize:
     def test_all_discordant_pairs_favouring_the_first_arm(self) -> None:
-        assert rank_biserial(np.ones(7)) == 1.0
+        assert sign_effect_size(np.ones(7)) == 1.0
 
     def test_all_favouring_the_second(self) -> None:
-        assert rank_biserial(-np.ones(7)) == -1.0
+        assert sign_effect_size(-np.ones(7)) == -1.0
 
     def test_an_even_split_is_zero(self) -> None:
-        assert rank_biserial(np.array([1.0, 1.0, -1.0, -1.0])) == 0.0
+        assert sign_effect_size(np.array([1.0, 1.0, -1.0, -1.0])) == 0.0
 
     def test_ties_are_outside_the_denominator(self) -> None:
         # The share is of *discordant* pairs. Ties must not pull it toward zero,
         # or a high tie rate would read as a small effect.
-        assert rank_biserial(np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0.0])) == 1.0
+        assert sign_effect_size(np.array([1.0, 1.0, 0.0, 0.0, 0.0, 0.0])) == 1.0
 
     def test_no_discordant_pairs_at_all(self) -> None:
-        assert rank_biserial(np.zeros(5)) == 0.0
+        assert sign_effect_size(np.zeros(5)) == 0.0
 
 
 class TestTheBootstrapInterval:
@@ -174,7 +174,7 @@ class TestTheDirectionConvention:
         )
         assert result.favouring_first == 1
         assert result.favouring_second == 0
-        assert result.rank_biserial == 1.0
+        assert result.sign_effect_size == 1.0
 
     def test_on_a_lower_is_better_outcome_the_winner_is_favouring_second(self) -> None:
         # The first arm reaches a smaller distance-to-goal, which is the better
@@ -186,7 +186,7 @@ class TestTheDirectionConvention:
             np.random.default_rng(0),
         )
         assert result.favouring_second == 2
-        assert result.rank_biserial == -1.0
+        assert result.sign_effect_size == -1.0
         assert result.mean_difference < 0
 
 

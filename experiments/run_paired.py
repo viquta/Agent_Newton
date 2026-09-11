@@ -74,11 +74,41 @@ def analyse(coupled: dict, decoupled: dict, rng: np.random.Generator) -> list:
     return list(zip(results, adjusted))
 
 
+def record(result, adjusted: float) -> dict:  # noqa: ANN001
+    """One outcome as stored, with every quantity the analysis declares.
+
+    ⚠️ **One writer for every framing, which it was not.** `compare` returns all
+    of these for whatever it is handed, but the dose-matched writers used to keep
+    four fields of the twelve — so framing B was stored without its interval, its
+    Wilcoxon value, its effect size or its discordant counts, and a table putting
+    the framings side by side could not be built from the summaries at all. The
+    narrowness was in the *writer*, never in the measurement.
+
+    Both p-values are named for the test that produced them, and `holm_p` is
+    separate from `sign_p` rather than replacing it: the correction is over the
+    sign test as one family of four, and a reader has to be able to see both.
+    """
+    return {
+        "outcome": result.outcome,
+        "mean_difference": result.mean_difference,
+        "ci95": list(result.ci95),
+        "n_pairs": result.n_pairs,
+        "ties": result.ties,
+        "favouring_coupled": result.favouring_first,
+        "favouring_decoupled": result.favouring_second,
+        "sign_effect_size": result.sign_effect_size,
+        "sign_p": result.sign_p,
+        "wilcoxon_p": result.wilcoxon_p,
+        "holm_p": adjusted,
+        "significant": adjusted < ALPHA,
+    }
+
+
 def show(rows: list, title: str) -> None:
     print(f"\n{title}")
     header = (
         f"  {'outcome':18}{'mean diff':>12}{'95% CI':>22}{'ties':>7}"
-        f"{'c/d':>9}{'r':>8}{'sign p':>10}{'holm':>10}"
+        f"{'c/d':>9}{'dir':>8}{'sign p':>10}{'holm':>10}"
     )
     print(header)
     print("  " + "-" * (len(header) - 2))
@@ -89,12 +119,13 @@ def show(rows: list, title: str) -> None:
             f"  {result.outcome:18}{result.mean_difference:>+12.4f}{ci:>22}"
             f"{result.ties:>7}"
             f"{f'{result.favouring_first}/{result.favouring_second}':>9}"
-            f"{result.rank_biserial:>+8.3f}"
+            f"{result.sign_effect_size:>+8.3f}"
             f"{result.sign_p:>10.2e}{adjusted:>9.2e}{mark}"
         )
     print("\n  ties = learners the two architectures treated identically;")
     print("  c/d  = discordant pairs favouring coupled / decoupled;")
-    print("  r    = rank-biserial; * = significant after Holm correction.")
+    print("  dir  = share of discordant pairs favouring coupled, on [-1, 1];")
+    print("  *    = significant after Holm correction.")
 
 
 def spent_seeds(results_dir: Path) -> dict[int, set[str]]:
@@ -192,23 +223,8 @@ def main() -> None:
         "mean_items": {arm: metrics[arm]["mean_items"] for arm in ARMS},
         "primary_outcome": OUTCOMES[0],
         "alpha": ALPHA,
-        "results": [
-            {
-                "outcome": r.outcome,
-                "mean_difference": r.mean_difference,
-                "ci95": list(r.ci95),
-                "n_pairs": r.n_pairs,
-                "ties": r.ties,
-                "favouring_coupled": r.favouring_first,
-                "favouring_decoupled": r.favouring_second,
-                "rank_biserial": r.rank_biserial,
-                "sign_p": r.sign_p,
-                "wilcoxon_p": r.wilcoxon_p,
-                "holm_p": adjusted,
-                "significant": adjusted < ALPHA,
-            }
-            for r, adjusted in rows
-        ],
+        "framing": "A — each arm runs to its own end",
+        "results": [record(r, adjusted) for r, adjusted in rows],
     }
     show(rows, f"paired comparison — {args.n} learners, seed {args.seed}")
     print(
@@ -225,19 +241,11 @@ def main() -> None:
         matched_rows = analyse(matched, metrics["decoupled"], rng)
         show(matched_rows, f"dose-matched — coupled capped at {budget} items")
         report["dose_matched"] = {
+            "framing": "B — coupled capped at the decoupled arm's item count",
             "budget": budget,
             "run_id": matched["run_id"],
             "mean_items": matched["mean_items"],
-            "results": [
-                {
-                    "outcome": r.outcome,
-                    "mean_difference": r.mean_difference,
-                    "sign_p": r.sign_p,
-                    "holm_p": adjusted,
-                    "significant": adjusted < ALPHA,
-                }
-                for r, adjusted in matched_rows
-            ],
+            "results": [record(r, adjusted) for r, adjusted in matched_rows],
         }
 
     directory = args.out or config.paths.results_dir / f"paired_{config.domain}"

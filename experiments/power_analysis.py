@@ -52,7 +52,7 @@ from agent_newton.core.evaluation.statistics import (  # noqa: E402
     bootstrap_ci,
     holm_bonferroni,
     paired_differences,
-    rank_biserial,
+    sign_effect_size,
     sign_test,
     wilcoxon,
 )
@@ -182,7 +182,7 @@ def main() -> None:
             "pilot_discordant": int((pilot != 0).sum()),
             "pilot_favouring_coupled": int((pilot > 0).sum()),
             "pilot_favouring_decoupled": int((pilot < 0).sum()),
-            "rank_biserial": rank_biserial(pilot),
+            "sign_effect_size": sign_effect_size(pilot),
             "sign_test_p": sign_test(pilot),
             "wilcoxon_p": wilcoxon(pilot),
             "required_n": sufficient[0]["n_learners"] if sufficient else None,
@@ -206,7 +206,7 @@ def main() -> None:
             f"  discordant {entry['pilot_discordant']}/{args.pilot} "
             f"({entry['pilot_favouring_coupled']} coupled, "
             f"{entry['pilot_favouring_decoupled']} decoupled), "
-            f"rank-biserial {entry['rank_biserial']:+.3f}"
+            f"effect size {entry['sign_effect_size']:+.3f}"
         )
         for label, key in (("sign test", "required_n"), ("Holm", "required_n_holm")):
             required = entry[key]

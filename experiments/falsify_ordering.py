@@ -163,7 +163,7 @@ def main() -> None:
                 "ties": r.ties,
                 "favouring_baseline": r.favouring_first,
                 "favouring_probe": r.favouring_second,
-                "rank_biserial": r.rank_biserial,
+                "sign_effect_size": r.sign_effect_size,
                 "sign_p": r.sign_p,
                 "holm_p": p,
                 "significant": p < ALPHA,

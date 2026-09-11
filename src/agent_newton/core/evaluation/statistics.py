@@ -17,9 +17,14 @@ discordant count is small. Wilcoxon's signed-rank is reported beside it: it uses
 the magnitudes too, so it has more power when they are informative, at the cost
 of treating differences as comparable across learners.
 
-Effect size is the **rank-biserial correlation**, the share of discordant pairs
+Effect size is the **sign-test effect size**, the share of discordant pairs
 favouring one arm rescaled to [-1, 1]. It does not pretend the differences sit
-on an interval scale, which Cohen's d would.
+on an interval scale, which Cohen's d would, and it matches the test it is
+reported beside: the sign test reads directions, and so does this.
+
+⚠️ **This was called the rank-biserial correlation until 2026-09-10 and is not
+one** — see `sign_effect_size`. The formula never changed and no stored value
+moved; the name did.
 """
 
 from __future__ import annotations
@@ -49,7 +54,8 @@ class PairedResult:
     ci95: tuple[float, float]
     sign_p: float
     wilcoxon_p: float
-    rank_biserial: float
+    #: Renamed from `rank_biserial` on 2026-09-10; see `sign_effect_size`.
+    sign_effect_size: float
 
     @property
     def significant(self) -> bool:
@@ -82,8 +88,31 @@ def wilcoxon(differences: np.ndarray) -> float:
         return 1.0
 
 
-def rank_biserial(differences: np.ndarray) -> float:
-    """Share of discordant pairs favouring the first arm, rescaled to [-1, 1]."""
+def sign_effect_size(differences: np.ndarray) -> float:
+    """Share of discordant pairs favouring the first arm, rescaled to [-1, 1].
+
+    ⚠️ **Renamed 2026-09-10, and the old name was wrong.** This was called
+    `rank_biserial`, and it is not the matched-pairs rank-biserial correlation:
+    that statistic is ``(W+ - W-) / (W+ + W-)`` over the *ranks of the absolute
+    differences*, and nothing here ranks anything. This counts directions.
+
+    **The formula is deliberate and stays.** The declared primary test is the
+    exact sign test, which reads directions and discards magnitudes; an effect
+    size taken from Wilcoxon's rank sums would not match the test it is reported
+    beside. It is also what gives this statistic the property §8.0 relies on —
+    ties sit outside the denominator, so it does not fall as the tie rate rises.
+
+    ⚠️ **The two are not interchangeable, so the old name was not harmless.**
+    Measured on the framing-C cohort (seed 20260811): they agree exactly on
+    `gain` and `goals_mastered`, differ by 0.037 on `distance_to_goal`, and
+    differ by **0.130 on the primary** — -0.314 here against -0.184 ranked, or
+    about two fifths of the magnitude. They coincide when the discordant split
+    is lopsided and diverge when it is mixed.
+
+    **No stored value moved.** Summaries written before the rename carry this
+    same number under the key `rank_biserial`; `compare_summary` treats the two
+    keys as one field so the rename cannot read as a reproduction failure.
+    """
     discordant = differences[differences != 0]
     if discordant.size == 0:
         return 0.0
@@ -141,7 +170,7 @@ def compare(
         ci95=bootstrap_ci(differences, rng, draws),
         sign_p=sign_test(differences),
         wilcoxon_p=wilcoxon(differences),
-        rank_biserial=rank_biserial(differences),
+        sign_effect_size=sign_effect_size(differences),
     )
 
 

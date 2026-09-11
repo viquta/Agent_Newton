@@ -93,7 +93,7 @@ def point(config: Config, half_life: float | None, forgets: bool, args, rng) -> 
         "ties": primary.ties,
         "favouring_coupled": primary.favouring_first,
         "favouring_decoupled": primary.favouring_second,
-        "rank_biserial": primary.rank_biserial,
+        "sign_effect_size": primary.sign_effect_size,
         "sign_p": primary.sign_p,
         "holm_p": adjusted,
         "significant": adjusted < ALPHA,

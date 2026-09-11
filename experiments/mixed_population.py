@@ -118,7 +118,7 @@ def row(result, adjusted) -> dict:
         "ties": result.ties,
         "favouring_coupled": result.favouring_first,
         "favouring_decoupled": result.favouring_second,
-        "rank_biserial": result.rank_biserial,
+        "sign_effect_size": result.sign_effect_size,
         "sign_p": result.sign_p,
         "holm_p": adjusted,
         "significant": adjusted < ALPHA,

@@ -144,7 +144,7 @@ def main() -> None:
                     "ties": result.ties,
                     "favouring_massed": result.favouring_first,
                     "favouring_spaced": result.favouring_second,
-                    "rank_biserial": result.rank_biserial,
+                    "sign_effect_size": result.sign_effect_size,
                 }
                 for outcome, result in rows.items()
             },

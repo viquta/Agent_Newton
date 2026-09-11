@@ -114,3 +114,40 @@ class TestCommandLine:
         rerun.write_text(json.dumps(_summary(seed=1)))
         assert main() == 1
         assert "differs" in capsys.readouterr().out
+
+
+class TestRenamedKeys:
+    """A field that changed name must still be compared against its own value.
+
+    ⚠️ The second test is the one that matters. An alias is a way of declaring
+    two names equivalent, and an alias that made their *values* equivalent too
+    would silence exactly the difference this tool exists to report — so the
+    guard is only worth having if it can still fail.
+    """
+
+    def _with(self, key: str, value: float) -> dict:
+        return _summary(results=[{"outcome": "remediation", key: value}])
+
+    def test_the_old_and_new_names_are_compared_as_one_field(self) -> None:
+        differences, checked = compare(
+            self._with("sign_effect_size", 0.8824),
+            self._with("rank_biserial", 0.8824),
+        )
+        assert differences == []
+        # Guards against agreement reached by dropping both.
+        assert checked > 3
+
+    def test_a_real_difference_under_the_two_names_is_still_reported(self) -> None:
+        differences, _ = compare(
+            self._with("sign_effect_size", -0.1841),
+            self._with("rank_biserial", -0.3143),
+        )
+        assert any("sign_effect_size" in line for line in differences)
+
+    def test_an_unaliased_rename_is_still_reported_as_a_difference(self) -> None:
+        # The alias covers one rename, deliberately. Any other key that appears
+        # under a new name is a difference and must read as one.
+        differences, _ = compare(
+            self._with("some_new_name", 0.5), self._with("some_old_name", 0.5)
+        )
+        assert differences != []

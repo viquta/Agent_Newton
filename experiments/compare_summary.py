@@ -25,6 +25,20 @@ import re
 from pathlib import Path
 from typing import Any, Iterator, Sequence
 
+#: Old key → current key, for a field that was renamed without its value
+#: changing. Without this a rename reads as a value appearing and another
+#: disappearing, which is the loudest possible way to report that nothing
+#: happened — and it would bury a real difference in the same run.
+#:
+#: ⚠️ Only for a rename that left the number alone. A key whose *meaning*
+#: changed must not be aliased: that is a difference, and reporting it is the
+#: whole point of this tool.
+RENAMED_KEYS: dict[str, str] = {
+    # 2026-09-10. Counted directions, never ranked anything, so the old name
+    # named a statistic it did not compute. Formula and value unchanged.
+    "rank_biserial": "sign_effect_size",
+}
+
 #: Keys naming a run, a directory or a moment. Two runs of the same experiment
 #: differ in all of them and agree on every number, which is the distinction
 #: this tool exists to draw.
@@ -50,11 +64,16 @@ TOLERANCE = 1e-9
 
 
 def leaves(node: Any, path: str = "") -> Iterator[tuple[str, Any]]:
-    """Every scalar in the structure, with the path that reaches it."""
+    """Every scalar in the structure, with the path that reaches it.
+
+    Renamed keys are normalised on the way through, so a field that changed name
+    is still compared against its own stored value.
+    """
     if isinstance(node, dict):
         for key, value in node.items():
             if key in PROVENANCE_KEYS:
                 continue
+            key = RENAMED_KEYS.get(key, key)
             yield from leaves(value, f"{path}.{key}" if path else str(key))
     elif isinstance(node, list):
         for index, value in enumerate(node):
