@@ -14,7 +14,7 @@ it *is* the argument in visual form, and it appears in the submitted document �
 so publishing it early is the thing the publishability rule exists to prevent.
 Pass ``--out results/figures`` to use the tracked location deliberately.
 
-Three figures, and each one is the encoding the *shape of its data* asks for:
+Five figures, and each one is the encoding the *shape of its data* asks for:
 
 ``prerequisite_sweep``
     Two quantities against the strength of the mechanism, in the same units and
@@ -33,6 +33,19 @@ Three figures, and each one is the encoding the *shape of its data* asks for:
     means would show a difference while hiding that it rests on twelve people
     out of a hundred and sixty.
 
+``learner_type_reversal``
+    The same diverging bar, once per simulated population, beside the level each
+    arm reached. Two panels rather than one because the bars give a direction,
+    and a direction is only interpretable against how much either arm taught at
+    that setting — and a figure travels without its caption, so the qualifier
+    has to be a panel rather than a note.
+
+``power_curve``
+    Two decision rules over the same sizes, so the vertical gap between a line
+    and its dashed partner is the quantity of interest. The outcomes that are
+    powered at the smallest size simulated are stated rather than drawn: as
+    curves they are flat lines at 1.0 that compress everything else.
+
 These are print figures, so there is no hover layer and one surface rather than
 a selected dark mode. Colour is the validated categorical palette; every series
 carries a direct label as well as a hue, so identity is never colour alone.
@@ -41,7 +54,9 @@ carries a direct label as well as a hue, so identity is never colour alone.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
+import re
 from pathlib import Path
 
 import matplotlib
@@ -73,6 +88,21 @@ POLE_LOW, NEUTRAL, POLE_HIGH = "#e34948", "#d8d7d2", "#2a78d6"
 #: first version of this one drew 160 learners favouring the decoupled arm on
 #: the outcome the coupled arm wins by the widest margin.
 LOWER_IS_BETTER = frozenset({"distance_to_goal"})
+
+#: Where `learner_type_reversal` checks its categories against, relative to ROOT.
+GRID_SOURCE = "experiments/grid_learner_types.py"
+
+#: Category name -> the shape of the error proportion that category produces.
+#: The summary keys name the mechanism a dial implements; these name what it
+#: looks like plotted against items, which is the axis the four rows are
+#: compared on and the one the mechanism names do not reveal. Checked against
+#: the declared categories, so a new dial cannot draw without a shape.
+ERROR_SHAPE: dict[str, str] = {
+    "basic": "exponential",
+    "linear": "linear",
+    "forgetful": "sawtooth",
+    "slipper": "noise floor",
+}
 
 SURFACE = "#fcfcfb"
 INK, INK_SOFT, INK_MUTED = "#0b0b0b", "#52514e", "#898781"
@@ -313,6 +343,390 @@ def paired_discordance(results: Path, out: Path) -> Path:
     return out / f"paired_discordance.{SUFFIX}"
 
 
+def _declared_categories() -> dict[str, dict]:
+    """`CATEGORIES` as `grid_learner_types.py` declares it, parsed not imported.
+
+    Parsed so drawing a stored summary does not import an experiment that would
+    pull in the whole session stack to read one dict.
+    """
+    source = ROOT / GRID_SOURCE
+    match = re.search(
+        r"^CATEGORIES: dict\[str, dict\] = (\{.*?^\})", source.read_text(), re.M | re.S
+    )
+    if match is None:
+        raise SystemExit(f"{GRID_SOURCE} no longer declares CATEGORIES as a literal")
+    # Comments inside the literal are dropped by `literal_eval`'s parser.
+    return ast.literal_eval(match.group(1))
+
+
+def _dial_text(dials: dict) -> str:
+    """One category's dials, short enough for a tick label.
+
+    The field names carry the mechanism they belong to, which is redundant once
+    the row is labelled with it and long enough to widen the panel by an inch.
+    """
+    if not dials:
+        return "dials off"
+    #: An unmapped key falls back to its own name rather than refusing to draw:
+    #: the dial *values* are already checked against the source, so a gap here
+    #: is presentational and costs a wider panel, not a wrong figure.
+    short = {
+        "forgetting_rate": "forgets",
+        "forgetting_period": "every",
+        "remediation_curve": "curve",
+        "slip_rate": "slips",
+    }
+    return ", ".join(
+        f"{short.get(key, key)} {value}" for key, value in dials.items()
+    )
+
+
+def _grid_complaints(summary: dict) -> list[str]:
+    """What the summary and the experiment disagree about, in three directions.
+
+    A figure drawn from a summary its source disowns is worse than no figure,
+    because it looks current. Returning complaints is only half of it — the
+    caller has to refuse to draw, or the check cannot fail and proves nothing.
+    """
+    declared = _declared_categories()
+    drawn = set(summary["categories"])
+    complaints = [
+        f"{kind}: {', '.join(sorted(names))}"
+        for kind, names in (
+            (f"declared in {GRID_SOURCE} but not in the summary", set(declared) - drawn),
+            (f"in the summary but not declared in {GRID_SOURCE}", drawn - set(declared)),
+            ("drawn with no entry in ERROR_SHAPE", drawn - set(ERROR_SHAPE)),
+        )
+        if names
+    ]
+    # The dials matter as much as the names: a category re-tuned in place would
+    # keep its key and mean something else.
+    complaints += [
+        f"category {name} was run with {summary['categories'][name].get('dials')} "
+        f"but {GRID_SOURCE} now declares {declared[name]}"
+        for name in sorted(drawn & set(declared))
+        if summary["categories"][name].get("dials") != declared[name]
+    ]
+    if summary.get("standing") != "exploratory":
+        complaints.append(
+            f"the summary's standing is {summary.get('standing')!r}; this figure "
+            f"states on its face that these populations are exploratory"
+        )
+    if "basic" not in drawn:
+        complaints.append(
+            "no `basic` row — it is the population the stored results were "
+            "produced on, and without it the others have no baseline"
+        )
+    return complaints
+
+
+def learner_type_reversal(results: Path, out: Path) -> Path:
+    """The paired difference per population, and the level each arm reached.
+
+    Two panels, because the direction and the level cannot be read apart.
+
+    The left panel is direction, in `paired_discordance`'s encoding: bars
+    centred on the ties, one row per population. It is the encoding that makes
+    the finding visible at all — three rows are almost entirely tied, and the
+    fourth both leans the other way and has lost nearly all its ties, so the
+    outcome only has discriminating power in the row where it changes sign.
+
+    The right panel is the level, and it is here rather than in a caption
+    because a figure travels without one — the lesson `prerequisite_sweep`
+    records from the other direction. At the strength the grid used, both arms
+    clear a small fraction of what they clear with the dial off, so the row that
+    changes sign compares two arms that have nearly stopped teaching. The
+    weakest non-zero setting is marked too: the sign has already changed there,
+    which is what separates a floor from the whole explanation.
+
+    Both marked settings and every label are read from the stored summaries, and
+    the categories are checked three ways against the experiment's own source —
+    see `_grid_complaints`.
+    """
+    grid = json.loads((results / "grid_learner_types" / "summary.json").read_text())
+    sweep = json.loads((results / "sweep_forgetting" / "summary.json").read_text())
+    complaints = _grid_complaints(grid)
+    if complaints:
+        raise SystemExit(
+            "learner_type_reversal refuses to draw:\n  " + "\n  ".join(complaints)
+        )
+
+    primary = grid["primary_outcome"]
+    measure = primary.replace("_", " ")
+
+    def row_for(name: str) -> dict:
+        outcomes = grid["categories"][name]["outcomes"]
+        return next(row for row in outcomes if row["outcome"] == primary)
+
+    # Declared order, reversed: `barh` puts index 0 at the bottom, and `basic`
+    # is the baseline the rest are read against, so it belongs at the top.
+    names = list(reversed(list(grid["categories"])))
+
+    figure, (left, right) = plt.subplots(
+        1, 2, figsize=(10.4, 4.0), gridspec_kw={"width_ratios": [1.25, 1]}
+    )
+    for ax in (left, right):
+        _bare(ax)
+
+    # ---- left: which architecture each learner's pair favoured -------------
+    left.grid(axis="y", visible=False)
+    reach = max(
+        row_for(name)["ties"] / 2
+        + max(row_for(name)["favouring_coupled"], row_for(name)["favouring_decoupled"])
+        for name in names
+    )
+    for y, name in enumerate(names):
+        row = row_for(name)
+        ties = row["ties"]
+        coupled, decoupled = row["favouring_coupled"], row["favouring_decoupled"]
+        if primary in LOWER_IS_BETTER:
+            coupled, decoupled = decoupled, coupled
+        left.barh(y, -decoupled, left=-ties / 2, height=0.54, color=POLE_LOW,
+                  edgecolor=SURFACE, linewidth=2, zorder=3)
+        left.barh(y, ties, left=-ties / 2, height=0.54, color=NEUTRAL,
+                  edgecolor=SURFACE, linewidth=2, zorder=3)
+        left.barh(y, coupled, left=ties / 2, height=0.54, color=POLE_HIGH,
+                  edgecolor=SURFACE, linewidth=2, zorder=3)
+        if ties:
+            inside = ties > 0.09 * reach * 3.5
+            left.annotate(
+                f"{ties} tied", xy=(0, y if inside else y + 0.40), ha="center",
+                va="center", color=INK_SOFT, fontsize=8,
+            )
+        if decoupled:
+            left.annotate(f"{decoupled}", xy=(-ties / 2 - decoupled, y), xytext=(-5, 0),
+                          textcoords="offset points", ha="right", va="center",
+                          color=INK_SOFT, fontsize=8)
+        if coupled:
+            left.annotate(f"{coupled}", xy=(ties / 2 + coupled, y), xytext=(5, 0),
+                          textcoords="offset points", ha="left", va="center",
+                          color=INK_SOFT, fontsize=8)
+        # The difference in its own right-hand column, on a blended transform so
+        # the four land in a line whatever the bars underneath them do.
+        left.annotate(
+            f"{row['mean_difference']:+.4f}{' *' if row['significant'] else ''}",
+            xy=(0.995, y), xycoords=left.get_yaxis_transform(), ha="right",
+            va="center", fontsize=8.5, family="monospace",
+            color=POLE_HIGH if row["mean_difference"] > 0 else POLE_LOW,
+        )
+
+    left.set_yticks(list(range(len(names))))
+    left.set_yticklabels(
+        [
+            "\n".join(
+                part for part in (
+                    ERROR_SHAPE[name],
+                    # Dropped when the shape and the mechanism share a name, as
+                    # they do for `linear`, where printing both reads as a
+                    # stutter and neither word is doing work the other is not.
+                    None if name == ERROR_SHAPE[name] else name,
+                    _dial_text(grid["categories"][name]["dials"]),
+                ) if part
+            )
+            for name in names
+        ],
+        fontsize=8.5, linespacing=1.5,
+    )
+    left.set_xticks([])
+    left.set_xlim(-reach * 1.35, reach * 2.15)
+    left.set_ylim(-0.6, len(names) - 0.4)
+    left.set_xlabel(f"learners, by which architecture their pair favoured"
+                    f"      (* Holm-adjusted p < {grid['alpha']:g})")
+    left.set_title(f"{measure} changes sign against one population,\n"
+                   f"and only there does it stop tying", loc="left")
+    # Written rather than drawn with arrow glyphs: the house sans has no arrows,
+    # and a missing glyph renders as a box in the PDF. Placed by where the bars
+    # actually reach, not at the panel edges, which the difference column owns.
+    left.annotate("favours decoupled", xy=(0.02, -0.155), xycoords="axes fraction",
+                  color=INK_SOFT, fontsize=8)
+    left.annotate("favours coupled", xy=(0.50, -0.155), xycoords="axes fraction",
+                  color=INK_SOFT, fontsize=8)
+
+    # ---- right: what either arm actually achieved -------------------------
+    points = sweep["points"]
+    rates = [point["forgetting_rate"] for point in points]
+    achieved = {
+        arm: [point["mean_remediation"][arm] for point in points]
+        for arm in ("coupled", "decoupled")
+    }
+    for arm, colour in (("coupled", POLE_HIGH), ("decoupled", POLE_LOW)):
+        right.plot(rates, achieved[arm], color=colour, linewidth=2, marker="o",
+                   markersize=4.5, markeredgecolor=SURFACE, markeredgewidth=1.2,
+                   zorder=3, label=arm)
+
+    # Headroom for the two marked settings, whose labels sit in a band above the
+    # data rather than beside it: the curve descends across the whole width, so
+    # there is no interior region wide enough that does not touch it.
+    ceiling = max(max(series) for series in achieved.values())
+    right.set_ylim(0, ceiling * 1.30)
+
+    # Both settings are read from the data. The grid's is where the left panel's
+    # sign change was measured; the flip point is the weakest setting at which it
+    # had already happened, and the two being different is why this panel exists.
+    grid_rate = grid["categories"]["forgetful"]["dials"]["forgetting_rate"]
+    flipped = [
+        point["forgetting_rate"] for point in points
+        if point["forgetting_rate"] > 0
+        and point["framing_a"]["mean_difference"] < 0
+        and point["framing_a"]["significant"]
+    ]
+    marks = [(grid_rate, "the left panel's setting")]
+    if flipped and flipped[0] != grid_rate:
+        marks.insert(0, (flipped[0], "sign already changed"))
+    for rate, label in marks:
+        right.axvline(rate, color=AXIS, linewidth=0.8, linestyle=(0, (2, 2)), zorder=2)
+        right.annotate(label, xy=(rate, 0.985), xycoords=right.get_xaxis_transform(),
+                       xytext=(3, 0), textcoords="offset points", ha="left",
+                       va="top", color=INK_MUTED, fontsize=7.5)
+
+    right.set_xticks(rates)
+    right.set_xticklabels([f"{rate:g}" for rate in rates])
+    right.set_xlabel(f"forgetting rate, every {sweep['period']} items")
+    right.set_ylabel(f"{measure} achieved")
+    right.set_title("Where it changes sign, both arms have nearly\nstopped teaching",
+                    loc="left")
+    right.legend(loc="upper right", fontsize=8.5, labelcolor="linecolor",
+                 handlelength=1.2, bbox_to_anchor=(1.0, 0.90))
+    at_grid = achieved["coupled"][rates.index(grid_rate)]
+    right.annotate(
+        f"at that setting the coupled arm clears {at_grid:.2f},\n"
+        f"against {achieved['coupled'][0]:.2f} with the dial off — "
+        f"{at_grid / achieved['coupled'][0]:.0%} of it",
+        xy=(0.98, 0.58), xycoords="axes fraction", ha="right", va="top",
+        color=INK_SOFT, fontsize=7.5, linespacing=1.45,
+    )
+
+    # As a figure-level label rather than placed text: constrained layout
+    # accounts for this one and reserves the strip, where free text in figure
+    # coordinates lands on top of the axis labels below it.
+    figure.supxlabel(
+        f"Exploratory. N = {grid['n_learners']} per arm, paired by learner; grid "
+        f"seed {grid['seed']}, forgetting sweep seed {sweep['seed']}. "
+        f"`basic` is the population the stored results were produced on.",
+        fontsize=7.5, color=INK_MUTED,
+    )
+    figure.savefig(out / f"learner_type_reversal.{SUFFIX}")
+    plt.close(figure)
+    return out / f"learner_type_reversal.{SUFFIX}"
+
+
+def power_curve(results: Path, out: Path) -> Path:
+    """Power against sample size, under both decision rules.
+
+    Two outcomes and two rules, so colour carries the outcome and dash carries
+    the rule. **The gap between a solid line and its dashed partner is the
+    point**: the correction is applied to the analysis but was not applied when
+    the size was chosen, so every solid line overstates the power of the study
+    as run. Drawing the corrected series alone would hide that there are two
+    numbers; drawing only the uncorrected one is what happened.
+
+    The two goal outcomes are left off the axes deliberately and stated instead.
+    They sit at 1.0 across the whole range and reach the target at the smallest
+    size simulated, so as curves they are two flat lines that compress the
+    region where anything happens — and the fact worth carrying is a sample
+    size, not a shape.
+
+    The target rule and the marked size are read from the file, and so is the
+    claim that the target is never reached: `required_n` is null exactly when no
+    simulated size cleared it.
+    """
+    data = json.loads((results / "power_calculus" / "power.json").read_text())
+    outcomes = data["outcomes"]
+    target = data["target_power"]
+    primary = data["primary_outcome"]
+
+    #: The outcomes whose power actually varies over the range. Selected by
+    #: whether the target was ever reached, so a re-run that changes which
+    #: outcomes are underpowered redraws rather than mislabels.
+    climbing = [
+        name for name, series in outcomes.items() if series["required_n_holm"] is None
+    ]
+    reached = {
+        name: series["required_n_holm"]
+        for name, series in outcomes.items()
+        if series["required_n_holm"] is not None
+    }
+
+    figure, ax = plt.subplots(figsize=(6.6, 3.6))
+    _bare(ax)
+    ax.axhline(target, color=POLE_LOW, linewidth=1, linestyle=(0, (4, 3)), zorder=2)
+    ax.annotate(
+        f"target {target:g}", xy=(0.005, target), xycoords=ax.get_yaxis_transform(),
+        xytext=(0, 5), textcoords="offset points", color=POLE_LOW, fontsize=8,
+    )
+
+    colours = {name: colour for name, colour in zip(climbing, (BLUE, ORANGE, AQUA))}
+    for name in climbing:
+        points = outcomes[name]["curve"]
+        ns = [point["n_learners"] for point in points]
+        for key, dash, rule in (
+            ("power_sign_test", None, "sign test"),
+            ("power_sign_test_holm", (0, (3, 2)), "under Holm"),
+        ):
+            ax.plot(
+                ns, [point[key] for point in points], color=colours[name],
+                linewidth=2 if dash is None else 1.6, linestyle=dash or "solid",
+                marker="o", markersize=4, markeredgecolor=SURFACE,
+                markeredgewidth=1.1, zorder=3,
+            )
+            ax.annotate(
+                f"{name.replace('_', ' ')}, {rule}"
+                if key == "power_sign_test" else rule,
+                xy=(ns[-1], points[-1][key]), xytext=(7, 0),
+                textcoords="offset points", ha="left", va="center",
+                color=colours[name], fontsize=8,
+            )
+
+    # The size actually used, which is the number a reader came for.
+    configured = 160
+    at = {
+        name: (
+            next(p for p in outcomes[name]["curve"] if p["n_learners"] == configured)
+        )
+        for name in climbing
+        if any(p["n_learners"] == configured for p in outcomes[name]["curve"])
+    }
+    if configured in [p["n_learners"] for p in outcomes[primary]["curve"]]:
+        ax.axvline(configured, color=AXIS, linewidth=0.8, linestyle=(0, (2, 2)), zorder=1)
+        row = at[primary]
+        ax.annotate(
+            f"N = {configured}: {row['power_sign_test']:.2f} uncorrected,\n"
+            f"{row['power_sign_test_holm']:.2f} under Holm",
+            xy=(configured, 0.98), xycoords=ax.get_xaxis_transform(),
+            xytext=(-6, 0), textcoords="offset points", ha="right", va="top",
+            color=INK_SOFT, fontsize=8, linespacing=1.4,
+        )
+
+    ax.set_xlim(0, max(p["n_learners"] for p in outcomes[primary]["curve"]) * 1.34)
+    ax.set_ylim(0, 1.04)
+    ax.set_xlabel("learners per arm")
+    ax.set_ylabel("power")
+    ax.set_title(
+        f"Neither fine-grained outcome reaches {target:g} at any size simulated",
+        loc="left",
+    )
+    if reached:
+        ax.annotate(
+            "  ·  ".join(
+                f"{name.replace('_', ' ')} reaches it at N = {n}"
+                for name, n in reached.items()
+            )
+            + " (both rules), so they are not drawn",
+            xy=(0, 0), xytext=(0, -38), textcoords="offset points",
+            xycoords="axes fraction", ha="left", va="top",
+            color=INK_SOFT, fontsize=7.5,
+        )
+    figure.supxlabel(
+        f"One {data['pilot_learners']}-learner pilot pool, "
+        f"{data['replicates']:,} replicates, alpha {data['alpha']:g} — so this is "
+        f"conditional on that pool's own draw.",
+        fontsize=7.5, color=INK_MUTED,
+    )
+    figure.savefig(out / f"power_curve.{SUFFIX}")
+    plt.close(figure)
+    return out / f"power_curve.{SUFFIX}"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--results", type=Path, default=ROOT / "results")
@@ -332,7 +746,13 @@ def main() -> None:
     SUFFIX = args.format
 
     house_style()
-    for draw in (prerequisite_sweep, arbitration_substitution, paired_discordance):
+    for draw in (
+        prerequisite_sweep,
+        arbitration_substitution,
+        paired_discordance,
+        learner_type_reversal,
+        power_curve,
+    ):
         try:
             written = draw(args.results, args.out)
         except FileNotFoundError as missing:
