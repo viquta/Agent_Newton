@@ -1,0 +1,15 @@
+strategy,case_id,returned,relevant,missed,noise
+keyed,rc_gradient_returns_under_a_new_concept,u_power_down u_tired,u_gradient_q u_gradient_steep,u_gradient_q u_gradient_steep,u_power_down u_tired
+keyed,rc_secant_under_first_principles,,u_h_approaches u_secant_q u_secant_understood,u_h_approaches u_secant_q u_secant_understood,
+keyed,rc_ratio_when_ratios_come_back,,u_ratio_q,u_ratio_q,
+keyed,rc_on_topic_and_relevant,u_arithmetic u_just_guessed u_why_relevant,u_division_guess u_ratio_q,u_division_guess u_ratio_q,u_arithmetic u_just_guessed u_why_relevant
+keyed,rc_on_topic_and_irrelevant,u_power_down u_tired,u_power_down,,u_tired
+keyed,rc_nothing_to_recall,,,,
+keyed,rc_a_bare_number_is_not_context,u_counted_two u_h_approaches u_secant_understood,u_gradient_formula u_gradient_q,u_gradient_formula u_gradient_q,u_counted_two u_h_approaches u_secant_understood
+embedded/ollama/nomic-embed-text@0.7,rc_gradient_returns_under_a_new_concept,u_gradient_q u_secant_understood,u_gradient_q u_gradient_steep,u_gradient_steep,u_secant_understood
+embedded/ollama/nomic-embed-text@0.7,rc_secant_under_first_principles,,u_h_approaches u_secant_q u_secant_understood,u_h_approaches u_secant_q u_secant_understood,
+embedded/ollama/nomic-embed-text@0.7,rc_ratio_when_ratios_come_back,u_ratio_q,u_ratio_q,,
+embedded/ollama/nomic-embed-text@0.7,rc_on_topic_and_relevant,,u_division_guess u_ratio_q,u_division_guess u_ratio_q,
+embedded/ollama/nomic-embed-text@0.7,rc_on_topic_and_irrelevant,u_power_down,u_power_down,,
+embedded/ollama/nomic-embed-text@0.7,rc_nothing_to_recall,,,,
+embedded/ollama/nomic-embed-text@0.7,rc_a_bare_number_is_not_context,u_gradient_q,u_gradient_formula u_gradient_q,u_gradient_formula,

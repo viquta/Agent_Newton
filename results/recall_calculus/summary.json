@@ -1,0 +1,79 @@
+{
+  "gold_set": "tests/fixtures/gold/calculus_recall_cases.yaml",
+  "cases": 7,
+  "corpus_utterances": 15,
+  "embed_model": "nomic-embed-text",
+  "threshold": 0.7,
+  "limit": 3,
+  "configured_threshold": 0.7,
+  "cases_with_nothing_to_find": [
+    "rc_nothing_to_recall"
+  ],
+  "strategies": [
+    {
+      "label": "keyed",
+      "precision": 0.1,
+      "recall": 0.09090909090909091,
+      "true_positives": 1,
+      "returned": 10,
+      "relevant": 11,
+      "noise": 9,
+      "returned_nothing_correctly": 1,
+      "cases_with_nothing_to_find": 1,
+      "missed": {
+        "rc_gradient_returns_under_a_new_concept": [
+          "u_gradient_q",
+          "u_gradient_steep"
+        ],
+        "rc_secant_under_first_principles": [
+          "u_h_approaches",
+          "u_secant_q",
+          "u_secant_understood"
+        ],
+        "rc_ratio_when_ratios_come_back": [
+          "u_ratio_q"
+        ],
+        "rc_on_topic_and_relevant": [
+          "u_division_guess",
+          "u_ratio_q"
+        ],
+        "rc_a_bare_number_is_not_context": [
+          "u_gradient_formula",
+          "u_gradient_q"
+        ]
+      }
+    },
+    {
+      "label": "embedded/ollama/nomic-embed-text@0.7",
+      "precision": 0.8,
+      "recall": 0.36363636363636365,
+      "true_positives": 4,
+      "returned": 5,
+      "relevant": 11,
+      "noise": 1,
+      "returned_nothing_correctly": 1,
+      "cases_with_nothing_to_find": 1,
+      "missed": {
+        "rc_gradient_returns_under_a_new_concept": [
+          "u_gradient_steep"
+        ],
+        "rc_secant_under_first_principles": [
+          "u_h_approaches",
+          "u_secant_q",
+          "u_secant_understood"
+        ],
+        "rc_on_topic_and_relevant": [
+          "u_division_guess",
+          "u_ratio_q"
+        ],
+        "rc_a_bare_number_is_not_context": [
+          "u_gradient_formula"
+        ]
+      }
+    }
+  ],
+  "strategies_scored": [
+    "keyed",
+    "embedded/ollama/nomic-embed-text@0.7"
+  ]
+}

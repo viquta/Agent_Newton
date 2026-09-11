@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 from agent_newton import __version__
-from agent_newton.config import Config, ModelSpec
+from agent_newton.config import Config, ModelSpec, RecallConfig
 from agent_newton.domains import registry
 from agent_newton.domains.base import DomainError
 from agent_newton.domains.validate import validate
@@ -1104,15 +1104,23 @@ def evaluate_recall(
     gold: Path = typer.Option(
         Path("tests/fixtures/gold/calculus_recall_cases.yaml"), "--gold"
     ),
-    embed_model: str = typer.Option("nomic-embed-text", "--embed-model"),
+    embed_model: str = typer.Option(RecallConfig().model, "--embed-model"),
     threshold: float = typer.Option(
-        0.5,
+        # ⚠️ Taken from `RecallConfig` rather than repeated. This defaulted to
+        # 0.5 while the wired value was 0.7, so the evaluation measured a
+        # strategy the system would not have used — and the figure §10.6 quotes
+        # (80% precision at 36% recall) is the 0.7 one. A default that drifts
+        # from the configured value scores the wrong instrument.
+        RecallConfig().threshold,
         "--threshold",
         help="Similarity below which a match is dropped. Higher returns less "
         "and means it more; a strategy that always fills its quota looks good "
-        "on recall and bad on precision.",
+        "on recall and bad on precision. Defaults to the configured value.",
     ),
-    limit: int = typer.Option(3, "--limit", help="Utterances returned per query."),
+    limit: int = typer.Option(
+        RecallConfig().limit, "--limit", help="Utterances returned per query."
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Output directory."),
 ) -> None:
     """Compare recall strategies on hand-labelled cases.
 
@@ -1178,6 +1186,62 @@ def evaluate_recall(
             console.print(f"\n[yellow]{report.label} missed[/yellow]")
             for case_id, want in missed:
                 console.print(f"  {case_id}: {', '.join(sorted(want))}")
+
+    if out is None:
+        return
+
+    # ⚠️ This command printed a table and wrote nothing until now, so every
+    # figure §10.6 quoted had no artifact behind it. The other `evaluate`
+    # subcommands all take `--out`; this one is brought into line with them.
+    nothing_to_find = [case.id for case in cases.cases if not case.relevant]
+    out.mkdir(parents=True, exist_ok=True)
+
+    with (out / "cases.csv").open("w", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["strategy", "case_id", "returned", "relevant", "missed", "noise"])
+        for report in reports:
+            for case_id, got, want in report.rows:
+                writer.writerow([
+                    report.label, case_id, " ".join(sorted(got)),
+                    " ".join(sorted(want)), " ".join(sorted(want - got)),
+                    " ".join(sorted(got - want)),
+                ])
+
+    summary = {
+        "gold_set": str(gold),
+        "cases": len(cases.cases),
+        "corpus_utterances": len(cases.corpus),
+        "embed_model": embed_model,
+        "threshold": threshold,
+        "limit": limit,
+        "configured_threshold": RecallConfig().threshold,
+        "cases_with_nothing_to_find": nothing_to_find,
+        # ⚠️ Precision and recall stay apart and are never averaged into one
+        # number. An unrelated remark handed to a tutor as context is worse than
+        # silence, because the tutor will try to use it — so the two failures
+        # are not interchangeable and an F-score would hide which one happened.
+        "strategies": [
+            {
+                "label": report.label,
+                "precision": report.precision,
+                "recall": report.recall,
+                "true_positives": report.true_positives,
+                "returned": report.returned,
+                "relevant": report.relevant,
+                "noise": report.noise,
+                # The cases with nothing to find are invisible to both figures
+                # above: a strategy that always fills its quota fails every one
+                # of them with its recall untouched.
+                "returned_nothing_correctly": report.returned_nothing_correctly,
+                "cases_with_nothing_to_find": len(nothing_to_find),
+                "missed": {case: sorted(want) for case, want in report.missed()},
+            }
+            for report in reports
+        ],
+        "strategies_scored": [report.label for report in reports],
+    }
+    (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    console.print(f"\nwritten to {out / 'summary.json'}")
 
 
 @app.command("sitting")
