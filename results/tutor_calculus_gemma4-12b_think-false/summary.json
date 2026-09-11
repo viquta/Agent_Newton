@@ -1,75 +1,79 @@
 {
   "domain": "calculus",
   "model": "ollama/gemma4:12b (think=false)",
-  "turns": 329,
-  "clean": 329,
-  "clean_rate": 1.0,
+  "turns": 350,
+  "clean": 342,
+  "clean_rate": 0.9771428571428571,
   "fallbacks": 0,
-  "violations_by_rule": {},
-  "rate_by_rule": {},
+  "violations_by_rule": {
+    "answer_leaked": 8
+  },
+  "rate_by_rule": {
+    "answer_leaked": 0.022857142857142857
+  },
   "by_level": {
     "nudge": {
-      "turns": 94,
-      "clean": 94,
-      "clean_rate": 1.0
+      "turns": 100,
+      "clean": 99,
+      "clean_rate": 0.99
     },
     "targeted": {
-      "turns": 141,
-      "clean": 141,
+      "turns": 150,
+      "clean": 150,
       "clean_rate": 1.0
     },
     "worked_step": {
-      "turns": 94,
-      "clean": 94,
-      "clean_rate": 1.0
+      "turns": 100,
+      "clean": 93,
+      "clean_rate": 0.93
     }
   },
   "by_move": {
     "hint": {
-      "turns": 141,
-      "clean": 141,
-      "clean_rate": 1.0
+      "turns": 150,
+      "clean": 144,
+      "clean_rate": 0.96
     },
     "reflect": {
-      "turns": 47,
-      "clean": 47,
+      "turns": 50,
+      "clean": 50,
       "clean_rate": 1.0
     },
     "remediate": {
-      "turns": 141,
-      "clean": 141,
-      "clean_rate": 1.0
+      "turns": 150,
+      "clean": 148,
+      "clean_rate": 0.9866666666666667
     }
   },
   "by_bank": {
     "posttest": {
-      "turns": 105,
-      "clean": 105,
-      "clean_rate": 1.0
+      "turns": 112,
+      "clean": 110,
+      "clean_rate": 0.9821428571428571
     },
     "practice": {
-      "turns": 119,
-      "clean": 119,
-      "clean_rate": 1.0
+      "turns": 126,
+      "clean": 125,
+      "clean_rate": 0.9920634920634921
     },
     "pretest": {
-      "turns": 105,
-      "clean": 105,
-      "clean_rate": 1.0
+      "turns": 112,
+      "clean": 107,
+      "clean_rate": 0.9553571428571429
     }
   },
-  "seconds": 0.08479809761047363,
+  "seconds": 0.12782669067382812,
   "judge": {
-    "model": "ollama/gemma4:26b",
+    "model": "ollama/gemma4:26b (think=false)",
     "gold_set": "tests/fixtures/gold/calculus_tutor_cases.yaml",
     "calibration_cases": 10,
     "agreement_with_hand_labels": 0.9,
     "disagreements": [
-      "gt_stat_counts_what_was_given"
+      "gt_impl_claims_a_chain_rule"
     ],
-    "grounded_rate": 0.8695652173913043,
-    "unobtainable": 121,
-    "level_order_agreement": 0.813953488372093,
-    "level_pairs": 86
+    "grounded_rate": 0.82,
+    "unobtainable": 0,
+    "level_order_agreement": 0.85,
+    "level_pairs": 100
   }
 }
