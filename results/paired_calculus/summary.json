@@ -4,8 +4,8 @@
   "seed": 20260811,
   "power_sized_on_seed": 20260807,
   "arms": {
-    "coupled": "20260818T141349_calculus_paired_coupled_9c95bba3",
-    "decoupled": "20260818T141352_calculus_paired_decoupled_8bf94985"
+    "coupled": "20260911T125919_calculus_paired_coupled_d8dcd4a7",
+    "decoupled": "20260911T125922_calculus_paired_decoupled_2e462ab6"
   },
   "mean_items": {
     "coupled": 44.63125,
@@ -13,6 +13,7 @@
   },
   "primary_outcome": "remediation",
   "alpha": 0.05,
+  "framing": "A \u2014 each arm runs to its own end",
   "results": [
     {
       "outcome": "remediation",
@@ -25,9 +26,9 @@
       "ties": 143,
       "favouring_coupled": 16,
       "favouring_decoupled": 1,
-      "rank_biserial": 0.8823529411764706,
+      "sign_effect_size": 0.8823529411764706,
       "sign_p": 0.000274658203125,
-      "wilcoxon_p": 0.00035153256850746316,
+      "wilcoxon_p": 3.0517578125e-05,
       "holm_p": 0.00054931640625,
       "significant": true
     },
@@ -42,9 +43,9 @@
       "ties": 153,
       "favouring_coupled": 6,
       "favouring_decoupled": 1,
-      "rank_biserial": 0.7142857142857142,
+      "sign_effect_size": 0.7142857142857142,
       "sign_p": 0.125,
-      "wilcoxon_p": 0.05878172135535887,
+      "wilcoxon_p": 0.125,
       "holm_p": 0.125,
       "significant": false
     },
@@ -59,7 +60,7 @@
       "ties": 0,
       "favouring_coupled": 160,
       "favouring_decoupled": 0,
-      "rank_biserial": 1.0,
+      "sign_effect_size": 1.0,
       "sign_p": 1.3684555315672042e-48,
       "wilcoxon_p": 7.726899342598888e-29,
       "holm_p": 5.473822126268817e-48,
@@ -76,7 +77,7 @@
       "ties": 0,
       "favouring_coupled": 0,
       "favouring_decoupled": 160,
-      "rank_biserial": -1.0,
+      "sign_effect_size": -1.0,
       "sign_p": 1.3684555315672042e-48,
       "wilcoxon_p": 1.4744075396637208e-28,
       "holm_p": 5.473822126268817e-48,
@@ -84,35 +85,76 @@
     }
   ],
   "dose_matched": {
+    "framing": "B \u2014 coupled capped at the decoupled arm's item count",
     "budget": 32,
-    "run_id": "20260818T141355_calculus_paired_dosematched_coupled_4ccce872",
+    "run_id": "20260911T125925_calculus_paired_dosematched_coupled_c3d893f9",
     "mean_items": 32.0,
     "results": [
       {
         "outcome": "remediation",
         "mean_difference": -0.11443240944436632,
+        "ci95": [
+          -0.14070216746337824,
+          -0.08877501822330584
+        ],
+        "n_pairs": 160,
+        "ties": 92,
+        "favouring_coupled": 3,
+        "favouring_decoupled": 65,
+        "sign_effect_size": -0.9117647058823529,
         "sign_p": 3.5550311609441887e-16,
+        "wilcoxon_p": 9.555480290794783e-12,
         "holm_p": 7.110062321888377e-16,
         "significant": true
       },
       {
         "outcome": "gain",
         "mean_difference": -0.00958333333333333,
+        "ci95": [
+          -0.013749999999999995,
+          -0.005833333333333332
+        ],
+        "n_pairs": 160,
+        "ties": 133,
+        "favouring_coupled": 2,
+        "favouring_decoupled": 25,
+        "sign_effect_size": -0.8518518518518519,
         "sign_p": 5.647540092468262e-06,
+        "wilcoxon_p": 9.584005666471248e-06,
         "holm_p": 5.647540092468262e-06,
         "significant": true
       },
       {
         "outcome": "goals_mastered",
         "mean_difference": 1.525,
+        "ci95": [
+          1.40625,
+          1.65
+        ],
+        "n_pairs": 160,
+        "ties": 15,
+        "favouring_coupled": 145,
+        "favouring_decoupled": 0,
+        "sign_effect_size": 1.0,
         "sign_p": 4.484155085839415e-44,
+        "wilcoxon_p": 9.271009768991768e-27,
         "holm_p": 1.3452465257518244e-43,
         "significant": true
       },
       {
         "outcome": "distance_to_goal",
         "mean_difference": -5.1875,
+        "ci95": [
+          -5.34390625,
+          -5.025
+        ],
+        "n_pairs": 160,
+        "ties": 0,
+        "favouring_coupled": 0,
+        "favouring_decoupled": 160,
+        "sign_effect_size": -1.0,
         "sign_p": 1.3684555315672042e-48,
+        "wilcoxon_p": 1.0169189713601226e-28,
         "holm_p": 5.473822126268817e-48,
         "significant": true
       }

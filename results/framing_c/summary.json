@@ -6,8 +6,8 @@
   "on_exhaustion": "cycle",
   "re_frames": "results/paired_calculus/summary.json",
   "arms": {
-    "coupled": "20260910T133700_calculus_paired_framingc_coupled_697bcd06",
-    "decoupled": "20260910T133702_calculus_paired_framingc_decoupled_5eb6ad40"
+    "coupled": "20260911T125928_calculus_paired_framingc_coupled_697bcd06",
+    "decoupled": "20260911T125930_calculus_paired_framingc_decoupled_5eb6ad40"
   },
   "mean_items": {
     "coupled": 44.63125,
@@ -29,7 +29,7 @@
       "favouring_decoupled": 23,
       "sign_effect_size": -0.3142857142857143,
       "sign_p": 0.08953107893466952,
-      "wilcoxon_p": 0.34211718515391487,
+      "wilcoxon_p": 0.35070493788225576,
       "holm_p": 0.17906215786933904,
       "significant": false
     },

@@ -15,65 +15,65 @@
       "pilot_discordant": 15,
       "pilot_favouring_coupled": 11,
       "pilot_favouring_decoupled": 4,
-      "rank_biserial": 0.46666666666666656,
+      "sign_effect_size": 0.46666666666666656,
       "sign_test_p": 0.11846923828124999,
-      "wilcoxon_p": 0.04088813291185591,
+      "wilcoxon_p": 0.041259765625,
       "required_n": null,
       "required_n_holm": null,
       "curve": [
         {
           "n_learners": 20,
           "power_sign_test": 0.0005,
-          "power_wilcoxon": 0.004,
+          "power_wilcoxon": 0.0005,
           "mean_discordant_pairs": 1.5315,
           "power_sign_test_holm": 0.0
         },
         {
           "n_learners": 30,
           "power_sign_test": 0.0015,
-          "power_wilcoxon": 0.0125,
+          "power_wilcoxon": 0.002,
           "mean_discordant_pairs": 2.203,
           "power_sign_test_holm": 0.001
         },
         {
           "n_learners": 40,
           "power_sign_test": 0.0105,
-          "power_wilcoxon": 0.0425,
+          "power_wilcoxon": 0.0165,
           "mean_discordant_pairs": 2.9805,
           "power_sign_test_holm": 0.0035
         },
         {
           "n_learners": 60,
           "power_sign_test": 0.048,
-          "power_wilcoxon": 0.135,
+          "power_wilcoxon": 0.0715,
           "mean_discordant_pairs": 4.5765,
           "power_sign_test_holm": 0.0165
         },
         {
           "n_learners": 80,
           "power_sign_test": 0.079,
-          "power_wilcoxon": 0.208,
+          "power_wilcoxon": 0.146,
           "mean_discordant_pairs": 5.966,
           "power_sign_test_holm": 0.0405
         },
         {
           "n_learners": 120,
           "power_sign_test": 0.175,
-          "power_wilcoxon": 0.337,
+          "power_wilcoxon": 0.31,
           "mean_discordant_pairs": 9.0745,
           "power_sign_test_holm": 0.122
         },
         {
           "n_learners": 160,
           "power_sign_test": 0.2595,
-          "power_wilcoxon": 0.461,
+          "power_wilcoxon": 0.4525,
           "mean_discordant_pairs": 11.8565,
           "power_sign_test_holm": 0.1995
         },
         {
           "n_learners": 200,
           "power_sign_test": 0.3525,
-          "power_wilcoxon": 0.5455,
+          "power_wilcoxon": 0.543,
           "mean_discordant_pairs": 14.9385,
           "power_sign_test_holm": 0.264
         }
@@ -88,65 +88,65 @@
       "pilot_discordant": 4,
       "pilot_favouring_coupled": 4,
       "pilot_favouring_decoupled": 0,
-      "rank_biserial": 1.0,
+      "sign_effect_size": 1.0,
       "sign_test_p": 0.125,
-      "wilcoxon_p": 0.045500263896358396,
+      "wilcoxon_p": 0.125,
       "required_n": null,
       "required_n_holm": null,
       "curve": [
         {
           "n_learners": 20,
           "power_sign_test": 0.0,
-          "power_wilcoxon": 0.0005,
+          "power_wilcoxon": 0.0,
           "mean_discordant_pairs": 0.3995,
           "power_sign_test_holm": 0.0
         },
         {
           "n_learners": 30,
           "power_sign_test": 0.0,
-          "power_wilcoxon": 0.004,
+          "power_wilcoxon": 0.0,
           "mean_discordant_pairs": 0.614,
           "power_sign_test_holm": 0.0
         },
         {
           "n_learners": 40,
           "power_sign_test": 0.0,
-          "power_wilcoxon": 0.009,
+          "power_wilcoxon": 0.0,
           "mean_discordant_pairs": 0.7825,
           "power_sign_test_holm": 0.0
         },
         {
           "n_learners": 60,
           "power_sign_test": 0.002,
-          "power_wilcoxon": 0.0325,
+          "power_wilcoxon": 0.002,
           "mean_discordant_pairs": 1.1645,
           "power_sign_test_holm": 0.0005
         },
         {
           "n_learners": 80,
           "power_sign_test": 0.0065,
-          "power_wilcoxon": 0.0785,
+          "power_wilcoxon": 0.0065,
           "mean_discordant_pairs": 1.5945,
           "power_sign_test_holm": 0.003
         },
         {
           "n_learners": 120,
           "power_sign_test": 0.0365,
-          "power_wilcoxon": 0.225,
+          "power_wilcoxon": 0.0365,
           "mean_discordant_pairs": 2.442,
           "power_sign_test_holm": 0.0225
         },
         {
           "n_learners": 160,
           "power_sign_test": 0.1155,
-          "power_wilcoxon": 0.409,
+          "power_wilcoxon": 0.1155,
           "mean_discordant_pairs": 3.259,
           "power_sign_test_holm": 0.0565
         },
         {
           "n_learners": 200,
           "power_sign_test": 0.203,
-          "power_wilcoxon": 0.559,
+          "power_wilcoxon": 0.203,
           "mean_discordant_pairs": 3.9855,
           "power_sign_test_holm": 0.15
         }
@@ -161,7 +161,7 @@
       "pilot_discordant": 200,
       "pilot_favouring_coupled": 200,
       "pilot_favouring_decoupled": 0,
-      "rank_biserial": 1.0,
+      "sign_effect_size": 1.0,
       "sign_test_p": 1.2446030555722283e-60,
       "wilcoxon_p": 7.405439137341704e-36,
       "required_n": 20,
@@ -234,7 +234,7 @@
       "pilot_discordant": 200,
       "pilot_favouring_coupled": 0,
       "pilot_favouring_decoupled": 200,
-      "rank_biserial": -1.0,
+      "sign_effect_size": -1.0,
       "sign_test_p": 1.2446030555722283e-60,
       "wilcoxon_p": 2.0477789865587478e-35,
       "required_n": 20,
