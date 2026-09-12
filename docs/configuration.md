@@ -1,5 +1,25 @@
 # Configuration reference
 
+> ⚠️ **This page is behind the code and needs an update.** It was last revised
+> on 2026-08-14 (`8309d92`); `config.py` has changed in 63 commits since. As of
+> `974a352` it is missing 40 of the 82 keys `Config` declares — the whole
+> `teaching` block (`explain_after`, `lesson_turns`, `detect_confusion`,
+> `recall.*`), the `scaffolding` and `decay` blocks, `paths.store_path`, the
+> per-role call limits (`think`, `max_tokens`, `context_tokens`,
+> `timeout_seconds`), the simulator dials (`prerequisite_dependence`,
+> `forgetting_rate`, `forgetting_period`, `slip_rate`, `remediation_curve`),
+> `bkt.prerequisite_doubt`, `diagnostic.label_space`, `planner.advance_after`
+> and `on_exhaustion`, and the `cohort` keys added for the demo
+> (`seed_from_pretest`, `pretest_weight`, `seed_floor`, `review_on_request`,
+> `max_visits_per_concept`, `administer_tests`). The planner `impl` list below
+> names `deterministic`, which does not exist; the real set is `goal_directed`,
+> `greedy`, `reverse`, `shuffled`, `oracle`, `llm`. Two load-time checks are
+> missing (`seed_floor < theta_lower`; `detect_confusion` needs a model-backed
+> tutor), and the shipped-configurations table omits `calculus.yaml` and
+> `demo.yaml`. **Until it is rewritten, `src/agent_newton/config.py` is the
+> reference** — every key carries its meaning in a `#:` comment, and
+> `uv run agent-newton config-check <file>` validates a file against it.
+
 Run configurations are YAML under `experiments/configs/`. A run is reproducible
 from `(config file, seed, git SHA)`.
 

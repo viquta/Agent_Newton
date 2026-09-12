@@ -1,5 +1,18 @@
 # The shared learner state
 
+> ⚠️ **This page is behind the code and needs an update.** It was last revised
+> on 2026-08-18 (`ba07ce4`); `core/state/` has changed in 37 commits since. As
+> of `974a352` it omits three `LearnerState` fields (`items_given`, `outcomes`,
+> `reflections`), the third `Utterance` kind (`lesson`) and `TeachingStyle`,
+> nine of the twelve `Blackboard` recording methods (`seed_from_test`,
+> `apply_decay`, `record_plan`, `record_turn`, `record_reflection`,
+> `record_request`, `request_lesson`, `record_teaching_style`, `note_visit`),
+> the two relaxations in the frontier predicate (`waived`, `reviewing`), and
+> the rows `FullStateView` gained (what the learner said; concepts set aside,
+> requested and under review). **Until it is rewritten, `core/state/schema.py`
+> and `core/state/store.py` are the reference**; `docs/architecture.md` has the
+> current summary of the views.
+
 Reference for `core/state/`. Concept and misconception identifiers are opaque
 strings throughout — nothing here knows what a derivative is, which is what lets
 the same state serve any domain.
