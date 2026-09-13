@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="JwlikoVSioMY8vlKte19" name="Page-1">
-        <mxGraphModel dx="5010" dy="4438" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="3332" dy="3293" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -36,26 +36,26 @@
                 <mxCell id="4" value="&lt;font style=&quot;font-size: 48px;&quot;&gt;/agents&lt;/font&gt;" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="190" y="-430" width="385" height="170" as="geometry"/>
                 </mxCell>
-                <mxCell id="6" value="arbitration" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-840" y="-550" width="160" height="90" as="geometry"/>
+                <mxCell id="6" value="&lt;font style=&quot;font-size: 48px;&quot;&gt;/arbitration&lt;/font&gt;" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="-640" y="-400" width="330" height="170" as="geometry"/>
                 </mxCell>
                 <mxCell id="8" value="/evaluation" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-730" y="-460" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-1400" y="-940" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="10" value="/orchestration" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-990" y="-730" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-1660" y="-1210" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="12" value="/pedagogy" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-1010" y="-810" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-1680" y="-1290" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="14" value="/recal" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-980" y="-880" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-1650" y="-1360" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="16" value="/simulator" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-1010" y="-490" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-1680" y="-970" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="18" value="/state" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="-900" y="-359.5" width="120" height="60" as="geometry"/>
+                    <mxGeometry x="-1570" y="-839.5" width="120" height="60" as="geometry"/>
                 </mxCell>
                 <object placeholders="1" c4Name="base.py" c4Type="Component" c4Technology="The protocol definitions (abstract interfaces) for every agent role." c4Description="It&#39;s a pure type declarations file — it never executes. It defines the contracts that bind the whole architecture together without depending on any implementation." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="20">
                     <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
@@ -340,130 +340,221 @@
                     </mxGeometry>
                 </mxCell>
                 <object placeholders="1" c4Name="Tutor.py" c4Type="Component" c4Technology="" c4Description="The template tutor — hints without a model. Its job is to match the two methods on the Tutor protocol (repsond and explain)" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="115">
-                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" parent="1" vertex="1">
                         <mxGeometry x="970" y="-430" width="240" height="120" as="geometry"/>
                     </mxCell>
                 </object>
-                <mxCell id="116" style="edgeStyle=none;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.042;entryY=1.021;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="4" target="115">
+                <mxCell id="116" style="edgeStyle=none;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.042;entryY=1.021;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="4" target="115" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="117" value="TemplateTutor" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                <mxCell id="117" value="TemplateTutor" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" parent="1" vertex="1">
                     <mxGeometry x="1310" y="-460" width="140" height="120" as="geometry"/>
                 </mxCell>
-                <mxCell id="118" value="&amp;lt;&amp;lt;&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="117">
+                <mxCell id="118" value="&amp;lt;&amp;lt;&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="117" vertex="1">
                     <mxGeometry y="29" width="140" height="25" as="geometry"/>
                 </mxCell>
-                <mxCell id="119" value="def respond()&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;def explain()&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="117">
+                <mxCell id="119" value="def respond()&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;def explain()&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="117" vertex="1">
                     <mxGeometry y="54" width="140" height="66" as="geometry"/>
                 </mxCell>
-                <mxCell id="121" value="" style="endArrow=none;html=1;exitX=1.013;exitY=0.413;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.029;entryY=0.179;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="115" target="117">
+                <mxCell id="121" value="" style="endArrow=none;html=1;exitX=1.013;exitY=0.413;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.029;entryY=0.179;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="115" target="117" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="1300" y="-280" as="sourcePoint"/>
                         <mxPoint x="1350" y="-330" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="123" style="edgeStyle=none;html=1;" edge="1" parent="1" source="122" target="119">
+                <mxCell id="123" style="edgeStyle=none;html=1;" parent="1" source="122" target="119" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="122" value="There is alot in def respond().." style="shape=note;size=20;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+                <mxCell id="122" value="There is alot in def respond().." style="shape=note;size=20;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" parent="1" vertex="1">
                     <mxGeometry x="1510" y="-470" width="100" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="124" value="&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre-wrap; font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; color: rgb(97, 97, 97); background-color: rgb(243, 243, 243);&quot;&gt;The key design point: &lt;/span&gt;&lt;strong style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre-wrap; font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; color: rgb(97, 97, 97); background-color: rgb(243, 243, 243);&quot;&gt;the rules drive the tutor, not the other way around.&lt;/strong&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre-wrap; font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; color: rgb(97, 97, 97); background-color: rgb(243, 243, 243);&quot;&gt; The move is determined before any text is written, so the error-first ordering (REFLECT before REMEDIATE) holds by construction rather than by the model&#39;s goodwill.&lt;/span&gt;" style="shape=note;size=20;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;" vertex="1" parent="1">
+                <mxCell id="124" value="&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre-wrap; font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; color: rgb(97, 97, 97); background-color: rgb(243, 243, 243);&quot;&gt;The key design point: &lt;/span&gt;&lt;strong style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre-wrap; font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; color: rgb(97, 97, 97); background-color: rgb(243, 243, 243);&quot;&gt;the rules drive the tutor, not the other way around.&lt;/strong&gt;&lt;span style=&quot;scrollbar-color: rgb(226, 226, 226) rgb(251, 251, 251); white-space: pre-wrap; font-family: -apple-system, &amp;quot;system-ui&amp;quot;, &amp;quot;Segoe UI&amp;quot;, Roboto, sans-serif; font-size: 13px; color: rgb(97, 97, 97); background-color: rgb(243, 243, 243);&quot;&gt; The move is determined before any text is written, so the error-first ordering (REFLECT before REMEDIATE) holds by construction rather than by the model&#39;s goodwill.&lt;/span&gt;" style="shape=note;size=20;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;" parent="1" vertex="1">
                     <mxGeometry x="1100" y="-640" width="240" height="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="125" style="edgeStyle=none;html=1;entryX=0.725;entryY=0.004;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="124" target="115">
+                <mxCell id="125" style="edgeStyle=none;html=1;entryX=0.725;entryY=0.004;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="124" target="115" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="227" style="edgeStyle=none;html=1;entryX=0;entryY=0;entryDx=40;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="126" target="122">
+                <mxCell id="227" style="edgeStyle=none;html=1;entryX=0;entryY=0;entryDx=40;entryDy=0;entryPerimeter=0;" parent="1" source="126" target="122" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="126" value="put def respond() illustration here" style="whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="126" value="put def respond() illustration here" style="whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="1500" y="-600" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="200" value="&lt;b&gt;TemplateTutor.respond() — inputs, logic, outputs&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];strokeColor=none;fillColor=none;fontSize=13;" vertex="1" parent="1">
+                <mxCell id="200" value="&lt;b&gt;TemplateTutor.respond() — inputs, logic, outputs&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];strokeColor=none;fillColor=none;fontSize=13;" parent="1" vertex="1">
                     <mxGeometry x="2050" y="-1560" width="980" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="201" value="USED INPUTS" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                <mxCell id="201" value="USED INPUTS" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
                     <mxGeometry x="2040" y="-1610" width="270" height="310" as="geometry"/>
                 </mxCell>
-                <mxCell id="202" value="mastery: float — estimate when question was posed" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="201">
+                <mxCell id="202" value="mastery: float — estimate when question was posed" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="201" vertex="1">
                     <mxGeometry y="29" width="270" height="41" as="geometry"/>
                 </mxCell>
-                <mxCell id="203" value="prior_failures: int — readable failures before this step" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="201">
+                <mxCell id="203" value="prior_failures: int — readable failures before this step" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="201" vertex="1">
                     <mxGeometry y="70" width="270" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="204" value="moves_this_item: Sequence[TutorMove]" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="201">
+                <mxCell id="204" value="moves_this_item: Sequence[TutorMove]" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="201" vertex="1">
                     <mxGeometry y="110" width="270" height="35" as="geometry"/>
                 </mxCell>
-                <mxCell id="205" value="explained: bool — learner already explained?" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="201">
+                <mxCell id="205" value="explained: bool — learner already explained?" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="201" vertex="1">
                     <mxGeometry y="145" width="270" height="25" as="geometry"/>
                 </mxCell>
-                <mxCell id="206" value="diagnosis.named: bool / .misconception_id: str|None" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="201">
+                <mxCell id="206" value="diagnosis.named: bool / .misconception_id: str|None" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="201" vertex="1">
                     <mxGeometry y="170" width="270" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="207" value="domain: Domain — misconception catalogue" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="201">
+                <mxCell id="207" value="domain: Domain — misconception catalogue" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="201" vertex="1">
                     <mxGeometry y="220" width="270" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="208" value="item: Item — item.prompt used in hint text" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="201">
+                <mxCell id="208" value="item: Item — item.prompt used in hint text" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" parent="201" vertex="1">
                     <mxGeometry y="270" width="270" height="40" as="geometry"/>
                 </mxCell>
-                <mxCell id="210" value="&lt;i&gt;response: str and said_this_item are del&#39;d at the top of the method — TemplateTutor output must not vary with anything model-backed tutors receive.&lt;/i&gt;" style="shape=note;size=14;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;align=left;" vertex="1" parent="1">
+                <mxCell id="210" value="&lt;i&gt;response: str and said_this_item are del&#39;d at the top of the method — TemplateTutor output must not vary with anything model-backed tutors receive.&lt;/i&gt;" style="shape=note;size=14;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;align=left;" parent="1" vertex="1">
                     <mxGeometry x="2040" y="-1260" width="270" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="214" value="&lt;b&gt;① hint_level()&lt;/b&gt;&lt;div&gt;hint_level(mastery, prior_failures, band, policy)&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;mastery &gt; θ_lower → base = NUDGE&lt;/div&gt;&lt;div&gt;mastery &gt; θ_lower/2 → base = TARGETED&lt;/div&gt;&lt;div&gt;else → base = WORKED_STEP&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;final = min(base + prior_failures, WORKED_STEP)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+                <mxCell id="214" value="&lt;b&gt;① hint_level()&lt;/b&gt;&lt;div&gt;hint_level(mastery, prior_failures, band, policy)&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;mastery &gt; θ_lower → base = NUDGE&lt;/div&gt;&lt;div&gt;mastery &gt; θ_lower/2 → base = TARGETED&lt;/div&gt;&lt;div&gt;else → base = WORKED_STEP&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;final = min(base + prior_failures, WORKED_STEP)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" parent="1" vertex="1">
                     <mxGeometry x="2380" y="-1490" width="270" height="160" as="geometry"/>
                 </mxCell>
-                <mxCell id="215" value="&lt;b&gt;② move_for()&lt;/b&gt;&lt;div&gt;move_for(level, moves_this_item, diagnosis.named, explained)&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;level = NONE → &lt;b&gt;REFLECT&lt;/b&gt;&lt;/div&gt;&lt;div&gt;misconception confirmed + no prior REFLECT + not explained → &lt;b&gt;REFLECT&lt;/b&gt;&lt;/div&gt;&lt;div&gt;diagnosis.named = True → &lt;b&gt;REMEDIATE&lt;/b&gt;&lt;/div&gt;&lt;div&gt;else → &lt;b&gt;HINT&lt;/b&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+                <mxCell id="215" value="&lt;b&gt;② move_for()&lt;/b&gt;&lt;div&gt;move_for(level, moves_this_item, diagnosis.named, explained)&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;level = NONE → &lt;b&gt;REFLECT&lt;/b&gt;&lt;/div&gt;&lt;div&gt;misconception confirmed + no prior REFLECT + not explained → &lt;b&gt;REFLECT&lt;/b&gt;&lt;/div&gt;&lt;div&gt;diagnosis.named = True → &lt;b&gt;REMEDIATE&lt;/b&gt;&lt;/div&gt;&lt;div&gt;else → &lt;b&gt;HINT&lt;/b&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" parent="1" vertex="1">
                     <mxGeometry x="2380" y="-1290" width="270" height="155" as="geometry"/>
                 </mxCell>
-                <mxCell id="216" value="&lt;b&gt;→ REFLECT&lt;/b&gt;&lt;div&gt;Hint(text=fixed reflective prompt,&lt;/div&gt;&lt;div&gt;move=REFLECT, level=level,&lt;/div&gt;&lt;div&gt;targets=None)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+                <mxCell id="216" value="&lt;b&gt;→ REFLECT&lt;/b&gt;&lt;div&gt;Hint(text=fixed reflective prompt,&lt;/div&gt;&lt;div&gt;move=REFLECT, level=level,&lt;/div&gt;&lt;div&gt;targets=None)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" parent="1" vertex="1">
                     <mxGeometry x="2760" y="-1530" width="260" height="90" as="geometry"/>
                 </mxCell>
-                <mxCell id="217" value="&lt;b&gt;→ HINT&lt;/b&gt;&lt;div&gt;Hint(text=&#39;Check your working on...&#39;,&lt;/div&gt;&lt;div&gt;move=HINT, level=level, targets=None)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+                <mxCell id="217" value="&lt;b&gt;→ HINT&lt;/b&gt;&lt;div&gt;Hint(text=&#39;Check your working on...&#39;,&lt;/div&gt;&lt;div&gt;move=HINT, level=level, targets=None)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" parent="1" vertex="1">
                     <mxGeometry x="2820" y="-1386" width="260" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="218" value="&lt;b&gt;→ REMEDIATE&lt;/b&gt;&lt;div&gt;Hint(text=_text_for(level, description, item),&lt;/div&gt;&lt;div&gt;move=REMEDIATE, level=level,&lt;/div&gt;&lt;div&gt;targets=misconception_id)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+                <mxCell id="218" value="&lt;b&gt;→ REMEDIATE&lt;/b&gt;&lt;div&gt;Hint(text=_text_for(level, description, item),&lt;/div&gt;&lt;div&gt;move=REMEDIATE, level=level,&lt;/div&gt;&lt;div&gt;targets=misconception_id)&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" parent="1" vertex="1">
                     <mxGeometry x="2790" y="-1250" width="260" height="90" as="geometry"/>
                 </mxCell>
-                <mxCell id="219" value="&lt;b&gt;_text_for(level, description, item)&lt;/b&gt;&lt;div&gt;NUDGE → &#39;Almost — one part does not follow...&#39;&lt;/div&gt;&lt;div&gt;TARGETED → &#39;Here is what went wrong: {description}&#39;&lt;/div&gt;&lt;div&gt;WORKED_STEP → same + &#39;Start again from the rule itself, take {item.prompt} one step at a time.&#39;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" vertex="1" parent="1">
+                <mxCell id="219" value="&lt;b&gt;_text_for(level, description, item)&lt;/b&gt;&lt;div&gt;NUDGE → &#39;Almost — one part does not follow...&#39;&lt;/div&gt;&lt;div&gt;TARGETED → &#39;Here is what went wrong: {description}&#39;&lt;/div&gt;&lt;div&gt;WORKED_STEP → same + &#39;Start again from the rule itself, take {item.prompt} one step at a time.&#39;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4;" parent="1" vertex="1">
                     <mxGeometry x="2765" y="-1110" width="260" height="120" as="geometry"/>
                 </mxCell>
-                <mxCell id="220" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="201" target="214">
+                <mxCell id="220" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="201" target="214" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="221" value="→ HintLevel" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="214" target="215">
+                <mxCell id="221" value="→ HintLevel" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="214" target="215" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="222" value="level=NONE or error-first rule" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="215" target="216">
+                <mxCell id="222" value="level=NONE or error-first rule" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="215" target="216" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="223" value="not diagnosis.named" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="215" target="217">
+                <mxCell id="223" value="not diagnosis.named" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="215" target="217" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="224" value="diagnosis.named" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="215" target="218">
+                <mxCell id="224" value="diagnosis.named" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="215" target="218" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="225" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="218" target="219">
+                <mxCell id="225" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="218" target="219" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="226" value="" style="edgeStyle=none;html=1;dashed=1;" edge="1" parent="1" source="126" target="200">
+                <mxCell id="226" value="" style="edgeStyle=none;html=1;dashed=1;" parent="1" source="126" target="200" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="228" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;entryX=0.629;entryY=-0.017;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.438;exitY=1.017;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="115" target="20">
+                <mxCell id="228" value="" style="html=1;labelBackgroundColor=#ffffff;startArrow=none;startFill=0;startSize=6;endArrow=classic;endFill=1;endSize=6;jettySize=auto;orthogonalLoop=1;strokeWidth=1;dashed=1;fontSize=14;entryX=0.629;entryY=-0.017;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.438;exitY=1.017;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="115" target="20" edge="1">
                     <mxGeometry width="60" height="60" relative="1" as="geometry">
                         <mxPoint x="860" y="-150" as="sourcePoint"/>
                         <mxPoint x="920" y="-210" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="229" value="&lt;div style=&quot;color: rgb(0, 0, 0); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; line-height: 18px; white-space: pre;&quot;&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;&lt;span style=&quot;color: rgb(175, 0, 219);&quot;&gt;import&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt; &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;Diagnosis&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;Hint&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 16, 128);&quot;&gt;StateView&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="228">
+                <mxCell id="229" value="&lt;div style=&quot;color: rgb(0, 0, 0); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; line-height: 18px; white-space: pre;&quot;&gt;&lt;font style=&quot;font-size: 9px;&quot;&gt;&lt;span style=&quot;color: rgb(175, 0, 219);&quot;&gt;import&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt; &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;Diagnosis&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;Hint&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 16, 128);&quot;&gt;StateView&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="228" vertex="1" connectable="0">
                     <mxGeometry x="-0.4692" y="2" relative="1" as="geometry">
                         <mxPoint as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="230" value="remember, there are more imports..." style="shape=note;size=20;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="230" value="remember, there are more imports..." style="shape=note;size=20;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="830" y="-570" width="100" height="100" as="geometry"/>
                 </mxCell>
-                <mxCell id="231" style="edgeStyle=none;html=1;entryX=0.133;entryY=0.004;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="230" target="115">
+                <mxCell id="231" style="edgeStyle=none;html=1;entryX=0.133;entryY=0.004;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="230" target="115" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="241" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="232" target="238">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <object placeholders="1" c4Name="policy.py (The Arbitrator)" c4Type="Component" c4Technology="ArbitrationConfig from config, Errorevent from state/schema, and Frontier from state/zpd" c4Description="Decides when the Planner is called, so that the Planner isn&#39;t called for each Item." label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="232">
+                    <mxCell style="rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;fillColor=#63BEF2;fontColor=#ffffff;align=center;arcSize=6;strokeColor=#2086C9;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1" parent="1">
+                        <mxGeometry x="-700" y="-90" width="240" height="120" as="geometry"/>
+                    </mxCell>
+                </object>
+                <mxCell id="233" style="edgeStyle=none;html=1;entryX=0.529;entryY=0.021;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="6" target="232">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="234" value="&lt;div style=&quot;color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-weight: normal; line-height: 18px; white-space: pre;&quot;&gt;&lt;span style=&quot;color: #267f99;&quot;&gt;ArbitrationPolicy&lt;/span&gt;&lt;/div&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                    <mxGeometry x="-860" y="130" width="160" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="235" value="&amp;lt;&amp;lt;baseline holder&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="234">
+                    <mxGeometry y="29" width="160" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="248" value="_baseline: dict[str, float]" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="234">
+                    <mxGeometry y="54" width="160" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="249" value="_items_since_replan: int" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="234">
+                    <mxGeometry y="79" width="160" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="250" value="replans: int" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="234">
+                    <mxGeometry y="104" width="160" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="251" value="suppressed: int" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="234">
+                    <mxGeometry y="129" width="160" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="236" value="note_item()&lt;div&gt;accept()&lt;/div&gt;&lt;div&gt;evaluate()&lt;/div&gt;&lt;div&gt;_find_trigger()&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="234">
+                    <mxGeometry y="154" width="160" height="96" as="geometry"/>
+                </mxCell>
+                <mxCell id="237" style="edgeStyle=none;html=1;entryX=0.594;entryY=-0.044;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="232" target="234">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="238" value="&lt;div style=&quot;color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; font-weight: normal; line-height: 18px; white-space: pre;&quot;&gt;&lt;span style=&quot;color: #267f99;&quot;&gt;Decision&lt;/span&gt;&lt;/div&gt;" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                    <mxGeometry x="-600" y="204" width="270" height="246" as="geometry"/>
+                </mxCell>
+                <mxCell id="239" value="&amp;lt;&amp;lt;frozen dataclas, stots=True&amp;gt;&amp;gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="238">
+                    <mxGeometry y="29" width="270" height="51" as="geometry"/>
+                </mxCell>
+                <mxCell id="240" value="&lt;div style=&quot;color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); font-family: Menlo, Monaco, &amp;quot;Courier New&amp;quot;, monospace; line-height: 18px; white-space: pre;&quot;&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;    &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 16, 128);&quot;&gt;replan&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;: &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;bool&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;    &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 16, 128);&quot;&gt;trigger&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;: &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;str&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt; | &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 112, 193);&quot;&gt;None&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt; = &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 112, 193);&quot;&gt;None&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;    &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 16, 128);&quot;&gt;suppressed_by&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;: &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;str&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt; | &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 112, 193);&quot;&gt;None&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt; = &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 112, 193);&quot;&gt;None&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;    &lt;/span&gt;&lt;span style=&quot;color: rgb(0, 16, 128);&quot;&gt;evidence&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;: &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;dict&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;[&lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;str&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;, &lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;Any&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;] = &lt;/span&gt;&lt;span style=&quot;color: rgb(121, 94, 38);&quot;&gt;field&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;(&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 16, 128);&quot;&gt;default_factory&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;=&lt;/span&gt;&lt;span style=&quot;color: rgb(38, 127, 153);&quot;&gt;dict&lt;/span&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;color: rgb(0, 0, 0);&quot;&gt;def summary()&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="238">
+                    <mxGeometry y="80" width="270" height="166" as="geometry"/>
+                </mxCell>
+                <mxCell id="242" value="Used in session.py and is actually the main session loop. Search: arbitration.evaluate&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;It is actually the only place the arbitrator is inherited --&amp;gt; session.py (discouting the tests)&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#d5e8d4;strokeColor=#82b366;align=left;" vertex="1" parent="1">
+                    <mxGeometry x="-1340" y="40" width="230" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="244" value="" style="endArrow=none;html=1;entryX=0.812;entryY=1.019;entryDx=0;entryDy=0;entryPerimeter=0;exitX=-0.013;exitY=0.099;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="234" target="242">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="-700" y="60" as="sourcePoint"/>
+                        <mxPoint x="-650" y="10" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="247" value="..arbitration.evaluate(..)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="244">
+                    <mxGeometry x="0.0765" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="245" value="saved in audit log also" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="-230" y="146" width="80" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="246" style="edgeStyle=none;html=1;entryX=0.013;entryY=0.626;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="239" target="245">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="252" value="Trigger constants (module-level)" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=29;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+                    <mxGeometry x="-1330" y="-230" width="260" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="253" value="NO_PLAN = &quot;no_plan&quot;" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="252">
+                    <mxGeometry y="29" width="260" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="254" value="FRONTIER_CROSSED = &quot;frontier_crossed&quot;" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="252">
+                    <mxGeometry y="54" width="260" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="255" value="MASTERY_DELTA = &quot;mastery_delta&quot;" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="252">
+                    <mxGeometry y="79" width="260" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="256" value="MISCONCEPTION_REPEAT = &quot;misconception_repeat&quot;" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="252">
+                    <mxGeometry y="104" width="260" height="46" as="geometry"/>
+                </mxCell>
+                <mxCell id="257" value="RATE_LIMITED = &quot;rate_limited&quot;" style="text;html=1;strokeColor=#82b366;fillColor=#d5e8d4;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;" vertex="1" parent="252">
+                    <mxGeometry y="150" width="260" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="258" value="&lt;b&gt;Two guardrails suppress triggers:&lt;/b&gt;&lt;div&gt;1. Rate limit: &gt;= min_items_between_replans items must separate replans (default: 2)&lt;/div&gt;&lt;div&gt;2. Verifier-only: only verifier-confirmed errors count toward MISCONCEPTION_REPEAT&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;FRONTIER_CROSSED is never suppressed&lt;/b&gt; — leaving the zone takes priority over rate limiting.&lt;/div&gt;" style="shape=note;size=20;whiteSpace=wrap;html=1;align=left;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+                    <mxGeometry x="-1300" y="230" width="290" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="259" style="edgeStyle=none;html=1;dashed=1;" edge="1" parent="1" source="252" target="232">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="260" style="edgeStyle=none;html=1;dashed=1;" edge="1" parent="1" source="258" target="234">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>
