@@ -25,11 +25,11 @@ def posterior(prior: float, correct: bool, params: BKTConfig) -> float:
     Bayes on the evidence alone, before the learning transition.
     """
     if correct:
-        knew = prior * (1.0 - params.p_slip)
-        did_not = (1.0 - prior) * params.p_guess
+        knew = prior * (1.0 - params.p_slip)            # P(correct | knew)  · P(knew)
+        did_not = (1.0 - prior) * params.p_guess        # P(correct | ¬knew) · P(¬knew)
     else:
-        knew = prior * params.p_slip
-        did_not = (1.0 - prior) * (1.0 - params.p_guess)
+        knew = prior * params.p_slip                    
+        did_not = (1.0 - prior) * (1.0 - params.p_guess) 
 
     total = knew + did_not
     if total <= 0.0:
@@ -37,7 +37,7 @@ def posterior(prior: float, correct: bool, params: BKTConfig) -> float:
         # enforces. Returning the prior keeps this total rather than dividing
         # by zero if that guarantee is ever weakened.
         return prior
-    return knew / total
+    return knew / total                                 # normalise
 
 
 def transition(posterior_value: float, params: BKTConfig) -> float:
