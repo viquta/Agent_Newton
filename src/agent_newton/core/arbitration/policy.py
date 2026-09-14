@@ -18,7 +18,7 @@ Two guardrails, which suppress a trigger rather than create one:
 
 * **Rate limit.** At least ``min_items_between_replans`` items must have been
   worked. Without it, a threshold set low enough to be sensitive also makes the
-  planner thrash between concepts on single observations.
+  planner thrash between concepts on single observations. vh_comment --> it's defaulted to 2 (see arbitrationconfig)
 * **Verifier confirmation.** Only verifier-confirmed errors count toward the
   repeat trigger. A diagnostic agent's label is an opinion about an error; the
   verifier is what establishes there was one. Letting a model's say-so alone

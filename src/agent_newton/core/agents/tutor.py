@@ -104,11 +104,21 @@ class TemplateTutor:
         # a property of a catalogue lookup rather than an oversight: the same
         # level on the same misconception *is* the same instruction. Only a
         # tutor that writes prose can say the same thing differently.
-        del response, said_this_item
+        del response, said_this_item #vh_comment: This does not necessarily erase the objects themselves. 
+                                     #            Python removes the references held by those names; an 
+                                     #            object is destroyed only when no references to it remain. 
+                                     #            The statement is commonly used to release temporary variables 
+                                     #            or prevent them from being reused accidentally. Both names 
+                                     #            must already exist, otherwise the statement raises a NameError.
 
-        # The session supplies the scaffolding rule's inputs. Reading them here
-        # is what put the failure being responded to into both of them — see the
-        # Tutor protocol.
+        # mastery and prior_failures are passed in rather than read from view
+        # because by the time respond() runs the session has already recorded
+        # the current failure into state. Reading from view here would give
+        # prior_failures off by one and mastery as the posterior after this
+        # answer rather than the value it held when the question was posed. The
+        # session reads both at the right moment — before processing the current
+        # step — and passes them in. See the Tutor protocol docstring in
+        # core/agents/base.py.
         level = hint_level(mastery, prior_failures, self._band, policy=self._policy)
 
         move = move_for(
@@ -144,7 +154,7 @@ class TemplateTutor:
                 targets=None,
             )
 
-        assert diagnosis.misconception_id is not None
+        assert diagnosis.misconception_id is not None #vh: annotation for the type checker. Pyright only sees misconception_id: str | None and still treats it as possibly None on line 158
         misconception = domain.misconceptions.get(diagnosis.misconception_id)
         return Hint(
             text=_text_for(level, misconception.description, item),

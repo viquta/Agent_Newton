@@ -11,6 +11,38 @@ the cases a model finds hardest are exactly the ones where it invents something.
 
 Schemas are cached per domain because building one walks the whole catalogue,
 and a session asks for the same shape thousands of times.
+
+vh_learning_notes: 
+Why it's called schemas.py
+
+"Schema" here means JSON schema for constrained LLM decoding. 
+When Ollama (or another backend) constrains its output grammar 
+to a schema, the model physically cannot emit a token sequence 
+that violates it. So these aren't database schemas or API contracts 
+in the usual sense — they're grammars that make invalid model 
+output unreachable rather than rejected after the fact. The module 
+is the single place those grammars are defined and cached. (Cool paper to read for this: https://arxiv.org/html/2501.10868v1 )
+
+How it works
+
+There are two kinds of schemas here:
+    Dynamically built (diagnosis_schema, plan_schema) — 
+    created at runtime with create_model so they can 
+    embed Literal[tuple_of_valid_ids]. That Literal is 
+    what closes the label space: the model can only emit 
+    IDs that actually exist in the current domain's 
+    catalogue or graph. Both are @lru_cached because building 
+    one walks the whole catalogue, and a session calls for the 
+    same shape thousands of times.
+
+    Static (HintReply, LessonReply, ClosingReply, ConfusionReply) 
+    — plain Pydantic models, domain-independent. Their value isn't 
+    in banning bad IDs but in the field descriptions, which become 
+    part of the JSON schema the backend decodes against, acting as 
+    inline instructions. The ClosingReply/LessonReply validators 
+    (which fire via Pydantic on every parse) also hook into complete()'s 
+    existing repair loop — a ValidationError is already handled there, 
+    so no new machinery is needed.
 """
 
 from __future__ import annotations
@@ -113,7 +145,14 @@ class LessonReply(BaseModel):
 
     @field_validator("text")
     @classmethod
-    #i don't think this is used anywhere
+    #vh_comment: i don't think this is used anywhere
+    #            should this be deleted? 
+    #answer here:
+    #s used — just implicitly. Pydantic invokes every field_validator 
+    # automatically when the model is parsed from data. 
+    # llm.py:535 constructs LessonReply instances, and 
+    # llm.py:542 uses ClosingReply (which inherits the validator). 
+    # Both fire it on every parse. The validator is live.
     def _must_be_a_finished_thought(cls, text: str) -> str:
         """Reject a turn that stops mid-sentence.
 
@@ -208,3 +247,14 @@ def schemas_for(domain: Domain) -> dict[str, Any]:
         "plan": plan_schema(domain.name, tuple(domain.concepts.ids())),
         "hint": HintReply,
     }
+
+#Why schemas_for() imports Domain from base.py
+#   Domain is the generic container defined in domains/base.py
+#  — it's not a concrete subject-matter domain. The rule I decided 
+# on is "core/ never imports a concrete domain"; Domain itself is 
+# the abstraction that core/ is generic over. schemas_for() 
+# needs domain.misconceptions.ids() and domain.concepts.ids() 
+# specifically to bake those lists into Literal types for the dynamic 
+# schemas. It's a thin assembly helper — it just calls the two cached 
+# builders with the right domain-specific arguments. (can be found in claude.md)
+#
