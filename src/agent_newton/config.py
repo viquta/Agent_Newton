@@ -236,7 +236,7 @@ class SimulatorConfig(BaseModel):
     #: engine's decision is used verbatim. ``llm`` renders it as student prose.
     surface: SurfaceMode = "symbolic"
     surface_model: ModelSpec = Field(
-        default_factory=lambda: ModelSpec(provider="ollama", model="gpt-oss:20b")
+        default_factory=lambda: ModelSpec(provider="ollama", model="gpt-oss:20b")     #vh: used gpt oss earlier but im only using symbolic which just jumps over this 
     )
     #: Misconceptions drawn per learner, and the initial firing probability range.
     misconceptions_per_learner: int = 2

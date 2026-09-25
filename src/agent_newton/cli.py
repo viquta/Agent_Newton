@@ -1,4 +1,14 @@
-"""Command-line entry points."""
+"""
+Command-line entry points.
+
+`demo` is a thin wrapper over :mod:`agent_newton.demo`. 
+
+The `evaluate` subcommands run their evaluation loops, 
+write CSV and JSON results, and format summary tables 
+inline — nothing here is imported as a library.
+
+
+"""
 
 from __future__ import annotations
 

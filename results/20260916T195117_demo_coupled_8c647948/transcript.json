@@ -1,0 +1,46 @@
+{
+  "learner_id": "human",
+  "completed": false,
+  "responses": [
+    {
+      "item_id": "ca_lim_pre1",
+      "response": ""
+    }
+  ],
+  "turns": [],
+  "said": [],
+  "mastery": {},
+  "error_trace": [],
+  "unmeasurable_steps": 0,
+  "audit_log": [
+    {
+      "version": 2,
+      "cause": "annotation",
+      "summary": "resumed learner 'human'",
+      "evidence": {
+        "concepts": 15,
+        "arm": "coupled",
+        "known_concepts": 0,
+        "prior_steps": 0
+      }
+    },
+    {
+      "version": 3,
+      "cause": "annotation",
+      "summary": "the learner asked to work on nothing in particular",
+      "evidence": {
+        "requested": []
+      }
+    },
+    {
+      "version": 4,
+      "cause": "annotation",
+      "summary": "the learner left the teaching style to the system",
+      "evidence": {
+        "teaching_style": null
+      }
+    }
+  ],
+  "stop_reason": "interrupted",
+  "items_attempted": 0
+}
