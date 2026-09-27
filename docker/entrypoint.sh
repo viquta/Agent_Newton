@@ -26,6 +26,10 @@ SEED="${NEWTON_SEED:-20260811}"
 # produces a coherent sweep that is not the stored one.
 DOUBT_SEED="${NEWTON_SEED:-20260819}"
 
+# The learner-type grid was recorded under its own seed too —
+# results/grid_learner_types/summary.json says 20260920.
+GRID_SEED="${NEWTON_SEED:-20260920}"
+
 # Supplies the measured misclassification rate to the propagation study's
 # `noised` condition. Committed, so it is present in a fresh clone.
 DIAGNOSTIC_SUMMARY="results/diagnostic_calculus_gemma4-12b_think-false_labels-concept/summary.json"
@@ -156,6 +160,7 @@ ${BOLD}Run an experiment${OFF}  ${DIM}— no model involved; summaries land in $
   ${CYAN}planner [arm]${OFF}     planner choices against a reference holding the profile
   ${CYAN}replicate${OFF}         the paired design over ten fresh seeds — is the estimate stable?
   ${CYAN}sweep <knob>${OFF}      arbitration | prerequisites | headroom | doubt
+  ${CYAN}grid-learners${OFF}     learner-type grid — trajectories per error shape (Framing A)
   ${CYAN}figures${OFF}           redraw the figures from the stored summaries
   ${CYAN}all${OFF}               every model-free experiment above, in order
 
@@ -299,6 +304,19 @@ case "$verb" in
     reproduce "sweep_${knob}" "" python "experiments/sweep_${knob}.py" \
       --config "$CALCULUS" --n "$N" --seed "$knob_seed" "$@"
     ;;
+  grid-learners)
+    # The verb reproduces the stored study at its own seed, so the seed is by
+    # definition already spent; it writes under results/reruns/ only.
+    reproduce "grid_learner_types" "" python experiments/grid_learner_types.py \
+      --config "$CALCULUS" --n "$N" --seed "$GRID_SEED" --allow-spent-seed "$@"
+    # Re-plot from the re-run summary so plots/ mirrors the stored one.
+    python experiments/analysis/plot_learner_types.py \
+      --summary "$RERUNS/grid_learner_types/summary.json" \
+      --out "$RERUNS/grid_learner_types/plots" --format png
+    python experiments/analysis/plot_learner_types.py \
+      --summary "$RERUNS/grid_learner_types/summary.json" \
+      --out "$RERUNS/grid_learner_types/plots" --format png --combined
+    ;;
   figures)
     # The script's own default writes outside the repository; results/figures is
     # the tracked location, and the only one that exists here.
@@ -339,6 +357,15 @@ case "$verb" in
       --config "$CALCULUS" --n "$N" --seed "$SEED"
     step "power analysis"
     reproduce "power_calculus" "" python experiments/power_analysis.py --config "$CALCULUS"
+    step "learner-type grid"
+    reproduce "grid_learner_types" "" python experiments/grid_learner_types.py \
+      --config "$CALCULUS" --n "$N" --seed "$GRID_SEED" --allow-spent-seed
+    python experiments/analysis/plot_learner_types.py \
+      --summary "$RERUNS/grid_learner_types/summary.json" \
+      --out "$RERUNS/grid_learner_types/plots" --format png
+    python experiments/analysis/plot_learner_types.py \
+      --summary "$RERUNS/grid_learner_types/summary.json" \
+      --out "$RERUNS/grid_learner_types/plots" --format png --combined
     step "figures"
     python experiments/analysis/figures.py --out results/figures --format png
     step "done in $(( (SECONDS - started) / 60 ))m $(( (SECONDS - started) % 60 ))s"

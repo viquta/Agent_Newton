@@ -119,14 +119,16 @@ outside the container.
 | `calibrate` | mastery estimate against held-out performance |
 | `planner [arm]` | planner choices against a reference policy holding the profile — `coupled` or `decoupled`, since the arm is what selects the planner |
 | `sweep <knob>` | `arbitration`, `prerequisites`, `headroom` or `doubt` |
+| `grid-learners` | learner-type grid — trajectories and outcomes per error shape (Framing A). Runs at `--seed 20260920`, the seed the stored summary records |
 | `figures` | redraw from the stored summaries, into `results/figures` — a tracked location, so the PNGs it writes are new files git will offer to commit |
 | `all` | every one of the above, in order |
 
 `paired`, `ordering`, `calibrate` and the sweeps run at `--n 160 --seed
 20260811`, which is what the committed summaries were produced under — except
-`sweep doubt`, whose summary records seed 20260819 and which is run at that.
-`NEWTON_N` and `NEWTON_SEED` change both for a quicker look, at the cost of not
-reproducing those numbers.
+`sweep doubt` (summary records seed 20260819) and `grid-learners` (summary
+records seed 20260920), each of which runs at its own seed. `NEWTON_N` and
+`NEWTON_SEED` change both for a quicker look, at the cost of not reproducing
+those numbers.
 
 The model-backed evaluations are redirected the same way, and compared against
 the stored directory for the model and flags they default to.

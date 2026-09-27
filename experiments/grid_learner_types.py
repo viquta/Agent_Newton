@@ -95,6 +95,12 @@ def main() -> None:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--n", type=int, required=True, help="Learners per arm.")
     parser.add_argument("--seed", type=int, required=True)
+    parser.add_argument(
+        "--allow-spent-seed",
+        action="store_true",
+        help="Re-run at a seed a stored study already reports from, to reproduce "
+        "or re-record that study. Refused otherwise.",
+    )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
 
@@ -105,12 +111,18 @@ def main() -> None:
             f"sized from. Pick another."
         )
     spent = spent_seeds(config.paths.results_dir)
-    if args.seed in spent:
+    if args.seed in spent and args.allow_spent_seed:
+        print(
+            f"seed {args.seed} is already reported by "
+            f"{', '.join(sorted(spent[args.seed]))}; running anyway (--allow-spent-seed)"
+        )
+    elif args.seed in spent:
         parser.error(
             f"--seed {args.seed} has already been used by "
             f"{', '.join(sorted(spent[args.seed]))}. Profiles come from "
             f"(seed, learner_id), so this would re-report learners an existing "
-            f"analysis has already seen."
+            f"analysis has already seen. Pick a seed no stored summary names, or "
+            f"pass --allow-spent-seed to reproduce or re-record that study."
         )
 
     rng = np.random.default_rng(args.seed)
