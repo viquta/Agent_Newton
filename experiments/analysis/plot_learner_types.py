@@ -33,6 +33,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.gridspec as gridspec  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.axes import Axes  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Style — match figures.py exactly
@@ -98,7 +99,7 @@ def house_style() -> None:
     )
 
 
-def _bare(ax: plt.Axes) -> None:
+def _bare(ax: Axes) -> None:
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
 
@@ -107,7 +108,7 @@ def _bare(ax: plt.Axes) -> None:
 # Trajectory panel
 # ---------------------------------------------------------------------------
 
-def _trajectory_panel(ax: plt.Axes, cat_data: dict) -> None:
+def _trajectory_panel(ax: Axes, cat_data: dict) -> None:
     """Remediation ratio and accuracy over practice items for both arms."""
     for arm, color in [("coupled", BLUE), ("decoupled", ORANGE)]:
         pts = cat_data["paths"][arm]
@@ -141,7 +142,7 @@ def _trajectory_panel(ax: plt.Axes, cat_data: dict) -> None:
 # Outcome panel
 # ---------------------------------------------------------------------------
 
-def _outcome_panel(ax: plt.Axes, outcome_data: dict) -> None:
+def _outcome_panel(ax: Axes, outcome_data: dict) -> None:
     """Mean paired difference ± 95 % CI for one outcome (Framing A)."""
     name = outcome_data["outcome"]
     diff = outcome_data["mean_difference"]
@@ -227,7 +228,7 @@ def _category_figure(category: str, cat_data: dict, out: Path, suffix: str) -> N
 # Combined figure (all categories on shared axes)
 # ---------------------------------------------------------------------------
 
-def _combined_figure(categories: dict, out: Path, suffix: str) -> None:
+def _combined_figure(categories: dict[str, dict], out: Path, suffix: str) -> None:
     """Remediation ratio trajectories, all categories on one figure.
 
     Colour encodes population; solid = coupled arm, dashed = decoupled arm.
@@ -245,7 +246,7 @@ def _combined_figure(categories: dict, out: Path, suffix: str) -> None:
 
     for category, cat_data in categories.items():
         color = CATEGORY_COLOR.get(category, INK_MUTED)
-        label = ERROR_SHAPE.get(category, category)
+        label: str = ERROR_SHAPE.get(category, category)
         for arm, linestyle, lw, alpha in [
             ("coupled",   "-",  1.8, 1.0),
             ("decoupled", "--", 1.1, 0.60),
